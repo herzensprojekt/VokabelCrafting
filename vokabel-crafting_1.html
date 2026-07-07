@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Vokabel-Crafting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --grass-a:#5b9c3f;
+    --grass-b:#4d8636;
+    --dirt-a:#8a5a34;
+    --dirt-b:#6e4527;
+    --stone:#8a8a8a;
+    --panel:#c6c6c6;
+    --panel-dark:#8b8b8b;
+    --panel-light:#eaeaea;
+    --sky-top:#7ec6ea;
+    --sky-bot:#bfe6f5;
+    --ink:#242017;
+    --gold:#f2c94c;
+    --danger:#c0392b;
+    --ok:#3fa34d;
+    --wood:#7a4a2b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'VT323', monospace;
+    font-size:22px;
+    color:var(--ink);
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 88% 10%, #fff6b8 0 22px, rgba(255,246,184,0.5) 23px 30px, transparent 31px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.10) 0 18px, transparent 18px 36px),
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.05) 0 6px, transparent 6px 12px),
+      repeating-linear-gradient(45deg, rgba(0,0,0,0.03) 0 6px, transparent 6px 12px),
+      linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bot) 54%, var(--grass-a) 54%, var(--grass-b) 100%);
+    background-attachment: fixed;
+    display:flex;
+    justify-content:center;
+    padding:14px;
+  }
+  .pixel-corners{
+    clip-path: polygon(
+      0px 8px, 8px 8px, 8px 0px, calc(100% - 8px) 0px, calc(100% - 8px) 8px, 100% 8px,
+      100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
+      8px 100%, 8px calc(100% - 8px), 0px calc(100% - 8px)
+    );
+  }
+
+  /* Modal (ersetzt window.confirm, das in manchen Vorschau-Frames blockiert wird) */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.6);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:1000;
+    animation: feedback-in .15s ease;
+  }
+  .modal-box{ max-width:340px; width:100%; margin:0; }
+  .modal-box p{ margin:0 0 16px 0; text-align:center; }
+
+  /* Avatar */
+  .avatar-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
+    margin-top:10px;
+  }
+  .avatar-option{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    cursor:pointer;
+    padding:6px 4px;
+    border:3px solid transparent;
+  }
+  .avatar-option.selected{
+    border-color:var(--gold);
+    background:rgba(242,201,76,0.15);
+    box-shadow:0 0 12px rgba(242,201,76,0.7);
+  }
+  .avatar-option .aname{
+    font-family:'Press Start 2P',monospace;
+    font-size:7.5px;
+    text-align:center;
+    color:#2b2b2b;
+    line-height:1.3;
+  }
+  .avatar-swatch{
+    position:relative;
+    width:56px; height:56px;
+    border:4px solid #2b2b2b;
+    box-shadow: inset -4px -4px 0 rgba(0,0,0,0.25), inset 4px 4px 0 rgba(255,255,255,0.3);
+  }
+  .avatar-swatch::before, .avatar-swatch::after{
+    content:"";
+    position:absolute;
+    top:34%;
+    width:16%;
+    height:16%;
+    background:#1a1a1a;
+  }
+  .avatar-swatch::before{ left:20%; }
+  .avatar-swatch::after{ right:20%; }
+  .avatar-swatch.mini{ width:28px; height:28px; border-width:3px; }
+  @keyframes rainbow-shift{
+    0%{ background-position:0% 50%; }
+    50%{ background-position:100% 50%; }
+    100%{ background-position:0% 50%; }
+  }
+  .player-badge{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    margin-bottom:10px;
+    font-family:'Press Start 2P',monospace;
+    font-size:11px;
+    color:#2b5c1f;
+  }
+  .player-badge .player-name{ color:#1e4515; }
+  #player-name-input{
+    width:100%;
+    font-family:'VT323',monospace;
+    font-size:22px;
+    padding:10px;
+    border:4px solid #9a9a9a;
+    background:#fff;
+    box-shadow: inset 2px 2px 0 #ddd;
+    margin-top:14px;
+  }
+  #player-name-input:focus{ outline:3px solid var(--gold); }
+  #app{
+    width:100%;
+    max-width:480px;
+  }
+  h1,h2,h3{font-family:'Press Start 2P', monospace; margin:0; line-height:1.4;}
+  .title-block{
+    text-align:center;
+    margin-bottom:14px;
+  }
+  .title-block h1{
+    font-size:16px;
+    color:#fff;
+    letter-spacing:1px;
+    animation: title-glow 2.6s ease-in-out infinite;
+  }
+  @keyframes title-glow{
+    0%,100%{ text-shadow: 3px 3px 0 #2b5c1f, -2px -2px 0 #2b5c1f, 2px -2px 0 #2b5c1f, -2px 2px 0 #2b5c1f, 0 0 6px rgba(255,255,255,0.15); }
+    50%{ text-shadow: 3px 3px 0 #2b5c1f, -2px -2px 0 #2b5c1f, 2px -2px 0 #2b5c1f, -2px 2px 0 #2b5c1f, 0 0 18px rgba(255,244,168,0.95); }
+  }
+  .title-block p{
+    font-family:'VT323',monospace;
+    font-size:16px;
+    color:#2b5c1f;
+    margin-top:6px;
+  }
+  .panel{
+    background: var(--panel);
+    border: 6px solid var(--panel-dark);
+    box-shadow:
+      inset 4px 4px 0 var(--panel-light),
+      inset -4px -4px 0 #6f6f6f,
+      0 6px 0 rgba(0,0,0,0.35);
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .dirt-panel{
+    background: var(--dirt-a);
+    border: 6px solid var(--dirt-b);
+    box-shadow:
+      inset 4px 4px 0 #a06f45,
+      inset -4px -4px 0 #4d3018,
+      0 6px 0 rgba(0,0,0,0.35);
+    color:#fff;
+  }
+  .btn{
+    font-family:'Press Start 2P', monospace;
+    font-size:12px;
+    color:#fff;
+    background: var(--ok);
+    border:4px solid #2c7a37;
+    box-shadow: inset 2px 2px 0 rgba(255,255,255,0.35), inset -2px -2px 0 rgba(0,0,0,0.25), 0 4px 0 rgba(0,0,0,0.35);
+    padding:14px 10px;
+    width:100%;
+    cursor:pointer;
+    text-align:center;
+    line-height:1.5;
+    min-height:48px;
+    touch-action:manipulation;
+    position:relative;
+    overflow:hidden;
+  }
+  .btn::after{
+    content:"";
+    position:absolute;
+    top:0; left:-60%;
+    width:40%; height:100%;
+    background:linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent);
+    transform:skewX(-20deg);
+    transition:left .5s ease;
+    pointer-events:none;
+  }
+  .btn:hover::after{ left:130%; }
+  .btn:active{ transform:translateY(3px); box-shadow:none; }
+  .btn.secondary{ background:#5a7dab; border-color:#2c4f7a; }
+  .btn.wood{ background:var(--wood); border-color:#4d2f1a; }
+  .btn.danger{ background:var(--danger); border-color:#7a2015; }
+  .btn.small{ font-size:11px; padding:10px 8px; }
+  .btn[disabled]{ opacity:0.5; pointer-events:none; }
+
+  .row{ display:flex; gap:10px; }
+  .row.wrap{ flex-wrap:wrap; }
+  .col{ flex:1; }
+
+  .mode-grid{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px; }
+  .mode-btn{
+    font-family:'Press Start 2P', monospace;
+    font-size:11px;
+    text-align:left;
+    padding:12px;
+    color:#fff;
+    background:#6d6d6d;
+    border:4px solid #454545;
+    box-shadow: inset 2px 2px 0 rgba(255,255,255,0.25), inset -2px -2px 0 rgba(0,0,0,0.3);
+    cursor:pointer;
+  }
+  .mode-btn.active{ background:var(--ok); border-color:#2c7a37; }
+  .mode-btn small{ display:block; font-family:'VT323',monospace; font-size:15px; margin-top:6px; opacity:0.9; }
+
+  /* Hearts */
+  .hearts{ display:flex; gap:4px; justify-content:center; margin-bottom:8px; }
+  .heart{ font-size:26px; filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.4)); }
+  .heart.lost{ opacity:0.25; filter: grayscale(1) drop-shadow(1px 1px 0 rgba(0,0,0,0.4)); }
+
+  .hud{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; }
+  .score-badge{
+    font-family:'Press Start 2P', monospace;
+    font-size:11px;
+    background:var(--gold);
+    color:#4a3400;
+    border:3px solid #b8901f;
+    padding:6px 8px;
+    box-shadow: 0 0 0 rgba(242,201,76,0.6);
+    animation: badge-glow 2.2s ease-in-out infinite;
+  }
+  @keyframes badge-glow{
+    0%,100%{ box-shadow: 0 0 2px rgba(242,201,76,0.4); }
+    50%{ box-shadow: 0 0 10px rgba(242,201,76,0.9); }
+  }
+  .cancel-row{ display:flex; justify-content:flex-end; margin-bottom:8px; }
+  .cancel-btn-inline{
+    width:auto;
+    font-size:10px;
+    padding:8px 12px;
+    min-height:auto;
+  }
+
+  .progress-outer{ background:#4a4a4a; border:3px solid #2b2b2b; height:14px; margin-bottom:14px; }
+  .progress-inner{ background:var(--ok); height:100%; width:0%; transition:width .3s; }
+
+  .word-card{
+    text-align:center;
+    padding:20px 10px;
+  }
+  .word-card .eyebrow{ font-family:'Press Start 2P',monospace; font-size:9px; color:#4a4a4a; letter-spacing:1px; margin-bottom:10px;}
+  .word-card .term{ font-family:'Press Start 2P',monospace; font-size:20px; color:var(--ink); word-break:break-word; line-height:1.5;}
+
+  .choices{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:16px; }
+  .choice-btn{
+    font-family:'VT323',monospace;
+    font-size:20px;
+    background:var(--panel-light);
+    border:4px solid #9a9a9a;
+    box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #b5b5b5, 0 3px 0 rgba(0,0,0,0.3);
+    padding:12px 10px;
+    cursor:pointer;
+    text-align:center;
+    min-height:52px;
+  }
+  .choice-btn:active{ transform:translateY(2px); box-shadow:none; }
+  .choice-btn.correct{ background:#bdeec2; border-color:var(--ok); }
+  .choice-btn.wrong{ background:#f0bcb6; border-color:var(--danger); }
+  .choice-btn[disabled]{ pointer-events:none; }
+
+  .type-area{ margin-top:18px; }
+  input[type=text]{
+    width:100%;
+    font-family:'VT323',monospace;
+    font-size:24px;
+    padding:10px;
+    border:4px solid #9a9a9a;
+    background:#fff;
+    box-shadow: inset 2px 2px 0 #ddd;
+  }
+  input[type=text]:focus{ outline:3px solid var(--gold); }
+
+  .feedback{
+    margin-top:14px;
+    padding:12px;
+    font-family:'VT323',monospace;
+    font-size:19px;
+    border:4px solid;
+    display:none;
+  }
+  .feedback.show{ display:block; animation: feedback-in .25s ease; }
+  @keyframes feedback-in{
+    0%{ transform:translateY(-6px); opacity:0; }
+    100%{ transform:translateY(0); opacity:1; }
+  }
+  .feedback.good{ background:#d7f3da; border-color:var(--ok); color:#1e5c28; }
+  .feedback.almost{ background:#fdf1c7; border-color:var(--gold); color:#6e5300; }
+  .feedback.bad{ background:#f7d6d1; border-color:var(--danger); color:#7a201a; }
+
+  .item-pop{
+    display:inline-block;
+    font-size:26px;
+    margin-right:6px;
+    animation: pop 0.5s ease;
+  }
+  @keyframes pop{
+    0%{ transform:scale(0) rotate(-15deg); opacity:0;}
+    60%{ transform:scale(1.3) rotate(8deg); opacity:1;}
+    100%{ transform:scale(1) rotate(0deg);}
+  }
+
+  .inventory{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(74px,1fr));
+    gap:8px;
+    margin-top:10px;
+  }
+  .slot{
+    background:var(--panel-light);
+    border:3px solid #9a9a9a;
+    box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #b5b5b5, 0 3px 0 rgba(0,0,0,0.25);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    position:relative;
+    padding:8px 4px;
+    animation: slot-in .3s ease;
+  }
+  @keyframes slot-in{
+    0%{ transform:scale(0.6); opacity:0; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .slot-icon{ font-size:24px; line-height:1; filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.25)); }
+  .slot-name{
+    font-family:'Press Start 2P',monospace;
+    font-size:7px;
+    line-height:1.4;
+    margin-top:6px;
+    text-align:center;
+    color:#3a3a3a;
+    text-transform:uppercase;
+  }
+  .slot .count{
+    position:absolute; top:-6px; right:-6px;
+    font-family:'Press Start 2P',monospace;
+    font-size:9px;
+    color:#4a3400;
+    background:var(--gold);
+    border:2px solid #b8901f;
+    padding:1px 4px;
+  }
+  .inventory-empty{
+    font-size:16px;
+    color:#555;
+    text-align:center;
+    padding:14px 6px;
+    border:3px dashed #9a9a9a;
+    margin-top:10px;
+  }
+
+  .center-text{ text-align:center; }
+  .muted{ color:#555; font-size:16px; }
+
+  .checkbox-row{ display:flex; align-items:center; gap:8px; margin:8px 0; }
+  .checkbox-row label{ font-size:17px; }
+
+  footer.note{
+    text-align:center;
+    font-size:14px;
+    color:#2b5c1f;
+    margin-top:6px;
+  }
+
+  select{
+    font-family:'VT323',monospace;
+    font-size:18px;
+    padding:8px;
+    border:3px solid #9a9a9a;
+    width:100%;
+    background:#fff;
+  }
+
+  @media (max-width:380px){
+    .word-card .term{ font-size:16px; }
+    body{ font-size:20px; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ---------------------------------------------------
+   VOKABEL-DATEN
+--------------------------------------------------- */
+const VOCAB = [
+  // Station 1
+  {en:"glass", de:"Glas", cat:"Station 1"},
+  {en:"orange", de:"Orange", cat:"Station 1"},
+  {en:"juice", de:"Saft", cat:"Station 1"},
+  {en:"at the moment", de:"im Moment", accepted:["im moment","gerade"], cat:"Station 1"},
+  {en:"sad", de:"traurig", cat:"Station 1"},
+  {en:"those", de:"jene", accepted:["jene","diese dort"], cat:"Station 1"},
+  {en:"like that", de:"so", cat:"Station 1"},
+  {en:"to earn", de:"verdienen", cat:"Station 1"},
+  {en:"flea market", de:"Flohmarkt", cat:"Station 1"},
+  {en:"community centre", de:"Gemeindezentrum", cat:"Station 1"},
+  {en:"to organise", de:"organisieren", cat:"Station 1"},
+  {en:"year", de:"Jahr", cat:"Station 1"},
+  {en:"to add", de:"hinzufügen", accepted:["hinzufügen","ergänzen","addieren"], cat:"Station 1"},
+  {en:"to make money", de:"Geld verdienen", cat:"Station 1"},
+  {en:"charity", de:"Wohltätigkeitsverein", accepted:["wohltätigkeitsverein","wohltätige zwecke","wohlfahrt"], cat:"Station 1"},
+  {en:"DVD", de:"DVD", cat:"Station 1"},
+  {en:"to clear out", de:"ausräumen", accepted:["ausräumen","entrümpeln"], cat:"Station 1"},
+  {en:"garage", de:"Garage", cat:"Station 1"},
+  {en:"to feel", de:"fühlen", accepted:["fühlen","sich fühlen"], cat:"Station 1"},
+  {en:"hopeful", de:"hoffnungsvoll", cat:"Station 1"},
+  {en:"to ring", de:"klingeln", accepted:["klingeln","läuten"], cat:"Station 1"},
+  {en:"advice", de:"Rat", accepted:["rat","ratschlag"], cat:"Station 1"},
+  {en:"should", de:"sollte", accepted:["sollte","solltest","sollten","solltet"], cat:"Station 1"},
+  {en:"full (of)", de:"voll", accepted:["voll","voll von","voll mit"], cat:"Station 1"},
+  {en:"to throw away", de:"wegwerfen", cat:"Station 1"},
+  {en:"coffee", de:"Kaffee", cat:"Station 1"},
+  {en:"charity shop", de:"Second-Hand-Laden", cat:"Station 1"},
+  {en:"any", de:"irgendein", accepted:["irgendein","irgendeine","irgendeiner","irgendwelche"], cat:"Station 1"},
+
+  // Station 2
+  {en:"That's what friends are for.", de:"Dafür sind Freunde da.", cat:"Station 2"},
+  {en:"must", de:"müssen", cat:"Station 2"},
+  {en:"to be worth", de:"wert sein", cat:"Station 2"},
+  {en:"How many...?", de:"Wie viele...?", accepted:["wie viele"], cat:"Station 2"},
+  {en:"about", de:"ungefähr", accepted:["ungefähr","circa","etwa"], cat:"Station 2"},
+  {en:"stuff", de:"Zeug", cat:"Station 2"},
+  {en:"not ... any", de:"kein", accepted:["kein","keine","keinen"], cat:"Station 2"},
+  {en:"a lot of", de:"viel", accepted:["viel","viele","eine menge"], cat:"Station 2"},
+  {en:"a couple of", de:"ein paar", cat:"Station 2"},
+  {en:"everything", de:"alles", cat:"Station 2"},
+  {en:"to ask for", de:"fragen nach", accepted:["fragen nach","bitten um"], cat:"Station 2"},
+  {en:"bargain", de:"Schnäppchen", cat:"Station 2"},
+
+  // Shops
+  {en:"shoe shop", de:"Schuhgeschäft", cat:"Shops"},
+  {en:"jewellery shop", de:"Juweliergeschäft", cat:"Shops"},
+  {en:"fashion shop", de:"Modegeschäft", cat:"Shops"},
+  {en:"café / snack bar", de:"Café / Imbiss", accepted:["café","imbiss","café / imbiss"], cat:"Shops"},
+  {en:"supermarket", de:"Supermarkt", cat:"Shops"},
+  {en:"market", de:"Markt", cat:"Shops"},
+  {en:"book shop", de:"Buchladen", cat:"Shops"},
+  {en:"sports shop", de:"Sportgeschäft", cat:"Shops"},
+
+  // Seite 3
+  {en:"a little", de:"ein wenig", accepted:["ein wenig","etwas"], cat:"Seite 3"},
+  {en:"in the end", de:"schließlich", accepted:["schließlich","zum schluss"], cat:"Seite 3"},
+  {en:"size", de:"Größe", accepted:["größe","kleidergröße"], cat:"Seite 3"},
+  {en:"another", de:"ein anderer", accepted:["ein anderer","eine andere","noch eine","noch ein"], cat:"Seite 3"},
+  {en:"FAQ", de:"häufig gestellte Fragen", accepted:["häufig gestellte fragen","faq"], cat:"Seite 3"},
+  {en:"to take (time)", de:"dauern", accepted:["dauern","zeit brauchen"], cat:"Seite 3"},
+  {en:"to call", de:"anrufen", accepted:["anrufen","rufen"], cat:"Seite 3"},
+  {en:"sunny", de:"sonnig", cat:"Seite 3"},
+  {en:"to check", de:"überprüfen", accepted:["überprüfen","prüfen","kontrollieren"], cat:"Seite 3"},
+  {en:"to have a break", de:"eine Pause machen", cat:"Seite 3"},
+  {en:"sugar", de:"Zucker", cat:"Seite 3"},
+  {en:"milk", de:"Milch", cat:"Seite 3"},
+  {en:"disgusting", de:"ekelhaft", accepted:["ekelhaft","widerlich"], cat:"Seite 3"},
+  {en:"fruit", de:"Obst", accepted:["obst","frucht"], cat:"Seite 3"},
+  {en:"apple", de:"Apfel", cat:"Seite 3"},
+  {en:"would like", de:"würde gern", accepted:["würde gern","hätte gern","möchte"], cat:"Seite 3"},
+  {en:"crisp (BE)", de:"Kartoffelchip", accepted:["kartoffelchip","chips"], cat:"Seite 3"},
+  {en:"not any more", de:"nicht mehr", cat:"Seite 3"},
+  {en:"buyer", de:"Käufer", accepted:["käufer","käuferin"], cat:"Seite 3"},
+  {en:"seller", de:"Verkäufer", accepted:["verkäufer","verkäuferin"], cat:"Seite 3"},
+  {en:"chips (BE)", de:"Pommes frites", accepted:["pommes frites","pommes"], cat:"Seite 3"},
+];
+
+// jedem Eintrag ein accepted-Array garantieren
+VOCAB.forEach(w => { if(!w.accepted){ w.accepted = [w.de.toLowerCase()]; } });
+
+const ITEM_POOL = ["💎","🥇","🪙","🔩","🟩","🍎","🪵","🪨","⚫","🔴","🌾","🥚","🧱"];
+const ITEM_NAMES = {
+  "💎":"Diamant","🥇":"Goldbarren","🪙":"Münze","🔩":"Eisen","🟩":"Smaragd",
+  "🍎":"Apfel","🪵":"Holz","🪨":"Stein","⚫":"Kohle","🔴":"Redstone",
+  "🌾":"Weizen","🥚":"Ei","🧱":"Ziegel"
+};
+
+const AVATARS = [
+  {id:"grass",    name:"Gras",      bg:"linear-gradient(135deg,#6fae44,#3f7a28)"},
+  {id:"stone",    name:"Stein",     bg:"linear-gradient(135deg,#b5b5b5,#7a7a7a)"},
+  {id:"lava",     name:"Lava",      bg:"linear-gradient(135deg,#ff8a3d,#c1440e)"},
+  {id:"diamond",  name:"Diamant",   bg:"linear-gradient(135deg,#8fe9f0,#2fa9b8)"},
+  {id:"ender",    name:"Ender",     bg:"linear-gradient(135deg,#b98bff,#3b0764)"},
+  {id:"gold",     name:"Gold",      bg:"linear-gradient(135deg,#ffe28a,#c9971f)"},
+  {id:"redstone", name:"Redstone",  bg:"linear-gradient(135deg,#ff6b6b,#8a1414)"},
+  {id:"rainbow",  name:"Regenbogen",bg:"linear-gradient(120deg,#ff004c,#ff8a00,#ffe600,#3dff6d,#00c3ff,#7b2ff7,#ff004c)", rainbow:true}
+];
+
+function avatarById(id){
+  return AVATARS.find(a=>a.id===id) || AVATARS[0];
+}
+function avatarStyle(av){
+  let s = `background:${av.bg};`;
+  if(av.rainbow){ s += "background-size:400% 400%;animation:rainbow-shift 4s linear infinite;"; }
+  return s;
+}
+function escapeHtml(str){
+  return String(str==null ? "" : str).replace(/[&<>"']/g, c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+/* ---------------------------------------------------
+   STATE
+--------------------------------------------------- */
+const state = {
+  screen: "start",
+  mode: "mc",          // 'mc' | 'type' | 'mix'
+  direction: "en-de",  // 'en-de' | 'de-en'
+  avatarId: "grass",
+  playerName: "",
+  category: "Alle",
+  maxHearts: 5,
+  hearts: 5,
+  score: 0,
+  streak: 0,
+  bestStreak: 0,
+  inventory: {},
+  queue: [],
+  currentIndex: 0,
+  currentQuestionType: "mc",
+  answered: false,
+  lastFeedback: null,
+};
+
+function categories(){
+  return ["Alle", ...Array.from(new Set(VOCAB.map(w=>w.cat)))];
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function buildQueue(){
+  let pool = state.category === "Alle" ? VOCAB : VOCAB.filter(w=>w.cat===state.category);
+  state.queue = shuffle(pool);
+  state.currentIndex = 0;
+}
+
+/* ---------------------------------------------------
+   LEVENSHTEIN (Fuzzy-Matching für Tipp-Modus)
+--------------------------------------------------- */
+function levenshtein(a,b){
+  const m=a.length, n=b.length;
+  const dp = Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) dp[i][0]=i;
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      const cost = a[i-1]===b[j-1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i-1][j]+1,
+        dp[i][j-1]+1,
+        dp[i-1][j-1]+cost
+      );
+    }
+  }
+  return dp[m][n];
+}
+
+function normalize(s){
+  return s.toLowerCase()
+    .trim()
+    .replace(/[.,!?;:'"…]/g,"")
+    .replace(/\s+/g," ");
+}
+
+// Entfernt Klammerzusätze wie "(BE)" oder "(time)" für die Englisch-Zielantwort
+function cleanEn(en){
+  return en.replace(/\([^)]*\)/g,"").replace(/\s+/g," ").trim();
+}
+
+// Liefert Frage/Ziel je nach gewählter Richtung
+function getAnswerData(word){
+  if(state.direction === "en-de"){
+    return {
+      promptText: word.en,
+      answerDisplay: word.de,
+      accepted: word.accepted,
+      eyebrow: "ÜBERSETZE INS DEUTSCHE"
+    };
+  }
+  const enBase = cleanEn(word.en);
+  return {
+    promptText: word.de,
+    answerDisplay: enBase,
+    accepted: [enBase],
+    eyebrow: "ÜBERSETZE INS ENGLISCHE"
+  };
+}
+
+// Ergebnis: 'correct' | 'almost' | 'wrong'
+function evaluateTyped(input, acceptedList, correctionDisplay){
+  const norm = normalize(input);
+  if(norm.length===0) return {result:"wrong", correction: correctionDisplay};
+  let bestDist = Infinity;
+  let bestLen = 1;
+  acceptedList.forEach(acc=>{
+    const a = normalize(acc);
+    const d = levenshtein(norm, a);
+    if(d < bestDist){ bestDist = d; bestLen = a.length; }
+  });
+  if(bestDist === 0) return {result:"correct"};
+  const threshold = Math.max(1, Math.round(bestLen * 0.3));
+  if(bestDist <= threshold) return {result:"almost", correction: correctionDisplay};
+  return {result:"wrong", correction: correctionDisplay};
+}
+
+/* ---------------------------------------------------
+   RENDER
+--------------------------------------------------- */
+const app = document.getElementById('app');
+
+function render(){
+  if(state.screen==="start") return renderStart();
+  if(state.screen==="quiz") return renderQuiz();
+  if(state.screen==="gameover") return renderGameOver();
+  if(state.screen==="finished") return renderFinished();
+}
+
+function renderHeader(subtitle){
+  return `
+    <div class="title-block">
+      <h1>⛏ VOKABEL-CRAFTING</h1>
+      <p>${subtitle||""}</p>
+    </div>
+  `;
+}
+
+function playerBadgeHtml(){
+  const av = avatarById(state.avatarId);
+  const name = escapeHtml(state.playerName || "Spieler");
+  return `
+    <div class="player-badge">
+      <span class="avatar-swatch mini" style="${avatarStyle(av)}"></span>
+      <span class="player-name">${name}</span>
+    </div>
+  `;
+}
+
+// Eigenes Bestätigungs-Fenster statt window.confirm (das in eingebetteten
+// Vorschau-Frames oft blockiert wird und dann nicht reagiert).
+function showConfirmModal(message, onYes){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="panel dirt-panel modal-box">
+      <p>${escapeHtml(message)}</p>
+      <div class="row">
+        <button class="btn danger" id="modal-yes">JA</button>
+        <button class="btn secondary" id="modal-no">NEIN</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = ()=>{ if(overlay.parentNode){ overlay.parentNode.removeChild(overlay); } };
+  overlay.querySelector('#modal-yes').addEventListener('click', ()=>{ close(); onYes(); });
+  overlay.querySelector('#modal-no').addEventListener('click', close);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) close(); });
+}
+
+function renderStart(){
+  const cats = categories();
+  app.innerHTML = `
+    ${renderHeader("Baue deinen Wortschatz &ndash; Block für Block.")}
+    <div class="panel">
+      <h3 style="font-size:12px;margin-bottom:10px;">AVATAR &amp; NAME</h3>
+      <div class="avatar-grid">
+        ${AVATARS.map(av=>`
+          <div class="avatar-option ${state.avatarId===av.id?'selected':''}" data-avatar="${av.id}">
+            <span class="avatar-swatch" style="${avatarStyle(av)}"></span>
+            <span class="aname">${av.name}</span>
+          </div>
+        `).join("")}
+      </div>
+      <input type="text" id="player-name-input" maxlength="16" placeholder="Dein Spielername" value="${escapeHtml(state.playerName)}">
+    </div>
+    <div class="panel">
+      <h3 style="font-size:12px;margin-bottom:10px;">RICHTUNG</h3>
+      <div class="mode-grid">
+        <div class="mode-btn ${state.direction==='en-de'?'active':''}" data-direction="en-de">
+          Englisch &rarr; Deutsch
+          <small>Englisches Wort wird gezeigt</small>
+        </div>
+        <div class="mode-btn ${state.direction==='de-en'?'active':''}" data-direction="de-en">
+          Deutsch &rarr; Englisch
+          <small>Deutsches Wort wird gezeigt</small>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3 style="font-size:12px;margin-bottom:10px;">MODUS WÄHLEN</h3>
+      <div class="mode-grid">
+        <div class="mode-btn ${state.mode==='mc'?'active':''}" data-mode="mc">
+          Multiple Choice
+          <small>4 Antworten zur Auswahl</small>
+        </div>
+        <div class="mode-btn ${state.mode==='type'?'active':''}" data-mode="type">
+          Eintippen
+          <small>Antwort selbst schreiben</small>
+        </div>
+        <div class="mode-btn ${state.mode==='mix'?'active':''}" data-mode="mix">
+          Gemischt
+          <small>Mal Auswahl, mal Eintippen</small>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3 style="font-size:12px;margin-bottom:10px;">KATEGORIE</h3>
+      <select id="cat-select">
+        ${cats.map(c=>`<option value="${c}" ${state.category===c?'selected':''}>${c}</option>`).join("")}
+      </select>
+      <p class="muted" style="margin-top:8px;">${(state.category==="Alle"?VOCAB.length:VOCAB.filter(w=>w.cat===state.category).length)} Vokabeln in dieser Auswahl</p>
+    </div>
+    <div class="panel dirt-panel center-text">
+      <p style="margin:0 0 10px 0;">Für jede richtige Antwort gibt's ein Item fürs Inventar. Bei falschen oder leeren Antworten verlierst du ein Herz. Bei 0 Herzen ist die Runde vorbei.</p>
+      <button class="btn" id="start-btn">▶ SPIEL STARTEN</button>
+    </div>
+    <footer class="note">Herzensprojekt &middot; Vokabeltrainer, Unit 5</footer>
+  `;
+
+  document.querySelectorAll('.avatar-option').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.avatarId = el.dataset.avatar; render(); });
+  });
+  const nameInput = document.getElementById('player-name-input');
+  if(nameInput){
+    nameInput.addEventListener('input', (e)=>{ state.playerName = e.target.value; });
+  }
+  document.querySelectorAll('.mode-btn[data-mode]').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.mode = el.dataset.mode; render(); });
+  });
+  document.querySelectorAll('.mode-btn[data-direction]').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.direction = el.dataset.direction; render(); });
+  });
+  document.getElementById('cat-select').addEventListener('change', (e)=>{
+    state.category = e.target.value; render();
+  });
+  document.getElementById('start-btn').addEventListener('click', startGame);
+}
+
+function startGame(){
+  state.playerName = (state.playerName||"").trim() || "Spieler";
+  state.hearts = state.maxHearts;
+  state.score = 0;
+  state.streak = 0;
+  state.bestStreak = 0;
+  state.inventory = {};
+  buildQueue();
+  state.screen = "quiz";
+  nextQuestion();
+}
+
+function pickQuestionType(){
+  if(state.mode==="mc") return "mc";
+  if(state.mode==="type") return "type";
+  return Math.random() < 0.5 ? "mc" : "type";
+}
+
+function nextQuestion(){
+  if(state.currentIndex >= state.queue.length){
+    state.screen = "finished";
+    render();
+    return;
+  }
+  state.currentQuestionType = pickQuestionType();
+  state.answered = false;
+  render();
+}
+
+function currentWord(){
+  return state.queue[state.currentIndex];
+}
+
+function buildChoices(word){
+  const ans = getAnswerData(word);
+  const valueFor = w => state.direction === "en-de" ? w.de : cleanEn(w.en);
+  const seen = new Set([ans.answerDisplay]);
+  const others = [];
+  shuffle(VOCAB.filter(w=>w!==word)).forEach(w=>{
+    if(others.length>=3) return;
+    const val = valueFor(w);
+    if(!seen.has(val)){ seen.add(val); others.push(val); }
+  });
+  return shuffle([ans.answerDisplay, ...others]);
+}
+
+function heartsHtml(){
+  let html = '<div class="hearts">';
+  for(let i=0;i<state.maxHearts;i++){
+    html += `<span class="heart ${i<state.hearts?'':'lost'}">${i<state.hearts?'❤️':'🤍'}</span>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function inventoryHtml(){
+  const keys = Object.keys(state.inventory);
+  if(keys.length===0){
+    return `<div class="inventory-empty">Noch leer &ndash; sammle Items mit richtigen Antworten!</div>`;
+  }
+  return `<div class="inventory">` + keys.map(k=>`
+    <div class="slot">
+      <span class="slot-icon">${k}</span>
+      <span class="slot-name">${ITEM_NAMES[k]||''}</span>
+      <span class="count">&times;${state.inventory[k]}</span>
+    </div>
+  `).join("") + `</div>`;
+}
+
+function renderQuiz(){
+  const word = currentWord();
+  const ans = getAnswerData(word);
+  const total = state.queue.length;
+  const progressPct = Math.round((state.currentIndex/total)*100);
+
+  app.innerHTML = `
+    ${renderHeader(state.category)}
+    ${playerBadgeHtml()}
+    <div class="cancel-row">
+      <button class="btn danger cancel-btn-inline" id="cancel-btn">✕ ABBRECHEN</button>
+    </div>
+    ${heartsHtml()}
+    <div class="hud">
+      <span class="score-badge">★ ${state.score}</span>
+      <span class="score-badge">🔥 ${state.streak}</span>
+    </div>
+    <div class="progress-outer"><div class="progress-inner" style="width:${progressPct}%"></div></div>
+
+    <div class="panel word-card" id="word-card">
+      <div class="eyebrow">${ans.eyebrow}</div>
+      <div class="term">${ans.promptText}</div>
+      <div id="question-body"></div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:11px;margin-bottom:8px;">INVENTAR</h3>
+      ${inventoryHtml()}
+    </div>
+  `;
+
+  document.getElementById('cancel-btn').addEventListener('click', cancelGame);
+
+  const body = document.getElementById('question-body');
+
+  if(state.currentQuestionType === "mc"){
+    const choices = buildChoices(word);
+    body.innerHTML = `
+      <div class="choices">
+        ${choices.map(c=>`<button class="choice-btn" data-choice="${encodeURIComponent(c)}">${c}</button>`).join("")}
+      </div>
+      <div class="feedback" id="feedback"></div>
+    `;
+    document.querySelectorAll('.choice-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>handleMcAnswer(btn, decodeURIComponent(btn.dataset.choice), word));
+    });
+  } else {
+    body.innerHTML = `
+      <div class="type-area">
+        <input type="text" id="type-input" placeholder="Deine Antwort..." autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="btn" id="submit-btn" style="margin-top:10px;">✓ ANTWORT PRÜFEN</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    `;
+    const input = document.getElementById('type-input');
+    const submit = document.getElementById('submit-btn');
+    submit.addEventListener('click', ()=>handleTypedAnswer(input.value, word));
+    input.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter'){ handleTypedAnswer(input.value, word); }
+    });
+    setTimeout(()=>input.focus(), 50);
+  }
+}
+
+function awardItem(){
+  const item = ITEM_POOL[Math.floor(Math.random()*ITEM_POOL.length)];
+  state.inventory[item] = (state.inventory[item]||0)+1;
+  return item;
+}
+
+function loseHeart(){
+  state.hearts = Math.max(0, state.hearts-1);
+}
+
+function showFeedback(type, html){
+  const fb = document.getElementById('feedback');
+  fb.className = `feedback show ${type}`;
+  fb.innerHTML = html;
+}
+
+function cancelGame(){
+  showConfirmModal('Runde abbrechen und zum Menü zurückkehren?', ()=>{
+    state.screen = "start";
+    render();
+  });
+}
+
+function goOnAfterDelay(){
+  setTimeout(()=>{
+    state.currentIndex++;
+    if(state.hearts <= 0){
+      state.screen = "gameover";
+      render();
+    } else {
+      nextQuestion();
+    }
+  }, 1300);
+}
+
+function handleMcAnswer(btn, choice, word){
+  if(state.answered) return;
+  state.answered = true;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.setAttribute('disabled','true'));
+
+  const ans = getAnswerData(word);
+  const isCorrect = choice === ans.answerDisplay;
+  if(isCorrect){
+    btn.classList.add('correct');
+    const item = awardItem();
+    state.score += 10;
+    state.streak += 1;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    showFeedback('good', `<span class="item-pop">${item}</span> Richtig! Du erhältst ${ITEM_NAMES[item]}.`);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.choice-btn').forEach(b=>{
+      if(decodeURIComponent(b.dataset.choice)===ans.answerDisplay) b.classList.add('correct');
+    });
+    state.streak = 0;
+    loseHeart();
+    showFeedback('bad', `Leider falsch. Richtig wäre: <strong>${ans.answerDisplay}</strong>. Ein Herz geht verloren.`);
+  }
+  goOnAfterDelay();
+}
+
+function handleTypedAnswer(value, word){
+  if(state.answered) return;
+  state.answered = true;
+  document.getElementById('submit-btn').setAttribute('disabled','true');
+  document.getElementById('type-input').setAttribute('disabled','true');
+
+  const ans = getAnswerData(word);
+  const evalResult = evaluateTyped(value, ans.accepted, ans.answerDisplay);
+
+  if(evalResult.result === "correct"){
+    const item = awardItem();
+    state.score += 10;
+    state.streak += 1;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    showFeedback('good', `<span class="item-pop">${item}</span> Richtig! Du erhältst ${ITEM_NAMES[item]}.`);
+  } else if(evalResult.result === "almost"){
+    const item = awardItem();
+    state.score += 6;
+    state.streak += 1;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    showFeedback('almost', `<span class="item-pop">${item}</span> Fast richtig! Korrekt geschrieben: <strong>${evalResult.correction}</strong>. Trotzdem ${ITEM_NAMES[item]} erhalten &ndash; kein Herzverlust.`);
+  } else {
+    state.streak = 0;
+    loseHeart();
+    showFeedback('bad', `Leider falsch. Richtig wäre: <strong>${evalResult.correction}</strong>. Ein Herz geht verloren.`);
+  }
+  goOnAfterDelay();
+}
+
+function renderGameOver(){
+  app.innerHTML = `
+    ${renderHeader("Runde beendet")}
+    ${playerBadgeHtml()}
+    <div class="panel dirt-panel center-text">
+      <h2 style="font-size:15px;color:#fff;">💀 GAME OVER</h2>
+      <p style="margin-top:12px;">Alle Herzen verloren, ${escapeHtml(state.playerName||"Spieler")}.</p>
+    </div>
+    <div class="panel center-text">
+      <p>Punkte: <strong>${state.score}</strong></p>
+      <p>Beste Serie: <strong>${state.bestStreak}</strong></p>
+      <p>Gesammelte Items:</p>
+      ${inventoryHtml()}
+    </div>
+    <button class="btn" id="retry-btn">↻ NOCHMAL VERSUCHEN</button>
+    <div style="height:10px;"></div>
+    <button class="btn secondary" id="menu-btn">✕ ABBRECHEN / MENÜ</button>
+  `;
+  document.getElementById('retry-btn').addEventListener('click', startGame);
+  document.getElementById('menu-btn').addEventListener('click', ()=>{ state.screen="start"; render(); });
+}
+
+function renderFinished(){
+  app.innerHTML = `
+    ${renderHeader("Alle Vokabeln geschafft!")}
+    ${playerBadgeHtml()}
+    <div class="panel dirt-panel center-text">
+      <h2 style="font-size:15px;color:#fff;">🏆 GESCHAFFT!</h2>
+      <p style="margin-top:12px;">Gut gemacht, ${escapeHtml(state.playerName||"Spieler")}!</p>
+    </div>
+    <div class="panel center-text">
+      <p>Punkte: <strong>${state.score}</strong></p>
+      <p>Verbleibende Herzen: <strong>${state.hearts} / ${state.maxHearts}</strong></p>
+      <p>Beste Serie: <strong>${state.bestStreak}</strong></p>
+      <p>Inventar:</p>
+      ${inventoryHtml()}
+    </div>
+    <button class="btn" id="retry-btn">↻ NOCHMAL SPIELEN</button>
+    <div style="height:10px;"></div>
+    <button class="btn secondary" id="menu-btn">✕ ABBRECHEN / MENÜ</button>
+  `;
+  document.getElementById('retry-btn').addEventListener('click', startGame);
+  document.getElementById('menu-btn').addEventListener('click', ()=>{ state.screen="start"; render(); });
+}
+
+render();
+</script>
+</body>
+</html>
