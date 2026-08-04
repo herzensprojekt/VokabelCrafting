@@ -270,9 +270,14 @@
     image-rendering:pixelated;
     box-shadow:0 3px 0 rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.22);
   }
+  .flood-platform.current{
+    box-shadow:0 3px 0 rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.5),
+               0 0 0 2px rgba(242,201,76,0.85);
+  }
   .flood-avatar-wrap{
     position:absolute; left:50%; width:54px; height:54px; z-index:3;
-    transition: bottom .55s cubic-bezier(.34,1.56,.64,1);
+    transition: bottom .55s cubic-bezier(.34,1.56,.64,1),
+                margin-left .55s cubic-bezier(.34,1.56,.64,1);
   }
   /* display:block ist wichtig - als inline-Element bekaeme der Span keine
      Hoehe (aspect-ratio greift bei inline nicht) und der Avatar waere unsichtbar. */
@@ -3620,10 +3625,12 @@ const FLOOD_AVATAR_SIZE = 54;
 const FLOOD_ROOM_HEIGHT = FLOOD_FLOOR + GRAMMAR_GOAL_CORRECT * FLOOD_STEP + FLOOD_AVATAR_SIZE + 26;
 
 function floodPlatformTop(level){ return FLOOD_FLOOR + level * FLOOD_STEP; }
-function floodPlatformWidth(level){
-  const widths = [92,74,82,70,86,76,80,72,84,74,96];
-  return widths[level] != null ? widths[level] : 78;
-}
+function floodPlatformWidth(level){ return level === GRAMMAR_GOAL_CORRECT ? 88 : 64; }
+// Die Plattformen laufen im Zickzack (links - Mitte - rechts) nach oben. Sonst
+// wuerde die 54 Pixel hohe Figur bei nur 22 Pixel Stufenabstand quer durch die
+// Bretter ueber ihr ragen. So liegt die naechste Plattform auf derselben Seite
+// erst drei Stufen hoeher - genug Luft fuer den Avatar.
+function floodPlatformX(level){ return [-70, 0, 70][level % 3]; }
 
 function resetGrammarSession(){
   state.grammarCorrectCount = 0;
@@ -3690,12 +3697,15 @@ function grammarRoomGeometry(){
 function renderFloodRoom(){
   const av = avatarById(state.avatarId);
   const { level, avatarBottom, waterHeight } = grammarRoomGeometry();
-  const avatarLeft = avatarFootOffset(av, FLOOD_AVATAR_SIZE);
+  // Die Figur wird so verschoben, dass ihre FUESSE ueber der Plattformmitte
+  // stehen - nicht die Bildmitte.
+  const avatarLeft = floodPlatformX(level) + avatarFootOffset(av, FLOOD_AVATAR_SIZE);
 
   let platforms = "";
   for(let l = 0; l <= GRAMMAR_GOAL_CORRECT; l++){
     const w = floodPlatformWidth(l);
-    platforms += `<div class="flood-platform" style="bottom:${floodPlatformTop(l) - FLOOD_PLATFORM_H}px;width:${w}px;margin-left:${-w/2}px;"></div>`;
+    const x = floodPlatformX(l);
+    platforms += `<div class="flood-platform${l === level ? ' current' : ''}" style="bottom:${floodPlatformTop(l) - FLOOD_PLATFORM_H}px;width:${w}px;margin-left:${x - w/2}px;"></div>`;
   }
 
   const bubbles = [14, 33, 55, 78].map((x, i) =>
@@ -3835,10 +3845,16 @@ function handleGrammarAnswer(btn, choice, exercise){
   // ---- Flutungsraum --------------------------------------------------------
   const avatarEl = document.getElementById('flood-avatar');
   const waterEl = document.getElementById('flood-water');
-  const { avatarBottom, waterHeight } = grammarRoomGeometry();
+  const { level, avatarBottom, waterHeight } = grammarRoomGeometry();
   if(waterEl){ waterEl.style.height = waterHeight + "px"; }
   if(avatarEl){
+    // Beim Aufsteigen wandert die Figur auch seitlich zur naechsten Plattform.
     avatarEl.style.bottom = avatarBottom + "px";
+    avatarEl.style.marginLeft =
+      (floodPlatformX(level) + avatarFootOffset(avatarById(state.avatarId), FLOOD_AVATAR_SIZE)) + "px";
+    document.querySelectorAll('.flood-platform').forEach((p, i)=>{
+      p.classList.toggle('current', i === level);
+    });
     if(correct){
       avatarEl.classList.add('jump');
       setTimeout(()=>avatarEl.classList.remove('jump'), 600);
