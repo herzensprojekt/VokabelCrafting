@@ -265,7 +265,7 @@
     background:linear-gradient(180deg, rgba(255,255,255,0.18), transparent 40%, rgba(0,0,0,0.45));
   }
   .flood-platform{
-    position:absolute; left:50%; height:12px; z-index:2;
+    position:absolute; left:50%; height:10px; z-index:2;
     background-repeat:repeat; background-size:24px 24px;
     image-rendering:pixelated;
     box-shadow:0 3px 0 rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.22);
@@ -274,7 +274,11 @@
     position:absolute; left:50%; width:54px; height:54px; z-index:3;
     transition: bottom .55s cubic-bezier(.34,1.56,.64,1);
   }
-  .flood-avatar-wrap .avatar-swatch{ width:54px; max-width:54px; margin:0; }
+  /* display:block ist wichtig - als inline-Element bekaeme der Span keine
+     Hoehe (aspect-ratio greift bei inline nicht) und der Avatar waere unsichtbar. */
+  .flood-avatar-wrap .avatar-swatch{
+    display:block; width:54px; max-width:54px; height:54px; margin:0;
+  }
   .flood-avatar-wrap.jump{ animation: flood-jump .55s ease; }
   @keyframes flood-jump{ 0%{ transform:translateY(0); } 40%{ transform:translateY(-14px); } 100%{ transform:translateY(0); } }
   .flood-avatar-wrap.sink{ animation: flood-sink 1.5s ease forwards; }
@@ -3609,8 +3613,9 @@ const GRAMMAR_PRACTICE_COUNT = 10;
 // Masse des Flutungsraums. FLOOD_FLOOR ist die Oberkante des Bodens, jede
 // Stufe liegt FLOOD_STEP Pixel darueber. Plattform UND Avatar rechnen mit
 // derselben Funktion - dadurch steht die Figur exakt auf dem Brett.
-const FLOOD_STEP = 20;
+const FLOOD_STEP = 22;
 const FLOOD_FLOOR = 14;
+const FLOOD_PLATFORM_H = 10;
 const FLOOD_AVATAR_SIZE = 54;
 const FLOOD_ROOM_HEIGHT = FLOOD_FLOOR + GRAMMAR_GOAL_CORRECT * FLOOD_STEP + FLOOD_AVATAR_SIZE + 26;
 
@@ -3690,7 +3695,7 @@ function renderFloodRoom(){
   let platforms = "";
   for(let l = 0; l <= GRAMMAR_GOAL_CORRECT; l++){
     const w = floodPlatformWidth(l);
-    platforms += `<div class="flood-platform" style="bottom:${floodPlatformTop(l) - 12}px;width:${w}px;margin-left:${-w/2}px;"></div>`;
+    platforms += `<div class="flood-platform" style="bottom:${floodPlatformTop(l) - FLOOD_PLATFORM_H}px;width:${w}px;margin-left:${-w/2}px;"></div>`;
   }
 
   const bubbles = [14, 33, 55, 78].map((x, i) =>
