@@ -180,6 +180,7 @@
   .mode-btn[data-mode="type"]{ background:linear-gradient(135deg,#f2994a,#c96a1f); }
   .mode-btn[data-mode="mix"]{ background:linear-gradient(135deg,#9b59b6,#6c3483); }
   .mode-btn[data-mode="challenge"]{ background:linear-gradient(135deg,#e74c3c,#a02d1f); }
+  .mode-btn[data-mode="flood"]{ background:linear-gradient(135deg,#3f86d8,#1d4f92); }
   .mode-btn[data-mode].active{
     box-shadow: 0 0 0 3px var(--gold), 0 4px 14px rgba(242,201,76,0.5);
   }
@@ -440,6 +441,7 @@
   .gm-card:hover{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.26); }
   .gm-card:active{ transform:translateY(1px); }
   .gm-card.practice{ background:linear-gradient(135deg,#4db55c,#2c7a37); }
+  .gm-card.test{ background:linear-gradient(135deg,#f2994a,#c96a1f); }
   .gm-card.flood{ background:linear-gradient(135deg,#3f86d8,#1d4f92); }
   .gm-card .gm-title{ font-size:17px; font-weight:800; display:block; }
   .gm-card .gm-sub{ font-size:13.5px; font-weight:400; opacity:0.93; display:block; margin-top:4px; line-height:1.4; }
@@ -911,7 +913,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "11.0 – Verzauberungstisch";
+const APP_VERSION = "12.0 – Netherportal";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2214,6 +2216,10 @@ function renderStart(){
           ⚔️ Die Challenge
           <small>10 Sekunden gegen den Bösewicht</small>
         </div>
+        <div class="mode-btn game-tile ${state.mode==='flood'?'active':''}" data-mode="flood">
+          🌊 Der Flutungsraum
+          <small>Klettere dem Wasser davon</small>
+        </div>
       </div>
 
       <button class="btn secondary small" id="custom-vocab-btn" style="margin-top:16px;" ${state.cloudId ? "" : "disabled"}>➕ Eigene Vokabeln hinzufügen</button>
@@ -2339,6 +2345,10 @@ function renderStart(){
 }
 
 function startGame(){
+  // Der Flutungsraum teilt sich die Zaehler mit der Grammatik-Variante.
+  state.grammarCorrectCount = 0;
+  state.grammarWrongStreak = 0;
+  state.grammarWaterPx = 12;
   state.playerName = (state.playerName||"").trim() || "Spieler";
   saveProgress();
   attemptCloudLogin();
@@ -2394,7 +2404,101 @@ function buildChoices(word){
 /* ---------------------------------------------------
    QUIZ-SCREEN
 --------------------------------------------------- */
+// Der Flutungsraum als Vokabelspiel: gleiche Kletterlogik wie bei der
+// Grammatik, nur mit Vokabelfragen. Die Zaehler des Raums werden geteilt.
+function renderVocabFlood(){
+  const word = currentWord();
+  if(!word){ endSession("finished"); return; }
+  const ans = getAnswerData(word);
+  const choices = buildChoices(word);
+  const level = Math.min(state.grammarCorrectCount, GRAMMAR_GOAL_CORRECT);
+
+  app.innerHTML = `
+    ${renderHeader(state.category, true)}
+    ${topBarHtml("cancel-btn")}
+    <div class="hud">
+      <span class="score-badge">🏁 ${level}/${GRAMMAR_GOAL_CORRECT}</span>
+      <span class="score-badge">🪙 ${state.sessionCoins}</span>
+    </div>
+
+    <div class="panel dirt-panel" style="padding:10px;margin-bottom:10px;">
+      ${renderFloodRoom()}
+    </div>
+
+    <div class="panel word-card" id="word-card">
+      <div class="eyebrow">${ans.eyebrow}</div>
+      <div class="term">${escapeHtml(ans.promptText)}</div>
+      <div class="choices">
+        ${choices.map(c=>`<button class="choice-btn" data-choice="${encodeURIComponent(c)}">${escapeHtml(c)}</button>`).join("")}
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  `;
+
+  document.getElementById('cancel-btn').addEventListener('click', cancelGame);
+  document.querySelectorAll('.choice-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>handleVocabFloodAnswer(btn, decodeURIComponent(btn.dataset.choice), word));
+  });
+}
+
+function handleVocabFloodAnswer(btn, choice, word){
+  if(state.answered) return;
+  state.answered = true;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.setAttribute('disabled','true'));
+
+  const ans = getAnswerData(word);
+  const richtig = choice === ans.answerDisplay;
+  const fb = document.getElementById('feedback');
+  const avatarEl = document.getElementById('flood-avatar');
+  const waterEl = document.getElementById('flood-water');
+
+  if(richtig){
+    btn.classList.add('correct');
+    state.sessionCoins += 10;
+    state.streak += 1;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    state.grammarCorrectCount += 1;
+    state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"correct", word});
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.choice-btn').forEach(b=>{
+      if(decodeURIComponent(b.dataset.choice)===ans.answerDisplay) b.classList.add('correct');
+    });
+    state.streak = 0;
+    deductCoinsForWrong(10);
+    state.grammarWrongStreak += 1;
+    raiseFloodWater();
+    fb.className = 'feedback show bad';
+    fb.innerHTML = `<div>❌ Leider falsch. Das Wasser steigt!</div>` +
+      `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(ans.answerDisplay)}</strong></div>`;
+    state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"wrong", userInput:choice, word});
+  }
+
+  const geo = grammarRoomGeometry();
+  if(waterEl){ waterEl.style.height = geo.waterHeight + "px"; }
+  if(avatarEl){
+    avatarEl.style.bottom = geo.avatarBottom + "px";
+    avatarEl.style.marginLeft =
+      (floodPlatformX(geo.level) + avatarFootOffset(avatarById(state.avatarId), FLOOD_AVATAR_SIZE)) + "px";
+    if(richtig){ avatarEl.classList.add('jump'); setTimeout(()=>avatarEl.classList.remove('jump'), 600); }
+  }
+
+  const gewonnen = state.grammarCorrectCount >= GRAMMAR_GOAL_CORRECT;
+  const ertrunken = state.grammarWrongStreak >= GRAMMAR_MAX_WRONG_STREAK;
+  if(ertrunken && avatarEl){ avatarEl.classList.add('sink'); }
+
+  const weiter = ()=>{
+    state.answered = false;
+    if(gewonnen){ endSession("finished"); }
+    else if(ertrunken){ endSession("drowned"); }
+    else { state.currentIndex++; render(); }
+  };
+  if(richtig || ertrunken){ setTimeout(weiter, ertrunken ? 1900 : 700); }
+  else { grammarWeiterKnopf(fb, weiter); }
+}
+
 function renderQuiz(){
+  if(state.mode === "flood") return renderVocabFlood();
   if(state.mode === "challenge"){ return renderChallengeQuiz(); }
 
   const word = currentWord();
@@ -2472,6 +2576,7 @@ function scrollFeedbackIntoView(fb){
 
 function showFeedback(type, message, revealAnswer){
   const fb = document.getElementById('feedback');
+  if(type === 'good'){ fb.className = 'feedback'; fb.innerHTML = ''; return; }
   fb.className = `feedback show ${type}`;
   let html = `<div>${message}</div>`;
   if(revealAnswer){
@@ -3142,6 +3247,8 @@ const GRAMMAR_TOPICS = [
     name: "to be",
     subtitle: "am / is / are",
     locked: false,
+    choices: ["am", "is", "are"],
+    prompt: 'WÄHLE DIE RICHTIGE FORM VON "TO BE"',
     intro: {
       title: "Das Verb \"to be\"",
       lead: "Bevor du loslegst, schau dir kurz die Tabelle an. \"to be\" heißt auf Deutsch \"sein\" - eines der wichtigsten Wörter im Englischen überhaupt!",
@@ -3157,26 +3264,115 @@ const GRAMMAR_TOPICS = [
     },
     exercises: [
       {sentence:"I ___ happy.", answer:"am", de:"Ich bin glücklich."},
+      {sentence:"I ___ from Germany.", answer:"am", de:"Ich komme aus Deutschland."},
+      {sentence:"I ___ in class 5.", answer:"am", de:"Ich bin in der 5. Klasse."},
+      {sentence:"I ___ eleven years old.", answer:"am", de:"Ich bin elf Jahre alt."},
+      {sentence:"I ___ your friend.", answer:"am", de:"Ich bin dein Freund."},
+      {sentence:"I ___ not tired.", answer:"am", de:"Ich bin nicht müde."},
       {sentence:"You ___ my friend.", answer:"are", de:"Du bist mein Freund."},
+      {sentence:"You ___ very funny.", answer:"are", de:"Du bist sehr lustig."},
+      {sentence:"You ___ late again.", answer:"are", de:"Du bist schon wieder zu spät."},
+      {sentence:"You ___ good at football.", answer:"are", de:"Du bist gut im Fußball."},
       {sentence:"He ___ ten years old.", answer:"is", de:"Er ist zehn Jahre alt."},
+      {sentence:"He ___ my brother.", answer:"is", de:"Er ist mein Bruder."},
+      {sentence:"He ___ in the garden.", answer:"is", de:"Er ist im Garten."},
       {sentence:"She ___ from Germany.", answer:"is", de:"Sie kommt aus Deutschland."},
+      {sentence:"She ___ a great singer.", answer:"is", de:"Sie ist eine tolle Sängerin."},
+      {sentence:"She ___ at home today.", answer:"is", de:"Sie ist heute zu Hause."},
       {sentence:"It ___ a small dog.", answer:"is", de:"Es ist ein kleiner Hund."},
+      {sentence:"It ___ cold outside.", answer:"is", de:"Es ist kalt draußen."},
+      {sentence:"It ___ my favourite game.", answer:"is", de:"Es ist mein Lieblingsspiel."},
       {sentence:"We ___ students.", answer:"are", de:"Wir sind Schüler."},
-      {sentence:"You ___ very funny.", answer:"are", de:"Ihr seid sehr lustig."},
+      {sentence:"We ___ hungry.", answer:"are", de:"Wir sind hungrig."},
+      {sentence:"We ___ in the same class.", answer:"are", de:"Wir sind in derselben Klasse."},
+      {sentence:"We ___ ready to go.", answer:"are", de:"Wir sind bereit zu gehen."},
+      {sentence:"You ___ very loud today.", answer:"are", de:"Ihr seid heute sehr laut."},
       {sentence:"They ___ in the garden.", answer:"are", de:"Sie sind im Garten."},
+      {sentence:"They ___ my neighbours.", answer:"are", de:"Sie sind meine Nachbarn."},
+      {sentence:"They ___ not at school.", answer:"are", de:"Sie sind nicht in der Schule."},
       {sentence:"Tom ___ my brother.", answer:"is", de:"Tom ist mein Bruder."},
+      {sentence:"Anna ___ in the kitchen.", answer:"is", de:"Anna ist in der Küche."},
       {sentence:"Lisa and Anna ___ best friends.", answer:"are", de:"Lisa und Anna sind beste Freundinnen."},
       {sentence:"My mum ___ a teacher.", answer:"is", de:"Meine Mama ist Lehrerin."},
-      {sentence:"The cat ___ black and white.", answer:"is", de:"Die Katze ist schwarz-weiß."},
-      {sentence:"I ___ in class 5.", answer:"am", de:"Ich bin in der 5. Klasse."},
-      {sentence:"We ___ hungry.", answer:"are", de:"Wir sind hungrig."},
-      {sentence:"The dog and the cat ___ friends.", answer:"are", de:"Der Hund und die Katze sind Freunde."},
-      {sentence:"This ___ my school.", answer:"is", de:"Das ist meine Schule."},
+      {sentence:"My parents ___ at work.", answer:"are", de:"Meine Eltern sind bei der Arbeit."},
       {sentence:"My friends ___ nice.", answer:"are", de:"Meine Freunde sind nett."},
-      {sentence:"Today ___ a good day.", answer:"is", de:"Heute ist ein guter Tag."}
+      {sentence:"The cat ___ black and white.", answer:"is", de:"Die Katze ist schwarz-weiß."},
+      {sentence:"The dog and the cat ___ friends.", answer:"are", de:"Der Hund und die Katze sind Freunde."},
+      {sentence:"The books ___ on the table.", answer:"are", de:"Die Bücher sind auf dem Tisch."},
+      {sentence:"This ___ my school.", answer:"is", de:"Das ist meine Schule."},
+      {sentence:"These ___ my shoes.", answer:"are", de:"Das sind meine Schuhe."},
+      {sentence:"Today ___ a good day.", answer:"is", de:"Heute ist ein guter Tag."},
+      {sentence:"The weather ___ terrible.", answer:"is", de:"Das Wetter ist schrecklich."},
+      {sentence:"Where ___ you from?", answer:"are", de:"Woher kommst du?"},
+      {sentence:"How old ___ your sister?", answer:"is", de:"Wie alt ist deine Schwester?"},
+      {sentence:"___ I too late?", answer:"am", de:"Bin ich zu spät?"},
+      {sentence:"My bike ___ new.", answer:"is", de:"Mein Fahrrad ist neu."},
+      {sentence:"The children ___ happy.", answer:"are", de:"Die Kinder sind glücklich."}
     ]
   },
-  { id:"simple-present", icon:"🔁", name:"Simple Present", subtitle:"he/she/it + -s", locked:true },
+  {
+    id: "simple-present",
+    icon: "🔁",
+    name: "Simple Present",
+    subtitle: "he/she/it + -s",
+    locked: false,
+    prompt: "WÄHLE DIE RICHTIGE VERBFORM",
+    intro: {
+      title: "Simple Present - das -s nicht vergessen!",
+      lead: "Im Simple Present erzählst du, was regelmäßig passiert. Fast alles bleibt gleich - nur bei he, she und it hängst du ein -s ans Verb.",
+      rows: [
+        {en:"I", form:"play", example:"I play football.", de:"Ich spiele Fußball."},
+        {en:"you", form:"play", example:"You play the guitar.", de:"Du spielst Gitarre."},
+        {en:"he / she / it", form:"plays", example:"He plays every day.", de:"Er spielt jeden Tag."},
+        {en:"we", form:"play", example:"We play together.", de:"Wir spielen zusammen."},
+        {en:"you (mehrere)", form:"play", example:"You play very well.", de:"Ihr spielt sehr gut."},
+        {en:"they", form:"play", example:"They play in the park.", de:"Sie spielen im Park."}
+      ],
+      tip: "Der berühmte Merksatz: he, she, it - das -s muss mit! Bei Verben auf -o, -s, -sh, -ch oder -x hängst du sogar -es an: he goes, she watches, it washes."
+    },
+    exercises: [
+      {sentence:"I ___ football every day.", answer:"play", opts:["play","plays"], de:"Ich spiele jeden Tag Fußball."},
+      {sentence:"He ___ football every day.", answer:"plays", opts:["play","plays"], de:"Er spielt jeden Tag Fußball."},
+      {sentence:"She ___ the guitar.", answer:"plays", opts:["play","plays"], de:"Sie spielt Gitarre."},
+      {sentence:"We ___ in the park.", answer:"play", opts:["play","plays"], de:"Wir spielen im Park."},
+      {sentence:"They ___ computer games.", answer:"play", opts:["play","plays"], de:"Sie spielen Computerspiele."},
+      {sentence:"My brother ___ tennis.", answer:"plays", opts:["play","plays"], de:"Mein Bruder spielt Tennis."},
+      {sentence:"I ___ to school by bus.", answer:"go", opts:["go","goes"], de:"Ich fahre mit dem Bus zur Schule."},
+      {sentence:"He ___ to school by bike.", answer:"goes", opts:["go","goes"], de:"Er fährt mit dem Rad zur Schule."},
+      {sentence:"She ___ shopping on Saturday.", answer:"goes", opts:["go","goes"], de:"Sie geht samstags einkaufen."},
+      {sentence:"They ___ home at four.", answer:"go", opts:["go","goes"], de:"Sie gehen um vier nach Hause."},
+      {sentence:"My dad ___ coffee every morning.", answer:"drinks", opts:["drink","drinks"], de:"Mein Papa trinkt jeden Morgen Kaffee."},
+      {sentence:"We ___ milk with breakfast.", answer:"drink", opts:["drink","drinks"], de:"Wir trinken Milch zum Frühstück."},
+      {sentence:"The cat ___ a lot of water.", answer:"drinks", opts:["drink","drinks"], de:"Die Katze trinkt viel Wasser."},
+      {sentence:"I ___ comics in the evening.", answer:"read", opts:["read","reads"], de:"Ich lese abends Comics."},
+      {sentence:"She ___ a book every week.", answer:"reads", opts:["read","reads"], de:"Sie liest jede Woche ein Buch."},
+      {sentence:"My friends ___ a lot.", answer:"read", opts:["read","reads"], de:"Meine Freunde lesen viel."},
+      {sentence:"He ___ TV after dinner.", answer:"watches", opts:["watch","watches"], de:"Er schaut nach dem Essen fern."},
+      {sentence:"We ___ films on Fridays.", answer:"watch", opts:["watch","watches"], de:"Wir schauen freitags Filme."},
+      {sentence:"She ___ her hands.", answer:"washes", opts:["wash","washes"], de:"Sie wäscht sich die Hände."},
+      {sentence:"They ___ the car on Sunday.", answer:"wash", opts:["wash","washes"], de:"Sie waschen sonntags das Auto."},
+      {sentence:"My mum ___ dinner at six.", answer:"makes", opts:["make","makes"], de:"Meine Mama macht um sechs Abendessen."},
+      {sentence:"I ___ my homework after school.", answer:"do", opts:["do","does"], de:"Ich mache nach der Schule Hausaufgaben."},
+      {sentence:"He ___ his homework in the evening.", answer:"does", opts:["do","does"], de:"Er macht abends seine Hausaufgaben."},
+      {sentence:"The dog ___ in the garden.", answer:"runs", opts:["run","runs"], de:"Der Hund rennt im Garten."},
+      {sentence:"We ___ every morning.", answer:"run", opts:["run","runs"], de:"Wir laufen jeden Morgen."},
+      {sentence:"She ___ English very well.", answer:"speaks", opts:["speak","speaks"], de:"Sie spricht sehr gut Englisch."},
+      {sentence:"They ___ German at home.", answer:"speak", opts:["speak","speaks"], de:"Sie sprechen zu Hause Deutsch."},
+      {sentence:"Tom ___ in a small house.", answer:"lives", opts:["live","lives"], de:"Tom wohnt in einem kleinen Haus."},
+      {sentence:"My grandparents ___ in Berlin.", answer:"live", opts:["live","lives"], de:"Meine Großeltern wohnen in Berlin."},
+      {sentence:"It ___ a lot in November.", answer:"rains", opts:["rain","rains"], de:"Im November regnet es viel."},
+      {sentence:"I ___ my room on Saturdays.", answer:"tidy", opts:["tidy","tidies"], de:"Ich räume samstags mein Zimmer auf."},
+      {sentence:"She ___ her room every day.", answer:"tidies", opts:["tidy","tidies"], de:"Sie räumt jeden Tag ihr Zimmer auf."},
+      {sentence:"My sister ___ up at seven.", answer:"gets", opts:["get","gets"], de:"Meine Schwester steht um sieben auf."},
+      {sentence:"We ___ up early on school days.", answer:"get", opts:["get","gets"], de:"An Schultagen stehen wir früh auf."},
+      {sentence:"He ___ pizza best.", answer:"likes", opts:["like","likes"], de:"Er mag Pizza am liebsten."},
+      {sentence:"I ___ chocolate.", answer:"like", opts:["like","likes"], de:"Ich mag Schokolade."},
+      {sentence:"The bus ___ at half past seven.", answer:"leaves", opts:["leave","leaves"], de:"Der Bus fährt um halb acht ab."},
+      {sentence:"My friends ___ me every weekend.", answer:"visit", opts:["visit","visits"], de:"Meine Freunde besuchen mich jedes Wochenende."},
+      {sentence:"Anna ___ her grandma on Sundays.", answer:"visits", opts:["visit","visits"], de:"Anna besucht sonntags ihre Oma."},
+      {sentence:"The children ___ in the schoolyard.", answer:"play", opts:["play","plays"], de:"Die Kinder spielen auf dem Schulhof."}
+    ]
+  },
   { id:"there-is-are", icon:"📍", name:"there is / there are", subtitle:"Es gibt ...", locked:true },
   { id:"plural-s", icon:"🔤", name:"Plural (-s)", subtitle:"one cat, two cats", locked:true }
 ];
@@ -3198,6 +3394,7 @@ function renderCertificate(){
   const mistakes = state.sessionLog.filter(l=>l.result!=="correct");
   const quote = state.sessionQuote || pickRandom(MINECRAFT_QUOTES);
   const won = state.lastReason === "finished";
+  const ertrunken = state.lastReason === "drowned";
   const schoolGrade = state.mode === "type" ? calculateSchoolGrade(correctCount, almostCount, total) : null;
 
   app.innerHTML = `
@@ -3205,7 +3402,7 @@ function renderCertificate(){
     ${playerBadgeHtml()}
 
     <div class="certificate">
-      <h2>${won ? "🏆 URKUNDE DER VOKABEL-MEISTERSCHAFT" : "📜 URKUNDE DER ÜBUNG"}</h2>
+      <h2>${ertrunken ? "🌊 UNTERGEGANGEN – NOCHMAL VERSUCHEN!" : (won ? "🏆 URKUNDE DER VOKABEL-MEISTERSCHAFT" : "📜 URKUNDE DER ÜBUNG")}</h2>
       <p style="text-align:center;font-family:var(--font);font-weight:500;font-size:19px;margin:10px 0;line-height:1.5;">
         ${won ? `Herzlichen Glückwunsch, <strong>${escapeHtml(state.playerName||"Spieler")}</strong>!` : `Gut geübt, <strong>${escapeHtml(state.playerName||"Spieler")}</strong> &ndash; weiter so!`}
       </p>
@@ -3733,7 +3930,11 @@ function renderGrammarIntro(){
       <div class="gm-choice">
         <button class="gm-card practice" id="grammar-practice-btn">
           <span class="gm-title">📘 Übungsrunde</span>
-          <span class="gm-sub">${GRAMMAR_PRACTICE_COUNT} Aufgaben in Ruhe &ndash; kein Verlieren, keine Zeit. Am Ende bekommst du eine Schulnote.</span>
+          <span class="gm-sub">${GRAMMAR_PRACTICE_COUNT} Aufgaben in Ruhe &ndash; ohne Note, ohne Verlieren. Zum Lernen.</span>
+        </button>
+        <button class="gm-card test" id="grammar-test-btn">
+          <span class="gm-title">📝 Grammatiktest <span class="gm-badge">MIT NOTE</span></span>
+          <span class="gm-sub">${GRAMMAR_PRACTICE_COUNT} Aufgaben, am Ende deine Schulnote &ndash; sie zählt für die Rangliste.</span>
         </button>
         <button class="gm-card flood" id="grammar-flood-btn">
           <span class="gm-title">🌊 Der Flutungsraum <span class="gm-badge">ZUSATZ-SPIEL</span></span>
@@ -3746,6 +3947,7 @@ function renderGrammarIntro(){
   `;
 
   document.getElementById('grammar-practice-btn').addEventListener('click', startGrammarPractice);
+  document.getElementById('grammar-test-btn').addEventListener('click', startGrammarTest);
   document.getElementById('grammar-flood-btn').addEventListener('click', startGrammarQuiz);
   document.getElementById('back-btn').addEventListener('click', ()=>{
     state.screen = "start";
@@ -3790,12 +3992,25 @@ function resetGrammarSession(){
   state.grammarIndex = 0;
 }
 
-// Ruhige Uebungsrunde: feste Anzahl Aufgaben, kein Verlieren, kein Muenzabzug.
+// Ruhige Uebungsrunde: zum Lernen, ohne Note und ohne Muenzabzug.
 function startGrammarPractice(){
   const topic = grammarTopicById(state.grammarTopicId);
   if(!topic) return;
   resetGrammarSession();
   state.grammarMode = "practice";
+  state.grammarQueue = shuffle(topic.exercises.slice()).slice(0, GRAMMAR_PRACTICE_COUNT);
+  state.grammarCurrentExercise = state.grammarQueue[0];
+  state.screen = "grammarquiz";
+  render();
+}
+
+// Grammatiktest: gleicher Ablauf, am Ende aber eine Schulnote - wie der
+// Vokabeltest auf der Vokabelseite.
+function startGrammarTest(){
+  const topic = grammarTopicById(state.grammarTopicId);
+  if(!topic) return;
+  resetGrammarSession();
+  state.grammarMode = "test";
   state.grammarQueue = shuffle(topic.exercises.slice()).slice(0, GRAMMAR_PRACTICE_COUNT);
   state.grammarCurrentExercise = state.grammarQueue[0];
   state.screen = "grammarquiz";
@@ -3824,8 +4039,12 @@ function pickGrammarExercise(topic){
   return pick;
 }
 
+// Jede Aufgabe darf eigene Antwortmoeglichkeiten mitbringen (z.B. play/plays),
+// sonst gelten die des Themas.
 function buildGrammarChoices(exercise){
-  return shuffle(["am", "is", "are"]);
+  const topic = grammarTopicById(state.grammarTopicId);
+  const opts = (exercise && exercise.opts) || (topic && topic.choices) || ["am","is","are"];
+  return shuffle(opts.slice());
 }
 
 // Aktuelle Position von Avatar und Wasserstand im Flutungsraum - beide in
@@ -3884,7 +4103,8 @@ function renderGrammarQuiz(){
   if(!topic || !exercise){ state.screen = "start"; render(); return; }
   const choices = buildGrammarChoices(exercise);
   const [before, after] = exercise.sentence.split("___");
-  const practice = state.grammarMode === "practice";
+  const practice = state.grammarMode === "practice" || state.grammarMode === "test";
+  const istTest = state.grammarMode === "test";
 
   const stage = practice
     ? (function(){
@@ -3896,7 +4116,7 @@ function renderGrammarQuiz(){
             <p class="center-text" style="font-weight:700;margin:0;">Aufgabe ${done + 1} von ${total}</p>
             <div class="practice-bar"><span style="width:${pct}%;"></span></div>
             <p class="center-text muted" style="margin:8px 0 0;font-size:13px;">
-              Kein Zeitdruck, kein Verlieren &ndash; am Ende bekommst du deine Note.
+              ${istTest ? "Das zählt: Am Ende gibt es eine Schulnote." : "Kein Zeitdruck, keine Note &ndash; einfach in Ruhe üben."}
             </p>
           </div>`;
       })()
@@ -3916,7 +4136,7 @@ function renderGrammarQuiz(){
     ${stage}
 
     <div class="panel word-card" id="word-card">
-      <div class="eyebrow">WÄHLE DIE RICHTIGE FORM VON "TO BE"</div>
+      <div class="eyebrow">${(grammarTopicById(state.grammarTopicId) || {}).prompt || "WÄHLE DIE RICHTIGE FORM"}</div>
       <div class="term" style="font-size:26px;">${escapeHtml(before)}<span style="display:inline-block;min-width:70px;border-bottom:3px solid var(--gold);margin:0 4px;">&nbsp;</span>${escapeHtml(after)}</div>
       <div class="choices">
         ${choices.map(c=>`<button class="choice-btn" data-choice="${c}">${c}</button>`).join("")}
@@ -3955,7 +4175,8 @@ function handleGrammarAnswer(btn, choice, exercise){
   if(state.grammarAnswered) return;
   state.grammarAnswered = true;
   const correct = choice === exercise.answer;
-  const practice = state.grammarMode === "practice";
+  const practice = state.grammarMode === "practice" || state.grammarMode === "test";
+  const istTest = state.grammarMode === "test";
 
   document.querySelectorAll('#word-card .choice-btn').forEach(b=>{
     b.setAttribute('disabled', 'true');
@@ -3970,10 +4191,10 @@ function handleGrammarAnswer(btn, choice, exercise){
     state.grammarCorrectCount += 1;
     // Bewusst KEIN Zuruecksetzen des Fehlerzaehlers: das Wasser soll stehen
     // bleiben, wenn die Antwort stimmt.
-    fb.className = 'feedback show good';
-    fb.innerHTML = practice
-      ? `<div>✅ Richtig! ${escapeHtml(exercise.de)}</div>`
-      : `<div>✅ Richtig! Du springst auf die nächste Plattform &ndash; das Wasser bleibt, wo es ist. ${escapeHtml(exercise.de)}</div>`;
+    // Und bewusst KEINE gruene Einblendung - der gruene Knopf ist Signal genug,
+    // und ein zusaetzlicher Kasten wuerde die Seite verschieben.
+    fb.className = 'feedback';
+    fb.innerHTML = '';
   } else {
     // In der ruhigen Uebungsrunde gibt es bewusst KEINEN Muenzabzug.
     if(!practice){ state.grammarSessionCoins = Math.max(0, state.grammarSessionCoins - 10); }
@@ -3996,7 +4217,7 @@ function handleGrammarAnswer(btn, choice, exercise){
     const weiter = ()=>{
       state.grammarAnswered = false;
       if(done){
-        finishGrammarSession("practice");
+        finishGrammarSession(istTest ? "test" : "practice");
       } else {
         state.grammarCurrentExercise = state.grammarQueue[state.grammarIndex];
         render();
@@ -4050,11 +4271,11 @@ function finishGrammarSession(result){
   state.grammarGameResult = result;
   state.grammarQuote = pickRandom(GRAMMAR_MOTIVATION_QUOTES);
   state.gradeWisdom = pickRandom(GRADE_WISDOM);
-  // Nur die ruhige Uebungsrunde wird benotet, der Flutungsraum bleibt Spiel.
-  if(result === "practice" && state.grammarSessionLog.length > 0){
+  // Nur der Grammatiktest wird benotet. Uebungsrunde und Flutungsraum nicht.
+  if(result === "test" && state.grammarSessionLog.length > 0){
     const c = state.grammarSessionLog.filter(l=>l.result==="correct").length;
     recordGameGrade(calculateSchoolGrade(c, 0, state.grammarSessionLog.length),
-                    "Grammatik" + (grammarTopicById(state.grammarTopicId) ? " (" + grammarTopicById(state.grammarTopicId).name + ")" : ""));
+                    "Grammatiktest" + (grammarTopicById(state.grammarTopicId) ? " (" + grammarTopicById(state.grammarTopicId).name + ")" : ""));
   }
   saveProgress();
   syncToCloud();
@@ -4067,12 +4288,14 @@ function renderGrammarCertificate(){
   const total = state.grammarSessionLog.length;
   const correctCount = state.grammarSessionLog.filter(l=>l.result==="correct").length;
   const result = state.grammarGameResult;
-  const practice = result === "practice";
-  const grade = practice ? calculateSchoolGrade(correctCount, 0, total) : null;
+  const practice = result === "practice" || result === "test";
+  const grade = result === "test" ? calculateSchoolGrade(correctCount, 0, total) : null;
 
   let headline;
-  if(practice){
-    headline = grade && grade.grade <= 2 ? "🏅 STARKE ÜBUNGSRUNDE!" : "📘 ÜBUNGSRUNDE GESCHAFFT!";
+  if(result === "test"){
+    headline = grade && grade.grade <= 2 ? "🏅 STARKER GRAMMATIKTEST!" : "📝 GRAMMATIKTEST GESCHRIEBEN!";
+  } else if(practice){
+    headline = "📘 ÜBUNGSRUNDE GESCHAFFT!";
   } else {
     headline = result === "won" ? "🚁 GERETTET! GRAMMATIK GEMEISTERT!" : "🌊 UNTERGEGANGEN – NOCHMAL VERSUCHEN!";
   }
@@ -4112,16 +4335,20 @@ function renderGrammarCertificate(){
 
     <button class="btn" id="grammar-retry-btn" style="margin-top:14px;">🔁 ${practice ? "NOCHMAL ÜBEN" : "NOCHMAL VERSUCHEN"}</button>
     <div style="height:10px;"></div>
-    <button class="btn secondary" id="grammar-switch-btn">${practice ? "🌊 JETZT DEN FLUTUNGSRAUM PROBIEREN" : "📘 LIEBER IN RUHE ÜBEN"}</button>
+    <button class="btn secondary" id="grammar-switch-btn">${result === "test" ? "📘 IN RUHE WEITERÜBEN" : (practice ? "📝 JETZT DEN TEST SCHREIBEN" : "📘 LIEBER IN RUHE ÜBEN")}</button>
     <div style="height:10px;"></div>
     <button class="btn wood" id="grammar-home-btn">🏠 ZUM STARTBILDSCHIRM</button>
   `;
 
   document.getElementById('grammar-retry-btn').addEventListener('click', ()=>{
-    if(practice){ startGrammarPractice(); } else { startGrammarQuiz(); }
+    if(result === "test"){ startGrammarTest(); }
+    else if(practice){ startGrammarPractice(); }
+    else { startGrammarQuiz(); }
   });
   document.getElementById('grammar-switch-btn').addEventListener('click', ()=>{
-    if(practice){ startGrammarQuiz(); } else { startGrammarPractice(); }
+    if(result === "test"){ startGrammarPractice(); }
+    else if(practice){ startGrammarTest(); }
+    else { startGrammarPractice(); }
   });
   document.getElementById('grammar-home-btn').addEventListener('click', ()=>{
     state.screen = "start";
