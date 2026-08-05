@@ -280,7 +280,7 @@
   .game-topbar .player-badge{ margin:0; max-width:none; }
 
   /* ---------- Anmeldebildschirm ---------- */
-  .login-hero{ text-align:center; margin-bottom:4px; }
+  .login-hero{ text-align:center; margin-bottom:4px; }  .sell-grid{ display:grid; gap:9px; margin:14px 0 4px; }  .sell{ display:grid; grid-template-columns:38px 1fr; grid-template-rows:auto auto; column-gap:10px; align-items:center; background:rgba(255,255,255,0.6); border-radius:14px; padding:10px 12px; }  .sell-i{ grid-row:1 / span 2; font-size:26px; text-align:center; }  .sell-t{ font-weight:800; font-size:15.5px; color:#1e4515; }  .sell-s{ font-size:13.5px; color:#4a4a4a; line-height:1.4; }  .eltern{ margin-top:16px; border-top:2px solid rgba(0,0,0,0.07); padding-top:12px; }  .eltern summary{ cursor:pointer; font-size:14px; font-weight:700; color:#4a5a3a; text-align:center; }  .eltern p{ font-size:13.5px; color:#555; line-height:1.55; margin:10px 0 0; text-align:left; }  .guest-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; background:rgba(255,246,214,0.96); border:2px solid var(--gold); border-radius:14px; padding:10px 12px; margin-bottom:12px; }  .guest-txt{ font-size:14px; line-height:1.4; color:#4a3400; text-align:center; flex:1 1 180px; }
   .login-hero h3{ font-size:20px; margin-bottom:6px; }
   .login-note{
     margin-top:14px; padding:13px 15px; border-radius:14px;
@@ -893,7 +893,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "9.1 – Abmelden sichtbar";
+const APP_VERSION = "10.0 – Startseite & Testmodus";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1118,7 +1118,7 @@ function loadSave(){
     if(data.cloudId) state.cloudId = data.cloudId;
   }catch(e){ /* Speicher blockiert (z.B. Vorschau-Sandbox) - Standardwerte bleiben */ }
 }
-function saveProgress(){
+function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewusst nichts
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       playerName: state.playerName,
@@ -1160,7 +1160,7 @@ const state = {
   cloudId: null,          // Firestore-Dokument-ID nach erfolgreichem "Login"
   playerPin: "",          // 4-stelliger PIN (nur als Hash gespeichert/übertragen)
   loginError: null,
-  loginBusy: false,        // laeuft gerade ein Anmeldeversuch?
+  loginBusy: false, guest: false,   // guest = Testmodus ohne Konto, es wird nichts gespeichert
   cloudChecked: false,     // wurde die Verbindung schon einmal geprueft?
   loginNotice: null,        // Hinweis, wenn ein Konto neu angelegt werden muss
   pendingRegisterName: null,
@@ -1604,7 +1604,7 @@ function render(){
   // Der Eltern-Bestaetigungslink wird ohne Anmeldung geoeffnet - der bleibt frei.
   if(state.screen==="parentconfirm") return renderParentConfirm();
   // Alles andere ist gesperrt, solange keine gueltige Firebase-Anmeldung besteht.
-  if(!state.cloudId) return renderLogin();
+  if(!state.cloudId && !state.guest) return renderLogin();
   if(state.screen==="start") return renderStart();
   if(state.screen==="quiz") return renderQuiz();
   if(state.screen==="milestone") return renderMilestone();
@@ -2019,8 +2019,8 @@ function renderLogin(){
         <button class="btn" id="login-retry-btn" style="margin-top:14px;">🔄 NOCHMAL VERSUCHEN</button>
       ` : `
         <div class="login-hero">
-          <h3>⚔️ Bereit für dein Abenteuer?</h3>
-          <p class="muted">Melde dich an, dann geht es los. Deinen Avatar suchst du gleich danach aus.</p>
+          <h3 style="font-size:23px;line-height:1.25;margin-bottom:10px;">&#9876;&#65039; Werde zum Vokabel-Crafter!</h3><p style="text-align:center;font-size:16px;line-height:1.5;margin:0 0 14px;">Englisch-Vokabeln und Grammatik &uuml;ben, bessere Noten schreiben &ndash; und dir dabei <strong>echte Belohnungen</strong> erspielen.</p><div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-t">4 Spielarten</span><span class="sell-s">Auswahl, Eintippen, Gemischt &ndash; und die Challenge gegen den B&ouml;sewicht</span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-t">Grammatik</span><span class="sell-s">In Ruhe &uuml;ben oder im Flutungsraum dem Wasser davonklettern</span></div><div class="sell"><span class="sell-i">&#129689;</span><span class="sell-t">Echte Belohnungen</span><span class="sell-s">M&uuml;nzen sammeln und gegen das eintauschen, was ihr zu Hause vereinbart</span></div><div class="sell"><span class="sell-i">&#128200;</span><span class="sell-t">Schulnote</span><span class="sell-s">Nach jedem Vokabeltest gibt es eine Note &ndash; wie in echt</span></div><div class="sell"><span class="sell-i">&#127942;</span><span class="sell-t">Rangliste</span><span class="sell-s">Miss dich mit deinen Freunden, bei M&uuml;nzen und bei Noten</span></div><div class="sell"><span class="sell-i">&#10133;</span><span class="sell-t">Eigene Vokabeln</span><span class="sell-s">Tipp deine Schulvokabeln ein oder lade sie aus Excel hoch</span></div></div>
+          <p class="muted" style="margin-top:6px;">Kostenlos &middot; keine Werbung &middot; in 10 Sekunden startklar</p>
         </div>
 
         <input type="text" id="player-name-input" maxlength="16" placeholder="Dein Spielername"
@@ -2029,7 +2029,7 @@ function renderLogin(){
                placeholder="4-stelliger PIN" autocomplete="current-password"
                value="${escapeHtml(state.playerPin)}" style="margin-top:10px;">
 
-        <button class="btn gold" id="login-btn" style="margin-top:12px;" ${wartet ? "disabled" : ""}>
+        <button class="btn gold" id="register-direct-btn" style="margin-top:12px;font-size:17px;padding:16px;" ${wartet ? "disabled" : ""}>${wartet ? "⏳ MOMENT ..." : "🆕 KOSTENLOSES KONTO ANLEGEN"}</button><button class="btn secondary" id="login-btn" style="margin-top:10px;" ${wartet ? "disabled" : ""}>
           ${wartet ? "⏳ PRÜFE ..." : "🔓 ANMELDEN"}
         </button>
 
@@ -2041,7 +2041,7 @@ function renderLogin(){
             <button class="btn wood" id="register-btn" style="margin-top:12px;" ${wartet ? "disabled" : ""}>🆕 KONTO ANLEGEN</button>
           </div>` : ""}
 
-        <p class="login-hint">
+        <button class="btn wood small" id="guest-btn" style="margin-top:16px;">👀 Erst mal ohne Konto ausprobieren</button>        <details class="eltern"><summary>F&uuml;r Eltern: Was ist das hier?</summary><p>Vokabel-Crafting ist kostenlos, zeigt keine Werbung und verkauft keine Daten. Zum Anlegen eines Kontos reichen ein frei gew&auml;hlter Spielername und eine vierstellige PIN &ndash; keine E-Mail-Adresse, kein echter Name n&ouml;tig.</p><p>Die M&uuml;nzen, die Ihr Kind erspielt, tauscht es gegen Belohnungen ein, die <strong>Sie</strong> festlegen &ndash; vom Filmabend bis zum Taschengeld. Jede Einl&ouml;sung k&ouml;nnen Sie per Link und Eltern-PIN best&auml;tigen.</p></details><p class="login-hint">
           Name + PIN sind deine Anmeldung. Merk dir den PIN gut &ndash; nur damit
           kommst du auf einem anderen Gerät an deinen Spielstand.<br>
           Neu hier? Einfach Wunschnamen und PIN eintippen und auf ANMELDEN tippen.
@@ -2080,7 +2080,7 @@ function renderLogin(){
   const loginBtn = document.getElementById('login-btn');
   if(loginBtn){ loginBtn.addEventListener('click', absenden); }
 
-  const registerBtn = document.getElementById('register-btn');
+  const rdBtn = document.getElementById('register-direct-btn'); if(rdBtn){ rdBtn.addEventListener('click', ()=>{ registerNewAccount(); }); } const gBtn = document.getElementById('guest-btn'); if(gBtn){ gBtn.addEventListener('click', ()=>{ state.guest = true; state.playerName = "Gast"; state.screen = "start"; render(); }); }  const registerBtn = document.getElementById('register-btn');
   if(registerBtn){ registerBtn.addEventListener('click', ()=>{ registerNewAccount(); }); }
 
   const retryBtn = document.getElementById('login-retry-btn');
@@ -2096,18 +2096,18 @@ function renderStart(){
   app.innerHTML = `
     ${renderHeader("", false, true)}
 
-    ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""}
+    ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""} ${state.guest ? `<div class="guest-bar"><span class="guest-txt">&#128064; <strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">&#127381; Konto anlegen</button></div>` : ""}
 
     <div class="panel">
       <div class="row" style="align-items:center;">
         <span class="avatar-swatch" style="width:46px;max-width:46px;flex:0 0 auto;${avatarStyle(avatarById(state.avatarId))}"></span>
         <div style="flex:1;padding:0 10px;min-width:0;">
-          <p style="font-weight:800;font-size:17px;margin:0;color:#1e5c28;overflow-wrap:anywhere;">${escapeHtml(state.playerName)}</p>
-          <p class="muted" style="margin:1px 0 0;font-size:13px;">Angemeldet &middot; Fortschritt wird gesichert</p>
+          <p style="font-weight:800;font-size:17px;margin:0;color:#1e5c28;overflow-wrap:anywhere;">${state.guest ? "Gast" : escapeHtml(state.playerName)}</p>
+          <p class="muted" style="margin:1px 0 0;font-size:13px;">${state.guest ? "Testmodus &middot; nichts wird gespeichert" : "Angemeldet &middot; Fortschritt wird gesichert"}</p>
         </div>
         <span class="coin-chip">🪙 ${state.coins}</span>
       </div>
-      <button class="btn danger small" id="logout-btn" style="margin-top:10px;width:auto;margin-right:8px;">🚪 Abmelden</button><button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
+      ${state.guest ? `<button class="btn gold small" id="signup-btn" style="margin-top:10px;width:auto;margin-right:8px;">🆕 Konto anlegen</button>` : `<button class="btn danger small" id="logout-btn" style="margin-top:10px;width:auto;margin-right:8px;">🚪 Abmelden</button>`}<button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
         ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
       </button>
 
@@ -2203,12 +2203,12 @@ function renderStart(){
     <p class="muted center-text" style="margin:10px auto 0;padding:12px 16px;background:rgba(255,255,255,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:14px;">${state.mainMode==='grammar' ? 'Auch bei Grammatik gibt\'s für jede richtige Antwort Münzen &ndash; genau wie beim Vokabeln lernen.' : 'Für jede richtige Antwort gibt\'s Münzen. Bei falschen oder leeren Antworten werden 10 Münzen abgezogen (dein Kontostand geht dabei nie unter 0). Am Ende jeder Übung wartet dein Zertifikat &ndash; die verdienten Münzen kannst du danach im Shop eintauschen.'}</p>
 
     <div style="height:14px;"></div>
-    <button class="btn gold" id="shop-btn">🛒 SHOP ÖFFNEN</button>
+    <button class="btn gold" id="shop-btn" ${state.guest ? "disabled" : ""}>🛒 SHOP ÖFFNEN</button>${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Shop, Rangliste und Notenkalender gibt es mit Konto.</p>` : ""}
     <div style="height:10px;"></div>
     <button class="btn diamond" id="grade-calendar-btn" ${state.cloudId ? "" : "disabled"}>💎 NOTENKALENDER</button>
     ${!state.cloudId ? `<p class="muted center-text" style="margin-top:4px;">Melde dich an, um echte Schulnoten einzutragen.</p>` : ""}
     <div style="height:10px;"></div>
-    <button class="btn secondary" id="leaderboard-btn">🏆 RANGLISTE ANSEHEN</button>
+    <button class="btn secondary" id="leaderboard-btn" ${state.guest ? "disabled" : ""}>🏆 RANGLISTE ANSEHEN</button>
 
     <div class="panel" style="margin-top:14px;">
       <h3 style="font-size:15px;margin-bottom:8px;">DEIN INVENTAR</h3>
@@ -2236,7 +2236,7 @@ function renderStart(){
       render();
     });
   });
-  const logoutBtn = document.getElementById('logout-btn');
+  const zurAnmeldung = ()=>{ state.guest=false; state.playerName=""; state.playerPin=""; state.coins=0; state.inventory={}; state.sessionLog=[]; state.loginError=null; state.loginNotice=null; state.screen="start"; render(); }; const suBtn = document.getElementById('signup-btn'); if(suBtn){ suBtn.addEventListener('click', zurAnmeldung); } const suBar = document.getElementById('guest-signup-bar'); if(suBar){ suBar.addEventListener('click', zurAnmeldung); }  const logoutBtn = document.getElementById('logout-btn');
   if(logoutBtn){
     logoutBtn.addEventListener('click', ()=>{
       showConfirmModal('Wirklich abmelden? Zum Weiterspielen brauchst du Name und PIN.', async ()=>{
@@ -3210,9 +3210,9 @@ function renderCertificate(){
     <div style="height:10px;"></div>` : ""}
     <button class="btn secondary" id="share-btn" style="margin-top:14px;">📤 PER WHATSAPP TEILEN</button>
     <div style="height:10px;"></div>
-    <button class="btn gold" id="shop-btn">🛒 MÜNZEN IM SHOP AUSGEBEN</button>
+    <button class="btn gold" id="shop-btn" ${state.guest ? "disabled" : ""}>🛒 MÜNZEN IM SHOP AUSGEBEN</button>
     <div style="height:10px;"></div>
-    <button class="btn secondary" id="leaderboard-btn">🏆 RANGLISTE ANSEHEN</button>
+    <button class="btn secondary" id="leaderboard-btn" ${state.guest ? "disabled" : ""}>🏆 RANGLISTE ANSEHEN</button>
     <div style="height:10px;"></div>
     <button class="btn" id="retry-btn">↻ NOCHMAL ÜBEN</button>
     <div style="height:10px;"></div>
