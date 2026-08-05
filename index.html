@@ -333,14 +333,14 @@
                0 0 0 2px rgba(242,201,76,0.85);
   }
   .flood-avatar-wrap{
-    position:absolute; left:50%; width:54px; height:54px; z-index:3;
+    position:absolute; left:50%; width:46px; height:46px; z-index:3;
     transition: bottom .55s cubic-bezier(.34,1.56,.64,1),
                 margin-left .55s cubic-bezier(.34,1.56,.64,1);
   }
   /* display:block ist wichtig - als inline-Element bekaeme der Span keine
      Hoehe (aspect-ratio greift bei inline nicht) und der Avatar waere unsichtbar. */
   .flood-avatar-wrap .avatar-swatch{
-    display:block; width:54px; max-width:54px; height:54px; margin:0;
+    display:block; width:46px; max-width:46px; height:46px; margin:0;
   }
   .flood-avatar-wrap.jump{ animation: flood-jump .55s ease; }
   @keyframes flood-jump{ 0%{ transform:translateY(0); } 40%{ transform:translateY(-14px); } 100%{ transform:translateY(0); } }
@@ -377,8 +377,12 @@
     font-size:12px; font-weight:700; color:#fff6d0;
     background:rgba(0,0,0,0.45); text-shadow:1px 1px 0 rgba(0,0,0,0.8);
   }
-  .flood-danger-row{ display:flex; justify-content:center; gap:8px; margin-top:10px; }
-  .flood-danger-drop{ font-size:22px; opacity:0.25; transition:opacity .3s ease; }
+  .flood-danger-row{
+    position:absolute; top:26px; right:8px; z-index:6;
+    display:flex; gap:3px; background:rgba(0,0,0,0.4);
+    border-radius:10px; padding:3px 6px;
+  }
+  .flood-danger-drop{ font-size:15px; opacity:0.3; transition:opacity .3s ease; }
   .flood-danger-drop.active{ opacity:1; }
 
   /* ---------- Startbildschirm: die beiden grossen Modus-Karten ---------- */
@@ -634,6 +638,20 @@
   }
   .grade-label{ font-family:var(--font); font-weight:700; font-size:20px; color:#3a2a10; text-align:left; }
   .grade-label small{ font-family:var(--font); font-size:15px; color:#7a5a10; font-weight:500; }
+  .grade-pill{
+    flex:0 0 auto; width:34px; height:34px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font); font-weight:800; font-size:18px; color:#fff;
+  }
+  .grade-1{ background:#2c7a37; } .grade-2{ background:#5aa14a; }
+  .grade-3{ background:#d3a83b; } .grade-4{ background:#d98032; }
+  .grade-5{ background:#c0553b; } .grade-6{ background:#a02d1f; }
+  .grade-wisdom{
+    margin:4px auto 0; max-width:340px; padding:12px 16px;
+    background:rgba(255,255,255,0.7); border-radius:14px;
+    font-family:var(--font); font-style:italic; font-size:16px; line-height:1.5;
+    color:#5a3d0a; text-align:center;
+  }
   .stat-row div span{ display:block; font-family:var(--font); font-weight:800; font-size:26px; margin-top:6px; }
 
   .center-text{ text-align:center; }
@@ -893,7 +911,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "10.0 – Startseite & Testmodus";
+const APP_VERSION = "11.0 – Noten im Spiel";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1396,10 +1414,14 @@ async function signOutCloud(){
 }
 
 // Durchschnittsnote berechnen (für die Diamant-Notenrangliste)
+// Fuer die Rangliste zaehlt der Durchschnitt der letzten zehn Tests: bleibt
+// aktuell und verzeiht einen einzelnen Ausrutscher.
+const GRADE_WINDOW = 10;
 function computeAvgGrade(){
   if(!state.gradeEntries || state.gradeEntries.length === 0) return null;
-  const sum = state.gradeEntries.reduce((s,e)=>s+e.grade, 0);
-  return Math.round((sum / state.gradeEntries.length) * 100) / 100;
+  const letzte = state.gradeEntries.slice(0, GRADE_WINDOW);
+  const sum = letzte.reduce((s,e)=>s+e.grade, 0);
+  return Math.round((sum / letzte.length) * 100) / 100;
 }
 
 let syncQueue = Promise.resolve();
@@ -2848,8 +2870,9 @@ function handleMcAnswer(btn, choice, word){
     });
     state.streak = 0;
     deductCoinsForWrong(10);
-    showFeedback('bad', `Leider falsch. -10 Münzen.`, ans.answerDisplay);
+    showFeedbackWithConfirm('bad', `Leider falsch. -10 Münzen.`, ans.answerDisplay);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"wrong", userInput:choice, word});
+    return; // Es geht erst weiter, wenn die richtige Antwort gelesen wurde
   }
   goOnAfterDelay();
 }
@@ -2929,6 +2952,14 @@ function endSession(reason){
   state.lifetimeBestStreak = Math.max(state.lifetimeBestStreak, state.bestStreak);
   state.lastReason = reason;
   state.sessionQuote = pickRandom(MINECRAFT_QUOTES);
+  state.gradeWisdom = pickRandom(GRADE_WISDOM);
+  // Nur der Vokabeltest gibt eine Note - und nur, wenn die Runde zu Ende
+  // gespielt wurde. Ein Abbruch soll nicht zur Note fuehren.
+  if(state.mode === "type" && reason === "finished" && state.sessionLog.length > 0){
+    const c = state.sessionLog.filter(l=>l.result==="correct").length;
+    const a = state.sessionLog.filter(l=>l.result==="almost").length;
+    recordGameGrade(calculateSchoolGrade(c, a, state.sessionLog.length), "Vokabeltest");
+  }
   saveProgress();
   syncToCloud();
   state.screen = "certificate";
@@ -3086,6 +3117,21 @@ function calculateSchoolGrade(correctCount, almostCount, total){
 
 const GRADE_LABELS = {1:"Sehr gut", 2:"Gut", 3:"Befriedigend", 4:"Ausreichend", 5:"Mangelhaft", 6:"Ungenügend"};
 
+// Steht auf jedem Zeugnis unter der Note. Eine Ziffer sagt, wie ein Test
+// gelaufen ist - nicht, wer jemand ist.
+const GRADE_WISDOM = [
+  "Eine Note sagt, wie ein Tag gelaufen ist. Nicht, wer du bist.",
+  "Kein Mensch wird an seinem Zeugnis gemessen, sondern an dem, was er anderen Gutes tut.",
+  "Fehler sind keine Niederlage. Sie sind die Stellen, an denen das Lernen anfängt.",
+  "Es gibt Dinge, für die es keine Noten gibt: Mut, Geduld und ein gutes Herz.",
+  "Wichtiger als die Ziffer ist die Frage: Kann ich heute etwas, das ich gestern noch nicht konnte?",
+  "Auch die schönsten Bäume wachsen langsam. Gib dir Zeit.",
+  "Was du kannst, ist mehr als das, was geprüft wurde.",
+  "Sei stolz auf den Weg, nicht nur auf das Ergebnis.",
+  "Wer aufsteht und es nochmal versucht, hat schon das Wichtigste gelernt.",
+  "Am Ende erinnert sich niemand an deine Noten - aber alle daran, wie du warst."
+];
+
 /* ---------------------------------------------------
    GRAMMATIKCRAFTING - Grammatik-Themen für Klasse 5
 --------------------------------------------------- */
@@ -3167,8 +3213,9 @@ function renderCertificate(){
       ${schoolGrade ? `
       <div class="grade-badge">
         <span class="grade-number">${schoolGrade.grade}</span>
-        <span class="grade-label">${schoolGrade.label}<br><small>Vokabeltest-Note</small></span>
-      </div>` : ""}
+        <span class="grade-label">${schoolGrade.label}<br><small>Note im Vokabeltest</small></span>
+      </div>
+      <p class="grade-wisdom">&bdquo;${escapeHtml(state.gradeWisdom || GRADE_WISDOM[0])}&ldquo;</p>` : ""}
 
       <div class="stat-row">
         <div>✅<span>${correctCount}</span></div>
@@ -3588,87 +3635,60 @@ function renderCustomVocab(){
 /* ---------------------------------------------------
    NOTENKALENDER (echte Schulnoten von Vokabeltests)
 --------------------------------------------------- */
-function addOrUpdateGradeEntry(date, grade){
-  if(!date || !grade) return false;
-  const existing = state.gradeEntries.find(e=>e.date===date);
-  if(existing){
-    existing.grade = grade;
-    existing.label = GRADE_LABELS[grade];
-  } else {
-    state.gradeEntries.push({ date, grade, label: GRADE_LABELS[grade] });
-  }
-  state.gradeEntries.sort((a,b)=> a.date < b.date ? 1 : -1); // neueste zuerst
-  return true;
-}
-
-function removeGradeEntry(date){
-  state.gradeEntries = state.gradeEntries.filter(e=>e.date!==date);
+// Noten entstehen ausschliesslich im Spiel: am Ende eines Vokabeltests und
+// am Ende einer Grammatik-Uebungsrunde. Von Hand eintragen kann man nichts
+// mehr - dadurch ist der Notenschnitt in der Rangliste auch wirklich erspielt.
+function recordGameGrade(grade, art){
+  if(!grade || state.guest) return;
+  const jetzt = new Date();
+  state.gradeEntries.unshift({
+    date: jetzt.toISOString().slice(0,10),
+    time: jetzt.toISOString().slice(11,16),
+    grade: grade.grade,
+    label: grade.label,
+    art: art || "Test"
+  });
+  if(state.gradeEntries.length > 60){ state.gradeEntries.length = 60; }
 }
 
 function renderGradeCalendar(){
-  const today = new Date().toISOString().slice(0,10);
+  const eintraege = state.gradeEntries || [];
+  const schnitt = computeAvgGrade();
+
   app.innerHTML = `
     ${renderHeader("Notenkalender", true)}
     ${playerBadgeHtml(true)}
 
-    <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:10px;">💎 ECHTE NOTE EINTRAGEN</h3>
-      <p class="muted">Trag hier die Note ein, die du bei einem echten Vokabeltest in der Schule bekommen hast.</p>
-      <p style="margin-top:10px;font-weight:700;color:#7a201a;background:#f7d6d1;padding:10px 14px;border-radius:12px;text-align:center;">⚠️ Hinweis: Sei ehrlich!</p>
-
-      <label style="display:block;margin-top:14px;font-weight:600;">Datum des Tests</label>
-      <input type="date" id="grade-date-input" value="${today}" max="${today}" style="width:100%;font-family:var(--font);font-size:17px;padding:12px;border:2px solid #e0e0e0;border-radius:12px;margin-top:6px;box-sizing:border-box;background:#fafafa;">
-
-      <label style="display:block;margin-top:14px;font-weight:600;">Deine Note</label>
-      <select id="grade-select" style="margin-top:6px;">
-        ${[1,2,3,4,5,6].map(g=>`<option value="${g}">${g} &ndash; ${GRADE_LABELS[g]}</option>`).join("")}
-      </select>
-
-      <button class="btn" id="save-grade-btn" style="margin-top:14px;">💾 NOTE SPEICHERN</button>
-      <p id="grade-status" class="muted" style="margin-top:8px;"></p>
+    <div class="panel center-text">
+      <h3 style="font-size:17px;margin-bottom:8px;">💎 Deine erspielten Noten</h3>
+      <p class="muted">Noten bekommst du im <strong>Vokabeltest</strong> und in der
+      <strong>Grammatik-Übungsrunde</strong>. Von Hand eintragen kann sie niemand &ndash;
+      deshalb zählt der Schnitt in der Rangliste auch wirklich.</p>
+      ${schnitt ? `
+        <div class="grade-badge" style="margin-top:16px;">
+          <span class="grade-number">${schnitt}</span>
+          <span class="grade-label">Schnitt<br><small>letzte ${Math.min(eintraege.length, GRADE_WINDOW)} Tests</small></span>
+        </div>` : `<p class="muted" style="margin-top:12px;">Noch keine Note &ndash; schreib deinen ersten Test!</p>`}
     </div>
 
+    ${eintraege.length ? `
     <div class="panel">
-      <h3 style="font-size:15px;margin-bottom:8px;">DEINE EINGETRAGENEN NOTEN (${state.gradeEntries.length})</h3>
-      ${state.gradeEntries.length === 0 ? `<p class="center-text muted">Noch keine Noten eingetragen.</p>` : `
+      <h3 style="font-size:15px;margin-bottom:8px;">VERLAUF (${eintraege.length})</h3>
       <div class="vocab-list">
-        ${state.gradeEntries.map(e=>`
+        ${eintraege.map(e=>`
           <div class="vocab-row" style="align-items:center;">
-            <span style="flex:1;text-align:left;">${escapeHtml(e.date)}</span>
-            <span style="flex:1;text-align:left;">${e.grade} &ndash; ${escapeHtml(e.label)}</span>
-            <button class="btn danger small" data-remove-date="${escapeHtml(e.date)}" style="width:auto;padding:6px 10px;min-height:auto;">✕</button>
+            <span class="grade-pill grade-${e.grade}">${e.grade}</span>
+            <span style="flex:1;text-align:left;padding-left:10px;">
+              ${escapeHtml(e.art || "Test")}<br>
+              <span class="muted" style="font-size:13px;">${escapeHtml(e.date)}${e.time ? " · " + escapeHtml(e.time) : ""} &middot; ${escapeHtml(e.label || "")}</span>
+            </span>
           </div>
         `).join("")}
-      </div>`}
-      ${state.gradeEntries.length > 0 ? `<p class="muted" style="margin-top:8px;">Ø Durchschnitt: ${computeAvgGrade()}</p>` : ""}
-    </div>
+      </div>
+    </div>` : ""}
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
-
-  document.getElementById('save-grade-btn').addEventListener('click', ()=>{
-    const date = document.getElementById('grade-date-input').value;
-    const grade = parseInt(document.getElementById('grade-select').value, 10);
-    const status = document.getElementById('grade-status');
-    if(!date){
-      if(status){ status.textContent = "⚠️ Bitte ein Datum wählen."; }
-      return;
-    }
-    addOrUpdateGradeEntry(date, grade);
-    saveProgress();
-    syncToCloud();
-    if(status){ status.textContent = "✅ Note gespeichert."; }
-    render();
-  });
-
-  document.querySelectorAll('[data-remove-date]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      removeGradeEntry(btn.dataset.removeDate);
-      saveProgress();
-      syncToCloud();
-      render();
-    });
-  });
 
   document.getElementById('back-btn').addEventListener('click', ()=>{
     state.screen = "start";
@@ -3743,11 +3763,11 @@ const GRAMMAR_PRACTICE_COUNT = 10;
 // Masse des Flutungsraums. FLOOD_FLOOR ist die Oberkante des Bodens, jede
 // Stufe liegt FLOOD_STEP Pixel darueber. Plattform UND Avatar rechnen mit
 // derselben Funktion - dadurch steht die Figur exakt auf dem Brett.
-const FLOOD_STEP = 22;
-const FLOOD_FLOOR = 14;
-const FLOOD_PLATFORM_H = 10;
-const FLOOD_AVATAR_SIZE = 54;
-const FLOOD_ROOM_HEIGHT = FLOOD_FLOOR + GRAMMAR_GOAL_CORRECT * FLOOD_STEP + FLOOD_AVATAR_SIZE + 26;
+const FLOOD_STEP = 18;
+const FLOOD_FLOOR = 12;
+const FLOOD_PLATFORM_H = 9;
+const FLOOD_AVATAR_SIZE = 46;
+const FLOOD_ROOM_HEIGHT = FLOOD_FLOOR + GRAMMAR_GOAL_CORRECT * FLOOD_STEP + FLOOD_AVATAR_SIZE + 20;
 
 function floodPlatformTop(level){ return FLOOD_FLOOR + level * FLOOD_STEP; }
 function floodPlatformWidth(level){ return level === GRAMMAR_GOAL_CORRECT ? 88 : 64; }
@@ -3852,6 +3872,9 @@ function renderFloodRoom(){
         <span class="avatar-swatch" style="${avatarStyle(av)}"></span>
       </div>
       <div class="flood-water" id="flood-water" style="height:${waterHeight}px;">${bubbles}</div>
+      <div class="flood-danger-row">
+        ${Array.from({length: GRAMMAR_MAX_WRONG_STREAK}, (_,i)=>`<span class="flood-danger-drop ${i < state.grammarWrongStreak ? 'active':''}">💧</span>`).join("")}
+      </div>
     </div>`;
 }
 
@@ -3878,12 +3901,8 @@ function renderGrammarQuiz(){
           </div>`;
       })()
     : `
-      <div class="panel dirt-panel" style="padding:14px;">
+      <div class="panel dirt-panel" style="padding:10px;margin-bottom:10px;">
         ${renderFloodRoom()}
-        <div class="flood-danger-row">
-          ${Array.from({length: GRAMMAR_MAX_WRONG_STREAK}, (_,i)=>`<span class="flood-danger-drop ${i < state.grammarWrongStreak ? 'active':''}">💧</span>`).join("")}
-        </div>
-        <p class="center-text" style="color:#fff;opacity:0.9;font-size:13px;margin-top:4px;">Das Wasser steigt bei jedem Fehler &ndash; und sinkt nie wieder. Nach ${GRAMMAR_MAX_WRONG_STREAK} Fehlern geht es dir über den Kopf!</p>
       </div>`;
 
   app.innerHTML = `
@@ -3917,6 +3936,19 @@ function cancelGrammarGame(){
     state.screen = "start";
     render();
   });
+}
+
+// Haengt einen "Weiter"-Knopf unter die Rueckmeldung, damit die Erklaerung
+// so lange stehen bleibt, wie das Kind zum Lesen braucht.
+function grammarWeiterKnopf(fb, weiter){
+  if(!fb){ setTimeout(weiter, 1900); return; }
+  const b = document.createElement('button');
+  b.className = 'btn';
+  b.style.marginTop = '12px';
+  b.textContent = '✓ VERSTANDEN – WEITER';
+  b.addEventListener('click', weiter, { once:true });
+  fb.appendChild(b);
+  scrollFeedbackIntoView(fb);
 }
 
 function handleGrammarAnswer(btn, choice, exercise){
@@ -3961,7 +3993,7 @@ function handleGrammarAnswer(btn, choice, exercise){
   if(practice){
     state.grammarIndex += 1;
     const done = state.grammarIndex >= state.grammarQueue.length;
-    setTimeout(()=>{
+    const weiter = ()=>{
       state.grammarAnswered = false;
       if(done){
         finishGrammarSession("practice");
@@ -3969,7 +4001,9 @@ function handleGrammarAnswer(btn, choice, exercise){
         state.grammarCurrentExercise = state.grammarQueue[state.grammarIndex];
         render();
       }
-    }, correct ? 1100 : 1900);
+    };
+    if(correct){ setTimeout(weiter, 1100); }
+    else { grammarWeiterKnopf(fb, weiter); }
     return;
   }
 
@@ -3996,7 +4030,7 @@ function handleGrammarAnswer(btn, choice, exercise){
   const lost = state.grammarWrongStreak >= GRAMMAR_MAX_WRONG_STREAK;
   if(lost && avatarEl){ avatarEl.classList.add('sink'); }
 
-  setTimeout(()=>{
+  const weiter = ()=>{
     state.grammarAnswered = false;
     if(won){
       finishGrammarSession("won");
@@ -4006,13 +4040,22 @@ function handleGrammarAnswer(btn, choice, exercise){
       state.grammarCurrentExercise = pickGrammarExercise(grammarTopicById(state.grammarTopicId));
       render();
     }
-  }, lost ? 1900 : (correct ? 1200 : 1900));
+  };
+  if(correct || lost){ setTimeout(weiter, lost ? 1900 : 1200); }
+  else { grammarWeiterKnopf(fb, weiter); }
 }
 
 function finishGrammarSession(result){
   state.coins = Math.max(0, state.coins + state.grammarSessionCoins);
   state.grammarGameResult = result;
   state.grammarQuote = pickRandom(GRAMMAR_MOTIVATION_QUOTES);
+  state.gradeWisdom = pickRandom(GRADE_WISDOM);
+  // Nur die ruhige Uebungsrunde wird benotet, der Flutungsraum bleibt Spiel.
+  if(result === "practice" && state.grammarSessionLog.length > 0){
+    const c = state.grammarSessionLog.filter(l=>l.result==="correct").length;
+    recordGameGrade(calculateSchoolGrade(c, 0, state.grammarSessionLog.length),
+                    "Grammatik" + (grammarTopicById(state.grammarTopicId) ? " (" + grammarTopicById(state.grammarTopicId).name + ")" : ""));
+  }
   saveProgress();
   syncToCloud();
   state.screen = "grammarcertificate";
@@ -4045,9 +4088,12 @@ function renderGrammarCertificate(){
       </p>
 
       ${grade ? `
-        <p style="text-align:center;font-family:var(--font);font-weight:800;font-size:34px;margin:6px 0 0;color:#2c7a37;">
-          Note ${grade.grade}
-        </p>
+        <div class="grade-badge">
+          <span class="grade-number">${grade.grade}</span>
+          <span class="grade-label">${grade.label}<br><small>Note in der Übungsrunde</small></span>
+        </div>
+        <p class="grade-wisdom">&bdquo;${escapeHtml(state.gradeWisdom || GRADE_WISDOM[0])}&ldquo;</p>
+        <p style="display:none;">
         <p style="text-align:center;font-family:var(--font);font-size:17px;margin:2px 0 12px;">${grade.label}</p>
       ` : ""}
 
