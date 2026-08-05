@@ -913,7 +913,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "12.1 – Leuchtstein";
+const APP_VERSION = "12.2 – Tiefenschiefer";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2468,9 +2468,9 @@ function handleVocabFloodAnswer(btn, choice, word){
     deductCoinsForWrong(10);
     state.grammarWrongStreak += 1;
     raiseFloodWater();
-    fb.className = 'feedback show bad';
-    fb.innerHTML = `<div>❌ Leider falsch. Das Wasser steigt!</div>` +
-      `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(ans.answerDisplay)}</strong></div>`;
+    // Die Korrektur kommt bewusst erst, wenn das Wasser gestiegen ist.
+    fb.className = 'feedback';
+    fb.innerHTML = '';
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"wrong", userInput:choice, word});
   }
 
@@ -2493,8 +2493,17 @@ function handleVocabFloodAnswer(btn, choice, word){
     else if(ertrunken){ endSession("drowned"); }
     else { state.currentIndex++; render(); }
   };
-  if(richtig || ertrunken){ setTimeout(weiter, ertrunken ? 1900 : 700); }
-  else { grammarWeiterKnopf(fb, weiter); }
+  if(richtig){ setTimeout(weiter, 700); }
+  else {
+    // Zuerst steigt das Wasser sichtbar an, danach erscheint die Korrektur.
+    setTimeout(()=>{
+      fb.className = 'feedback show bad';
+      fb.innerHTML = `<div>❌ Leider falsch. Das Wasser ist gestiegen!</div>` +
+        `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(ans.answerDisplay)}</strong></div>`;
+      if(ertrunken){ scrollFeedbackIntoView(fb); setTimeout(weiter, 1600); }
+      else { grammarWeiterKnopf(fb, weiter); }
+    }, FLOOD_MSG_DELAY);
+  }
 }
 
 function renderQuiz(){
@@ -3965,6 +3974,9 @@ const GRAMMAR_PRACTICE_COUNT = 10;
 // Masse des Flutungsraums. FLOOD_FLOOR ist die Oberkante des Bodens, jede
 // Stufe liegt FLOOD_STEP Pixel darueber. Plattform UND Avatar rechnen mit
 // derselben Funktion - dadurch steht die Figur exakt auf dem Brett.
+// So lange dauert das Ansteigen des Wassers (CSS-Uebergang .9s). Erst danach
+// wird die Korrektur eingeblendet, damit man das Steigen wirklich sieht.
+const FLOOD_MSG_DELAY = 950;
 const FLOOD_STEP = 18;
 const FLOOD_FLOOR = 12;
 const FLOOD_PLATFORM_H = 9;
@@ -4200,12 +4212,17 @@ function handleGrammarAnswer(btn, choice, exercise){
     if(!practice){ state.grammarSessionCoins = Math.max(0, state.grammarSessionCoins - 10); }
     state.grammarWrongStreak += 1;
     if(!practice){ raiseFloodWater(); }
-    fb.className = 'feedback show bad';
-    fb.innerHTML = practice
-      ? `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. ${escapeHtml(exercise.de)}</div>`
-      : `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. Das Wasser steigt! ${escapeHtml(exercise.de)}</div>`;
+    if(practice){
+      fb.className = 'feedback show bad';
+      fb.innerHTML = `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. ${escapeHtml(exercise.de)}</div>`;
+    } else {
+      // Flutungsraum: erst steigt das Wasser, die Korrektur folgt danach.
+      fb.className = 'feedback';
+      fb.innerHTML = '';
+    }
   }
-  scrollFeedbackIntoView(fb);
+  const meldungFolgtSpaeter = !correct && !practice;
+  if(!meldungFolgtSpaeter){ scrollFeedbackIntoView(fb); }
 
   state.grammarSessionLog.push({ sentence:exercise.sentence, correct:exercise.answer, given:choice, result: correct ? "correct" : "wrong" });
   state.grammarLastExercise = exercise;
@@ -4262,8 +4279,16 @@ function handleGrammarAnswer(btn, choice, exercise){
       render();
     }
   };
-  if(correct || lost){ setTimeout(weiter, lost ? 1900 : 1200); }
-  else { grammarWeiterKnopf(fb, weiter); }
+  if(correct){ setTimeout(weiter, 1200); }
+  else {
+    // Zuerst steigt das Wasser sichtbar an, danach erscheint die Korrektur.
+    setTimeout(()=>{
+      fb.className = 'feedback show bad';
+      fb.innerHTML = `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. Das Wasser ist gestiegen! ${escapeHtml(exercise.de)}</div>`;
+      if(lost){ scrollFeedbackIntoView(fb); setTimeout(weiter, 1600); }
+      else { grammarWeiterKnopf(fb, weiter); }
+    }, FLOOD_MSG_DELAY);
+  }
 }
 
 function finishGrammarSession(result){
