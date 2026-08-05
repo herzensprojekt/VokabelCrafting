@@ -893,7 +893,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "9.0 – Echte Anmeldung";
+const APP_VERSION = "9.1 – Abmelden sichtbar";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2107,7 +2107,7 @@ function renderStart(){
         </div>
         <span class="coin-chip">🪙 ${state.coins}</span>
       </div>
-      <button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
+      <button class="btn danger small" id="logout-btn" style="margin-top:10px;width:auto;margin-right:8px;">🚪 Abmelden</button><button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
         ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
       </button>
 
@@ -2121,7 +2121,7 @@ function renderStart(){
             </div>
           `).join("")}
         </div>
-        <button class="btn danger small" id="logout-btn" style="margin-top:14px;">🚪 ABMELDEN</button>
+        <!-- Abmelden steht jetzt oben, direkt neben "Avatar aendern" -->
       ` : ""}
     </div>
 
