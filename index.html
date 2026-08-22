@@ -474,6 +474,7 @@
   .bel-meta{ display:block; font-size:12.5px; color:#8a7143; margin-top:2px; }
   .parent-open-btn{ background:linear-gradient(180deg,#e0a24a,#a86b18); }
   .parent-lock-btn{ background:linear-gradient(180deg,#6f7d8c,#41505f); }
+  .panel.gefahr{ border:2px solid #f0b6b6; background:rgba(255,240,238,0.85); }
   .linkbtn{ background:none; border:none; padding:2px 4px; cursor:pointer;
     font-family:var(--font); font-size:13px; font-weight:600; color:#2f5f9e;
     text-decoration:underline; }
@@ -1002,10 +1003,11 @@
       const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
       const {
         getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-        onAuthStateChanged, signOut, setPersistence, browserLocalPersistence
+        onAuthStateChanged, signOut, setPersistence, browserLocalPersistence,
+        deleteUser
       } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
       const {
-        getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection,
+        getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, increment, collection,
         getDocs, query, orderBy, limit, where, arrayUnion
       } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
 
@@ -1169,11 +1171,33 @@
         return { ok:true, player: Object.assign({id}, data, { redeemLog: updatedLog }) };
       }
 
+      // Konto vollstaendig entfernen: erst das Profil mit allen Daten, dann
+      // das Anmeldekonto. Firebase verlangt fuers Loeschen des Kontos eine
+      // frische Anmeldung - schlaegt das fehl, sind die Daten trotzdem schon
+      // weg und wir melden es ehrlich zurueck.
+      async function deleteAccount(){
+        const user = auth.currentUser;
+        if(!user) return { ok:false, reason:"not-signed-in" };
+        try{
+          await deleteDoc(doc(db, "players", user.uid));
+        }catch(e){
+          return { ok:false, reason:"firestore", error:String(e) };
+        }
+        try{
+          await deleteUser(user);
+        }catch(e){
+          try{ await signOut(auth); }catch(e2){ /* egal */ }
+          return { ok:false, reason:"auth", code:(e && e.code) || "", datenWeg:true, error:String(e) };
+        }
+        return { ok:true };
+      }
+
       return {
         available:true, initialUid: initialUser ? initialUser.uid : null,
         currentUid, signInWithPin, registerWithPin, signOutUser,
         savePlayer, getLeaderboard, getGradeLeaderboard, getPlayerById,
-        adjustCoinsAndInventory, appendRedeemLogEntry, confirmRedeemEntry
+        adjustCoinsAndInventory, appendRedeemLogEntry, confirmRedeemEntry,
+        deleteAccount
       };
     }catch(e){
       console.error("Firebase-Initialisierung fehlgeschlagen:", e);
@@ -1187,7 +1211,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "15.3 – Amboss";
+const APP_VERSION = "16.0 – Elytra";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1503,6 +1527,9 @@ const state = {
   confirmPinError: null,
   confirmDone: false,
   rewardDraft: { icon:"🎁", name:"", price:"500" },
+  deleteOpen: false,       // Loeschbereich im Elternbereich aufgeklappt?
+  deleteError: null,
+  deleteBusy: false,
   rewardError: null,
   grammarMode: "practice",   // "practice" = ruhige Uebungsrunde, "flood" = Wasserraum
   grammarQueue: [],
@@ -4260,6 +4287,59 @@ function belohnungLoeschen(id){
 }
 
 // --- Die Seite selbst -----------------------------------------------------
+
+/* ---------------------------------------------------
+   KONTO LOESCHEN (Art. 17 DSGVO)
+   Zwei Sicherungen: der Spielername muss abgetippt werden, danach kommt
+   noch eine Rueckfrage. Danach gibt es kein Zurueck.
+--------------------------------------------------- */
+async function kontoLoeschen(){
+  const feld = document.getElementById('del-name');
+  const eingabe = (feld ? feld.value : "").trim().toLowerCase();
+  const soll = (state.playerName || "").trim().toLowerCase();
+  if(!soll){ state.deleteError = "Kein angemeldetes Konto gefunden."; render(); return; }
+  if(eingabe !== soll){
+    state.deleteError = 'Bitte den Spielernamen genau so eintippen: "' + state.playerName + '"';
+    render(); return;
+  }
+  showConfirmModal(
+    'Wirklich alles löschen? Spielstand, Münzen, Noten, eigene Vokabeln und das Konto sind danach unwiderruflich weg.',
+    async ()=>{
+      state.deleteBusy = true; state.deleteError = null; render();
+      try{
+        const db = await getVokabelDB();
+        if(!db.available || !db.deleteAccount){
+          state.deleteBusy = false;
+          state.deleteError = "Keine Verbindung zur Datenbank. Bitte später erneut versuchen.";
+          render(); return;
+        }
+        const res = await db.deleteAccount();
+        if(res.ok || res.datenWeg){
+          // Lokalen Speicher in jedem Fall leeren.
+          try{ localStorage.removeItem(STORAGE_KEY); }catch(e){ /* egal */ }
+          if(res.ok){
+            alert("Das Konto und alle Daten wurden gelöscht.");
+          } else {
+            alert("Alle Spiel- und Lerndaten wurden gelöscht.\n\nDas Anmeldekonto selbst konnte nicht "
+                + "entfernt werden, weil Firebase dafür eine frische Anmeldung verlangt. "
+                + "Bitte einmal neu anmelden und den Löschvorgang wiederholen - oder kurz "
+                + "an info@herzensprojekt.de schreiben, dann erledigen wir es.");
+          }
+          location.reload();
+          return;
+        }
+        state.deleteBusy = false;
+        state.deleteError = "Das Löschen hat nicht geklappt. Bitte später erneut versuchen oder an info@herzensprojekt.de schreiben.";
+        console.error("Löschen fehlgeschlagen:", res);
+        render();
+      }catch(e){
+        state.deleteBusy = false;
+        state.deleteError = "Das Löschen hat nicht geklappt: " + String(e);
+        render();
+      }
+    });
+}
+
 function renderParents(){
   if(!state.parentUnlocked) return renderParentGate();
 
@@ -4397,6 +4477,30 @@ function renderParents(){
 
     ${state.parentTab === 'belohnungen' ? belohnungen : uebersicht}
 
+    <div class="panel gefahr">
+      <h3 style="font-size:15px;margin-bottom:4px;color:#a63a2e;">⚠️ KONTO LÖSCHEN</h3>
+      ${state.deleteOpen ? `
+        <p class="muted" style="margin:0 0 8px;font-size:12.5px;">
+          Gelöscht werden: der Spielstand, alle Münzen und Noten, die eigenen Vokabeln,
+          der Einlöse-Verlauf, der Lernfortschritt und das Anmeldekonto selbst.
+          Das lässt sich <strong>nicht</strong> rückgängig machen.
+        </p>
+        <div class="setting-label">Zum Bestätigen den Spielernamen eintippen</div>
+        <input type="text" id="del-name" autocomplete="off" placeholder="${escapeHtml(state.playerName || "Spielername")}">
+        ${state.deleteError ? `<p class="center-text" style="color:#b3421f;font-weight:700;margin-top:8px;">⚠️ ${escapeHtml(state.deleteError)}</p>` : ""}
+        <button class="btn danger" id="del-go" style="margin-top:12px;" ${state.deleteBusy ? "disabled" : ""}>
+          ${state.deleteBusy ? "⏳ WIRD GELÖSCHT ..." : "🗑️ KONTO ENDGÜLTIG LÖSCHEN"}
+        </button>
+        <button class="btn secondary small" id="del-cancel" style="margin-top:8px;">Abbrechen</button>
+      ` : `
+        <p class="muted" style="margin:0 0 10px;font-size:12.5px;">
+          Ihr wollt aufhören? Hier lassen sich das Konto und alle gespeicherten Daten
+          endgültig entfernen.
+        </p>
+        <button class="btn secondary small" id="del-open">Konto und alle Daten löschen …</button>
+      `}
+    </div>
+
     <div class="panel" style="text-align:center;">
       <p class="muted" style="margin:0 0 10px;font-size:12.5px;">
         Fertig? Dann bitte zusperren &ndash; sonst kommt das Kind ohne PIN wieder hier herein.
@@ -4443,6 +4547,12 @@ function renderParents(){
       saveProgress(); syncToCloud(); render();
     });
   });
+  const delOpen = document.getElementById('del-open');
+  if(delOpen){ delOpen.addEventListener('click', ()=>{ state.deleteOpen = true; state.deleteError = null; render(); }); }
+  const delCancel = document.getElementById('del-cancel');
+  if(delCancel){ delCancel.addEventListener('click', ()=>{ state.deleteOpen = false; state.deleteError = null; render(); }); }
+  const delGo = document.getElementById('del-go');
+  if(delGo){ delGo.addEventListener('click', kontoLoeschen); }
   const lockBtn = document.getElementById('parent-lock');
   if(lockBtn){
     lockBtn.addEventListener('click', ()=>{
@@ -4946,9 +5056,11 @@ function renderDatenschutz(){
         (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20)
         und Widerspruch (Art. 21 DSGVO). Bei Kindern üben die Eltern diese Rechte aus.</p>
 
-        <p><strong>Konto löschen:</strong> Eine Nachricht mit dem Spielernamen an
-        <a href="mailto:info@herzensprojekt.de">info@herzensprojekt.de</a> genügt. Wir löschen
-        das Konto und alle zugehörigen Daten.</p>
+        <p><strong>Konto löschen:</strong> Das geht direkt in der App &ndash; im
+        Elternbereich ganz unten unter „Konto löschen". Dabei werden das Profil mit allen
+        Spiel- und Lerndaten, das Anmeldekonto und der lokale Speicherstand entfernt.
+        Alternativ genügt eine Nachricht mit dem Spielernamen an
+        <a href="mailto:info@herzensprojekt.de">info@herzensprojekt.de</a>.</p>
 
         <p>Außerdem könnt ihr euch bei einer Aufsichtsbehörde beschweren. Für uns zuständig ist:
         Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen,
