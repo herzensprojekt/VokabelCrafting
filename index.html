@@ -254,18 +254,82 @@
   .unit-txt{ display:flex; flex-direction:column; min-width:0; }
   .unit-name{ font-weight:800; font-size:14.5px; color:#1e4515; line-height:1.2; }
   .unit-hint{ font-size:12px; color:#6a6a6a; line-height:1.3; }
-  .gram-tile{ position:relative; text-align:left; }
-  .gt-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
-  .gt-icon{ font-size:20px; }
-  .gt-orb{ font-size:13px; width:22px; height:22px; border-radius:7px; display:flex;
-    align-items:center; justify-content:center; background:rgba(0,0,0,.06); }
-  .gt-orb.leer{ color:#b5b5b5; }
+  /* ---- Klappleiste je Unit ---- */
+  .unit-bar{
+    display:flex; align-items:center; gap:10px; width:100%;
+    font-family:var(--font); text-align:left; cursor:pointer;
+    background:linear-gradient(160deg,#ffffff,#eef4ec);
+    border:2px solid rgba(255,255,255,0.95); border-radius:16px;
+    padding:9px 11px; box-shadow:0 2px 8px rgba(20,30,15,0.10);
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .unit-bar:hover{ transform:translateY(-1px); box-shadow:0 5px 13px rgba(20,30,15,0.16); }
+  .unit-bar:active{ transform:translateY(1px); }
+  .unit-block.offen .unit-bar{
+    border-color:#a9cf9f; background:linear-gradient(160deg,#f3faf1,#e1f1dd);
+    box-shadow:0 3px 11px rgba(45,124,55,0.18);
+  }
+  .unit-chev{
+    flex:0 0 auto; width:27px; height:27px; border-radius:9px; font-size:14px;
+    display:flex; align-items:center; justify-content:center; font-weight:800;
+    color:#3f7a2b; background:rgba(77,181,92,0.16);
+    transition:transform .22s ease, background .15s ease;
+  }
+  .unit-block.offen .unit-chev{ transform:rotate(90deg); background:rgba(77,181,92,0.3); }
+  .unit-zahl{ flex:0 0 auto; font-size:11.5px; font-weight:700; color:#6d7a68;
+    background:rgba(30,69,21,0.06); padding:3px 8px; border-radius:8px; }
+  .unit-tipp{ display:flex; align-items:center; gap:7px; font-size:12.5px; color:#5a6656;
+    background:rgba(255,255,255,0.6); border-radius:11px; padding:7px 10px; margin-bottom:10px; }
+
+  /* ---- Themenkarte: helle Karte statt grauem Klotz, alles in EINER Zeile ---- */
+  .unit-block .mode-grid{ gap:8px; margin-top:8px; margin-bottom:4px; }
+  .mode-btn.gram-tile{
+    display:flex; align-items:center; gap:12px; text-align:left;
+    padding:10px 12px; border-radius:17px; color:#1e4515;
+    background:linear-gradient(160deg,#ffffff,#f2f7f0);
+    border:2px solid rgba(255,255,255,0.95);
+    box-shadow:0 2px 9px rgba(20,30,15,0.10);
+  }
+  .mode-btn.gram-tile:hover{ transform:translateY(-2px); box-shadow:0 6px 15px rgba(20,30,15,0.17); }
+  .mode-btn.gram-tile.active{
+    background:linear-gradient(160deg,#eaf9e7,#c9ecc7); border-color:#4db55c; color:#1e4515;
+    box-shadow:0 0 0 3px rgba(77,181,92,0.32), 0 5px 14px rgba(45,124,55,0.25);
+  }
+  .gt-icon{
+    flex:0 0 auto; width:44px; height:44px; border-radius:14px; font-size:23px;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg,#eef4ea,#d8e8d2);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .gram-tile[data-unit="1"] .gt-icon{ background:linear-gradient(160deg,#e7f1ff,#c4d9f9); }
+  .gram-tile[data-unit="2"] .gt-icon{ background:linear-gradient(160deg,#f4e9ff,#dbc8fa); }
+  .gram-tile[data-unit="3"] .gt-icon{ background:linear-gradient(160deg,#fff5d6,#ffe5a0); }
+  .gram-tile[data-unit="4"] .gt-icon{ background:linear-gradient(160deg,#e8f8e9,#c5e8c9); }
+  .gram-tile[data-unit="5"] .gt-icon{ background:linear-gradient(160deg,#e1f6f9,#bce6ee); }
+  .gt-txt{ flex:1 1 auto; min-width:0; }
+  .gt-name{ display:block; font-weight:800; font-size:15.5px; line-height:1.2; color:#1e4515; }
+  .mode-btn.gram-tile small{
+    display:block; text-align:left; margin-top:2px; font-size:12.5px;
+    color:#5f6b5a; opacity:1; font-weight:500;
+  }
+  .mode-btn.gram-tile.active small{ color:#3d5a35; }
+  .gt-orb{
+    flex:0 0 auto; width:31px; height:31px; border-radius:11px; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 1px 3px rgba(0,0,0,0.13);
+  }
+  .gt-orb.leer{ background:rgba(30,69,21,0.06); color:#b7c2b2; font-size:11px; box-shadow:none; }
   .gt-orb.diamant{ background:linear-gradient(160deg,#8ce9f5,#22aec7); }
   .gt-orb.gold{ background:linear-gradient(160deg,#ffde7a,#dfa019); }
   .gt-orb.eisen{ background:linear-gradient(160deg,#eaeaea,#9d9d9d); }
   .gt-orb.stein{ background:linear-gradient(160deg,#c6c6c0,#84847d); }
   .gt-orb.holz{ background:linear-gradient(160deg,#dcab6d,#9e6b34); }
-  .gt-name{ display:block; font-weight:800; line-height:1.2; }
+  /* Unit-Nummer traegt die Farbe der Unit. */
+  .unit-nr[data-unit="1"]{ background:linear-gradient(160deg,#5f95dd,#2f5f9e); }
+  .unit-nr[data-unit="2"]{ background:linear-gradient(160deg,#9a76e8,#5a3aa8); }
+  .unit-nr[data-unit="3"]{ background:linear-gradient(160deg,#e8b23c,#a8760f); }
+  .unit-nr[data-unit="4"]{ background:linear-gradient(160deg,#5cbb6c,#2c7a37); }
+  .unit-nr[data-unit="5"]{ background:linear-gradient(160deg,#46b8c8,#1d7b8a); }
   .skill-open-btn{ margin:0 0 6px; background:linear-gradient(180deg,#6c8ed6,#41639f); }
 
   /* --- Statistikseite --- */
@@ -977,7 +1041,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "13.0 – Smaragdader";
+const APP_VERSION = "13.1 – Leuchtfeuer";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1260,6 +1324,7 @@ const state = {
   grammarTopicId: null,
   grammarSkills: {},      // {themenId: {r:"1101...", n:Gesamtzahl, ts:Zeitstempel}}
   grammarStatsReturnTo: "start",
+  grammarOpenUnit: null,   // welche Unit ist aufgeklappt (immer hoechstens eine)
   grammarMode: "practice",   // "practice" = ruhige Uebungsrunde, "flood" = Wasserraum
   grammarQueue: [],
   grammarIndex: 0,
@@ -2243,29 +2308,41 @@ function renderStart(){
       <h3 style="font-size:16px;margin-bottom:6px;">GRAMMATIK-THEMEN</h3>
       <p class="muted" style="margin-bottom:12px;">${GRAMMAR_TOPICS.length} Themen aus dem ganzen Schuljahr &ndash; sortiert nach Units.</p>
       <button class="btn skill-open-btn" id="grammar-stats-btn">📊 MEINE GRAMMATIK-SKILLS</button>
+      <div class="unit-tipp">👇 <span>Tippe auf eine Unit, um ihre Themen aufzuklappen.</span></div>
       ${GRAMMAR_UNITS.map(u=>{
         const themen = grammarTopicsOfUnit(u.nr);
         if(themen.length === 0) return "";
+        const offen = state.grammarOpenUnit === u.nr;
+        const geuebt = themen.filter(t=>grammarSkillInfo(t).fenster > 0).length;
         return `
-        <div class="unit-block">
-          <div class="unit-head">
-            <span class="unit-nr">Unit ${u.nr}</span>
-            <span class="unit-txt"><span class="unit-name">${escapeHtml(u.name)}</span><span class="unit-hint">${escapeHtml(u.hint)}</span></span>
-          </div>
+        <div class="unit-block ${offen ? 'offen' : ''}">
+          <button class="unit-bar" data-unit-toggle="${u.nr}" aria-expanded="${offen}">
+            <span class="unit-nr" data-unit="${u.nr}">Unit ${u.nr}</span>
+            <span class="unit-txt">
+              <span class="unit-name">${escapeHtml(u.name)}</span>
+              <span class="unit-hint">${escapeHtml(u.hint)}</span>
+            </span>
+            <span class="unit-zahl">${geuebt > 0 ? geuebt + '/' + themen.length : themen.length}</span>
+            <span class="unit-chev">▶</span>
+          </button>
+          ${offen ? `
           <div class="mode-grid">
             ${themen.map(t=>{
               const sk = grammarSkillInfo(t);
+              const stufe = sk.level
+                ? `<span class="gt-orb ${sk.level.key}" title="${sk.level.name}">${sk.level.icon}</span>`
+                : `<span class="gt-orb leer" title="Noch nicht geübt">●</span>`;
               return `
-              <div class="mode-btn gram-tile ${state.grammarTopicId===t.id?'active':''}" data-grammar-topic="${t.id}">
-                <span class="gt-head">
-                  <span class="gt-icon">${t.icon}</span>
-                  <span class="gt-orb ${sk.level ? sk.level.key : 'leer'}">${sk.level ? sk.level.icon : '·'}</span>
+              <div class="mode-btn gram-tile ${state.grammarTopicId===t.id?'active':''}" data-grammar-topic="${t.id}" data-unit="${t.unit}">
+                <span class="gt-icon">${t.icon}</span>
+                <span class="gt-txt">
+                  <span class="gt-name">${escapeHtml(t.name)}</span>
+                  <small>${escapeHtml(t.subtitle)}</small>
                 </span>
-                <span class="gt-name">${escapeHtml(t.name)}</span>
-                <small>${escapeHtml(t.subtitle)}</small>
+                ${stufe}
               </div>`;
             }).join("")}
-          </div>
+          </div>` : ''}
         </div>`;
       }).join("")}
     </div>
@@ -2397,8 +2474,20 @@ function renderStart(){
   document.querySelectorAll('.mode-btn[data-mainmode]').forEach(el=>{
     el.addEventListener('click', ()=>{ state.mainMode = el.dataset.mainmode; render(); });
   });
+  document.querySelectorAll('.unit-bar[data-unit-toggle]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const nr = parseInt(el.dataset.unitToggle, 10);
+      state.grammarOpenUnit = (state.grammarOpenUnit === nr) ? null : nr;
+      render();
+    });
+  });
   document.querySelectorAll('.mode-btn[data-grammar-topic]').forEach(el=>{
-    el.addEventListener('click', ()=>{ state.grammarTopicId = el.dataset.grammarTopic; render(); });
+    el.addEventListener('click', ()=>{
+      state.grammarTopicId = el.dataset.grammarTopic;
+      const th = grammarTopicById(state.grammarTopicId);
+      if(th){ state.grammarOpenUnit = th.unit; }   // die Unit bleibt offen
+      render();
+    });
   });
   const statsBtn = document.getElementById('grammar-stats-btn');
   if(statsBtn){
@@ -3525,7 +3614,7 @@ const GRAMMAR_UNITS = [
   { nr:2, name:"Was ich habe, was du tun sollst", hint:"have got, Imperativ, this und that" },
   { nr:3, name:"Mein Alltag", hint:"Wie oft, in welcher Reihenfolge, Simple Present" },
   { nr:4, name:"Fragen und Verneinen", hint:"do und does, Objektformen" },
-  { nr:5, name:"Mengen und Plaene", hint:"Verlaufsform, some und any, going to" }
+  { nr:5, name:"Mengen und Pläne", hint:"Verlaufsform, some und any, going to" }
 ];
 
 /* ---------------------------------------------------
@@ -4591,7 +4680,7 @@ function renderGrammarStats(){
       return `
       <div class="panel">
         <div class="unit-head">
-          <span class="unit-nr">Unit ${u.nr}</span>
+          <span class="unit-nr" data-unit="${u.nr}">Unit ${u.nr}</span>
           <span class="unit-txt"><span class="unit-name">${escapeHtml(u.name)}</span><span class="unit-hint">${escapeHtml(u.hint)}</span></span>
         </div>
         ${themen.map(t=>skillZeile(t)).join("")}
@@ -4605,6 +4694,8 @@ function renderGrammarStats(){
     el.addEventListener('click', ()=>{
       state.mainMode = "grammar";
       state.grammarTopicId = el.dataset.skillTopic;
+      const th = grammarTopicById(state.grammarTopicId);
+      if(th){ state.grammarOpenUnit = th.unit; }
       state.screen = "grammarintro";
       render();
     });
