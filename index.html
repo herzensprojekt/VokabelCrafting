@@ -1211,7 +1211,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "16.0 – Elytra";
+const APP_VERSION = "16.1 – Elytra";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2569,13 +2569,13 @@ function renderStart(){
     <div class="panel">
       <h3 style="font-size:16px;margin-bottom:10px;">WAS MÖCHTEST DU ÜBEN?</h3>
       <div class="main-mode-grid">
-        <button type="button" class="mode-btn main-mode-card ${state.mainMode==='vocab'?'active':''}" data-mainmode="vocab"> aria-pressed="${state.mainMode==='vocab'}"
+        <button type="button" class="mode-btn main-mode-card ${state.mainMode==='vocab'?'active':''}" data-mainmode="vocab" aria-pressed="${state.mainMode==='vocab'}">
           <span class="mm-check">✓</span>
           <span class="mm-icon">📖</span>
           <span class="mm-title">Vokabeln</span>
           <span class="mm-sub">Vokabeln lernen &amp; abfragen</span>
         </button>
-        <button type="button" class="mode-btn main-mode-card ${state.mainMode==='grammar'?'active':''}" data-mainmode="grammar"> aria-pressed="${state.mainMode==='grammar'}"
+        <button type="button" class="mode-btn main-mode-card ${state.mainMode==='grammar'?'active':''}" data-mainmode="grammar" aria-pressed="${state.mainMode==='grammar'}">
           <span class="mm-check">✓</span>
           <span class="mm-icon">🧠</span>
           <span class="mm-title">Grammatik</span>
@@ -2614,7 +2614,7 @@ function renderStart(){
                 ? `<span class="gt-orb ${sk.level.key}" title="${sk.level.name}">${sk.level.icon}</span>`
                 : `<span class="gt-orb leer" title="Noch nicht geübt">●</span>`;
               return `
-              <button type="button" class="mode-btn gram-tile ${state.grammarTopicId===t.id?'active':''}" data-grammar-topic="${t.id}" data-unit="${t.unit}"> aria-pressed="${state.grammarTopicId===t.id}"
+              <button type="button" class="mode-btn gram-tile ${state.grammarTopicId===t.id?'active':''}" data-grammar-topic="${t.id}" data-unit="${t.unit}" aria-pressed="${state.grammarTopicId===t.id}">
                 <span class="gt-icon">${t.icon}</span>
                 <span class="gt-txt">
                   <span class="gt-name">${escapeHtml(t.name)}</span>
@@ -2637,45 +2637,45 @@ function renderStart(){
 
       <div class="setting-label">Richtung</div>
       <div class="seg-row">
-        <button type="button" class="mode-btn seg ${state.direction==='de-en'?'active':''}" data-direction="de-en"> aria-pressed="${state.direction==='de-en'}"
+        <button type="button" class="mode-btn seg ${state.direction==='de-en'?'active':''}" data-direction="de-en" aria-pressed="${state.direction==='de-en'}">
           Deutsch &rarr; Englisch
         </button>
-        <button type="button" class="mode-btn seg ${state.direction==='en-de'?'active':''}" data-direction="en-de"> aria-pressed="${state.direction==='en-de'}"
+        <button type="button" class="mode-btn seg ${state.direction==='en-de'?'active':''}" data-direction="en-de" aria-pressed="${state.direction==='en-de'}">
           Englisch &rarr; Deutsch
         </button>
       </div>
 
       <div class="setting-label">Spiel</div>
       <div class="game-grid">
-        <button type="button" class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc"> aria-pressed="${state.mode==='mc'}"
+        <button type="button" class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc" aria-pressed="${state.mode==='mc'}">
           <span class="gm-ic">🎯</span>
           <span class="gm-txt">
             <span class="gm-name">Multiple Choice</span>
             <small>4 Antworten zur Auswahl</small>
           </span>
         </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='type'?'active':''}" data-mode="type"> aria-pressed="${state.mode==='type'}"
+        <button type="button" class="mode-btn game-tile ${state.mode==='type'?'active':''}" data-mode="type" aria-pressed="${state.mode==='type'}">
           <span class="gm-ic">📝</span>
           <span class="gm-txt">
             <span class="gm-name">Vokabeltest</span>
             <small>Selbst schreiben, mit Schulnote</small>
           </span>
         </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='mix'?'active':''}" data-mode="mix"> aria-pressed="${state.mode==='mix'}"
+        <button type="button" class="mode-btn game-tile ${state.mode==='mix'?'active':''}" data-mode="mix" aria-pressed="${state.mode==='mix'}">
           <span class="gm-ic">🔀</span>
           <span class="gm-txt">
             <span class="gm-name">Gemischt</span>
             <small>Mal Auswahl, mal Eintippen</small>
           </span>
         </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='challenge'?'active':''}" data-mode="challenge"> aria-pressed="${state.mode==='challenge'}"
+        <button type="button" class="mode-btn game-tile ${state.mode==='challenge'?'active':''}" data-mode="challenge" aria-pressed="${state.mode==='challenge'}">
           <span class="gm-ic">⚔️</span>
           <span class="gm-txt">
             <span class="gm-name">Die Challenge</span>
             <small>10 Sekunden gegen den Bösewicht</small>
           </span>
         </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='flood'?'active':''}" data-mode="flood"> aria-pressed="${state.mode==='flood'}"
+        <button type="button" class="mode-btn game-tile ${state.mode==='flood'?'active':''}" data-mode="flood" aria-pressed="${state.mode==='flood'}">
           <span class="gm-ic">🌊</span>
           <span class="gm-txt">
             <span class="gm-name">Der Flutungsraum</span>
