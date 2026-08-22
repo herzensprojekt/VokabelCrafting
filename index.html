@@ -373,6 +373,68 @@
   .sk-todo-txt strong{ font-size:14px; color:#1e4515; }
   .sk-todo-txt small{ font-size:11.5px; color:#777; }
   .sk-todo-go{ flex:0 0 auto; font-size:12px; font-weight:800; color:#c0392b; }
+  /* --- Elternbereich --- */
+  .parent-tabs{ display:flex; gap:8px; margin-bottom:12px; }
+  .ptab{ flex:1 1 0; font-family:var(--font); font-weight:800; font-size:13.5px;
+    padding:11px 8px; border-radius:14px; cursor:pointer; border:2px solid rgba(255,255,255,0.95);
+    background:linear-gradient(160deg,#ffffff,#f2f7f0); color:#1e4515;
+    box-shadow:0 2px 8px rgba(20,30,15,0.09); }
+  .ptab.active{ background:linear-gradient(160deg,#dbe9ff,#b9d3f7); border-color:#4a7fd0; color:#153a6b;
+    box-shadow:0 0 0 3px rgba(74,127,208,0.28), 0 4px 12px rgba(30,60,110,0.2); }
+  .kpi-grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:6px; }
+  .kpi{ background:rgba(255,255,255,0.8); border:1px solid rgba(255,255,255,0.9);
+    border-radius:15px; padding:11px 12px; display:flex; align-items:center; gap:10px; }
+  .kpi-ic{ flex:0 0 auto; width:38px; height:38px; border-radius:12px; font-size:19px;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg,#eef4ea,#d8e8d2); }
+  .kpi-txt{ min-width:0; }
+  .kpi-nr{ display:block; font-weight:800; font-size:19px; color:#1e4515; line-height:1.1; }
+  .kpi-lb{ display:block; font-size:11.5px; color:#63705f; line-height:1.25; }
+  .chart{ width:100%; height:auto; display:block; margin-top:4px; }
+  .chart .grid{ stroke:rgba(20,40,15,0.13); stroke-width:1; }
+  .chart .ax{ font-size:11px; fill:#69756a; font-family:var(--font); }
+  .chart .lbl{ font-size:12px; fill:#1e4515; font-family:var(--font); font-weight:700; }
+  .legende{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:8px; }
+  .leg{ display:flex; align-items:center; gap:6px; font-size:12px; color:#4f5b4c; }
+  .leg-dot{ width:12px; height:12px; border-radius:4px; display:inline-block; }
+  .urow{ display:flex; align-items:center; gap:10px; padding:7px 0;
+    border-top:1px solid rgba(0,0,0,0.07); }
+  .urow:first-of-type{ border-top:none; }
+  .urow-nr{ flex:0 0 auto; font-size:11px; font-weight:800; color:#fff;
+    padding:4px 8px; border-radius:8px; background:#5f5f5f; }
+  .urow-body{ flex:1 1 auto; min-width:0; }
+  .urow-top{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .urow-name{ font-size:13.5px; font-weight:700; color:#1e4515; }
+  .urow-q{ font-size:12.5px; font-weight:800; color:#3d5a35; }
+  .urow-bar{ display:block; height:10px; border-radius:5px; background:rgba(0,0,0,0.09);
+    overflow:hidden; margin-top:5px; }
+  .urow-bar > span{ display:block; height:100%; border-radius:5px; }
+  .tl{ display:flex; align-items:center; gap:9px; padding:6px 0; font-size:13px; }
+  .tl-ic{ font-size:17px; }
+  .tl-n{ flex:1 1 auto; color:#26401d; }
+  .tl-q{ font-weight:800; }
+  .tl-q.gut{ color:#2c7a37; }
+  .tl-q.schwach{ color:#b3421f; }
+  /* Belohnungen anlegen */
+  .icon-pick{ display:grid; grid-template-columns:repeat(auto-fill,minmax(44px,1fr)); gap:6px;
+    margin:8px 0 12px; }
+  .icon-pick button{ font-size:21px; padding:6px 0; border-radius:11px; cursor:pointer;
+    border:2px solid transparent; background:rgba(255,255,255,0.75); font-family:var(--font); }
+  .icon-pick button.gewaehlt{ border-color:#4db55c; background:linear-gradient(160deg,#eaf9e7,#c9ecc7);
+    box-shadow:0 0 0 2px rgba(77,181,92,0.3); }
+  .rw-row{ display:flex; align-items:center; gap:10px; padding:9px 0;
+    border-top:1px solid rgba(0,0,0,0.07); }
+  .rw-row:first-of-type{ border-top:none; }
+  .rw-ic{ flex:0 0 auto; width:40px; height:40px; border-radius:13px; font-size:21px;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg,#fff4e0,#ffe3b5); }
+  .rw-txt{ flex:1 1 auto; min-width:0; }
+  .rw-name{ display:block; font-weight:700; font-size:14px; color:#1e4515; }
+  .rw-preis{ display:block; font-size:12.5px; color:#68745f; }
+  .rw-del{ flex:0 0 auto; border:none; cursor:pointer; font-family:var(--font); font-weight:800;
+    font-size:12px; color:#fff; padding:7px 11px; border-radius:10px;
+    background:linear-gradient(180deg,#d4665a,#a63a2e); }
+  .parent-open-btn{ background:linear-gradient(180deg,#e0a24a,#a86b18); }
   .gram-tip{
     margin-top:14px; padding:14px 16px; background:#fdf1c7; border-radius:14px;
     color:#5e4600; font-weight:600; font-size:15.5px; line-height:1.55;
@@ -554,9 +616,47 @@
     background:linear-gradient(135deg,#9a9a9a,#727272);
   }
   .mode-btn.seg.active{ background:linear-gradient(135deg,#4db55c,#2c7a37); }
-  .game-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .mode-btn.game-tile{ padding:12px 8px; font-size:14px; border-radius:14px; }
-  .mode-btn.game-tile small{ font-size:12px; margin-top:4px; }
+  .game-grid{ display:grid; grid-template-columns:1fr; gap:8px; }
+  /* Spielkachel: derselbe helle Kartenlook wie die Grammatik-Themen. */
+  .mode-btn.game-tile{
+    display:flex; align-items:center; gap:12px; text-align:left;
+    padding:10px 12px; border-radius:17px; font-size:15px; color:#1e4515;
+    background:linear-gradient(160deg,#ffffff,#f2f7f0);
+    border:2px solid rgba(255,255,255,0.95);
+    box-shadow:0 2px 9px rgba(20,30,15,0.10);
+  }
+  .mode-btn.game-tile:hover{ transform:translateY(-2px); box-shadow:0 6px 15px rgba(20,30,15,0.17); }
+  .mode-btn.game-tile.active{
+    background:linear-gradient(160deg,#eaf9e7,#c9ecc7); border-color:#4db55c; color:#1e4515;
+    box-shadow:0 0 0 3px rgba(77,181,92,0.32), 0 5px 14px rgba(45,124,55,0.25);
+  }
+  .mode-btn.game-tile small{
+    display:block; text-align:left; margin-top:2px; font-size:12.5px;
+    color:#5f6b5a; opacity:1; font-weight:500;
+  }
+  .mode-btn.game-tile.active small{ color:#3d5a35; }
+  .gm-ic{
+    flex:0 0 auto; width:44px; height:44px; border-radius:14px; font-size:23px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .game-tile[data-mode="mc"]        .gm-ic{ background:linear-gradient(160deg,#e7f1ff,#c4d9f9); }
+  .game-tile[data-mode="type"]      .gm-ic{ background:linear-gradient(160deg,#fff0e2,#ffd6ae); }
+  .game-tile[data-mode="mix"]       .gm-ic{ background:linear-gradient(160deg,#f4e9ff,#dbc8fa); }
+  .game-tile[data-mode="challenge"] .gm-ic{ background:linear-gradient(160deg,#ffe8e4,#ffc2b6); }
+  .game-tile[data-mode="flood"]     .gm-ic{ background:linear-gradient(160deg,#e1f6f9,#bce6ee); }
+  .gm-txt{ flex:1 1 auto; min-width:0; }
+  .gm-name{ display:block; font-weight:800; font-size:15.5px; line-height:1.2; color:#1e4515; }
+  /* Richtungswahl als helle Pillen. */
+  .mode-btn.seg{
+    background:linear-gradient(160deg,#ffffff,#f2f7f0); color:#1e4515;
+    border:2px solid rgba(255,255,255,0.95); font-weight:700;
+    box-shadow:0 2px 8px rgba(20,30,15,0.09);
+  }
+  .mode-btn.seg.active{
+    background:linear-gradient(160deg,#eaf9e7,#c9ecc7); border-color:#4db55c; color:#1e4515;
+    box-shadow:0 0 0 3px rgba(77,181,92,0.30), 0 4px 12px rgba(45,124,55,0.22);
+  }
 
   /* ---------- Grammatik: Modus-Auswahl & ruhige Uebungsrunde ---------- */
   .gm-choice{ display:grid; gap:10px; margin-top:6px; }
@@ -1041,7 +1141,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "13.1 – Leuchtfeuer";
+const APP_VERSION = "14.0 – Netherit";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1214,7 +1314,14 @@ const SHOP_ITEMS = [
   {id:"media5",      icon:"📱", name:"5 Min. Medienzeit",            price:2400},
   {id:"cash050",     icon:"💶", name:"0,50 €",                       price:4000}
 ];
-function shopItemById(id){ return SHOP_ITEMS.find(i=>i.id===id); }
+// Der Shop besteht aus den mitgelieferten Belohnungen PLUS denen, die die
+// Eltern selbst angelegt haben. Alles andere (Kaufen, Inventar, Einloesen)
+// laeuft ueber shopItemById und funktioniert dadurch automatisch mit.
+function alleShopItems(){
+  const eigene = Array.isArray(state.customRewards) ? state.customRewards : [];
+  return SHOP_ITEMS.concat(eigene);
+}
+function shopItemById(id){ return alleShopItems().find(i=>i.id===id); }
 
 const MINECRAFT_QUOTES = [
   "Achievement erhalten: Wortschatz-Meister!",
@@ -1265,6 +1372,8 @@ function loadSave(){
     if(data.parentPinSalt) state.parentPinSalt = data.parentPinSalt;
     if(data.cloudId) state.cloudId = data.cloudId;
     if(data.grammarSkills && typeof data.grammarSkills === "object") state.grammarSkills = data.grammarSkills;
+    if(data.activityLog && typeof data.activityLog === "object") state.activityLog = data.activityLog;
+    if(Array.isArray(data.customRewards)) state.customRewards = data.customRewards;
   }catch(e){ /* Speicher blockiert (z.B. Vorschau-Sandbox) - Standardwerte bleiben */ }
 }
 function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewusst nichts
@@ -1281,7 +1390,9 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       parentPinHash: state.parentPinHash,
       parentPinSalt: state.parentPinSalt,
       cloudId: state.cloudId,
-      grammarSkills: state.grammarSkills
+      grammarSkills: state.grammarSkills,
+      activityLog: state.activityLog,
+      customRewards: state.customRewards
     }));
   }catch(e){ /* Speicher nicht verfügbar - Fortschritt bleibt nur für diese Sitzung erhalten */ }
 }
@@ -1325,6 +1436,13 @@ const state = {
   grammarSkills: {},      // {themenId: {r:"1101...", n:Gesamtzahl, ts:Zeitstempel}}
   grammarStatsReturnTo: "start",
   grammarOpenUnit: null,   // welche Unit ist aufgeklappt (immer hoechstens eine)
+  activityLog: {},         // {"2026-08-22": {v, vc, g, gc}} - Aufgaben und Treffer pro Tag
+  customRewards: [],       // von den Eltern angelegte Belohnungen {id, icon, name, price}
+  parentUnlocked: false,   // nur fuer diese Sitzung: Elternbereich ist offen
+  parentPinError: null,
+  parentTab: "uebersicht", // "uebersicht" | "belohnungen"
+  rewardDraft: { icon:"🎁", name:"", price:"500" },
+  rewardError: null,
   grammarMode: "practice",   // "practice" = ruhige Uebungsrunde, "flood" = Wasserraum
   grammarQueue: [],
   grammarIndex: 0,
@@ -1436,6 +1554,9 @@ function applyPlayerToState(player){
   state.gradeEntries = Array.isArray(player.gradeEntries) ? player.gradeEntries : [];
   state.redeemLog = Array.isArray(player.redeemLog) ? player.redeemLog : [];
   state.grammarSkills = (player.grammarSkills && typeof player.grammarSkills === "object") ? player.grammarSkills : {};
+  state.activityLog = (player.activityLog && typeof player.activityLog === "object") ? player.activityLog : {};
+  state.customRewards = Array.isArray(player.customRewards) ? player.customRewards : [];
+  state.parentUnlocked = false;   // beim Profilwechsel wieder zusperren
   state.parentPinHash = player.parentPinHash || null;
   state.parentPinSalt = player.parentPinSalt || null;
   state.playerPin = "";            // PIN nie länger als nötig im Speicher halten
@@ -1553,6 +1674,39 @@ async function signOutCloud(){
 // Fuer die Rangliste zaehlt der Durchschnitt der letzten zehn Tests: bleibt
 // aktuell und verzeiht einen einzelnen Ausrutscher.
 const GRADE_WINDOW = 10;
+
+/* ---------------------------------------------------
+   TAGESSTATISTIK fuer den Elternbereich.
+   Pro Tag wird gezaehlt, wie viele Aufgaben bearbeitet und wie viele
+   davon richtig waren - getrennt nach Vokabeln (v/vc) und Grammatik (g/gc).
+   Aufbewahrt werden die letzten 120 Tage.
+--------------------------------------------------- */
+const ACTIVITY_DAYS = 120;
+function dateKey(d){
+  const p = n=>String(n).padStart(2,"0");
+  return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate());
+}
+function heuteKey(){ return dateKey(new Date()); }
+
+function recordActivity(bereich, anzahl, richtig){
+  if(state.guest || !anzahl) return;
+  if(!state.activityLog || typeof state.activityLog !== "object"){ state.activityLog = {}; }
+  const k = heuteKey();
+  const e = state.activityLog[k] || { v:0, vc:0, g:0, gc:0 };
+  if(bereich === "grammar"){ e.g += anzahl; e.gc += richtig; }
+  else { e.v += anzahl; e.vc += richtig; }
+  state.activityLog[k] = e;
+  // Alte Tage aufraeumen, damit das Profil nicht endlos waechst.
+  const keys = Object.keys(state.activityLog).sort();
+  while(keys.length > ACTIVITY_DAYS){ delete state.activityLog[keys.shift()]; }
+}
+
+// Zaehlt eine Runde aus und schreibt sie in die Tagesstatistik.
+function protokolliereRunde(bereich, log){
+  if(!Array.isArray(log) || log.length === 0) return;
+  const richtig = log.filter(l=>l.result === "correct").length;
+  recordActivity(bereich, log.length, richtig);
+}
 function computeAvgGrade(){
   if(!state.gradeEntries || state.gradeEntries.length === 0) return null;
   const letzte = state.gradeEntries.slice(0, GRADE_WINDOW);
@@ -1584,7 +1738,9 @@ function syncToCloud(){
       customVocab: state.customVocab,
       gradeEntries: state.gradeEntries,
       redeemLog: state.redeemLog,
-      grammarSkills: state.grammarSkills || {}
+      grammarSkills: state.grammarSkills || {},
+      activityLog: state.activityLog || {},
+      customRewards: state.customRewards || []
     };
     if(state.parentPinHash){ payload.parentPinHash = state.parentPinHash; }
     if(state.parentPinSalt){ payload.parentPinSalt = state.parentPinSalt; }
@@ -1778,6 +1934,7 @@ function render(){
   if(state.screen==="grammarquiz") return renderGrammarQuiz();
   if(state.screen==="grammarcertificate") return renderGrammarCertificate();
   if(state.screen==="grammarstats") return renderGrammarStats();
+  if(state.screen==="parents") return renderParents();
 }
 
 const TILE_STONE  = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAACJ0lEQVR42gXBya7cRBQA0DvV4KmHSFlnF0gWfBELJP4Z2CYvUgZBXrvtsmu6VZyDv//xJ2vJ3IfWkC2UlMGQQ8ipVmsGTLF7iyXXjsZ3kreLefP+nejNFTWiZ8qtLHRRbDkGN1E+R9ZN7j4l43l7yL+vhb/zAv+dJ4EJUjnzztUfqY/z+j0PkrPk9DmAoeonI0SJpatpyYURJy2QGdq5mYHPVOEY6z3y1mUm7BOskbDQVNe0gnSh1yw9Xlbx1Y4KXm+XW+Qg6GRkF4OCYenG1GS6Ma3UDkM9d7S9OkrdjmXftfTLRVWBrMDr7oWgHcF2O8QZiJZwDJMd23Q6EtpnKGBAw/Lsc4eJ7+0kaQZvdno8FS9UY7sO2A6KSxg3F/zgWuINI2XaW5o6tUE4ub/++ZuH5r4RgAVKZ2Hne2lgk3ZxFblTAyzanORDfvvw6wZAJts6R8dL23bPFPDrl0/vPv6i0MaaS4ED4vVuoaFs24mXDnte8dBithhQFk4hPLfH88VV2YcCOg5dX37EsWaqQ4BTjjamSC3iXeeGlfCmzbDl0qvvt2osHpNN+egTJZgpPSbovlmYzeN6XHtCs7NPtE2g5nlmSfQEzYsnErJSdLk8xxMJW1KAOYm0MtcmdQjO6cDG8U8EWBTRVeKc67O6otqyp32skrujfrjEtYp6V6StcJ/ttqGBKhQcliuDWvLc22Jg5Rza1UV7WmdOrHjG0awJB2diFf0fOhtozI3dWGsAAAAASUVORK5CYII=";
@@ -2367,24 +2524,39 @@ function renderStart(){
       <div class="setting-label">Spiel</div>
       <div class="game-grid">
         <div class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc">
-          Multiple Choice
-          <small>4 Antworten zur Auswahl</small>
+          <span class="gm-ic">🎯</span>
+          <span class="gm-txt">
+            <span class="gm-name">Multiple Choice</span>
+            <small>4 Antworten zur Auswahl</small>
+          </span>
         </div>
         <div class="mode-btn game-tile ${state.mode==='type'?'active':''}" data-mode="type">
-          Vokabeltest
-          <small>Selbst schreiben, mit Schulnote</small>
+          <span class="gm-ic">📝</span>
+          <span class="gm-txt">
+            <span class="gm-name">Vokabeltest</span>
+            <small>Selbst schreiben, mit Schulnote</small>
+          </span>
         </div>
         <div class="mode-btn game-tile ${state.mode==='mix'?'active':''}" data-mode="mix">
-          Gemischt
-          <small>Mal Auswahl, mal Eintippen</small>
+          <span class="gm-ic">🔀</span>
+          <span class="gm-txt">
+            <span class="gm-name">Gemischt</span>
+            <small>Mal Auswahl, mal Eintippen</small>
+          </span>
         </div>
         <div class="mode-btn game-tile ${state.mode==='challenge'?'active':''}" data-mode="challenge">
-          ⚔️ Die Challenge
-          <small>10 Sekunden gegen den Bösewicht</small>
+          <span class="gm-ic">⚔️</span>
+          <span class="gm-txt">
+            <span class="gm-name">Die Challenge</span>
+            <small>10 Sekunden gegen den Bösewicht</small>
+          </span>
         </div>
         <div class="mode-btn game-tile ${state.mode==='flood'?'active':''}" data-mode="flood">
-          🌊 Der Flutungsraum
-          <small>Klettere dem Wasser davon</small>
+          <span class="gm-ic">🌊</span>
+          <span class="gm-txt">
+            <span class="gm-name">Der Flutungsraum</span>
+            <small>Klettere dem Wasser davon</small>
+          </span>
         </div>
       </div>
 
@@ -2403,6 +2575,9 @@ function renderStart(){
     ${!state.cloudId ? `<p class="muted center-text" style="margin-top:4px;">Melde dich an, um echte Schulnoten einzutragen.</p>` : ""}
     <div style="height:10px;"></div>
     <button class="btn secondary" id="leaderboard-btn" ${state.guest ? "disabled" : ""}>🏆 RANGLISTE ANSEHEN</button>
+    <div style="height:10px;"></div>
+    <button class="btn parent-open-btn" id="parents-btn" ${state.guest ? "disabled" : ""}>👨‍👩‍👧 ELTERNBEREICH</button>
+    ${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Im Testmodus nicht verfügbar.</p>` : ""}
 
     <div class="panel" style="margin-top:14px;">
       <h3 style="font-size:15px;margin-bottom:8px;">DEIN INVENTAR</h3>
@@ -2520,6 +2695,15 @@ function renderStart(){
   });
   document.getElementById('shop-btn').addEventListener('click', ()=>{ state.screen="shop"; state.shopReturnTo="start"; render(); attemptCloudLogin(true); });
   document.getElementById('leaderboard-btn').addEventListener('click', ()=>{ openLeaderboard("start"); });
+  const parentsBtn = document.getElementById('parents-btn');
+  if(parentsBtn){
+    parentsBtn.addEventListener('click', ()=>{
+      state.parentPinError = null;
+      state.parentTab = "uebersicht";
+      state.screen = "parents";
+      render();
+    });
+  }
   const gradeCalBtn = document.getElementById('grade-calendar-btn');
   if(gradeCalBtn){
     gradeCalBtn.addEventListener('click', ()=>{
@@ -2800,6 +2984,8 @@ function showFeedbackWithConfirm(type, message, revealAnswer, extraNoteHtml){
 function cancelGame(){
   showConfirmModal('Runde abbrechen und zum Menü zurückkehren?', ()=>{
     clearInterval(challengeTimerId);
+    protokolliereRunde("vocab", state.sessionLog);   // auch Abgebrochenes zaehlt
+    saveProgress(); syncToCloud();
     state.answered = true;
     state.screen = "start";
     render();
@@ -3248,6 +3434,7 @@ function startMistakeReview(){
 }
 
 function endSession(reason){
+  protokolliereRunde("vocab", state.sessionLog);
   state.coins = Math.max(0, state.coins + state.sessionCoins);
   state.lifetimeBestStreak = Math.max(state.lifetimeBestStreak, state.bestStreak);
   state.lastReason = reason;
@@ -3768,6 +3955,417 @@ function renderCertificate(){
 /* ---------------------------------------------------
    SHOP
 --------------------------------------------------- */
+
+/* ---------------------------------------------------
+   ELTERNBEREICH
+   Eine Seite fuer Mama und Papa: der Lernfortschritt auf einen Blick und
+   selbst angelegte Belohnungen. Geschuetzt durch denselben Eltern-PIN, der
+   auch die Einloesungen bestaetigt. Der PIN wird nur als PBKDF2-Hash
+   gespeichert und hier gegen diesen Hash geprueft.
+--------------------------------------------------- */
+const REWARD_ICONS = ["🍬","🍭","🍫","🍦","🧁","🍕","🍟","🍔","🌮","🍿",
+                      "🎮","📱","📺","🎬","🎧","🎲","🧩","🪁","🎨","✏️",
+                      "⚽","🏀","🚲","🛴","🏊","🎳","🏕️","🎡","🎟️","🎁",
+                      "📚","🛏️","⏰","🌙","💶","💰","🐶","🐱","🚗","✈️"];
+const FARBE_VOKABEL  = "#5cc86c";
+const FARBE_GRAMMATIK = "#8a68e4";
+
+function letzteTageStat(anzahl){
+  const out = [];
+  const heute = new Date();
+  for(let i = anzahl - 1; i >= 0; i--){
+    const d = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() - i);
+    const e = (state.activityLog && state.activityLog[dateKey(d)]) || {};
+    out.push({
+      tag: d.getDate(), monat: d.getMonth() + 1,
+      v: e.v || 0, vc: e.vc || 0, g: e.g || 0, gc: e.gc || 0
+    });
+  }
+  return out;
+}
+
+function aktivitaetSumme(){
+  const l = state.activityLog || {};
+  let v = 0, vc = 0, g = 0, gc = 0;
+  Object.keys(l).forEach(k=>{
+    const e = l[k] || {};
+    v += e.v || 0; vc += e.vc || 0; g += e.g || 0; gc += e.gc || 0;
+  });
+  return { v, vc, g, gc, gesamt: v + g, richtig: vc + gc };
+}
+
+// --- Diagramm 1: Aufgaben pro Tag ---------------------------------------
+function chartAktivitaet(){
+  const tage = letzteTageStat(30);
+  const max = Math.max(1, ...tage.map(t=>t.v + t.g));
+  const W = 660, H = 190, links = 36, rechts = 8, oben = 12, unten = 28;
+  const breiteInnen = W - links - rechts;
+  const spalte = breiteInnen / tage.length;
+  const balken = Math.max(4, spalte * 0.66);
+  const hoeheInnen = H - oben - unten;
+  let netz = "", stapel = "", achse = "";
+  [0, 0.5, 1].forEach(f=>{
+    const y = H - unten - f * hoeheInnen;
+    netz += `<line x1="${links}" y1="${y}" x2="${W - rechts}" y2="${y}" class="grid"></line>`;
+    netz += `<text x="${links - 6}" y="${y + 4}" text-anchor="end" class="ax">${Math.round(max * f)}</text>`;
+  });
+  tage.forEach((d, i)=>{
+    const x = links + i * spalte + (spalte - balken) / 2;
+    const hg = (d.g / max) * hoeheInnen;
+    const hv = (d.v / max) * hoeheInnen;
+    const yg = H - unten - hg;
+    if(d.g > 0) stapel += `<rect x="${x}" y="${yg}" width="${balken}" height="${hg}" rx="2" fill="${FARBE_GRAMMATIK}"></rect>`;
+    if(d.v > 0) stapel += `<rect x="${x}" y="${yg - hv}" width="${balken}" height="${hv}" rx="2" fill="${FARBE_VOKABEL}"></rect>`;
+    if(i % 7 === 0 || i === tage.length - 1){
+      achse += `<text x="${x + balken / 2}" y="${H - 9}" text-anchor="middle" class="ax">${d.tag}.${d.monat}.</text>`;
+    }
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="Aufgaben pro Tag">${netz}${stapel}${achse}</svg>`;
+}
+
+// --- Diagramm 2: Notenverlauf -------------------------------------------
+function chartNoten(){
+  const alle = (state.gradeEntries || []).slice(0, 20).slice().reverse();
+  if(alle.length === 0){
+    return `<p class="center-text muted" style="margin:10px 0 0;">Noch kein benoteter Test geschrieben.</p>`;
+  }
+  const W = 660, H = 190, links = 30, rechts = 12, oben = 14, unten = 26;
+  const breiteInnen = W - links - rechts, hoeheInnen = H - oben - unten;
+  const px = i => alle.length === 1 ? links + breiteInnen / 2 : links + (i / (alle.length - 1)) * breiteInnen;
+  const py = g => oben + ((g - 1) / 5) * hoeheInnen;
+  let netz = "";
+  for(let g = 1; g <= 6; g++){
+    const y = py(g);
+    netz += `<line x1="${links}" y1="${y}" x2="${W - rechts}" y2="${y}" class="grid"></line>`;
+    netz += `<text x="${links - 6}" y="${y + 4}" text-anchor="end" class="ax">${g}</text>`;
+  }
+  function reihe(test, farbe){
+    const punkte = [];
+    alle.forEach((e, i)=>{
+      const istGrammatik = String(e.art || "").indexOf("Grammatik") === 0;
+      if((test === "grammar") === istGrammatik){ punkte.push([px(i), py(e.grade)]); }
+    });
+    if(punkte.length === 0) return "";
+    const linie = punkte.length > 1
+      ? `<polyline points="${punkte.map(p=>p[0] + "," + p[1]).join(" ")}" fill="none" stroke="${farbe}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>`
+      : "";
+    const kreise = punkte.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="${farbe}" stroke="#fff" stroke-width="2"></circle>`).join("");
+    return linie + kreise;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="Notenverlauf">${netz}${reihe("vocab", FARBE_VOKABEL)}${reihe("grammar", FARBE_GRAMMATIK)}</svg>`;
+}
+
+// --- Diagramm 3: Grammatik nach Units ------------------------------------
+function unitBalken(){
+  return GRAMMAR_UNITS.map(u=>{
+    const themen = grammarTopicsOfUnit(u.nr);
+    let fenster = 0, richtig = 0, angefangen = 0;
+    themen.forEach(t=>{
+      const sk = grammarSkillInfo(t);
+      fenster += sk.fenster; richtig += sk.richtig;
+      if(sk.fenster > 0) angefangen++;
+    });
+    const quote = fenster > 0 ? richtig / fenster : null;
+    const prozent = quote === null ? 0 : Math.round(quote * 100);
+    const farbe = quote === null ? "transparent"
+      : (quote >= 0.85 ? "linear-gradient(90deg,#7fd88b,#3f9d4e)"
+      : (quote >= 0.7 ? "linear-gradient(90deg,#ffd87a,#e0a41d)"
+      : "linear-gradient(90deg,#f3a08c,#c8503a)"));
+    return `
+      <div class="urow">
+        <span class="urow-nr" style="background:${['#2f5f9e','#5a3aa8','#a8760f','#2c7a37','#1d7b8a'][u.nr-1]};">U${u.nr}</span>
+        <span class="urow-body">
+          <span class="urow-top">
+            <span class="urow-name">${escapeHtml(u.name)}</span>
+            <span class="urow-q">${quote === null ? '–' : prozent + ' %'}</span>
+          </span>
+          <span class="urow-bar"><span style="width:${quote === null ? 0 : Math.max(prozent, 3)}%;background:${farbe};"></span></span>
+          <span class="sk-note">${angefangen} von ${themen.length} Themen geübt${fenster > 0 ? ' · ' + fenster + ' Antworten gewertet' : ''}</span>
+        </span>
+      </div>`;
+  }).join("");
+}
+
+// --- Liste 4: Staerken und Luecken ---------------------------------------
+function staerkenListe(){
+  const bewertet = GRAMMAR_TOPICS
+    .map(t=>({ t, sk: grammarSkillInfo(t) }))
+    .filter(x=>x.sk.genug);
+  if(bewertet.length === 0){
+    return `<p class="center-text muted" style="margin:8px 0 0;">Sobald ein Thema mindestens ${SKILL_MIN} Aufgaben hat, erscheint es hier.</p>`;
+  }
+  const stark = bewertet.slice().sort((a,b)=>b.sk.quote - a.sk.quote).slice(0, 5);
+  const schwach = bewertet.slice().sort((a,b)=>a.sk.quote - b.sk.quote).slice(0, 5);
+  const zeile = (x, klasse) => `
+    <div class="tl">
+      <span class="tl-ic">${x.t.icon}</span>
+      <span class="tl-n">${escapeHtml(x.t.name)} <span class="muted" style="font-size:11.5px;">· Unit ${x.t.unit}</span></span>
+      <span class="tl-q ${klasse}">${x.sk.prozent} %</span>
+    </div>`;
+  return `
+    <div style="margin-top:10px;">
+      <p style="font-weight:800;font-size:13.5px;color:#2c7a37;margin:0 0 2px;">💪 Sitzt am besten</p>
+      ${stark.map(x=>zeile(x, 'gut')).join("")}
+    </div>
+    <div style="margin-top:14px;">
+      <p style="font-weight:800;font-size:13.5px;color:#b3421f;margin:0 0 2px;">🛠️ Braucht noch Übung</p>
+      ${schwach.map(x=>zeile(x, 'schwach')).join("")}
+    </div>`;
+}
+
+// --- Belohnungen ----------------------------------------------------------
+function rewardDraftLesen(){
+  const n = document.getElementById('rw-name');
+  const p = document.getElementById('rw-price');
+  if(n) state.rewardDraft.name = n.value;
+  if(p) state.rewardDraft.price = p.value;
+}
+
+function belohnungAnlegen(){
+  rewardDraftLesen();
+  const name = (state.rewardDraft.name || "").trim();
+  const preis = parseInt(state.rewardDraft.price, 10);
+  if(name.length < 2){ state.rewardError = "Bitte einen Namen für die Belohnung eintragen."; render(); return; }
+  if(name.length > 40){ state.rewardError = "Der Name darf höchstens 40 Zeichen lang sein."; render(); return; }
+  if(!Number.isFinite(preis) || preis < 50 || preis > 100000){
+    state.rewardError = "Der Preis muss zwischen 50 und 100000 Münzen liegen."; render(); return;
+  }
+  if(!Array.isArray(state.customRewards)) state.customRewards = [];
+  if(state.customRewards.length >= 30){ state.rewardError = "Mehr als 30 eigene Belohnungen gehen nicht."; render(); return; }
+  state.customRewards.push({
+    id: "cr_" + Date.now().toString(36) + Math.floor(Math.random()*1000).toString(36),
+    icon: state.rewardDraft.icon || "🎁",
+    name: name,
+    price: preis
+  });
+  state.rewardDraft = { icon:"🎁", name:"", price:"500" };
+  state.rewardError = null;
+  saveProgress();
+  syncToCloud();
+  render();
+}
+
+function belohnungLoeschen(id){
+  showConfirmModal('Diese Belohnung wirklich löschen?', ()=>{
+    state.customRewards = (state.customRewards || []).filter(r=>r.id !== id);
+    saveProgress();
+    syncToCloud();
+    render();
+  });
+}
+
+// --- Die Seite selbst -----------------------------------------------------
+function renderParents(){
+  if(!state.parentUnlocked) return renderParentGate();
+
+  const sum = aktivitaetSumme();
+  const quote = sum.gesamt > 0 ? Math.round((sum.richtig / sum.gesamt) * 100) : null;
+  const schnitt = computeAvgGrade();
+  const letzte7 = letzteTageStat(7);
+  const tageAktiv = letzte7.filter(d=>d.v + d.g > 0).length;
+  const aufgaben7 = letzte7.reduce((n,d)=>n + d.v + d.g, 0);
+  const eigene = Array.isArray(state.customRewards) ? state.customRewards : [];
+
+  const uebersicht = `
+    <div class="panel">
+      <div class="kpi-grid">
+        <div class="kpi"><span class="kpi-ic">📚</span><span class="kpi-txt">
+          <span class="kpi-nr">${sum.gesamt}</span><span class="kpi-lb">Aufgaben insgesamt</span></span></div>
+        <div class="kpi"><span class="kpi-ic">🎯</span><span class="kpi-txt">
+          <span class="kpi-nr">${quote === null ? '–' : quote + ' %'}</span><span class="kpi-lb">davon richtig</span></span></div>
+        <div class="kpi"><span class="kpi-ic">💎</span><span class="kpi-txt">
+          <span class="kpi-nr">${schnitt === null ? '–' : schnitt.toFixed(2)}</span><span class="kpi-lb">Notenschnitt</span></span></div>
+        <div class="kpi"><span class="kpi-ic">🪙</span><span class="kpi-txt">
+          <span class="kpi-nr">${state.coins}</span><span class="kpi-lb">Münzen im Konto</span></span></div>
+      </div>
+      <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
+        In den letzten 7 Tagen: <strong>${aufgaben7}</strong> Aufgaben an <strong>${tageAktiv}</strong> von 7 Tagen.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:2px;">📊 AUFGABEN PRO TAG</h3>
+      <p class="muted" style="margin:0 0 4px;font-size:12.5px;">Die letzten 30 Tage.</p>
+      ${chartAktivitaet()}
+      <div class="legende">
+        <span class="leg"><span class="leg-dot" style="background:${FARBE_VOKABEL};"></span>Vokabeln</span>
+        <span class="leg"><span class="leg-dot" style="background:${FARBE_GRAMMATIK};"></span>Grammatik</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:2px;">💎 NOTENVERLAUF</h3>
+      <p class="muted" style="margin:0 0 4px;font-size:12.5px;">Die letzten 20 benoteten Tests, 1 oben, 6 unten.</p>
+      ${chartNoten()}
+      <div class="legende">
+        <span class="leg"><span class="leg-dot" style="background:${FARBE_VOKABEL};"></span>Vokabeltest</span>
+        <span class="leg"><span class="leg-dot" style="background:${FARBE_GRAMMATIK};"></span>Grammatiktest</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:6px;">🧠 GRAMMATIK NACH UNITS</h3>
+      ${unitBalken()}
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:0;">⭐ STÄRKEN UND LÜCKEN</h3>
+      ${staerkenListe()}
+    </div>`;
+
+  const belohnungen = `
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:4px;">🎁 EIGENE BELOHNUNG ANLEGEN</h3>
+      <p class="muted" style="margin:0 0 4px;font-size:12.5px;">
+        Symbol wählen, Namen eintippen, Münzpreis festlegen. Die Belohnung erscheint sofort im Shop.
+      </p>
+      <div class="icon-pick">
+        ${REWARD_ICONS.map(i=>`<button type="button" data-rw-icon="${i}" class="${state.rewardDraft.icon === i ? 'gewaehlt' : ''}">${i}</button>`).join("")}
+      </div>
+      <input type="text" id="rw-name" maxlength="40" placeholder="z. B. Eine Stunde Schwimmbad" value="${escapeHtml(state.rewardDraft.name || "")}">
+      <div class="setting-label">Preis in Münzen</div>
+      <input type="number" id="rw-price" min="50" max="100000" step="50" value="${escapeHtml(state.rewardDraft.price || "500")}">
+      ${state.rewardError ? `<p class="center-text" style="color:#b3421f;font-weight:700;margin-top:8px;">⚠️ ${escapeHtml(state.rewardError)}</p>` : ""}
+      <button class="btn" id="rw-add" style="margin-top:12px;">➕ BELOHNUNG ANLEGEN</button>
+      <p class="muted" style="margin-top:8px;font-size:12px;">
+        Zum Vergleich: eine richtige Antwort bringt 10 Münzen, eine ganze Runde also grob 100.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:6px;">📋 EURE BELOHNUNGEN (${eigene.length})</h3>
+      ${eigene.length === 0
+        ? `<p class="center-text muted" style="margin:6px 0 0;">Noch keine eigene Belohnung angelegt. Die sieben mitgelieferten stehen dem Kind trotzdem zur Verfügung.</p>`
+        : eigene.map(r=>`
+          <div class="rw-row">
+            <span class="rw-ic">${r.icon}</span>
+            <span class="rw-txt">
+              <span class="rw-name">${escapeHtml(r.name)}</span>
+              <span class="rw-preis">🪙 ${r.price} Münzen</span>
+            </span>
+            <button class="rw-del" data-rw-del="${escapeHtml(r.id)}">Löschen</button>
+          </div>`).join("")}
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:6px;">📦 MITGELIEFERTE BELOHNUNGEN</h3>
+      ${SHOP_ITEMS.map(r=>`
+        <div class="rw-row">
+          <span class="rw-ic">${r.icon}</span>
+          <span class="rw-txt">
+            <span class="rw-name">${escapeHtml(r.name)}</span>
+            <span class="rw-preis">🪙 ${r.price} Münzen</span>
+          </span>
+        </div>`).join("")}
+    </div>`;
+
+  app.innerHTML = `
+    ${renderHeader("Elternbereich", true)}
+    ${playerBadgeHtml(true)}
+
+    <div class="panel">
+      <p class="center-text" style="margin:0;font-weight:700;color:#1e4515;">
+        Lernfortschritt von ${escapeHtml(state.playerName || "deinem Kind")}
+      </p>
+      <div class="parent-tabs" style="margin-top:12px;margin-bottom:0;">
+        <button class="ptab ${state.parentTab === 'uebersicht' ? 'active' : ''}" data-ptab="uebersicht">📈 Fortschritt</button>
+        <button class="ptab ${state.parentTab === 'belohnungen' ? 'active' : ''}" data-ptab="belohnungen">🎁 Belohnungen</button>
+      </div>
+    </div>
+
+    ${state.parentTab === 'belohnungen' ? belohnungen : uebersicht}
+
+    <button class="btn danger" id="back-btn">✕ ZURÜCK ZUM SPIEL</button>
+  `;
+
+  document.querySelectorAll('[data-ptab]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      if(state.parentTab === 'belohnungen'){ rewardDraftLesen(); }
+      state.parentTab = el.dataset.ptab;
+      state.rewardError = null;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-rw-icon]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      rewardDraftLesen();
+      state.rewardDraft.icon = el.dataset.rwIcon;
+      render();
+    });
+  });
+  const addBtn = document.getElementById('rw-add');
+  if(addBtn){ addBtn.addEventListener('click', belohnungAnlegen); }
+  document.querySelectorAll('[data-rw-del]').forEach(el=>{
+    el.addEventListener('click', ()=>{ belohnungLoeschen(el.dataset.rwDel); });
+  });
+  document.getElementById('back-btn').addEventListener('click', ()=>{
+    state.screen = "start";
+    render();
+  });
+}
+
+// Die Schleuse davor: ohne den Eltern-PIN geht hier nichts.
+function renderParentGate(){
+  const hatPin = !!(state.parentPinHash && state.parentPinSalt);
+  app.innerHTML = `
+    ${renderHeader("Elternbereich", true)}
+    ${playerBadgeHtml(true)}
+
+    <div class="panel">
+      <h3 style="font-size:17px;margin-bottom:8px;">🔒 Nur für Eltern</h3>
+      ${hatPin ? `
+        <p class="center-text muted" style="margin-bottom:12px;">
+          Bitte den Eltern-PIN eingeben. Dahinter liegen der Lernfortschritt und die Belohnungen.
+        </p>
+        <input type="password" id="parent-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="4-stelliger Eltern-PIN">
+        ${state.parentPinError ? `<p class="center-text" style="color:#b3421f;font-weight:700;margin-top:8px;">⚠️ ${escapeHtml(state.parentPinError)}</p>` : ""}
+        <button class="btn" id="parent-unlock" style="margin-top:12px;">🔓 ÖFFNEN</button>
+      ` : `
+        <p class="center-text muted" style="margin-bottom:12px;">
+          Für dieses Profil gibt es noch keinen Eltern-PIN. Legt ihn gemeinsam fest &ndash; er schützt
+          diesen Bereich und bestätigt später die eingelösten Belohnungen.
+        </p>
+        <button class="btn" id="parent-setpin" style="margin-top:4px;">🔑 ELTERN-PIN FESTLEGEN</button>
+      `}
+    </div>
+
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+  `;
+
+  const unlock = document.getElementById('parent-unlock');
+  if(unlock){
+    const pruefen = async ()=>{
+      const feld = document.getElementById('parent-pin');
+      const pin = (feld ? feld.value : "").trim();
+      if(!/^[0-9]{4}$/.test(pin)){
+        state.parentPinError = "Bitte vier Ziffern eingeben."; render(); return;
+      }
+      unlock.disabled = true;
+      unlock.textContent = "⏳ WIRD GEPRÜFT ...";
+      const hash = await hashParentPin(pin, state.parentPinSalt);
+      if(hash !== state.parentPinHash){
+        state.parentPinError = "Der PIN stimmt nicht."; render(); return;
+      }
+      state.parentUnlocked = true;
+      state.parentPinError = null;
+      render();
+    };
+    unlock.addEventListener('click', pruefen);
+    const feld = document.getElementById('parent-pin');
+    if(feld){ feld.addEventListener('keydown', e=>{ if(e.key === "Enter") pruefen(); }); }
+  }
+  const setzen = document.getElementById('parent-setpin');
+  if(setzen){
+    setzen.addEventListener('click', ()=>{
+      showSetParentPinModal(()=>{ state.parentUnlocked = true; render(); });
+    });
+  }
+  document.getElementById('back-btn').addEventListener('click', ()=>{
+    state.screen = "start";
+    render();
+  });
+}
+
 function renderShop(){
   app.innerHTML = `
     ${renderHeader("Tausche Münzen gegen Items")}
@@ -3777,7 +4375,7 @@ function renderShop(){
     <div class="panel">
       <h3 style="font-size:16px;margin-bottom:10px;">SHOP</h3>
       <div class="shop-grid">
-        ${SHOP_ITEMS.map(item=>`
+        ${alleShopItems().map(item=>`
           <div class="shop-item">
             <span class="slot-icon">${item.icon}</span>
             <span class="slot-name">${item.name}</span>
@@ -4448,6 +5046,8 @@ function renderGrammarQuiz(){
 
 function cancelGrammarGame(){
   showConfirmModal('Spiel abbrechen und zum Menü zurückkehren?', ()=>{
+    protokolliereRunde("grammar", state.grammarSessionLog);
+    saveProgress(); syncToCloud();
     state.screen = "start";
     render();
   });
@@ -4576,6 +5176,7 @@ function handleGrammarAnswer(btn, choice, exercise){
 }
 
 function finishGrammarSession(result){
+  protokolliereRunde("grammar", state.grammarSessionLog);
   state.coins = Math.max(0, state.coins + state.grammarSessionCoins);
   state.grammarGameResult = result;
   state.grammarQuote = pickRandom(GRAMMAR_MOTIVATION_QUOTES);
