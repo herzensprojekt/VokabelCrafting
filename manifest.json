@@ -1,0 +1,16 @@
+{
+  "name": "LingoCrafter",
+  "short_name": "LingoCrafter",
+  "description": "Englisch-Vokabeln und Grammatik üben im Minecraft-Look. Kostenlos, ohne Werbung.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#7ec6ea",
+  "theme_color": "#5b9c3f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

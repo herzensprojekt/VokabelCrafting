@@ -2,8 +2,15 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LingoCrafter</title>
+<meta name="description" content="LingoCrafter: Englisch-Vokabeln und Grammatik üben im Minecraft-Look. Kostenlos, ohne Werbung.">
+<meta name="theme-color" content="#5b9c3f">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="LingoCrafter">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -67,11 +74,11 @@
   .title-block{ text-align:center; margin-bottom:14px; }
   .title-block.compact{ margin-bottom:6px; }
   .logo-img{
-    max-width:min(88%, 380px); width:100%; height:auto; display:inline-block;
+    max-width:min(94%, 440px); width:100%; height:auto; display:inline-block;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     animation: logo-glow 2.6s ease-in-out infinite;
   }
-  .title-block.compact .logo-img{ max-width:min(52%, 190px); }
+  .title-block.compact .logo-img{ max-width:min(58%, 215px); }
   @keyframes logo-glow{
     0%,100%{ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25)); }
     50%{ filter: drop-shadow(0 4px 16px rgba(255,244,168,0.85)); }
@@ -162,12 +169,18 @@
 
   .mode-grid{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px; }
   .mode-btn{
+    display:block; width:100%; appearance:none; -webkit-appearance:none;
     font-family:var(--font); font-weight:600; font-size:15px; text-align:center; padding:16px 14px;
     color:#fff; background:linear-gradient(135deg,#8a8a8a,#636363); border:none; border-radius:14px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.18);
     cursor:pointer; transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
   }
   .mode-btn:hover{ transform:translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.22); }
+  .mode-btn:focus-visible, .btn:focus-visible, .linkbtn:focus-visible, .ptab:focus-visible,
+  .icon-pick button:focus-visible, .rw-del:focus-visible, .rw-back:focus-visible,
+  .sk-go:focus-visible, .unit-bar:focus-visible{
+    outline:3px solid #2f5f9e; outline-offset:2px;
+  }
   .mode-btn:active{ transform:translateY(1px); box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
   .mode-btn.active{
     background:linear-gradient(135deg, #4db55c, #2c7a37);
@@ -221,7 +234,7 @@
 
   /* Auf dem Startbildschirm darf das Logo kleiner sein - sonst ist der halbe
      erste Bildschirm weg, bevor irgendetwas Bedienbares kommt. */
-  .title-block.start .logo-img{ max-width:min(64%, 250px); }
+  .title-block.start .logo-img{ max-width:min(70%, 285px); }
   .coin-chip{
     flex:0 0 auto; display:inline-flex; align-items:center; gap:5px;
     font-weight:800; font-size:15px; color:#4a3400;
@@ -448,6 +461,13 @@
   .bel-meta{ display:block; font-size:12.5px; color:#8a7143; margin-top:2px; }
   .parent-open-btn{ background:linear-gradient(180deg,#e0a24a,#a86b18); }
   .parent-lock-btn{ background:linear-gradient(180deg,#6f7d8c,#41505f); }
+  .linkbtn{ background:none; border:none; padding:2px 4px; cursor:pointer;
+    font-family:var(--font); font-size:13px; font-weight:600; color:#2f5f9e;
+    text-decoration:underline; }
+  .linkbtn:hover{ color:#1a3f70; }
+  .impressum{ text-align:left; font-size:14px; line-height:1.65; color:#2d3a2a; }
+  .impressum p{ margin:0 0 12px; }
+  .impressum a{ color:#2f5f9e; }
   .gram-tip{
     margin-top:14px; padding:14px 16px; background:#fdf1c7; border-radius:14px;
     color:#5e4600; font-weight:600; font-size:15.5px; line-height:1.55;
@@ -1154,7 +1174,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "14.2 – Endstein";
+const APP_VERSION = "15.1 – Amboss";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1458,6 +1478,7 @@ const state = {
   grammarTopicId: null,
   grammarSkills: {},      // {themenId: {r:"1101...", n:Gesamtzahl, ts:Zeitstempel}}
   grammarStatsReturnTo: "start",
+  impressumReturnTo: "start",
   grammarOpenUnit: null,   // welche Unit ist aufgeklappt (immer hoechstens eine)
   activityLog: {},         // {"2026-08-22": {v, vc, g, gc}} - Aufgaben und Treffer pro Tag
   customRewards: [],       // von den Eltern angelegte Belohnungen {id, icon, name, price}
@@ -1714,6 +1735,12 @@ function dateKey(d){
   const p = n=>String(n).padStart(2,"0");
   return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate());
 }
+// Uhrzeit ebenfalls lokal. toISOString() rechnet in UTC - abends nach 22 Uhr
+// haette das sonst den Folgetag eingetragen.
+function timeKey(d){
+  const p = n=>String(n).padStart(2,"0");
+  return p(d.getHours()) + ":" + p(d.getMinutes());
+}
 function heuteKey(){ return dateKey(new Date()); }
 
 function recordActivity(bereich, anzahl, richtig){
@@ -1964,13 +1991,14 @@ function render(){
   if(state.screen==="customvocab") return renderCustomVocab();
   if(state.screen==="challengeend") return renderChallengeRoundEnd();
   if(state.screen==="gradecalendar") return renderGradeCalendar();
-  if(state.screen==="parentconfirm") return renderParentConfirm();
   if(state.screen==="grammarintro") return renderGrammarIntro();
   if(state.screen==="grammarquiz") return renderGrammarQuiz();
   if(state.screen==="grammarcertificate") return renderGrammarCertificate();
   if(state.screen==="grammarstats") return renderGrammarStats();
   if(state.screen==="parents") return renderParents();
   if(state.screen==="confirmreward") return renderConfirmReward();
+  if(state.screen==="impressum") return renderImpressum();
+  if(state.screen==="datenschutz") return renderDatenschutz();
 }
 
 const TILE_STONE  = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAACJ0lEQVR42gXBya7cRBQA0DvV4KmHSFlnF0gWfBELJP4Z2CYvUgZBXrvtsmu6VZyDv//xJ2vJ3IfWkC2UlMGQQ8ipVmsGTLF7iyXXjsZ3kreLefP+nejNFTWiZ8qtLHRRbDkGN1E+R9ZN7j4l43l7yL+vhb/zAv+dJ4EJUjnzztUfqY/z+j0PkrPk9DmAoeonI0SJpatpyYURJy2QGdq5mYHPVOEY6z3y1mUm7BOskbDQVNe0gnSh1yw9Xlbx1Y4KXm+XW+Qg6GRkF4OCYenG1GS6Ma3UDkM9d7S9OkrdjmXftfTLRVWBrMDr7oWgHcF2O8QZiJZwDJMd23Q6EtpnKGBAw/Lsc4eJ7+0kaQZvdno8FS9UY7sO2A6KSxg3F/zgWuINI2XaW5o6tUE4ub/++ZuH5r4RgAVKZ2Hne2lgk3ZxFblTAyzanORDfvvw6wZAJts6R8dL23bPFPDrl0/vPv6i0MaaS4ED4vVuoaFs24mXDnte8dBithhQFk4hPLfH88VV2YcCOg5dX37EsWaqQ4BTjjamSC3iXeeGlfCmzbDl0qvvt2osHpNN+egTJZgpPSbovlmYzeN6XHtCs7NPtE2g5nlmSfQEzYsnErJSdLk8xxMJW1KAOYm0MtcmdQjO6cDG8U8EWBTRVeKc67O6otqyp32skrujfrjEtYp6V6StcJ/ttqGBKhQcliuDWvLc22Jg5Rza1UV7WmdOrHjG0awJB2diFf0fOhtozI3dWGsAAAAASUVORK5CYII=";
@@ -2113,11 +2141,14 @@ function redeemInventoryItem(id){
     itemId: id,
     name: item ? item.name : id,
     icon: item ? item.icon : "🎁",
-    date: new Date().toISOString().slice(0,10),
-    time: new Date().toISOString().slice(11,16),
+    date: dateKey(new Date()),
+    time: timeKey(new Date()),
     status: "unconfirmed"
   };
   state.redeemLog.unshift(entry);
+  // Begrenzen, sonst waechst das Profil endlos und der Cloud-Schreibvorgang
+  // schlaegt irgendwann still fehl.
+  if(state.redeemLog.length > 200){ state.redeemLog.length = 200; }
   saveProgress();
   syncCoinsAndInventoryDelta(0, id, -1);
   syncNewRedeemEntry(entry);
@@ -2405,10 +2436,19 @@ function renderLogin(){
           kommst du auf einem anderen Gerät an deinen Spielstand.<br>
           Neu hier? Einfach Wunschnamen und PIN eintippen und auf ANMELDEN tippen.
         </p>
+        <p class="center-text" style="margin-top:12px;">
+          <button type="button" class="linkbtn" id="impressum-login">Impressum</button>
+          <span style="opacity:0.5;">&middot;</span>
+          <button type="button" class="linkbtn" id="datenschutz-login">Datenschutz</button>
+        </p>
       `}
     </div>
   `;
 
+  const impLogin = document.getElementById('impressum-login');
+  if(impLogin){ impLogin.addEventListener('click', ()=>oeffneImpressum("start")); }
+  const dsLogin = document.getElementById('datenschutz-login');
+  if(dsLogin){ dsLogin.addEventListener('click', ()=>oeffneDatenschutz("start")); }
   const nameInput = document.getElementById('player-name-input');
   const pinInput = document.getElementById('player-pin-input');
 
@@ -2487,18 +2527,18 @@ function renderStart(){
     <div class="panel">
       <h3 style="font-size:16px;margin-bottom:10px;">WAS MÖCHTEST DU ÜBEN?</h3>
       <div class="main-mode-grid">
-        <div class="mode-btn main-mode-card ${state.mainMode==='vocab'?'active':''}" data-mainmode="vocab">
+        <button type="button" class="mode-btn main-mode-card ${state.mainMode==='vocab'?'active':''}" data-mainmode="vocab"> aria-pressed="${state.mainMode==='vocab'}"
           <span class="mm-check">✓</span>
           <span class="mm-icon">📖</span>
           <span class="mm-title">Vokabeln</span>
           <span class="mm-sub">Vokabeln lernen &amp; abfragen</span>
-        </div>
-        <div class="mode-btn main-mode-card ${state.mainMode==='grammar'?'active':''}" data-mainmode="grammar">
+        </button>
+        <button type="button" class="mode-btn main-mode-card ${state.mainMode==='grammar'?'active':''}" data-mainmode="grammar"> aria-pressed="${state.mainMode==='grammar'}"
           <span class="mm-check">✓</span>
           <span class="mm-icon">🧠</span>
           <span class="mm-title">Grammatik</span>
           <span class="mm-sub">Regeln üben &ndash; ruhig oder als Spiel</span>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -2532,14 +2572,14 @@ function renderStart(){
                 ? `<span class="gt-orb ${sk.level.key}" title="${sk.level.name}">${sk.level.icon}</span>`
                 : `<span class="gt-orb leer" title="Noch nicht geübt">●</span>`;
               return `
-              <div class="mode-btn gram-tile ${state.grammarTopicId===t.id?'active':''}" data-grammar-topic="${t.id}" data-unit="${t.unit}">
+              <button type="button" class="mode-btn gram-tile ${state.grammarTopicId===t.id?'active':''}" data-grammar-topic="${t.id}" data-unit="${t.unit}"> aria-pressed="${state.grammarTopicId===t.id}"
                 <span class="gt-icon">${t.icon}</span>
                 <span class="gt-txt">
                   <span class="gt-name">${escapeHtml(t.name)}</span>
                   <small>${escapeHtml(t.subtitle)}</small>
                 </span>
                 ${stufe}
-              </div>`;
+              </button>`;
             }).join("")}
           </div>` : ''}
         </div>`;
@@ -2555,51 +2595,51 @@ function renderStart(){
 
       <div class="setting-label">Richtung</div>
       <div class="seg-row">
-        <div class="mode-btn seg ${state.direction==='de-en'?'active':''}" data-direction="de-en">
+        <button type="button" class="mode-btn seg ${state.direction==='de-en'?'active':''}" data-direction="de-en"> aria-pressed="${state.direction==='de-en'}"
           Deutsch &rarr; Englisch
-        </div>
-        <div class="mode-btn seg ${state.direction==='en-de'?'active':''}" data-direction="en-de">
+        </button>
+        <button type="button" class="mode-btn seg ${state.direction==='en-de'?'active':''}" data-direction="en-de"> aria-pressed="${state.direction==='en-de'}"
           Englisch &rarr; Deutsch
-        </div>
+        </button>
       </div>
 
       <div class="setting-label">Spiel</div>
       <div class="game-grid">
-        <div class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc">
+        <button type="button" class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc"> aria-pressed="${state.mode==='mc'}"
           <span class="gm-ic">🎯</span>
           <span class="gm-txt">
             <span class="gm-name">Multiple Choice</span>
             <small>4 Antworten zur Auswahl</small>
           </span>
-        </div>
-        <div class="mode-btn game-tile ${state.mode==='type'?'active':''}" data-mode="type">
+        </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='type'?'active':''}" data-mode="type"> aria-pressed="${state.mode==='type'}"
           <span class="gm-ic">📝</span>
           <span class="gm-txt">
             <span class="gm-name">Vokabeltest</span>
             <small>Selbst schreiben, mit Schulnote</small>
           </span>
-        </div>
-        <div class="mode-btn game-tile ${state.mode==='mix'?'active':''}" data-mode="mix">
+        </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='mix'?'active':''}" data-mode="mix"> aria-pressed="${state.mode==='mix'}"
           <span class="gm-ic">🔀</span>
           <span class="gm-txt">
             <span class="gm-name">Gemischt</span>
             <small>Mal Auswahl, mal Eintippen</small>
           </span>
-        </div>
-        <div class="mode-btn game-tile ${state.mode==='challenge'?'active':''}" data-mode="challenge">
+        </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='challenge'?'active':''}" data-mode="challenge"> aria-pressed="${state.mode==='challenge'}"
           <span class="gm-ic">⚔️</span>
           <span class="gm-txt">
             <span class="gm-name">Die Challenge</span>
             <small>10 Sekunden gegen den Bösewicht</small>
           </span>
-        </div>
-        <div class="mode-btn game-tile ${state.mode==='flood'?'active':''}" data-mode="flood">
+        </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='flood'?'active':''}" data-mode="flood"> aria-pressed="${state.mode==='flood'}"
           <span class="gm-ic">🌊</span>
           <span class="gm-txt">
             <span class="gm-name">Der Flutungsraum</span>
             <small>Klettere dem Wasser davon</small>
           </span>
-        </div>
+        </button>
       </div>
 
       <button class="btn secondary small" id="custom-vocab-btn" style="margin-top:16px;" ${state.cloudId ? "" : "disabled"}>➕ Eigene Vokabeln hinzufügen</button>
@@ -2636,7 +2676,11 @@ function renderStart(){
       <button class="btn secondary" id="support-btn" style="margin-top:6px;"><span class="paypal-badge-inline">Pay<span style="color:#c9e2ff;">Pal</span></span> &nbsp;Unterstützen</button>
     </div>
 
-    <footer class="note">Herzensprojekt GmbH &middot; Version ${APP_VERSION}<br><span style="font-size:12px;opacity:0.85;">Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt oder unterstützt.</span></footer>
+    <footer class="note">Herzensprojekt GmbH &middot; Version ${APP_VERSION}<br>
+      <button type="button" class="linkbtn" id="impressum-start">Impressum</button>
+      <span style="opacity:0.5;">&middot;</span>
+      <button type="button" class="linkbtn" id="datenschutz-start">Datenschutz</button><br>
+      <span style="font-size:12px;opacity:0.85;">Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt oder unterstützt.</span></footer>
   `;
 
   document.querySelectorAll('.avatar-option').forEach(el=>{
@@ -2737,6 +2781,10 @@ function renderStart(){
   });
   document.getElementById('shop-btn').addEventListener('click', ()=>{ state.screen="shop"; state.shopReturnTo="start"; render(); attemptCloudLogin(true); });
   document.getElementById('leaderboard-btn').addEventListener('click', ()=>{ openLeaderboard("start"); });
+  const impStart = document.getElementById('impressum-start');
+  if(impStart){ impStart.addEventListener('click', ()=>oeffneImpressum("start")); }
+  const dsStart = document.getElementById('datenschutz-start');
+  if(dsStart){ dsStart.addEventListener('click', ()=>oeffneDatenschutz("start")); }
   const parentsBtn = document.getElementById('parents-btn');
   if(parentsBtn){
     parentsBtn.addEventListener('click', ()=>{
@@ -4567,7 +4615,7 @@ function renderConfirmReward(){
     const eintrag = bestaetigungEintrag();
     if(eintrag){
       eintrag.status = "confirmed";
-      eintrag.confirmedAt = new Date().toISOString().slice(0,10);
+      eintrag.confirmedAt = dateKey(new Date());
       saveProgress();
       syncToCloud();
     }
@@ -4665,6 +4713,248 @@ function teileBelohnungsbild(entryId){
       });
     }
   }, "image/png");
+}
+
+
+/* ---------------------------------------------------
+   IMPRESSUM
+   Muss von jeder Seite aus in wenigen Schritten erreichbar sein - deshalb
+   steht der Link sowohl im Fuss der Anmeldeseite als auch im Fuss des
+   Startbildschirms.
+--------------------------------------------------- */
+function oeffneImpressum(zurueck){
+  state.impressumReturnTo = zurueck || "start";
+  state.screen = "impressum";
+  render();
+}
+
+function renderImpressum(){
+  app.innerHTML = `
+    ${renderHeader("Impressum", true)}
+
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:10px;">ANGABEN GEMÄSS § 5 DDG</h3>
+      <div class="impressum">
+        <p><strong>Herzensprojekt GmbH</strong><br>
+        Mülheimer Straße 94<br>
+        40882 Ratingen<br>
+        Deutschland</p>
+
+        <p>Tel.: <a href="tel:+4921021461269">021021461269</a><br>
+        E-Mail: <a href="mailto:info@herzensprojekt.de">info@herzensprojekt.de</a></p>
+
+        <p>Registergericht: Düsseldorf<br>
+        Registernummer: HRB 82421</p>
+
+        <p>Geschäftsführer: Markus Kister</p>
+
+        <p>Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG:<br>
+        DE316754475</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">HINWEISE</h3>
+      <p class="muted" style="font-size:13px;margin:0 0 8px;">
+        LingoCrafter ist kein offizielles Minecraft-Produkt und wurde weder von Mojang
+        noch von Microsoft genehmigt oder unterstützt.
+      </p>
+      <p class="muted" style="font-size:13px;margin:0;">
+        Version ${APP_VERSION}
+      </p>
+    </div>
+
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+  `;
+  document.getElementById('back-btn').addEventListener('click', ()=>{
+    state.screen = state.impressumReturnTo || "start";
+    render();
+  });
+}
+
+
+function oeffneDatenschutz(zurueck){
+  state.impressumReturnTo = zurueck || "start";
+  state.screen = "datenschutz";
+  render();
+}
+
+function renderDatenschutz(){
+  app.innerHTML = `
+    ${renderHeader("Datenschutz", true)}
+
+    <div class="panel">
+      <p class="impressum" style="margin:0;">
+        Diese Erklärung beschreibt, welche Daten LingoCrafter verarbeitet. Sie ist bewusst
+        in einfacher Sprache gehalten, damit auch Kinder und Jugendliche verstehen, worum es geht.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">1. WER IST VERANTWORTLICH?</h3>
+      <div class="impressum">
+        <p>Herzensprojekt GmbH<br>
+        Mülheimer Straße 94, 40882 Ratingen, Deutschland<br>
+        Geschäftsführer: Markus Kister<br>
+        E-Mail: <a href="mailto:info@herzensprojekt.de">info@herzensprojekt.de</a><br>
+        Tel.: <a href="tel:+4921021461269">021021461269</a></p>
+        <p>Einen Datenschutzbeauftragten haben wir nicht bestellt; wir sind dazu nicht verpflichtet.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">2. UNSER GRUNDSATZ</h3>
+      <div class="impressum">
+        <p>LingoCrafter zeigt <strong>keine Werbung</strong>, verwendet <strong>keine Analyse- oder
+        Tracking-Dienste</strong> und <strong>verkauft keine Daten</strong>. Wir erstellen keine
+        Nutzerprofile zu Werbezwecken. Es gibt keine Cookies zu Werbe- oder Analysezwecken.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">3. WELCHE DATEN WERDEN VERARBEITET?</h3>
+      <div class="impressum">
+        <p><strong>Beim Anlegen eines Kontos:</strong> ein frei gewählter Spielername und eine
+        vierstellige PIN. Aus beidem erzeugt die App im Hintergrund ein Anmeldekonto bei
+        Firebase Authentication. Die PIN wird nicht im Klartext bei uns gespeichert.</p>
+
+        <p><strong>Während des Spielens:</strong> gewählter Avatar, Münzstand, längste Serie
+        richtiger Antworten, erspielte Schulnoten (Datum, Uhrzeit, Note, Art des Tests),
+        selbst eingetragene Vokabeln, Fortschritt je Grammatikthema (die jeweils letzten
+        20 Antworten als Folge von richtig/falsch) sowie eine Tagesstatistik: pro Tag die
+        Anzahl bearbeiteter Aufgaben und wie viele davon richtig waren, getrennt nach
+        Vokabeln und Grammatik. Die Tagesstatistik wird nach 120 Tagen automatisch gelöscht.</p>
+
+        <p><strong>Belohnungen:</strong> welche Belohnungen gekauft und eingelöst wurden,
+        wann und ob die Eltern sie bestätigt haben. Dazu die von den Eltern selbst
+        angelegten Belohnungen und deren Preise.</p>
+
+        <p><strong>Eltern-PIN:</strong> wird ausschließlich als kryptografischer Hash
+        (PBKDF2, 300.000 Runden, mit zufälligem Salt) gespeichert, nicht im Klartext.</p>
+
+        <p><strong>Was wir NICHT erheben:</strong> keine E-Mail-Adresse, keinen echten Namen,
+        kein Geburtsdatum, keine Anschrift, keinen Standort, keine Kontakte, keinen Zugriff
+        auf Kamera oder Mikrofon.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">4. WO LIEGEN DIE DATEN?</h3>
+      <div class="impressum">
+        <p>Die Spieldaten liegen in <strong>Google Cloud Firestore</strong>, Standort
+        <strong>eur3 (Europäische Union)</strong>. Die Anmeldung läuft über
+        <strong>Firebase Authentication</strong> (ebenfalls Google). Anbieter ist
+        Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. Eine
+        Übermittlung in die USA an Google LLC lässt sich dabei nicht ausschließen; sie ist
+        durch den EU-US Data Privacy Framework und Standardvertragsklauseln abgesichert.</p>
+
+        <p>Die Seite selbst wird über <strong>GitHub Pages</strong> ausgeliefert
+        (GitHub Inc., 88 Colin P. Kelly Jr. Street, San Francisco, USA). GitHub verarbeitet
+        dabei technisch notwendige Server-Protokolldaten, insbesondere die IP-Adresse.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">5. WAS IST ÖFFENTLICH SICHTBAR?</h3>
+      <div class="impressum">
+        <p>Die App hat eine <strong>Rangliste</strong>. Dort sind für andere Nutzerinnen und
+        Nutzer der gewählte Spielername, der Münzstand und der Notendurchschnitt sichtbar.
+        Wer das nicht möchte, sollte einen Fantasienamen wählen &ndash; ein echter Vorname
+        ist für die Nutzung nicht nötig.</p>
+
+        <p><strong>Wichtiger Hinweis zum aktuellen Stand:</strong> Die Datenbank ist derzeit
+        so eingestellt, dass Profildaten technisch auch ohne Anmeldung ausgelesen werden
+        könnten. Das stammt aus der Zeit, als die App nur im Familien- und Freundeskreis
+        genutzt wurde. Wir arbeiten daran, den Lesezugriff auf angemeldete Konten zu
+        beschränken. Bis dahin gilt: Bitte keine sensiblen Inhalte als eigene Vokabeln
+        eintragen und einen Fantasienamen verwenden.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">6. SPEICHERUNG AUF DEM GERÄT</h3>
+      <div class="impressum">
+        <p>Damit der Spielstand auch ohne Verbindung erhalten bleibt, speichert die App ihn
+        zusätzlich lokal im Browser (<em>localStorage</em>). Das ist technisch notwendig für
+        die Funktion der App (§ 25 Abs. 2 Nr. 2 TDDG) und benötigt daher keine Einwilligung.
+        Über die Browsereinstellungen lässt sich dieser Speicher jederzeit löschen.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">7. DIENSTE DRITTER</h3>
+      <div class="impressum">
+        <p><strong>Google Fonts:</strong> Die Schriftart Poppins wird beim Laden der Seite von
+        Google-Servern (fonts.googleapis.com, fonts.gstatic.com) abgerufen. Dabei wird die
+        IP-Adresse an Google übertragen. Rechtsgrundlage ist unser berechtigtes Interesse an
+        einer einheitlichen Darstellung (Art. 6 Abs. 1 lit. f DSGVO). Wir planen, die
+        Schriftart künftig selbst auszuliefern, damit dieser Abruf entfällt.</p>
+
+        <p><strong>cdnjs (Cloudflare):</strong> Nur wenn eine Excel-Datei (.xlsx) importiert
+        wird, lädt die App einmalig eine Hilfsbibliothek von cdnjs.cloudflare.com. Beim
+        Import von CSV-Dateien passiert das nicht. Wer keine Excel-Datei importiert,
+        kontaktiert diesen Dienst nie.</p>
+
+        <p><strong>PayPal und WhatsApp:</strong> werden ausschließlich geöffnet, wenn man
+        aktiv auf den entsprechenden Knopf tippt. Vorher findet keine Verbindung statt.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">8. RECHTSGRUNDLAGEN</h3>
+      <div class="impressum">
+        <p>Konto, Spielstand und Lernfortschritt verarbeiten wir, um die App überhaupt
+        bereitstellen zu können &ndash; Art. 6 Abs. 1 lit. b DSGVO (Erfüllung des
+        Nutzungsverhältnisses).</p>
+        <p>Technische Protokolldaten des Hostings und die Schriftauslieferung stützen wir auf
+        Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an sicherem, funktionierendem Betrieb).</p>
+        <p>Richtet sich das Angebot an Kinder unter 16 Jahren, ist zusätzlich die Einwilligung
+        der Eltern erforderlich (Art. 8 DSGVO). Eltern sollten das Konto daher gemeinsam mit
+        dem Kind einrichten.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">9. WIE LANGE?</h3>
+      <div class="impressum">
+        <p>Kontodaten und Spielstand bleiben gespeichert, solange das Konto besteht.
+        Die Tagesstatistik wird nach 120 Tagen automatisch gelöscht, der Notenkalender
+        umfasst die letzten 60 Einträge, der Einlöse-Verlauf die letzten 200. Auf Wunsch
+        löschen wir das gesamte Konto.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">10. EURE RECHTE</h3>
+      <div class="impressum">
+        <p>Ihr habt das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung
+        (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20)
+        und Widerspruch (Art. 21 DSGVO). Bei Kindern üben die Eltern diese Rechte aus.</p>
+
+        <p><strong>Konto löschen:</strong> Eine Nachricht mit dem Spielernamen an
+        <a href="mailto:info@herzensprojekt.de">info@herzensprojekt.de</a> genügt. Wir löschen
+        das Konto und alle zugehörigen Daten.</p>
+
+        <p>Außerdem könnt ihr euch bei einer Aufsichtsbehörde beschweren. Für uns zuständig ist:
+        Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen,
+        Kavalleriestraße 2&ndash;4, 40213 Düsseldorf.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">11. ÄNDERUNGEN</h3>
+      <div class="impressum">
+        <p>Wenn sich die App ändert, passen wir diese Erklärung an.
+        Stand: Version ${APP_VERSION}.</p>
+      </div>
+    </div>
+
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+  `;
+  document.getElementById('back-btn').addEventListener('click', ()=>{
+    state.screen = state.impressumReturnTo || "start";
+    render();
+  });
 }
 
 function renderShop(){
@@ -4888,8 +5178,42 @@ function loadSheetJS(){
   return sheetJsLoadPromise;
 }
 
+// CSV lesen wir selbst - dafuer braucht es keine fremde Bibliothek, und es
+// funktioniert auch ohne Internet. Trennzeichen ; , oder Tab, Anfuehrungs-
+// zeichen werden beachtet.
+function parseCsv(text){
+  const zeilen = String(text).replace(/\r\n?/g, "\n").split("\n");
+  const trenner = (zeilen[0].match(/;/g) || []).length >= (zeilen[0].match(/,/g) || []).length ? ";" : ",";
+  return zeilen.filter(z=>z.trim() !== "").map(zeile=>{
+    const felder = []; let feld = ""; let inAnf = false;
+    for(let i = 0; i < zeile.length; i++){
+      const c = zeile[i];
+      if(c === '"'){
+        if(inAnf && zeile[i+1] === '"'){ feld += '"'; i++; }
+        else { inAnf = !inAnf; }
+      } else if((c === trenner || c === "\t") && !inAnf){
+        felder.push(feld); feld = "";
+      } else { feld += c; }
+    }
+    felder.push(feld);
+    return felder.map(f=>f.trim());
+  });
+}
+
 async function handleExcelFile(file){
   const statusEl = document.getElementById('excel-status');
+  const istCsv = /\.csv$/i.test(file.name || "") || file.type === "text/csv";
+  if(istCsv){
+    try{
+      if(statusEl){ statusEl.textContent = "⏳ Lese Datei …"; }
+      const rows = parseCsv(await file.text());
+      uebernehmeVokabelZeilen(rows, statusEl);
+    }catch(e){
+      console.error(e);
+      if(statusEl){ statusEl.textContent = "⚠️ Die Datei konnte nicht gelesen werden."; }
+    }
+    return;
+  }
   if(statusEl){ statusEl.textContent = "⏳ Lade Excel-Bibliothek …"; }
   try{
     const XLSX = await loadSheetJS();
@@ -4898,23 +5222,32 @@ async function handleExcelFile(file){
     const wb = XLSX.read(buf, { type:"array" });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { header:1 });
-    let added = 0;
-    rows.forEach(row=>{
-      if(!row || row.length < 2) return;
-      const de = String(row[0]==null ? "" : row[0]).trim();
-      const en = String(row[1]==null ? "" : row[1]).trim();
-      // Kopfzeile ("Deutsch"/"Englisch" o.ä.) überspringen
-      if(/^(deutsch|german|de)$/i.test(de) && /^(englisch|english|en)$/i.test(en)) return;
-      if(addCustomVocabEntry(de, en)) added++;
-    });
-    saveProgress();
-    syncToCloud();
-    if(statusEl){ statusEl.textContent = added > 0 ? `✅ ${added} Vokabeln aus der Datei übernommen.` : "⚠️ Keine gültigen Zeilen gefunden (Spalte A = Deutsch, Spalte B = Englisch)."; }
-    render();
+    uebernehmeVokabelZeilen(rows, statusEl);
   }catch(e){
     console.error(e);
     if(statusEl){ statusEl.textContent = "⚠️ " + e.message; }
   }
+}
+
+// Gemeinsamer Schritt fuer CSV und Excel: Zeilen in eigene Vokabeln umwandeln.
+function uebernehmeVokabelZeilen(rows, statusEl){
+  let added = 0;
+  (rows || []).forEach(row=>{
+    if(!row || row.length < 2) return;
+    const de = String(row[0]==null ? "" : row[0]).trim();
+    const en = String(row[1]==null ? "" : row[1]).trim();
+    // Kopfzeile ("Deutsch"/"Englisch" o.ä.) überspringen
+    if(/^(deutsch|german|de)$/i.test(de) && /^(englisch|english|en)$/i.test(en)) return;
+    if(addCustomVocabEntry(de, en)) added++;
+  });
+  saveProgress();
+  syncToCloud();
+  if(statusEl){
+    statusEl.textContent = added > 0
+      ? `✅ ${added} Vokabeln aus der Datei übernommen.`
+      : "⚠️ Keine gültigen Zeilen gefunden (Spalte A = Deutsch, Spalte B = Englisch).";
+  }
+  render();
 }
 
 function renderCustomVocab(){
@@ -4948,7 +5281,7 @@ function renderCustomVocab(){
 
     <div class="panel">
       <h3 style="font-size:16px;margin-bottom:10px;">PER EXCEL HOCHLADEN</h3>
-      <p class="muted">Spalte A = Deutsch, Spalte B = Englisch (.xlsx, .xls oder .csv)</p>
+      <p class="muted">Spalte A = Deutsch, Spalte B = Englisch. CSV wird direkt gelesen, für .xlsx wird einmalig eine Hilfsbibliothek geladen.</p>
       <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="margin-top:10px;width:100%;">
       <p id="excel-status" class="muted" style="margin-top:8px;"></p>
     </div>
@@ -5042,8 +5375,8 @@ function recordGameGrade(grade, art){
   if(!grade || state.guest) return;
   const jetzt = new Date();
   state.gradeEntries.unshift({
-    date: jetzt.toISOString().slice(0,10),
-    time: jetzt.toISOString().slice(11,16),
+    date: dateKey(jetzt),
+    time: timeKey(jetzt),
     grade: grade.grade,
     label: grade.label,
     art: art || "Test"
