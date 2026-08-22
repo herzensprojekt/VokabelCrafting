@@ -434,6 +434,18 @@
   .rw-del{ flex:0 0 auto; border:none; cursor:pointer; font-family:var(--font); font-weight:800;
     font-size:12px; color:#fff; padding:7px 11px; border-radius:10px;
     background:linear-gradient(180deg,#d4665a,#a63a2e); }
+  .rw-back{ flex:0 0 auto; border:none; cursor:pointer; font-family:var(--font); font-weight:800;
+    font-size:12px; color:#fff; padding:7px 11px; border-radius:10px;
+    background:linear-gradient(180deg,#6d9ad6,#3d6ba5); }
+  .uebergabe{ text-align:center; padding:4px 0 2px; }
+  .uebergabe-ic{ font-size:44px; display:block; margin-bottom:6px; }
+  .uebergabe-txt{ font-size:17px; font-weight:800; color:#1e4515; line-height:1.35; }
+  .bel-karte{ display:flex; align-items:center; gap:14px; margin-top:14px;
+    background:linear-gradient(160deg,#fff8ec,#ffeccd); border:2px solid #f0d5a4;
+    border-radius:18px; padding:14px 16px; }
+  .bel-ic{ flex:0 0 auto; font-size:38px; }
+  .bel-name{ display:block; font-weight:800; font-size:17px; color:#5a3d09; }
+  .bel-meta{ display:block; font-size:12.5px; color:#8a7143; margin-top:2px; }
   .parent-open-btn{ background:linear-gradient(180deg,#e0a24a,#a86b18); }
   .parent-lock-btn{ background:linear-gradient(180deg,#6f7d8c,#41505f); }
   .gram-tip{
@@ -1142,7 +1154,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "14.1 – Obsidian";
+const APP_VERSION = "14.2 – Endstein";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1320,9 +1332,17 @@ const SHOP_ITEMS = [
 // laeuft ueber shopItemById und funktioniert dadurch automatisch mit.
 function alleShopItems(){
   const eigene = Array.isArray(state.customRewards) ? state.customRewards : [];
-  return SHOP_ITEMS.concat(eigene);
+  const versteckt = Array.isArray(state.hiddenRewards) ? state.hiddenRewards : [];
+  return SHOP_ITEMS.filter(i=>versteckt.indexOf(i.id) < 0).concat(eigene);
 }
-function shopItemById(id){ return alleShopItems().find(i=>i.id===id); }
+// WICHTIG: hier wird bewusst NICHT gefiltert. Eine ausgeblendete Belohnung
+// verschwindet nur aus dem Schaufenster - schon gekaufte Exemplare im
+// Inventar und alte Eintraege im Verlauf muessen weiter aufloesbar bleiben.
+function jedesShopItemById(id){
+  const eigene = Array.isArray(state.customRewards) ? state.customRewards : [];
+  return SHOP_ITEMS.concat(eigene).find(i=>i.id===id);
+}
+function shopItemById(id){ return jedesShopItemById(id); }
 
 const MINECRAFT_QUOTES = [
   "Achievement erhalten: Wortschatz-Meister!",
@@ -1375,6 +1395,7 @@ function loadSave(){
     if(data.grammarSkills && typeof data.grammarSkills === "object") state.grammarSkills = data.grammarSkills;
     if(data.activityLog && typeof data.activityLog === "object") state.activityLog = data.activityLog;
     if(Array.isArray(data.customRewards)) state.customRewards = data.customRewards;
+    if(Array.isArray(data.hiddenRewards)) state.hiddenRewards = data.hiddenRewards;
   }catch(e){ /* Speicher blockiert (z.B. Vorschau-Sandbox) - Standardwerte bleiben */ }
 }
 function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewusst nichts
@@ -1393,7 +1414,8 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       cloudId: state.cloudId,
       grammarSkills: state.grammarSkills,
       activityLog: state.activityLog,
-      customRewards: state.customRewards
+      customRewards: state.customRewards,
+      hiddenRewards: state.hiddenRewards
     }));
   }catch(e){ /* Speicher nicht verfügbar - Fortschritt bleibt nur für diese Sitzung erhalten */ }
 }
@@ -1442,6 +1464,10 @@ const state = {
   parentUnlocked: false,   // nur fuer diese Sitzung: Elternbereich ist offen
   parentPinError: null,
   parentTab: "uebersicht", // "uebersicht" | "belohnungen"
+  hiddenRewards: [],       // ausgeblendete mitgelieferte Belohnungen
+  confirmEntryId: null,    // welche Einloesung wird gerade bestaetigt
+  confirmPinError: null,
+  confirmDone: false,
   rewardDraft: { icon:"🎁", name:"", price:"500" },
   rewardError: null,
   grammarMode: "practice",   // "practice" = ruhige Uebungsrunde, "flood" = Wasserraum
@@ -1557,6 +1583,7 @@ function applyPlayerToState(player){
   state.grammarSkills = (player.grammarSkills && typeof player.grammarSkills === "object") ? player.grammarSkills : {};
   state.activityLog = (player.activityLog && typeof player.activityLog === "object") ? player.activityLog : {};
   state.customRewards = Array.isArray(player.customRewards) ? player.customRewards : [];
+  state.hiddenRewards = Array.isArray(player.hiddenRewards) ? player.hiddenRewards : [];
   state.parentUnlocked = false;   // beim Profilwechsel wieder zusperren
   state.parentPinHash = player.parentPinHash || null;
   state.parentPinSalt = player.parentPinSalt || null;
@@ -1741,7 +1768,8 @@ function syncToCloud(){
       redeemLog: state.redeemLog,
       grammarSkills: state.grammarSkills || {},
       activityLog: state.activityLog || {},
-      customRewards: state.customRewards || []
+      customRewards: state.customRewards || [],
+      hiddenRewards: state.hiddenRewards || []
     };
     if(state.parentPinHash){ payload.parentPinHash = state.parentPinHash; }
     if(state.parentPinSalt){ payload.parentPinSalt = state.parentPinSalt; }
@@ -1942,6 +1970,7 @@ function render(){
   if(state.screen==="grammarcertificate") return renderGrammarCertificate();
   if(state.screen==="grammarstats") return renderGrammarStats();
   if(state.screen==="parents") return renderParents();
+  if(state.screen==="confirmreward") return renderConfirmReward();
 }
 
 const TILE_STONE  = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAACJ0lEQVR42gXBya7cRBQA0DvV4KmHSFlnF0gWfBELJP4Z2CYvUgZBXrvtsmu6VZyDv//xJ2vJ3IfWkC2UlMGQQ8ipVmsGTLF7iyXXjsZ3kreLefP+nejNFTWiZ8qtLHRRbDkGN1E+R9ZN7j4l43l7yL+vhb/zAv+dJ4EJUjnzztUfqY/z+j0PkrPk9DmAoeonI0SJpatpyYURJy2QGdq5mYHPVOEY6z3y1mUm7BOskbDQVNe0gnSh1yw9Xlbx1Y4KXm+XW+Qg6GRkF4OCYenG1GS6Ma3UDkM9d7S9OkrdjmXftfTLRVWBrMDr7oWgHcF2O8QZiJZwDJMd23Q6EtpnKGBAw/Lsc4eJ7+0kaQZvdno8FS9UY7sO2A6KSxg3F/zgWuINI2XaW5o6tUE4ub/++ZuH5r4RgAVKZ2Hne2lgk3ZxFblTAyzanORDfvvw6wZAJts6R8dL23bPFPDrl0/vPv6i0MaaS4ED4vVuoaFs24mXDnte8dBithhQFk4hPLfH88VV2YcCOg5dX37EsWaqQ4BTjjamSC3iXeeGlfCmzbDl0qvvt2osHpNN+egTJZgpPSbovlmYzeN6XHtCs7NPtE2g5nlmSfQEzYsnErJSdLk8xxMJW1KAOYm0MtcmdQjO6cDG8U8EWBTRVeKc67O6otqyp32skrujfrjEtYp6V6StcJ/ttqGBKhQcliuDWvLc22Jg5Rza1UV7WmdOrHjG0awJB2diFf0fOhtozI3dWGsAAAAASUVORK5CYII=";
@@ -2116,11 +2145,15 @@ function renderRedeemableInventory(){
   }).join("") + `</div>`;
 }
 
-function redeemHistoryHtml(){
-  if(!state.redeemLog || state.redeemLog.length === 0){
-    return `<p class="center-text muted">Noch nichts eingelöst.</p>`;
+function redeemHistoryHtml(filter){
+  const alle = state.redeemLog || [];
+  const liste = filter === "archiv" ? alle.filter(e=>e.status === "confirmed")
+              : filter === "offen"  ? alle.filter(e=>e.status !== "confirmed")
+              : alle;
+  if(liste.length === 0){
+    return `<p class="center-text muted">${filter === "archiv" ? "Noch nichts bestätigt." : "Nichts offen &ndash; alles abgehakt!"}</p>`;
   }
-  return `<div class="vocab-list">` + state.redeemLog.slice(0,20).map(e=>{
+  return `<div class="vocab-list">` + liste.slice(0,30).map(e=>{
     const confirmed = e.status === "confirmed";
     return `
     <div class="vocab-row" style="align-items:center;flex-wrap:wrap;">
@@ -2129,7 +2162,9 @@ function redeemHistoryHtml(){
         ${escapeHtml(e.name)} <span class="muted" style="font-size:12px;">#${shortEntryId(e.id)}</span><br>
         <span class="muted" style="font-size:13px;">${escapeHtml(e.date)}${e.time ? ' ' + escapeHtml(e.time) : ''} &middot; ${confirmed ? '✅ offiziell bestätigt' : '⏳ noch nicht bestätigt'}</span>
       </span>
-      ${!confirmed ? `<button class="btn small secondary" data-request-confirm="${escapeHtml(e.id)}" style="width:auto;flex:0 0 auto;">📤 Eltern bestätigen lassen</button>` : ""}
+      ${!confirmed
+        ? `<button class="btn small" data-confirm-here="${escapeHtml(e.id)}" style="width:auto;flex:0 0 auto;">🙋 Eltern bestätigen lassen</button>`
+        : `<button class="btn small secondary" data-reward-img="${escapeHtml(e.id)}" style="width:auto;flex:0 0 auto;">🖼️ Bild</button>`}
     </div>`;
   }).join("") + `</div>`;
 }
@@ -4172,6 +4207,7 @@ function renderParents(){
   const tageAktiv = letzte7.filter(d=>d.v + d.g > 0).length;
   const aufgaben7 = letzte7.reduce((n,d)=>n + d.v + d.g, 0);
   const eigene = Array.isArray(state.customRewards) ? state.customRewards : [];
+  const versteckt = Array.isArray(state.hiddenRewards) ? state.hiddenRewards : [];
 
   const uebersicht = `
     <div class="panel">
@@ -4255,15 +4291,31 @@ function renderParents(){
     </div>
 
     <div class="panel">
-      <h3 style="font-size:15px;margin-bottom:6px;">📦 MITGELIEFERTE BELOHNUNGEN</h3>
-      ${SHOP_ITEMS.map(r=>`
+      <h3 style="font-size:15px;margin-bottom:2px;">📦 MITGELIEFERTE BELOHNUNGEN</h3>
+      <p class="muted" style="margin:0 0 6px;font-size:12.5px;">
+        Was ihr nicht braucht, könnt ihr ausblenden. Schon gekaufte Exemplare bleiben gültig.
+      </p>
+      ${SHOP_ITEMS.filter(r=>versteckt.indexOf(r.id) < 0).map(r=>`
         <div class="rw-row">
           <span class="rw-ic">${r.icon}</span>
           <span class="rw-txt">
             <span class="rw-name">${escapeHtml(r.name)}</span>
             <span class="rw-preis">🪙 ${r.price} Münzen</span>
           </span>
+          <button class="rw-del" data-rw-hide="${escapeHtml(r.id)}">Ausblenden</button>
         </div>`).join("")}
+      ${SHOP_ITEMS.filter(r=>versteckt.indexOf(r.id) >= 0).length === 0 ? "" : `
+        <h3 style="font-size:14px;margin:16px 0 4px;color:#77827a;">🙈 AUSGEBLENDET</h3>
+        ${SHOP_ITEMS.filter(r=>versteckt.indexOf(r.id) >= 0).map(r=>`
+          <div class="rw-row" style="opacity:0.65;">
+            <span class="rw-ic" style="background:rgba(0,0,0,0.06);">${r.icon}</span>
+            <span class="rw-txt">
+              <span class="rw-name">${escapeHtml(r.name)}</span>
+              <span class="rw-preis">🪙 ${r.price} Münzen</span>
+            </span>
+            <button class="rw-back" data-rw-show="${escapeHtml(r.id)}">Wieder zeigen</button>
+          </div>`).join("")}
+      `}
     </div>`;
 
   app.innerHTML = `
@@ -4311,6 +4363,22 @@ function renderParents(){
   if(addBtn){ addBtn.addEventListener('click', belohnungAnlegen); }
   document.querySelectorAll('[data-rw-del]').forEach(el=>{
     el.addEventListener('click', ()=>{ belohnungLoeschen(el.dataset.rwDel); });
+  });
+  document.querySelectorAll('[data-rw-hide]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.dataset.rwHide;
+      showConfirmModal('Diese Belohnung aus dem Shop ausblenden?', ()=>{
+        if(!Array.isArray(state.hiddenRewards)) state.hiddenRewards = [];
+        if(state.hiddenRewards.indexOf(id) < 0){ state.hiddenRewards.push(id); }
+        saveProgress(); syncToCloud(); render();
+      });
+    });
+  });
+  document.querySelectorAll('[data-rw-show]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.hiddenRewards = (state.hiddenRewards || []).filter(x=>x !== el.dataset.rwShow);
+      saveProgress(); syncToCloud(); render();
+    });
   });
   const lockBtn = document.getElementById('parent-lock');
   if(lockBtn){
@@ -4391,6 +4459,214 @@ function renderParentGate(){
   });
 }
 
+
+/* ---------------------------------------------------
+   BELOHNUNG AM GERAET BESTAETIGEN
+   Das Kind reicht das Handy weiter, die Eltern tippen ihren PIN ein.
+   Geprueft wird gegen denselben PBKDF2-Hash wie beim Elternbereich.
+--------------------------------------------------- */
+function oeffneBestaetigung(entryId){
+  if(!state.parentPinHash || !state.parentPinSalt){
+    showSetParentPinModal(()=>{ oeffneBestaetigung(entryId); });
+    return;
+  }
+  state.confirmEntryId = entryId;
+  state.confirmPinError = null;
+  state.confirmDone = false;
+  state.screen = "confirmreward";
+  render();
+}
+
+function bestaetigungEintrag(){
+  return (state.redeemLog || []).find(e=>e.id === state.confirmEntryId) || null;
+}
+
+function renderConfirmReward(){
+  const e = bestaetigungEintrag();
+  if(!e){ state.screen = "shop"; render(); return; }
+
+  const karte = `
+    <div class="bel-karte">
+      <span class="bel-ic">${e.icon}</span>
+      <span style="min-width:0;">
+        <span class="bel-name">${escapeHtml(e.name)}</span>
+        <span class="bel-meta">Eingelöst am ${escapeHtml(e.date)}${e.time ? " um " + escapeHtml(e.time) : ""} · Beleg #${shortEntryId(e.id)}</span>
+      </span>
+    </div>`;
+
+  if(state.confirmDone){
+    app.innerHTML = `
+      ${renderHeader("Belohnung bestätigt", true)}
+      ${playerBadgeHtml(true)}
+      <div class="panel">
+        <div class="uebergabe">
+          <span class="uebergabe-ic">🎉</span>
+          <span class="uebergabe-txt">Bestätigt!<br>Deine Eltern haben es abgehakt.</span>
+        </div>
+        ${karte}
+        <p class="muted center-text" style="margin-top:12px;font-size:13px;">
+          Der Eintrag liegt jetzt im Archiv der bestätigten Belohnungen.
+        </p>
+        <button class="btn" id="reward-img-btn" style="margin-top:14px;">🖼️ ERINNERUNG AN DIE ELTERN SCHICKEN</button>
+        <p class="muted center-text" style="margin-top:6px;font-size:12px;">
+          Erzeugt ein Bild der Belohnung &ndash; zum Verschicken oder Aufheben, damit es niemand vergisst.
+        </p>
+      </div>
+      <button class="btn danger" id="back-btn">✕ ZURÜCK ZUM SHOP</button>
+    `;
+    document.getElementById('reward-img-btn').addEventListener('click', ()=>{ teileBelohnungsbild(e.id); });
+    document.getElementById('back-btn').addEventListener('click', ()=>{ state.screen = "shop"; render(); });
+    return;
+  }
+
+  app.innerHTML = `
+    ${renderHeader("Belohnung bestätigen", true)}
+    ${playerBadgeHtml(true)}
+
+    <div class="panel">
+      <div class="uebergabe">
+        <span class="uebergabe-ic">📱➡️👨‍👩‍👧</span>
+        <span class="uebergabe-txt">Gib das Handy deinen Eltern,<br>damit sie deine Belohnung bestätigen können.</span>
+      </div>
+      ${karte}
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:6px;">🔒 FÜR DIE ELTERN</h3>
+      <p class="muted" style="margin:0 0 10px;font-size:13px;">
+        Bitte den Eltern-PIN eingeben. Damit ist die Belohnung offiziell abgehakt.
+      </p>
+      <input type="password" id="confirm-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="4-stelliger Eltern-PIN">
+      ${state.confirmPinError ? `<p class="center-text" style="color:#b3421f;font-weight:700;margin-top:8px;">⚠️ ${escapeHtml(state.confirmPinError)}</p>` : ""}
+      <button class="btn" id="confirm-do" style="margin-top:12px;">✅ BELOHNUNG BESTÄTIGEN</button>
+    </div>
+
+    <div class="panel">
+      <p class="muted center-text" style="margin:0 0 8px;font-size:12.5px;">
+        Eltern gerade nicht da? Dann schick ihnen den Bestätigungs-Link.
+      </p>
+      <button class="btn secondary small" id="confirm-link">📤 PER LINK SCHICKEN</button>
+    </div>
+
+    <button class="btn danger" id="back-btn">✕ ABBRECHEN</button>
+  `;
+
+  const knopf = document.getElementById('confirm-do');
+  const pruefen = async ()=>{
+    const feld = document.getElementById('confirm-pin');
+    const pin = (feld ? feld.value : "").trim();
+    if(!/^[0-9]{4}$/.test(pin)){
+      state.confirmPinError = "Bitte vier Ziffern eingeben."; render(); return;
+    }
+    knopf.disabled = true;
+    knopf.textContent = "⏳ WIRD GEPRÜFT ...";
+    const hash = await hashParentPin(pin, state.parentPinSalt);
+    if(hash !== state.parentPinHash){
+      state.confirmPinError = "Der PIN stimmt nicht."; render(); return;
+    }
+    const eintrag = bestaetigungEintrag();
+    if(eintrag){
+      eintrag.status = "confirmed";
+      eintrag.confirmedAt = new Date().toISOString().slice(0,10);
+      saveProgress();
+      syncToCloud();
+    }
+    state.confirmPinError = null;
+    state.confirmDone = true;
+    render();
+  };
+  knopf.addEventListener('click', pruefen);
+  const feld = document.getElementById('confirm-pin');
+  if(feld){ feld.addEventListener('keydown', ev=>{ if(ev.key === "Enter") pruefen(); }); }
+
+  document.getElementById('confirm-link').addEventListener('click', ()=>{ sendRedemptionToParent(e.id); });
+  document.getElementById('back-btn').addEventListener('click', ()=>{ state.screen = "shop"; render(); });
+}
+
+/* ---------------------------------------------------
+   ERINNERUNGSBILD zu einer bestaetigten Belohnung.
+--------------------------------------------------- */
+function buildRewardCanvas(e){
+  const W = 900, H = 900;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const himmel = ctx.createLinearGradient(0, 0, 0, H);
+  himmel.addColorStop(0, "#7ec6ea");
+  himmel.addColorStop(1, "#bfe6f5");
+  ctx.fillStyle = himmel;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#4d8636";
+  ctx.fillRect(0, H - 54, W, 54);
+
+  const pad = 44;
+  ctx.fillStyle = "#fdf6e3";
+  ctx.fillRect(pad, pad, W - pad*2, H - pad*2 - 36);
+  ctx.lineWidth = 12;
+  ctx.strokeStyle = "#c9a227";
+  ctx.strokeRect(pad + 12, pad + 12, W - pad*2 - 24, H - pad*2 - 36 - 24);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#2c7a37";
+  ctx.font = "bold 40px Poppins, Arial, sans-serif";
+  ctx.fillText("BELOHNUNG BESTÄTIGT", W/2, pad + 110);
+
+  ctx.font = "150px Arial, sans-serif";
+  ctx.fillText(e.icon || "🎁", W/2, pad + 290);
+
+  ctx.fillStyle = "#242017";
+  ctx.font = "bold 46px Poppins, Arial, sans-serif";
+  const name = String(e.name || "Belohnung");
+  const zeilen = [];
+  let rest = name;
+  while(rest.length > 22){
+    let schnitt = rest.lastIndexOf(" ", 22);
+    if(schnitt < 8) schnitt = 22;
+    zeilen.push(rest.slice(0, schnitt));
+    rest = rest.slice(schnitt).trim();
+  }
+  zeilen.push(rest);
+  zeilen.slice(0, 3).forEach((z, i)=>{ ctx.fillText(z, W/2, pad + 380 + i*56); });
+
+  const yBasis = pad + 380 + Math.min(zeilen.length, 3) * 56;
+  ctx.fillStyle = "#5a5a4a";
+  ctx.font = "30px Poppins, Arial, sans-serif";
+  ctx.fillText("für " + (state.playerName || "unser Kind"), W/2, yBasis + 40);
+  ctx.font = "26px Poppins, Arial, sans-serif";
+  ctx.fillText("bestätigt am " + (e.confirmedAt || e.date || ""), W/2, yBasis + 86);
+  ctx.fillStyle = "#8a8a76";
+  ctx.font = "22px Poppins, Arial, sans-serif";
+  ctx.fillText("Beleg #" + shortEntryId(e.id), W/2, yBasis + 126);
+
+  ctx.fillStyle = "#6b6b58";
+  ctx.font = "24px Poppins, Arial, sans-serif";
+  ctx.fillText("Herzensprojekt · LingoCrafter", W/2, H - pad - 66);
+  return canvas;
+}
+
+function teileBelohnungsbild(entryId){
+  const e = (state.redeemLog || []).find(x=>x.id === entryId);
+  if(!e) return;
+  let canvas;
+  try{ canvas = buildRewardCanvas(e); }
+  catch(err){ return; }
+  canvas.toBlob(blob=>{
+    if(!blob) return;
+    const dateiname = "belohnung-" + shortEntryId(e.id) + ".png";
+    const file = new File([blob], dateiname, { type:"image/png" });
+    const text = "🎁 " + (state.playerName || "Dein Kind") + " hat sich \"" + e.name + "\" verdient - und ihr habt es bestätigt!";
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      navigator.share({ files:[file], text }).catch(()=>{});
+    } else {
+      downloadBlob(blob, dateiname);
+      showConfirmModal("Das Bild wurde heruntergeladen. Jetzt WhatsApp öffnen, um es zu verschicken?", ()=>{
+        window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+      });
+    }
+  }, "image/png");
+}
+
 function renderShop(){
   app.innerHTML = `
     ${renderHeader("Tausche Münzen gegen Items")}
@@ -4418,8 +4694,14 @@ function renderShop(){
     </div>
 
     <div class="panel">
-      <h3 style="font-size:15px;margin-bottom:8px;">📜 EINLÖSE-VERLAUF</h3>
-      ${redeemHistoryHtml()}
+      <h3 style="font-size:15px;margin-bottom:8px;">⏳ WARTET AUF BESTÄTIGUNG</h3>
+      ${redeemHistoryHtml("offen")}
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:4px;">🗄️ ARCHIV DER BESTÄTIGTEN BELOHNUNGEN</h3>
+      <p class="muted" style="margin:0 0 8px;font-size:12.5px;">Alles, was deine Eltern schon abgehakt haben.</p>
+      ${redeemHistoryHtml("archiv")}
     </div>
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
@@ -4430,6 +4712,12 @@ function renderShop(){
   });
   document.querySelectorAll('[data-request-confirm]').forEach(btn=>{
     btn.addEventListener('click', ()=>{ sendRedemptionToParent(btn.dataset.requestConfirm); });
+  });
+  document.querySelectorAll('[data-confirm-here]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ oeffneBestaetigung(btn.dataset.confirmHere); });
+  });
+  document.querySelectorAll('[data-reward-img]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ teileBelohnungsbild(btn.dataset.rewardImg); });
   });
 
   document.querySelectorAll('.buy-btn').forEach(btn=>{
