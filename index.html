@@ -87,11 +87,11 @@
   .title-block{ text-align:center; margin-bottom:14px; }
   .title-block.compact{ margin-bottom:6px; }
   .logo-img{
-    max-width:min(94%, 440px); width:100%; height:auto; display:inline-block;
+    max-width:min(100%, 520px); width:100%; height:auto; display:inline-block;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     animation: logo-glow 2.6s ease-in-out infinite;
   }
-  .title-block.compact .logo-img{ max-width:min(58%, 215px); }
+  .title-block.compact .logo-img{ max-width:min(68%, 250px); }
   @keyframes logo-glow{
     0%,100%{ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25)); }
     50%{ filter: drop-shadow(0 4px 16px rgba(255,244,168,0.85)); }
@@ -247,7 +247,7 @@
 
   /* Auf dem Startbildschirm darf das Logo kleiner sein - sonst ist der halbe
      erste Bildschirm weg, bevor irgendetwas Bedienbares kommt. */
-  .title-block.start .logo-img{ max-width:min(70%, 285px); }
+  .title-block.start .logo-img{ max-width:min(84%, 350px); }
   .coin-chip{
     flex:0 0 auto; display:inline-flex; align-items:center; gap:5px;
     font-weight:800; font-size:15px; color:#4a3400;
@@ -1187,7 +1187,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "15.2 – Amboss";
+const APP_VERSION = "15.3 – Amboss";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1991,8 +1991,12 @@ function render(){
     state.parentUnlocked = false;
     state.parentTab = "uebersicht";
   }
-  // Der Eltern-Bestaetigungslink wird ohne Anmeldung geoeffnet - der bleibt frei.
+  // Diese drei Seiten sind bewusst ohne Anmeldung erreichbar: der
+  // Eltern-Bestaetigungslink sowie Impressum und Datenschutz - letztere
+  // muessen von jeder Seite aus zugaenglich sein, auch vom Anmeldebildschirm.
   if(state.screen==="parentconfirm") return renderParentConfirm();
+  if(state.screen==="impressum") return renderImpressum();
+  if(state.screen==="datenschutz") return renderDatenschutz();
   // Alles andere ist gesperrt, solange keine gueltige Firebase-Anmeldung besteht.
   if(!state.cloudId && !state.guest) return renderLogin();
   if(state.screen==="start") return renderStart();
@@ -2010,8 +2014,6 @@ function render(){
   if(state.screen==="grammarstats") return renderGrammarStats();
   if(state.screen==="parents") return renderParents();
   if(state.screen==="confirmreward") return renderConfirmReward();
-  if(state.screen==="impressum") return renderImpressum();
-  if(state.screen==="datenschutz") return renderDatenschutz();
 }
 
 const TILE_STONE  = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAACJ0lEQVR42gXBya7cRBQA0DvV4KmHSFlnF0gWfBELJP4Z2CYvUgZBXrvtsmu6VZyDv//xJ2vJ3IfWkC2UlMGQQ8ipVmsGTLF7iyXXjsZ3kreLefP+nejNFTWiZ8qtLHRRbDkGN1E+R9ZN7j4l43l7yL+vhb/zAv+dJ4EJUjnzztUfqY/z+j0PkrPk9DmAoeonI0SJpatpyYURJy2QGdq5mYHPVOEY6z3y1mUm7BOskbDQVNe0gnSh1yw9Xlbx1Y4KXm+XW+Qg6GRkF4OCYenG1GS6Ma3UDkM9d7S9OkrdjmXftfTLRVWBrMDr7oWgHcF2O8QZiJZwDJMd23Q6EtpnKGBAw/Lsc4eJ7+0kaQZvdno8FS9UY7sO2A6KSxg3F/zgWuINI2XaW5o6tUE4ub/++ZuH5r4RgAVKZ2Hne2lgk3ZxFblTAyzanORDfvvw6wZAJts6R8dL23bPFPDrl0/vPv6i0MaaS4ED4vVuoaFs24mXDnte8dBithhQFk4hPLfH88VV2YcCOg5dX37EsWaqQ4BTjjamSC3iXeeGlfCmzbDl0qvvt2osHpNN+egTJZgpPSbovlmYzeN6XHtCs7NPtE2g5nlmSfQEzYsnErJSdLk8xxMJW1KAOYm0MtcmdQjO6cDG8U8EWBTRVeKc67O6otqyp32skrujfrjEtYp6V6StcJ/ttqGBKhQcliuDWvLc22Jg5Rza1UV7WmdOrHjG0awJB2diFf0fOhtozI3dWGsAAAAASUVORK5CYII=";
@@ -4736,7 +4738,8 @@ function teileBelohnungsbild(entryId){
    Startbildschirms.
 --------------------------------------------------- */
 function oeffneImpressum(zurueck){
-  state.impressumReturnTo = zurueck || "start";
+  // Ohne Konto gibt es keinen Startbildschirm - dann zurueck zur Anmeldung.
+  state.impressumReturnTo = (!state.cloudId && !state.guest) ? "login" : (zurueck || "start");
   state.screen = "impressum";
   render();
 }
@@ -4787,7 +4790,7 @@ function renderImpressum(){
 
 
 function oeffneDatenschutz(zurueck){
-  state.impressumReturnTo = zurueck || "start";
+  state.impressumReturnTo = (!state.cloudId && !state.guest) ? "login" : (zurueck || "start");
   state.screen = "datenschutz";
   render();
 }
