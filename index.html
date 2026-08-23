@@ -482,6 +482,26 @@
   .impressum{ text-align:left; font-size:14px; line-height:1.65; color:#2d3a2a; }
   .impressum p{ margin:0 0 12px; }
   .impressum a{ color:#2f5f9e; }
+  .good-toast{
+    position:fixed; left:50%; top:16px; transform:translateX(-50%) translateY(0) scale(1);
+    z-index:9000; pointer-events:none;
+    background:linear-gradient(160deg,#57c76a,#2d7a38); color:#fff;
+    font-family:var(--font); font-weight:800; font-size:16px;
+    padding:12px 20px; border-radius:16px; border:2px solid rgba(255,255,255,0.65);
+    box-shadow:0 6px 20px rgba(20,60,20,0.35);
+    animation: toast-rein .28s cubic-bezier(.2,1.3,.5,1);
+    transition: opacity .45s ease, transform .45s ease;
+    max-width:92vw; text-align:center;
+  }
+  .good-toast.weg{ opacity:0; transform:translateX(-50%) translateY(-14px) scale(0.94); }
+  @keyframes toast-rein{
+    from{ opacity:0; transform:translateX(-50%) translateY(-18px) scale(0.9); }
+    to{ opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+  }
+  .flood-hard-hint{ font-size:11.5px; font-weight:700; color:#b03a2e;
+    background:rgba(255,255,255,0.75); padding:3px 9px; border-radius:9px; }
+  .mode-btn[data-mode="floodhard"]{ background:linear-gradient(135deg,#2f6fbf,#123566); }
+  .game-tile[data-mode="floodhard"] .gm-ic{ background:linear-gradient(160deg,#dbeaff,#a9c9ee); }
   .gram-tip{
     margin-top:14px; padding:14px 16px; background:#fdf1c7; border-radius:14px;
     color:#5e4600; font-weight:600; font-size:15.5px; line-height:1.55;
@@ -1211,7 +1231,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "16.1 – Elytra";
+const APP_VERSION = "17.0 – Diamantader";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1337,8 +1357,10 @@ const AVATAR_FOOT_CENTER = {
   rainbow:50.5, ender:58.2, forest:41.5, frost:53.8,
   lava:56.8, potion:47.8, crystal:48.0, shadow:41.8
 };
-function avatarFootOffset(av, size){
-  const c = (AVATAR_FOOT_CENTER[av.id] != null) ? AVATAR_FOOT_CENTER[av.id] : 50;
+function avatarFootOffset(av, size, facing){
+  let c = (AVATAR_FOOT_CENTER[av.id] != null) ? AVATAR_FOOT_CENTER[av.id] : 50;
+  // Gespiegelt liegen die Fuesse auch spiegelbildlich.
+  if(facing === -1){ c = 100 - c; }
   return Math.round(-(size/2) + ((50 - c)/100) * size);
 }
 function avatarStyle(av){
@@ -1536,7 +1558,10 @@ const state = {
   grammarIndex: 0,
   grammarCorrectCount: 0,   // Fortschritt Richtung Rettung (Ziel: 10)
   grammarWrongStreak: 0,    // Fehler insgesamt in dieser Runde
-  grammarWaterPx: 0,        // Wasserstand in Pixeln - steigt nur, faellt nie
+  grammarWaterPx: 0,        // Wasserstand in Pixeln
+  floodHard: false,         // schwere Variante: Wasser steigt von allein
+  floodPos: 0,              // auf welcher Stufe steht die Figur gerade
+  floodFacing: 1,           // 1 = schaut nach rechts, -1 = gespiegelt
   grammarSessionCoins: 0,
   grammarSessionLog: [],
   grammarAnswered: false,
@@ -2682,6 +2707,13 @@ function renderStart(){
             <small>Klettere dem Wasser davon</small>
           </span>
         </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='floodhard'?'active':''}" data-mode="floodhard" aria-pressed="${state.mode==='floodhard'}">
+          <span class="gm-ic">🌊</span>
+          <span class="gm-txt">
+            <span class="gm-name">Flutungsraum &ndash; Schwer</span>
+            <small>Wasser steigt von allein, falsch = eine Stufe runter</small>
+          </span>
+        </button>
       </div>
 
       <button class="btn secondary small" id="custom-vocab-btn" style="margin-top:16px;" ${state.cloudId ? "" : "disabled"}>➕ Eigene Vokabeln hinzufügen</button>
@@ -2850,7 +2882,7 @@ function startGame(){
   // Der Flutungsraum teilt sich die Zaehler mit der Grammatik-Variante.
   state.grammarCorrectCount = 0;
   state.grammarWrongStreak = 0;
-  state.grammarWaterPx = 12;
+  resetFlood(state.mode === "floodhard");
   state.playerName = (state.playerName||"").trim() || "Spieler";
   saveProgress();
   attemptCloudLogin();
@@ -2864,6 +2896,9 @@ function startGame(){
     buildQueue();
   }
   state.screen = "quiz";
+  if(state.floodHard){
+    startFloodRise(()=>{ stopFloodRise(); endSession("drowned"); });
+  }
   nextQuestion();
 }
 
@@ -2913,7 +2948,7 @@ function renderVocabFlood(){
   if(!word){ endSession("finished"); return; }
   const ans = getAnswerData(word);
   const choices = buildChoices(word);
-  const level = Math.min(state.grammarCorrectCount, GRAMMAR_GOAL_CORRECT);
+  const level = grammarRoomGeometry().level;
 
   app.innerHTML = `
     ${renderHeader(state.category, true)}
@@ -2960,6 +2995,8 @@ function handleVocabFloodAnswer(btn, choice, word){
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
     state.grammarCorrectCount += 1;
+    setFloodPos(state.floodHard ? state.floodPos + 1 : state.grammarCorrectCount);
+    showGoodToast('<span class="item-pop">🪙</span> Richtig! Eine Stufe höher.');
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"correct", word});
   } else {
     btn.classList.add('wrong');
@@ -2969,8 +3006,10 @@ function handleVocabFloodAnswer(btn, choice, word){
     state.streak = 0;
     deductCoinsForWrong(10);
     state.grammarWrongStreak += 1;
-    raiseFloodWater();
-    // Die Korrektur kommt bewusst erst, wenn das Wasser gestiegen ist.
+    // Leicht: das Wasser steigt. Schwer: die Figur rutscht eine Stufe runter.
+    if(state.floodHard){ setFloodPos(state.floodPos - 1); }
+    else { raiseFloodWater(); }
+    // Die Korrektur kommt bewusst erst, wenn sich etwas bewegt hat.
     fb.className = 'feedback';
     fb.innerHTML = '';
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"wrong", userInput:choice, word});
@@ -2978,29 +3017,38 @@ function handleVocabFloodAnswer(btn, choice, word){
 
   const geo = grammarRoomGeometry();
   if(waterEl){ waterEl.style.height = geo.waterHeight + "px"; }
+  const bildEl = document.getElementById('flood-avatar-img');
+  if(bildEl){ bildEl.style.transform = "scaleX(" + state.floodFacing + ")"; }
   if(avatarEl){
     avatarEl.style.bottom = geo.avatarBottom + "px";
     avatarEl.style.marginLeft =
-      (floodPlatformX(geo.level) + avatarFootOffset(avatarById(state.avatarId), FLOOD_AVATAR_SIZE)) + "px";
+      (floodPlatformX(geo.level) + avatarFootOffset(avatarById(state.avatarId), FLOOD_AVATAR_SIZE, state.floodFacing)) + "px";
+    document.querySelectorAll('.flood-platform').forEach((p, i)=>{ p.classList.toggle('current', i === geo.level); });
     if(richtig){ avatarEl.classList.add('jump'); setTimeout(()=>avatarEl.classList.remove('jump'), 600); }
   }
 
-  const gewonnen = state.grammarCorrectCount >= GRAMMAR_GOAL_CORRECT;
-  const ertrunken = state.grammarWrongStreak >= GRAMMAR_MAX_WRONG_STREAK;
+  const gewonnen = state.floodHard
+    ? state.floodPos >= GRAMMAR_GOAL_CORRECT
+    : state.grammarCorrectCount >= GRAMMAR_GOAL_CORRECT;
+  const ertrunken = state.floodHard
+    ? floodDrowned()
+    : state.grammarWrongStreak >= GRAMMAR_MAX_WRONG_STREAK;
   if(ertrunken && avatarEl){ avatarEl.classList.add('sink'); }
+  if(gewonnen || ertrunken){ floodBeendet = true; stopFloodRise(); }
 
   const weiter = ()=>{
+    // Wer waehrend der Korrekturmeldung ertrunken ist, spielt nicht weiter.
+    if(floodBeendet && !gewonnen && !ertrunken){ return; }
     state.answered = false;
-    if(gewonnen){ endSession("finished"); }
-    else if(ertrunken){ endSession("drowned"); }
+    if(gewonnen){ stopFloodRise(); endSession("finished"); }
+    else if(ertrunken){ stopFloodRise(); endSession("drowned"); }
     else { state.currentIndex++; render(); }
   };
   if(richtig){ setTimeout(weiter, 700); }
   else {
-    // Zuerst steigt das Wasser sichtbar an, danach erscheint die Korrektur.
     setTimeout(()=>{
       fb.className = 'feedback show bad';
-      fb.innerHTML = `<div>❌ Leider falsch. Das Wasser ist gestiegen!</div>` +
+      fb.innerHTML = `<div>❌ Leider falsch. ${state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!"}</div>` +
         `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(ans.answerDisplay)}</strong></div>`;
       if(ertrunken){ scrollFeedbackIntoView(fb); setTimeout(weiter, 1600); }
       else { grammarWeiterKnopf(fb, weiter); }
@@ -3009,7 +3057,7 @@ function handleVocabFloodAnswer(btn, choice, word){
 }
 
 function renderQuiz(){
-  if(state.mode === "flood") return renderVocabFlood();
+  if(state.mode === "flood" || state.mode === "floodhard") return renderVocabFlood();
   if(state.mode === "challenge"){ return renderChallengeQuiz(); }
 
   const word = currentWord();
@@ -3085,9 +3133,28 @@ function scrollFeedbackIntoView(fb){
   }, 60);
 }
 
+// Kurze gruene Bestaetigung, die ueber allem schwebt und von allein wieder
+// verschwindet. Bewusst NICHT im Textfluss - so verschiebt sich nichts und
+// niemand muss scrollen.
+function showGoodToast(html){
+  const alt = document.getElementById('good-toast');
+  if(alt && alt.parentNode){ alt.parentNode.removeChild(alt); }
+  const t = document.createElement('div');
+  t.id = 'good-toast';
+  t.className = 'good-toast';
+  t.innerHTML = html;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.classList.add('weg'); }, 950);
+  setTimeout(()=>{ if(t.parentNode){ t.parentNode.removeChild(t); } }, 1500);
+}
+
 function showFeedback(type, message, revealAnswer){
   const fb = document.getElementById('feedback');
-  if(type === 'good'){ fb.className = 'feedback'; fb.innerHTML = ''; return; }
+  if(type === 'good'){
+    fb.className = 'feedback'; fb.innerHTML = '';
+    showGoodToast(message);
+    return;
+  }
   fb.className = `feedback show ${type}`;
   let html = `<div>${message}</div>`;
   if(revealAnswer){
@@ -3116,6 +3183,7 @@ function showFeedbackWithConfirm(type, message, revealAnswer, extraNoteHtml){
 function cancelGame(){
   showConfirmModal('Runde abbrechen und zum Menü zurückkehren?', ()=>{
     clearInterval(challengeTimerId);
+    stopFloodRise();
     protokolliereRunde("vocab", state.sessionLog);   // auch Abgebrochenes zaehlt
     saveProgress(); syncToCloud();
     state.answered = true;
@@ -3392,9 +3460,14 @@ function handleChallengeAnswer(btn, choice, word){
     state.challengePlayerHP = Math.max(0, state.challengePlayerHP - 1);
     updateBattleHP('player');
     const msg = choice===null ? "⏰ Zeit abgelaufen!" : "Leider falsch.";
-    showFeedback('bad', `${msg} Du verlierst Lebensenergie.`, correct);
     state.sessionLog.push({prompt:word.de, correct, result:"wrong", userInput: choice || "(keine Antwort)", word});
+    // Erst fliegt der Blitz vom Boesewicht zur Figur, danach kommt die
+    // Korrektur - und die muss gelesen und bestaetigt werden.
     if(villainImg && playerAvatarEl){ spawnProjectile('⚡', villainImg, playerAvatarEl); }
+    setTimeout(()=>{
+      showFeedbackWithConfirm('bad', `${msg} Du verlierst Lebensenergie.`, correct);
+    }, 700);
+    return;
   }
   goOnAfterDelay();
 }
@@ -3566,6 +3639,7 @@ function startMistakeReview(){
 }
 
 function endSession(reason){
+  stopFloodRise();
   protokolliereRunde("vocab", state.sessionLog);
   state.coins = Math.max(0, state.coins + state.sessionCoins);
   state.lifetimeBestStreak = Math.max(state.lifetimeBestStreak, state.bestStreak);
@@ -5603,6 +5677,10 @@ function renderGrammarIntro(){
           <span class="gm-title">🌊 Der Flutungsraum <span class="gm-badge">ZUSATZ-SPIEL</span></span>
           <span class="gm-sub">Klettere mit richtigen Antworten nach oben. Das Wasser steigt bei jedem Fehler und sinkt nie wieder &ndash; nach ${GRAMMAR_MAX_WRONG_STREAK} Fehlern holt es dich ein!</span>
         </button>
+        <button class="gm-card flood" id="grammar-floodhard-btn">
+          <span class="gm-title">🌊 Flutungsraum &ndash; Schwer <span class="gm-badge">FÜR PROFIS</span></span>
+          <span class="gm-sub">Das Wasser steigt die ganze Zeit von allein. Richtig bringt dich eine Stufe hoch, falsch eine Stufe runter &ndash; steht es dir über dem Kopf, ist die Runde vorbei.</span>
+        </button>
       </div>
     </div>
 
@@ -5611,7 +5689,8 @@ function renderGrammarIntro(){
 
   document.getElementById('grammar-practice-btn').addEventListener('click', startGrammarPractice);
   document.getElementById('grammar-test-btn').addEventListener('click', startGrammarTest);
-  document.getElementById('grammar-flood-btn').addEventListener('click', startGrammarQuiz);
+  document.getElementById('grammar-flood-btn').addEventListener('click', ()=>startGrammarQuiz(false));
+  document.getElementById('grammar-floodhard-btn').addEventListener('click', ()=>startGrammarQuiz(true));
   document.getElementById('back-btn').addEventListener('click', ()=>{
     state.screen = "start";
     render();
@@ -5648,7 +5727,6 @@ function floodPlatformX(level){ return [-70, 0, 70][level % 3]; }
 function resetGrammarSession(){
   state.grammarCorrectCount = 0;
   state.grammarWrongStreak = 0;
-  state.grammarWaterPx = 12;
   state.grammarSessionCoins = 0;
   state.grammarSessionLog = [];
   state.grammarAnswered = false;
@@ -5684,14 +5762,18 @@ function startGrammarTest(){
 }
 
 // Zusatz-Spiel: der Flutungsraum.
-function startGrammarQuiz(){
+function startGrammarQuiz(hart){
   const topic = grammarTopicById(state.grammarTopicId);
   if(!topic) return;
   resetGrammarSession();
+  resetFlood(!!hart);
   state.grammarMode = "flood";
   state.grammarCurrentExercise = pickGrammarExercise(topic);
   state.screen = "grammarquiz";
   render();
+  if(state.floodHard){
+    startFloodRise(()=>{ stopFloodRise(); finishGrammarSession("lost"); });
+  }
 }
 
 // Wählt zufällig die nächste Übung, vermeidet nach Möglichkeit eine direkte Wiederholung
@@ -5716,9 +5798,67 @@ function buildGrammarChoices(exercise){
 // Aktuelle Position von Avatar und Wasserstand im Flutungsraum - beide in
 // Pixeln, damit die Figur immer genau auf der Plattform ihrer Stufe steht.
 function grammarRoomGeometry(){
-  const level = Math.min(state.grammarCorrectCount, GRAMMAR_GOAL_CORRECT);
+  const level = Math.max(0, Math.min(state.floodPos, GRAMMAR_GOAL_CORRECT));
   const avatarBottom = floodPlatformTop(level);
   return { level, avatarBottom, waterHeight: state.grammarWaterPx || 12 };
+}
+
+/* ---------------------------------------------------
+   SCHWERE VARIANTE DES FLUTUNGSRAUMS
+   Das Wasser steigt hier von allein weiter. Richtig = eine Stufe hoch,
+   falsch = eine Stufe runter. Steht das Wasser ueber dem Kopf, ist Schluss.
+--------------------------------------------------- */
+const FLOOD_RISE_MS = 900;   // Takt, in dem das Wasser steigt
+const FLOOD_RISE_PX = 2;     // wie viel es pro Takt steigt
+let floodRiseTimerId = null;
+let floodBeendet = false;    // verhindert, dass eine Runde doppelt endet
+
+// Ganz im Wasser? Dann ist die Runde vorbei.
+function floodDrowned(){
+  return (state.grammarWaterPx || 12) >= floodPlatformTop(state.floodPos) + FLOOD_AVATAR_SIZE;
+}
+
+// Setzt die Stufe und merkt sich dabei, in welche Richtung gesprungen wurde -
+// daraus ergibt sich, ob die Figur gespiegelt dargestellt wird.
+function setFloodPos(neu){
+  const ziel = Math.max(0, Math.min(GRAMMAR_GOAL_CORRECT, neu));
+  const dx = floodPlatformX(ziel) - floodPlatformX(state.floodPos);
+  if(dx < 0){ state.floodFacing = -1; }
+  else if(dx > 0){ state.floodFacing = 1; }
+  state.floodPos = ziel;
+}
+
+function stopFloodRise(){
+  if(floodRiseTimerId){ clearInterval(floodRiseTimerId); floodRiseTimerId = null; }
+}
+
+function startFloodRise(beiErtrinken){
+  stopFloodRise();
+  if(!state.floodHard) return;
+  floodRiseTimerId = setInterval(()=>{
+    if(floodBeendet){ stopFloodRise(); return; }
+    const maximum = floodPlatformTop(GRAMMAR_GOAL_CORRECT) + FLOOD_AVATAR_SIZE + 12;
+    state.grammarWaterPx = Math.min(maximum, (state.grammarWaterPx || 12) + FLOOD_RISE_PX);
+    const w = document.getElementById('flood-water');
+    if(w){ w.style.height = state.grammarWaterPx + "px"; }
+    if(floodDrowned()){
+      floodBeendet = true;
+      stopFloodRise();
+      const a = document.getElementById('flood-avatar');
+      if(a){ a.classList.add('sink'); }
+      setTimeout(beiErtrinken, 900);
+    }
+  }, FLOOD_RISE_MS);
+}
+
+// Setzt alles zurueck, was der Flutungsraum braucht.
+function resetFlood(hart){
+  stopFloodRise();
+  floodBeendet = false;
+  state.floodHard = !!hart;
+  state.floodPos = 0;
+  state.floodFacing = 1;
+  state.grammarWaterPx = 12;
 }
 
 // Wird NUR bei einer falschen Antwort aufgerufen. Der Stand kann dadurch
@@ -5736,7 +5876,7 @@ function renderFloodRoom(){
   const { level, avatarBottom, waterHeight } = grammarRoomGeometry();
   // Die Figur wird so verschoben, dass ihre FUESSE ueber der Plattformmitte
   // stehen - nicht die Bildmitte.
-  const avatarLeft = floodPlatformX(level) + avatarFootOffset(av, FLOOD_AVATAR_SIZE);
+  const avatarLeft = floodPlatformX(level) + avatarFootOffset(av, FLOOD_AVATAR_SIZE, state.floodFacing);
 
   let platforms = "";
   for(let l = 0; l <= GRAMMAR_GOAL_CORRECT; l++){
@@ -5754,11 +5894,13 @@ function renderFloodRoom(){
       <div class="flood-goal">🚁 Rettung auf Stufe ${GRAMMAR_GOAL_CORRECT} &middot; du stehst auf Stufe ${level}</div>
       ${platforms}
       <div class="flood-avatar-wrap" id="flood-avatar" style="bottom:${avatarBottom}px;margin-left:${avatarLeft}px;">
-        <span class="avatar-swatch" style="${avatarStyle(av)}"></span>
+        <span class="avatar-swatch" id="flood-avatar-img" style="${avatarStyle(av)}transform:scaleX(${state.floodFacing});"></span>
       </div>
       <div class="flood-water" id="flood-water" style="height:${waterHeight}px;">${bubbles}</div>
       <div class="flood-danger-row">
-        ${Array.from({length: GRAMMAR_MAX_WRONG_STREAK}, (_,i)=>`<span class="flood-danger-drop ${i < state.grammarWrongStreak ? 'active':''}">💧</span>`).join("")}
+        ${state.floodHard
+          ? `<span class="flood-hard-hint">⚠️ Das Wasser steigt von allein &middot; falsch = eine Stufe runter</span>`
+          : Array.from({length: GRAMMAR_MAX_WRONG_STREAK}, (_,i)=>`<span class="flood-danger-drop ${i < state.grammarWrongStreak ? 'active':''}">💧</span>`).join("")}
       </div>
     </div>`;
 }
@@ -5819,6 +5961,7 @@ function renderGrammarQuiz(){
 
 function cancelGrammarGame(){
   showConfirmModal('Spiel abbrechen und zum Menü zurückkehren?', ()=>{
+    stopFloodRise();
     protokolliereRunde("grammar", state.grammarSessionLog);
     saveProgress(); syncToCloud();
     state.screen = "start";
@@ -5857,6 +6000,7 @@ function handleGrammarAnswer(btn, choice, exercise){
   if(correct){
     state.grammarSessionCoins += 10;
     state.grammarCorrectCount += 1;
+    showGoodToast('<span class="item-pop">✅</span> Richtig!');
     // Bewusst KEIN Zuruecksetzen des Fehlerzaehlers: das Wasser soll stehen
     // bleiben, wenn die Antwort stimmt.
     // Und bewusst KEINE gruene Einblendung - der gruene Knopf ist Signal genug,
@@ -5905,13 +6049,19 @@ function handleGrammarAnswer(btn, choice, exercise){
   // ---- Flutungsraum --------------------------------------------------------
   const avatarEl = document.getElementById('flood-avatar');
   const waterEl = document.getElementById('flood-water');
+  // Leicht: hochklettern, Wasser steigt nur bei Fehlern.
+  // Schwer: richtig = eine Stufe hoch, falsch = eine Stufe runter.
+  if(state.floodHard){ setFloodPos(state.floodPos + (correct ? 1 : -1)); }
+  else if(correct){ setFloodPos(state.grammarCorrectCount); }
   const { level, avatarBottom, waterHeight } = grammarRoomGeometry();
   if(waterEl){ waterEl.style.height = waterHeight + "px"; }
+  const bildEl = document.getElementById('flood-avatar-img');
+  if(bildEl){ bildEl.style.transform = "scaleX(" + state.floodFacing + ")"; }
   if(avatarEl){
-    // Beim Aufsteigen wandert die Figur auch seitlich zur naechsten Plattform.
+    // Beim Springen wandert die Figur auch seitlich zur naechsten Plattform.
     avatarEl.style.bottom = avatarBottom + "px";
     avatarEl.style.marginLeft =
-      (floodPlatformX(level) + avatarFootOffset(avatarById(state.avatarId), FLOOD_AVATAR_SIZE)) + "px";
+      (floodPlatformX(level) + avatarFootOffset(avatarById(state.avatarId), FLOOD_AVATAR_SIZE, state.floodFacing)) + "px";
     document.querySelectorAll('.flood-platform').forEach((p, i)=>{
       p.classList.toggle('current', i === level);
     });
@@ -5921,15 +6071,23 @@ function handleGrammarAnswer(btn, choice, exercise){
     }
   }
 
-  const won = state.grammarCorrectCount >= GRAMMAR_GOAL_CORRECT;
-  const lost = state.grammarWrongStreak >= GRAMMAR_MAX_WRONG_STREAK;
+  const won = state.floodHard
+    ? state.floodPos >= GRAMMAR_GOAL_CORRECT
+    : state.grammarCorrectCount >= GRAMMAR_GOAL_CORRECT;
+  const lost = state.floodHard
+    ? floodDrowned()
+    : state.grammarWrongStreak >= GRAMMAR_MAX_WRONG_STREAK;
   if(lost && avatarEl){ avatarEl.classList.add('sink'); }
+  if(won || lost){ floodBeendet = true; stopFloodRise(); }
 
   const weiter = ()=>{
+    if(floodBeendet && !won && !lost){ return; }
     state.grammarAnswered = false;
     if(won){
+      stopFloodRise();
       finishGrammarSession("won");
     } else if(lost){
+      stopFloodRise();
       finishGrammarSession("lost");
     } else {
       state.grammarCurrentExercise = pickGrammarExercise(grammarTopicById(state.grammarTopicId));
@@ -5938,10 +6096,9 @@ function handleGrammarAnswer(btn, choice, exercise){
   };
   if(correct){ setTimeout(weiter, 1200); }
   else {
-    // Zuerst steigt das Wasser sichtbar an, danach erscheint die Korrektur.
     setTimeout(()=>{
       fb.className = 'feedback show bad';
-      fb.innerHTML = `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. Das Wasser ist gestiegen! ${escapeHtml(exercise.de)}</div>`;
+      fb.innerHTML = `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. ${state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!"} ${escapeHtml(exercise.de)}</div>`;
       if(lost){ scrollFeedbackIntoView(fb); setTimeout(weiter, 1600); }
       else { grammarWeiterKnopf(fb, weiter); }
     }, FLOOD_MSG_DELAY);
@@ -5949,6 +6106,7 @@ function handleGrammarAnswer(btn, choice, exercise){
 }
 
 function finishGrammarSession(result){
+  stopFloodRise();
   protokolliereRunde("grammar", state.grammarSessionLog);
   state.coins = Math.max(0, state.coins + state.grammarSessionCoins);
   state.grammarGameResult = result;
