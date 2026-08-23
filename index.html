@@ -475,6 +475,49 @@
   .parent-open-btn{ background:linear-gradient(180deg,#e0a24a,#a86b18); }
   .parent-lock-btn{ background:linear-gradient(180deg,#6f7d8c,#41505f); }
   .panel.gefahr{ border:2px solid #f0b6b6; background:rgba(255,240,238,0.85); }
+  .avatar-option.leer .avatar-swatch.platzhalter{
+    background:rgba(255,255,255,0.7); border:2px dashed #9db894;
+    display:flex; align-items:center; justify-content:center; font-size:28px;
+  }
+  .mal-flaeche{
+    display:grid; grid-template-columns:repeat(16, 1fr); gap:1px;
+    width:100%; max-width:360px; margin:10px auto 0; aspect-ratio:1/1;
+    background:#cfd8cb; border:3px solid #7d8f78; border-radius:10px;
+    padding:2px; touch-action:none; user-select:none;
+  }
+  .mal-punkt{ background:#fdfdfb; border-radius:1px; cursor:crosshair; }
+  .mal-punkt.leer{
+    background-image:linear-gradient(45deg,#eceee9 25%,transparent 25%,transparent 75%,#eceee9 75%),
+                     linear-gradient(45deg,#eceee9 25%,transparent 25%,transparent 75%,#eceee9 75%);
+    background-size:6px 6px; background-position:0 0, 3px 3px; background-color:#fdfdfb;
+  }
+  .farb-reihe{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(38px,1fr));
+    gap:6px; margin-top:12px;
+  }
+  .farb-knopf{
+    aspect-ratio:1/1; border-radius:10px; border:3px solid rgba(255,255,255,0.9);
+    cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,0.18); padding:0;
+  }
+  .farb-knopf.gewaehlt{ border-color:#2c7a37; box-shadow:0 0 0 3px rgba(77,181,92,0.45); }
+  .farb-knopf.radierer{
+    background-image:linear-gradient(45deg,#e6e6e6 25%,#fff 25%,#fff 75%,#e6e6e6 75%),
+                     linear-gradient(45deg,#e6e6e6 25%,#fff 25%,#fff 75%,#e6e6e6 75%);
+    background-size:10px 10px; background-position:0 0, 5px 5px;
+  }
+  .vorschau-reihe{ display:flex; align-items:center; justify-content:center; gap:16px; margin-top:4px; }
+  .vorschau-gross{ width:96px; height:96px; border-radius:14px; background:rgba(255,255,255,0.75);
+    border:2px solid rgba(255,255,255,0.9); }
+  .vorschau-klein{ width:44px; height:44px; border-radius:10px; background:rgba(255,255,255,0.75);
+    border:2px solid rgba(255,255,255,0.9); }
+  .vorlagen-reihe{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-top:8px; }
+  .vorlage-knopf{
+    background:rgba(255,255,255,0.8); border:2px solid rgba(255,255,255,0.9);
+    border-radius:12px; padding:6px 4px; cursor:pointer; font-family:var(--font);
+    font-size:11px; font-weight:700; color:#1e4515;
+  }
+  .vorlage-bild{ display:block; width:100%; aspect-ratio:1/1; image-rendering:pixelated;
+    background-size:cover; margin-bottom:3px; }
   .info-btn{
     position:absolute; top:0; right:0; z-index:20;
     width:40px; height:40px; border-radius:50%; border:2px solid rgba(255,255,255,0.9);
@@ -1272,7 +1315,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "18.2 – Netherportal";
+const APP_VERSION = "19.0 – Smaragdader II";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1389,7 +1432,95 @@ const AVATARS = [
   {id:"potion", name:"Alchemistin", src:AVATAR_IMAGES["potion"]},
   {id:"crystal", name:"Kristall", src:AVATAR_IMAGES["crystal"]}
 ];
-function avatarById(id){ return AVATARS.find(a=>a.id===id) || AVATARS[0]; }
+const AVATAR_PALETTE = ["", "#ffffff", "#d0d3d4", "#8a8f94", "#2b2b2b", "#f2c9a0", "#c68642", "#6b4423", "#d8a33a", "#c0392b", "#e8792b", "#f2d02c", "#3f9d4e", "#1e6e33", "#2f5f9e", "#4dd2ff", "#8a3fbf"];
+const AVATAR_ALPHABET = ".123456789abcdefg";
+const AVATAR_VORLAGEN = [
+  { name:"Ritter", px:".....................................222222.........21111112........21555512........21544512........21111112.........222222........2233333322.....221339933122....22.333333.22.......333333..........33..33..........33..33.........444..444........444..444...." },
+  { name:"Waldläufer", px:".....................................dddddd.........ddddddddd.......dd5555dd........d55555d5.........557755..........555555........77cccccc77.....775cccccc577.....7.cccccc.7........cccccc..........77..77..........77..77.........666..666........666..666...." },
+  { name:"Zauberin", px:"........g..............ggg............ggggg..........ggggggg........ggggggggg........555555..........544445..........555555.........gggggggg.......5gggbggg5........gggggggg........gggggggg........gggggggg.......gggggggggg......gggggggggg.......7777.7777..." },
+  { name:"Roboter", px:".........................b...........3333333........333333333.......33f333f33.......333333333........3333333.......................33eeeeee33......33efffffe33.....33eeeeee33........eeeeee..........33..33..........33..33.........333..333........333..333...." },
+];
+
+/* ---------------------------------------------------
+   SELBST GEMALTER AVATAR
+   16x16 Bildpunkte, ein Zeichen je Punkt. Aus der Zeichenkette wird bei
+   Bedarf ein PNG gebaut und gemerkt - so laeuft der Rest der App unveraendert
+   weiter, denn ueberall steht weiterhin nur av.src.
+--------------------------------------------------- */
+const AVATAR_GRID = 16;
+const CUSTOM_AVATAR_ID = "custom";
+const pixelBildCache = {};
+
+function leeresPixelbild(){ return ".".repeat(AVATAR_GRID * AVATAR_GRID); }
+
+function pixelBildGueltig(px){
+  if(typeof px !== "string" || px.length !== AVATAR_GRID * AVATAR_GRID) return false;
+  for(let i = 0; i < px.length; i++){
+    if(AVATAR_ALPHABET.indexOf(px[i]) < 0) return false;
+  }
+  return true;
+}
+
+function pixelToDataUri(px){
+  if(!pixelBildGueltig(px)) return null;
+  if(pixelBildCache[px]) return pixelBildCache[px];
+  const c = document.createElement('canvas');
+  c.width = AVATAR_GRID; c.height = AVATAR_GRID;
+  const ctx = c.getContext('2d');
+  const bild = ctx.createImageData(AVATAR_GRID, AVATAR_GRID);
+  for(let i = 0; i < px.length; i++){
+    const k = AVATAR_ALPHABET.indexOf(px[i]);
+    const o = i * 4;
+    if(k <= 0){ bild.data[o+3] = 0; continue; }
+    const h = AVATAR_PALETTE[k];
+    bild.data[o]   = parseInt(h.slice(1,3), 16);
+    bild.data[o+1] = parseInt(h.slice(3,5), 16);
+    bild.data[o+2] = parseInt(h.slice(5,7), 16);
+    bild.data[o+3] = 255;
+  }
+  ctx.putImageData(bild, 0, 0);
+  const uri = c.toDataURL('image/png');
+  pixelBildCache[px] = uri;
+  return uri;
+}
+
+// Wo stehen die Fuesse? Beim selbst gemalten Avatar rechnen wir das aus,
+// statt es wie bei den acht fertigen Figuren von Hand zu messen.
+const fussCache = {};
+function pixelFussMitte(px){
+  if(!pixelBildGueltig(px)) return 50;
+  if(fussCache[px] != null) return fussCache[px];
+  let zeile = -1;
+  for(let y = AVATAR_GRID - 1; y >= 0 && zeile < 0; y--){
+    for(let x = 0; x < AVATAR_GRID; x++){
+      if(px[y * AVATAR_GRID + x] !== "."){ zeile = y; break; }
+    }
+  }
+  let ergebnis = 50;
+  if(zeile >= 0){
+    let summe = 0, anzahl = 0;
+    for(let y = Math.max(0, zeile - 1); y <= zeile; y++){
+      for(let x = 0; x < AVATAR_GRID; x++){
+        if(px[y * AVATAR_GRID + x] !== "."){ summe += x + 0.5; anzahl++; }
+      }
+    }
+    if(anzahl > 0){ ergebnis = (summe / anzahl) / AVATAR_GRID * 100; }
+  }
+  fussCache[px] = ergebnis;
+  return ergebnis;
+}
+
+// px darf mitgegeben werden - fuer fremde Spieler in der Rangliste, deren
+// Bild ja nicht im eigenen Zustand steht.
+function avatarById(id, px){
+  if(id === CUSTOM_AVATAR_ID){
+    const daten = (typeof px === "string" && px) ? px : state.customAvatar;
+    const uri = pixelToDataUri(daten);
+    if(uri) return { id: CUSTOM_AVATAR_ID, name: "Selbst gemalt", src: uri, px: daten };
+    return AVATARS[0];
+  }
+  return AVATARS.find(a=>a.id===id) || AVATARS[0];
+}
 
 // Bei welchem Anteil der Bildbreite stehen die FUESSE der Figur? Die Avatare
 // sind nicht mittig gezeichnet - ohne diese Korrektur steht die Figur im
@@ -1399,7 +1530,8 @@ const AVATAR_FOOT_CENTER = {
   lava:56.8, potion:47.8, crystal:48.0, shadow:41.8
 };
 function avatarFootOffset(av, size, facing){
-  let c = (AVATAR_FOOT_CENTER[av.id] != null) ? AVATAR_FOOT_CENTER[av.id] : 50;
+  let c = (av.id === CUSTOM_AVATAR_ID && av.px) ? pixelFussMitte(av.px)
+        : ((AVATAR_FOOT_CENTER[av.id] != null) ? AVATAR_FOOT_CENTER[av.id] : 50);
   // Gespiegelt liegen die Fuesse auch spiegelbildlich.
   if(facing === -1){ c = 100 - c; }
   return Math.round(-(size/2) + ((50 - c)/100) * size);
@@ -1420,7 +1552,15 @@ function preloadAvatarImages(){
 
 // Zeichnet den Avatar (echtes Bild) auf einen Canvas (fürs Zertifikat-Bild)
 function drawAvatarOnCanvas(ctx, av, x, y, size){
-  const img = AVATAR_IMG_CACHE[av.id];
+  let img = AVATAR_IMG_CACHE[av.id];
+  if(av.id === CUSTOM_AVATAR_ID){
+    // Der selbst gemalte Avatar wird erst bei Bedarf erzeugt.
+    if(!img || img.src !== av.src){
+      img = new Image();
+      img.src = av.src;
+      AVATAR_IMG_CACHE[CUSTOM_AVATAR_ID] = img;
+    }
+  }
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.35)";
   ctx.shadowBlur = size*0.08;
@@ -1516,6 +1656,7 @@ function loadSave(){
     if(data.activityLog && typeof data.activityLog === "object") state.activityLog = data.activityLog;
     if(Array.isArray(data.customRewards)) state.customRewards = data.customRewards;
     if(Array.isArray(data.hiddenRewards)) state.hiddenRewards = data.hiddenRewards;
+    if(typeof data.customAvatar === "string") state.customAvatar = data.customAvatar;
   }catch(e){ /* Speicher blockiert (z.B. Vorschau-Sandbox) - Standardwerte bleiben */ }
 }
 function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewusst nichts
@@ -1535,7 +1676,8 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       grammarSkills: state.grammarSkills,
       activityLog: state.activityLog,
       customRewards: state.customRewards,
-      hiddenRewards: state.hiddenRewards
+      hiddenRewards: state.hiddenRewards,
+      customAvatar: state.customAvatar
     }));
   }catch(e){ /* Speicher nicht verfügbar - Fortschritt bleibt nur für diese Sitzung erhalten */ }
 }
@@ -1548,6 +1690,10 @@ const state = {
   mode: "mc",
   direction: "de-en",
   avatarId: AVATARS[0].id,
+  customAvatar: "",        // 256 Zeichen, selbst gemalter Avatar
+  editorPx: "",            // Arbeitskopie im Malkasten
+  editorFarbe: 1,          // gewaehlter Farbstift
+  editorReturnTo: "start",
   playerName: "",
   category: "Alle",
 
@@ -1711,6 +1857,7 @@ function applyPlayerToState(player){
   state.activityLog = (player.activityLog && typeof player.activityLog === "object") ? player.activityLog : {};
   state.customRewards = Array.isArray(player.customRewards) ? player.customRewards : [];
   state.hiddenRewards = Array.isArray(player.hiddenRewards) ? player.hiddenRewards : [];
+  state.customAvatar = (typeof player.customAvatar === "string") ? player.customAvatar : "";
   state.parentUnlocked = false;   // beim Profilwechsel wieder zusperren
   state.parentPinHash = player.parentPinHash || null;
   state.parentPinSalt = player.parentPinSalt || null;
@@ -1902,7 +2049,8 @@ function syncToCloud(){
       grammarSkills: state.grammarSkills || {},
       activityLog: state.activityLog || {},
       customRewards: state.customRewards || [],
-      hiddenRewards: state.hiddenRewards || []
+      hiddenRewards: state.hiddenRewards || [],
+      customAvatar: state.customAvatar || ""
     };
     if(state.parentPinHash){ payload.parentPinHash = state.parentPinHash; }
     if(state.parentPinSalt){ payload.parentPinSalt = state.parentPinSalt; }
@@ -2091,6 +2239,7 @@ function render(){
   if(state.screen==="impressum") return renderImpressum();
   if(state.screen==="datenschutz") return renderDatenschutz();
   if(state.screen==="info") return renderInfo();
+  if(state.screen==="avatareditor") return renderAvatarEditor();
   // Alles andere ist gesperrt, solange keine gueltige Firebase-Anmeldung besteht.
   if(!state.cloudId && !state.guest) return renderLogin();
   if(state.screen==="start") return renderStart();
@@ -2653,7 +2802,21 @@ function renderStart(){
               <span class="aname">${av.name}</span>
             </div>
           `).join("")}
+          ${pixelBildGueltig(state.customAvatar) ? `
+            <div class="avatar-option ${state.avatarId===CUSTOM_AVATAR_ID?'selected':''}" data-avatar="${CUSTOM_AVATAR_ID}">
+              <span class="avatar-swatch" style="${avatarStyle(avatarById(CUSTOM_AVATAR_ID))}"></span>
+              <span class="aname">Selbst gemalt</span>
+            </div>
+          ` : `
+            <div class="avatar-option leer" id="avatar-neu">
+              <span class="avatar-swatch platzhalter">🎨</span>
+              <span class="aname">Selbst malen</span>
+            </div>
+          `}
         </div>
+        <button class="btn secondary small" id="avatar-editor-btn" style="margin-top:10px;">
+          🎨 ${pixelBildGueltig(state.customAvatar) ? "Eigenen Avatar bearbeiten" : "Eigenen Avatar malen"}
+        </button>
         <!-- Abmelden steht jetzt oben, direkt neben "Avatar aendern" -->
       ` : ""}
     </div>
@@ -2879,6 +3042,10 @@ function renderStart(){
   document.querySelectorAll('.mode-btn[data-direction]').forEach(el=>{
     el.addEventListener('click', ()=>{ state.direction = el.dataset.direction; render(); });
   });
+  const avatarNeu = document.getElementById('avatar-neu');
+  if(avatarNeu){ avatarNeu.addEventListener('click', ()=>oeffneAvatarEditor()); }
+  const avatarEditorBtn = document.getElementById('avatar-editor-btn');
+  if(avatarEditorBtn){ avatarEditorBtn.addEventListener('click', ()=>oeffneAvatarEditor()); }
   document.querySelectorAll('.mode-btn[data-mainmode]').forEach(el=>{
     el.addEventListener('click', ()=>{ state.mainMode = el.dataset.mainmode; render(); });
   });
@@ -5394,6 +5561,178 @@ function renderInfo(){
   document.getElementById('back-btn').addEventListener('click', zurueck);
 }
 
+
+/* ---------------------------------------------------
+   MALKASTEN FUER DEN EIGENEN AVATAR
+--------------------------------------------------- */
+function oeffneAvatarEditor(){
+  state.editorPx = pixelBildGueltig(state.customAvatar) ? state.customAvatar : AVATAR_VORLAGEN[0].px;
+  state.editorFarbe = 1;
+  state.editorReturnTo = "start";
+  state.screen = "avatareditor";
+  render();
+  window.scrollTo(0, 0);
+}
+
+function editorSetze(i, farbe){
+  if(i < 0 || i >= AVATAR_GRID * AVATAR_GRID) return;
+  const zeichen = AVATAR_ALPHABET[farbe] || ".";
+  if(state.editorPx[i] === zeichen) return;
+  state.editorPx = state.editorPx.slice(0, i) + zeichen + state.editorPx.slice(i + 1);
+  const punkt = document.querySelector('.mal-punkt[data-i="' + i + '"]');
+  if(punkt){
+    if(farbe <= 0){ punkt.classList.add('leer'); punkt.style.background = ""; }
+    else { punkt.classList.remove('leer'); punkt.style.background = AVATAR_PALETTE[farbe]; }
+  }
+  editorVorschau();
+}
+
+function editorVorschau(){
+  const uri = pixelToDataUri(state.editorPx);
+  ["vorschau-a", "vorschau-b"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && uri){
+      el.style.backgroundImage = "url('" + uri + "')";
+      el.style.backgroundSize = "cover";
+      el.style.imageRendering = "pixelated";
+    }
+  });
+}
+
+function renderAvatarEditor(){
+  if(!pixelBildGueltig(state.editorPx)){ state.editorPx = leeresPixelbild(); }
+
+  let punkte = "";
+  for(let i = 0; i < AVATAR_GRID * AVATAR_GRID; i++){
+    const k = AVATAR_ALPHABET.indexOf(state.editorPx[i]);
+    punkte += k > 0
+      ? `<div class="mal-punkt" data-i="${i}" style="background:${AVATAR_PALETTE[k]};"></div>`
+      : `<div class="mal-punkt leer" data-i="${i}"></div>`;
+  }
+
+  const farben = AVATAR_PALETTE.map((hex, i)=>
+    i === 0
+      ? `<button type="button" class="farb-knopf radierer ${state.editorFarbe===0?'gewaehlt':''}" data-farbe="0" title="Radierer" aria-label="Radierer"></button>`
+      : `<button type="button" class="farb-knopf ${state.editorFarbe===i?'gewaehlt':''}" data-farbe="${i}" style="background:${hex};" aria-label="Farbe ${i}"></button>`
+  ).join("");
+
+  const vorlagen = AVATAR_VORLAGEN.map((v, i)=>
+    `<button type="button" class="vorlage-knopf" data-vorlage="${i}">
+       <span class="vorlage-bild" style="background-image:url('${pixelToDataUri(v.px)}');"></span>
+       ${escapeHtml(v.name)}
+     </button>`
+  ).join("");
+
+  app.innerHTML = `
+    ${renderHeader("Eigener Avatar", true)}
+
+    <div class="panel">
+      <p class="center-text muted" style="margin:0 0 4px;font-size:13px;">
+        Tippe oder wische über die Felder. Unten wählst du die Farbe.
+      </p>
+      <div class="vorschau-reihe">
+        <span class="vorschau-gross" id="vorschau-a"></span>
+        <span class="vorschau-klein" id="vorschau-b"></span>
+      </div>
+      <div class="mal-flaeche" id="mal-flaeche">${punkte}</div>
+      <div class="farb-reihe">${farben}</div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:14px;margin-bottom:2px;">VORLAGE ALS START</h3>
+      <p class="muted" style="margin:0;font-size:12px;">Achtung: Das überschreibt dein Bild.</p>
+      <div class="vorlagen-reihe">${vorlagen}</div>
+      <button class="btn secondary small" id="mal-leeren" style="margin-top:10px;">🧽 Alles löschen</button>
+    </div>
+
+    <button class="btn" id="mal-speichern">💾 SPEICHERN UND VERWENDEN</button>
+    <div style="height:10px;"></div>
+    <button class="btn danger" id="back-btn">✕ ABBRECHEN</button>
+  `;
+
+  editorVorschau();
+
+  // Malen: funktioniert mit Maus und Finger. elementFromPoint findet auch beim
+  // Wischen das richtige Feld - normale Mouseover-Ereignisse tun das am Handy nicht.
+  const flaeche = document.getElementById('mal-flaeche');
+  let maltGerade = false;
+  const malenAn = (x, y)=>{
+    const el = document.elementFromPoint(x, y);
+    if(el && el.classList.contains('mal-punkt')){
+      editorSetze(parseInt(el.dataset.i, 10), state.editorFarbe);
+    }
+  };
+  flaeche.addEventListener('pointerdown', e=>{
+    maltGerade = true;
+    flaeche.setPointerCapture && flaeche.setPointerCapture(e.pointerId);
+    malenAn(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+  flaeche.addEventListener('pointermove', e=>{
+    if(!maltGerade) return;
+    malenAn(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+  const malenAus = ()=>{ maltGerade = false; };
+  flaeche.addEventListener('pointerup', malenAus);
+  flaeche.addEventListener('pointercancel', malenAus);
+  flaeche.addEventListener('pointerleave', malenAus);
+
+  document.querySelectorAll('[data-farbe]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.editorFarbe = parseInt(el.dataset.farbe, 10);
+      document.querySelectorAll('[data-farbe]').forEach(x=>x.classList.remove('gewaehlt'));
+      el.classList.add('gewaehlt');
+    });
+  });
+
+  document.querySelectorAll('[data-vorlage]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const v = AVATAR_VORLAGEN[parseInt(el.dataset.vorlage, 10)];
+      if(!v) return;
+      showConfirmModal('Vorlage laden? Dein aktuelles Bild wird dabei überschrieben.', ()=>{
+        state.editorPx = v.px;
+        render();
+      });
+    });
+  });
+
+  document.getElementById('mal-leeren').addEventListener('click', ()=>{
+    showConfirmModal('Wirklich alles löschen?', ()=>{
+      state.editorPx = leeresPixelbild();
+      render();
+    });
+  });
+
+  document.getElementById('mal-speichern').addEventListener('click', ()=>{
+    const gemalt = state.editorPx.split("").filter(c=>c !== ".").length;
+    if(gemalt < 12){
+      showConfirmModal('Da ist noch fast nichts gemalt. Trotzdem speichern?', ()=>{
+        avatarSpeichern();
+      });
+      return;
+    }
+    avatarSpeichern();
+  });
+
+  document.getElementById('back-btn').addEventListener('click', ()=>{
+    state.screen = state.editorReturnTo || "start";
+    render();
+    window.scrollTo(0, 0);
+  });
+}
+
+function avatarSpeichern(){
+  state.customAvatar = state.editorPx;
+  state.avatarId = CUSTOM_AVATAR_ID;
+  saveProgress();
+  syncToCloud();
+  state.screen = state.editorReturnTo || "start";
+  render();
+  window.scrollTo(0, 0);
+  showGoodToast('🎨 Dein Avatar ist gespeichert!');
+}
+
 function renderShop(){
   app.innerHTML = `
     ${renderHeader("Tausche Münzen gegen Items")}
@@ -5503,7 +5842,7 @@ function renderLeaderboard(){
 
 function showGradeDetailModal(player){
   if(!player) return;
-  const av = avatarById(player.avatarId);
+  const av = avatarById(player.avatarId, player.customAvatar);
   const entries = Array.isArray(player.gradeEntries) ? player.gradeEntries.slice() : [];
   entries.sort((a,b)=> a.date < b.date ? 1 : -1); // neueste zuerst
   const quote = pickRandom(GRADE_MOTIVATION_QUOTES);
@@ -5555,7 +5894,7 @@ function renderLeaderboardBody(){
       : `<p class="center-text muted">Noch keine Einträge &ndash; sei die/der Erste!</p>`;
   }
   return `<div class="vocab-list" style="max-height:420px;">` + state.leaderboardData.map((p, i)=>{
-    const av = avatarById(p.avatarId);
+    const av = avatarById(p.avatarId, p.customAvatar);
     const isMe = state.cloudId && p.id === state.cloudId;
     const valueHtml = isGrades
       ? `💎 Ø ${(typeof p.avgGrade==="number" ? p.avgGrade.toFixed(2) : "-")}`
