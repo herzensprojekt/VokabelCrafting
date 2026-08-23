@@ -498,8 +498,17 @@
     from{ opacity:0; transform:translateX(-50%) translateY(-18px) scale(0.9); }
     to{ opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
   }
-  .flood-hard-hint{ font-size:11.5px; font-weight:700; color:#b03a2e;
-    background:rgba(255,255,255,0.75); padding:3px 9px; border-radius:9px; }
+  .flood-hard-hint{
+    position:absolute; top:27px; left:6px; right:6px; z-index:7;
+    text-align:center; font-size:11.5px; font-weight:800; line-height:1.3;
+    color:#7a1f12; background:rgba(255,241,208,0.94);
+    border:1px solid rgba(0,0,0,0.14); padding:4px 8px; border-radius:9px;
+    animation: hinweis-weg 4s ease forwards;
+  }
+  @keyframes hinweis-weg{
+    0%, 65%{ opacity:1; transform:translateY(0); }
+    100%{ opacity:0; transform:translateY(-8px); visibility:hidden; }
+  }
   .mode-btn[data-mode="floodhard"]{ background:linear-gradient(135deg,#2f6fbf,#123566); }
   .game-tile[data-mode="floodhard"] .gm-ic{ background:linear-gradient(160deg,#dbeaff,#a9c9ee); }
   .gram-tip{
@@ -1231,7 +1240,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "17.0 – Diamantader";
+const APP_VERSION = "17.1 – Diamantader";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2721,7 +2730,11 @@ function renderStart(){
     </div>
     `}
 
-    <button class="btn" id="start-btn" style="font-size:19px;padding:18px;" ${state.mainMode==='grammar' && !state.grammarTopicId ? 'disabled' : ''}>▶ ${state.mainMode==='grammar' ? 'GRAMMATIK STARTEN' : 'SPIEL STARTEN'}</button>
+    ${state.mainMode === 'grammar'
+      ? `<p class="muted center-text" style="margin:4px auto 0;padding:12px 16px;background:rgba(255,255,255,0.7);border-radius:14px;font-size:13.5px;">
+           👆 Tippe ein Thema an &ndash; danach wählst du, wie du üben möchtest.
+         </p>`
+      : `<button class="btn" id="start-btn" style="font-size:19px;padding:18px;">▶ SPIEL STARTEN</button>`}
     <p class="muted center-text" style="margin:10px auto 0;padding:12px 16px;background:rgba(255,255,255,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:14px;">${state.mainMode==='grammar' ? 'Auch bei Grammatik gibt\'s für jede richtige Antwort Münzen &ndash; genau wie beim Vokabeln lernen.' : 'Für jede richtige Antwort gibt\'s Münzen. Bei falschen oder leeren Antworten werden 10 Münzen abgezogen (dein Kontostand geht dabei nie unter 0). Am Ende jeder Übung wartet dein Zertifikat &ndash; die verdienten Münzen kannst du danach im Shop eintauschen.'}</p>
 
     <div style="height:14px;"></div>
@@ -2812,8 +2825,17 @@ function renderStart(){
   document.querySelectorAll('.unit-bar[data-unit-toggle]').forEach(el=>{
     el.addEventListener('click', ()=>{
       const nr = parseInt(el.dataset.unitToggle, 10);
-      state.grammarOpenUnit = (state.grammarOpenUnit === nr) ? null : nr;
+      const oeffnen = state.grammarOpenUnit !== nr;
+      state.grammarOpenUnit = oeffnen ? nr : null;
       render();
+      // Die frisch geoeffnete Unit nach oben holen, damit ihre Themen
+      // sofort sichtbar sind.
+      if(oeffnen){
+        const leiste = document.querySelector('.unit-bar[data-unit-toggle="' + nr + '"]');
+        if(leiste && leiste.scrollIntoView){
+          leiste.scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+      }
     });
   });
   document.querySelectorAll('.mode-btn[data-grammar-topic]').forEach(el=>{
@@ -2821,7 +2843,11 @@ function renderStart(){
       state.grammarTopicId = el.dataset.grammarTopic;
       const th = grammarTopicById(state.grammarTopicId);
       if(th){ state.grammarOpenUnit = th.unit; }   // die Unit bleibt offen
+      // Direkt weiter zur Auswahl der Uebungsart. Frueher musste man dafuer
+      // erst an allen Themen vorbei nach unten scrollen.
+      state.screen = "grammarintro";
       render();
+      window.scrollTo(0, 0);
     });
   });
   const statsBtn = document.getElementById('grammar-stats-btn');
@@ -2844,15 +2870,8 @@ function renderStart(){
       render();
     });
   }
-  document.getElementById('start-btn').addEventListener('click', ()=>{
-    if(state.mainMode === 'grammar'){
-      if(!state.grammarTopicId) return;
-      state.screen = "grammarintro";
-      render();
-    } else {
-      startGame();
-    }
-  });
+  const startBtn = document.getElementById('start-btn');
+  if(startBtn){ startBtn.addEventListener('click', startGame); }
   document.getElementById('shop-btn').addEventListener('click', ()=>{ state.screen="shop"; state.shopReturnTo="start"; render(); attemptCloudLogin(true); });
   document.getElementById('leaderboard-btn').addEventListener('click', ()=>{ openLeaderboard("start"); });
   const impStart = document.getElementById('impressum-start');
@@ -5873,6 +5892,11 @@ function raiseFloodWater(){
 
 function renderFloodRoom(){
   const av = avatarById(state.avatarId);
+  // Der Hinweis zum schweren Modus wird nur vor der allerersten Antwort
+  // gezeigt - danach stoert er nur noch beim Spielen.
+  const nochKeineAntwort = state.floodPos === 0
+    && state.grammarCorrectCount === 0
+    && state.grammarWrongStreak === 0;
   const { level, avatarBottom, waterHeight } = grammarRoomGeometry();
   // Die Figur wird so verschoben, dass ihre FUESSE ueber der Plattformmitte
   // stehen - nicht die Bildmitte.
@@ -5897,11 +5921,13 @@ function renderFloodRoom(){
         <span class="avatar-swatch" id="flood-avatar-img" style="${avatarStyle(av)}transform:scaleX(${state.floodFacing});"></span>
       </div>
       <div class="flood-water" id="flood-water" style="height:${waterHeight}px;">${bubbles}</div>
-      <div class="flood-danger-row">
-        ${state.floodHard
-          ? `<span class="flood-hard-hint">⚠️ Das Wasser steigt von allein &middot; falsch = eine Stufe runter</span>`
-          : Array.from({length: GRAMMAR_MAX_WRONG_STREAK}, (_,i)=>`<span class="flood-danger-drop ${i < state.grammarWrongStreak ? 'active':''}">💧</span>`).join("")}
-      </div>
+      ${state.floodHard
+        ? (nochKeineAntwort
+            ? `<div class="flood-hard-hint">⚠️ Das Wasser steigt von allein &middot; falsch = eine Stufe runter</div>`
+            : "")
+        : `<div class="flood-danger-row">
+            ${Array.from({length: GRAMMAR_MAX_WRONG_STREAK}, (_,i)=>`<span class="flood-danger-drop ${i < state.grammarWrongStreak ? 'active':''}">💧</span>`).join("")}
+          </div>`}
     </div>`;
 }
 
