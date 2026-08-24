@@ -870,7 +870,10 @@
     position:absolute; left:50%; top:48%; transform:translate(-50%,-50%);
     width:58px; height:58px; pointer-events:none;
   }
-  .lingora-knopf span{
+  /* NUR die Beschriftung - nicht jeder Span im Knopf. Vorher stand hier
+     ".lingora-knopf span", was auch die Huelle um das Portrait lila
+     einfaerbte. */
+  .lingora-knopf .lg-knopf-text{
     position:absolute; left:50%; bottom:-20px; transform:translateX(-50%);
     font-family:var(--font); font-weight:800; font-size:9.5px; line-height:1.05;
     color:#ffffff; background:#7a4bbf; border-radius:8px;
@@ -888,6 +891,8 @@
   .lg-lebt{ position:relative; display:block; }
   .lg-lebt > img{ display:block; width:100%; height:100%; }
   .lg-lebt.regt-sich > img:first-child{ visibility:hidden; }
+  /* Ein Bild, das nicht geladen werden konnte, zeigt nichts an. */
+  .lg-bewegt:not([src]), .lg-bewegt[src=""]{ display:none; }
   .lg-bewegt{
     position:absolute; left:0; top:0; width:100%; height:100%;
     pointer-events:none;
@@ -1666,7 +1671,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "25.0 – Lingora wird lebendig";
+const APP_VERSION = "25.1 – Lingora wird lebendig";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2011,9 +2016,10 @@ const LINGORA_WEISHEIT = [
 const LINGORA_BEWEGT = "lingora.webp";
 const LINGORA_DAUER_MS = 7150;
 let lingoraRegtSich = false;
+let lingoraBewegungFehlt = false;   // Datei nicht da? Dann gar nicht erst versuchen.
 
 function lingoraRegen(){
-  if(lingoraRegtSich) return;
+  if(lingoraRegtSich || lingoraBewegungFehlt) return;
   if(document.hidden) return;
   const traeger = document.querySelectorAll('.lg-lebt');
   if(!traeger.length) return;
@@ -2024,6 +2030,16 @@ function lingoraRegen(){
     const im = document.createElement('img');
     im.className = 'lg-bewegt';
     im.alt = "";
+    // Fehlt die Datei, verschwindet das Bild lautlos - lieber gar keine
+    // Bewegung als ein kaputtes Bildsymbol im Knopf.
+    im.onerror = ()=>{
+      lingoraBewegungFehlt = true;
+      eingefuegt.forEach(([tt, ii])=>{
+        if(ii.parentNode) ii.parentNode.removeChild(ii);
+        tt.classList.remove('regt-sich');
+      });
+      lingoraRegtSich = false;
+    };
     im.src = LINGORA_BEWEGT + "?v=1";
     t.appendChild(im);
     t.classList.add('regt-sich');
@@ -2645,7 +2661,8 @@ function lingoraKnopfAuffrischen(){
     el.id = 'lingora-knopf';
     el.className = 'lingora-knopf';
     el.title = "Frag Lingora!";
-    el.innerHTML = `<span class="lg-lebt"><img src="${LINGORA_BILD}" alt=""></span><span>Frag<br>Lingora!</span>`;
+    el.innerHTML = `<span class="lg-lebt"><img src="${LINGORA_BILD}" alt=""></span>`
+                  + `<span class="lg-knopf-text">Frag<br>Lingora!</span>`;
     el.addEventListener('click', ()=>lingoraOeffnen(state.screen));
     el.addEventListener('pointerdown', lingoraRegen);
     document.body.appendChild(el);
