@@ -782,6 +782,38 @@
   .abschnitt-h{ font-size:15px; margin:0 0 10px; }  .sell-grid{ display:grid; gap:10px; margin:14px 0 6px; }
   /* Der Aufmacher fuer das Belohnungssystem - das Einzige, was es so
      woanders nicht gibt, steht deshalb hervorgehoben ganz oben. */
+  /* Der Hinweis "aufs Handy holen". Sitzt unten und deckt Lingoras Knopf
+     bewusst zu - zwei Dinge gleichzeitig unten rechts waeren zu viel. */
+  .install-banner{
+    position:fixed; left:10px; right:10px; bottom:10px; z-index:8600;
+    display:flex; align-items:center; gap:11px;
+    background:#ffffff; border:2px solid #7a4bbf; border-radius:18px;
+    padding:11px 12px; box-shadow:0 6px 22px rgba(40,15,80,0.28);
+    animation: ib-rein .32s cubic-bezier(.2,1.2,.4,1);
+  }
+  @keyframes ib-rein{ from{ opacity:0; transform:translateY(24px); } to{ opacity:1; transform:none; } }
+  .ib-icon{ flex:0 0 auto; width:44px; height:44px; border-radius:11px; }
+  .ib-txt{ flex:1 1 auto; min-width:0; }
+  .ib-t{ display:block; font-family:var(--font); font-weight:800; font-size:14px; color:#3a2470; line-height:1.2; }
+  .ib-s{ display:block; font-family:var(--font); font-size:12px; color:#5a5a6a; line-height:1.35; margin-top:2px; }
+  .ib-teilen{
+    display:inline-block; border:1.5px solid #5a5a6a; border-radius:4px;
+    padding:0 4px; font-weight:800; line-height:1.25;
+  }
+  .ib-btn{
+    flex:0 0 auto; font-family:var(--font); font-weight:800; font-size:13px;
+    background:#7a4bbf; color:#fff; border:none; border-radius:12px;
+    padding:11px 13px; cursor:pointer;
+  }
+  .ib-weg{
+    flex:0 0 auto; width:28px; height:28px; border-radius:50%; cursor:pointer;
+    background:#f0edf7; border:none; color:#6a6a7a; font-size:13px; font-weight:800;
+  }
+  /* Solange der Hinweis steht, tritt Lingoras Knopf zurueck.
+     Bewusst ueber eine Klasse statt ueber :has() - das gibt es auf aelteren
+     Geraeten noch nicht, und ausgerechnet hier geht es um alte iPhones. */
+  body.hat-install-banner .lingora-knopf{ display:none !important; }
+  body.hat-install-banner .lg-chat{ bottom:96px; }
   /* Lingoras Chatblasen. Der Kasten selbst faengt keine Tipps ab - nur die
      Blasen, damit man den Bildschirm dahinter weiter bedienen kann. */
   .lg-chat{
@@ -825,7 +857,11 @@
     position:fixed; right:14px; bottom:36px; z-index:8000;
     width:64px; height:64px; border-radius:50%; cursor:pointer;
     border:3px solid #7a4bbf; padding:0;
-    background:#ffffff;
+    /* Kein reines Weiss, sondern derselbe milchige Untergrund wie bei den
+       Kaesten und der Schrift-Pille unter dem Logo: durchscheinend mit
+       Weichzeichner dahinter. So sitzt der Knopf im Bild statt darauf. */
+    background:rgba(255,255,255,0.72);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
     box-shadow:0 4px 14px rgba(90,50,160,0.28);
     display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
     overflow:visible;
@@ -1621,7 +1657,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "23.2 – Lingora schreibt";
+const APP_VERSION = "24.1 – Aufs Handy holen";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2113,9 +2149,12 @@ function lingoraTagBauen(wahl, minuten, phase, tagNr){
 
 /* Baut den kompletten Plan - heute und, wenn eine Arbeit ansteht, die Tage
    bis dahin. */
+/* Steht ein Termin an? Dann plant Lingora ueber mehrere Tage. */
+function lingoraMitTermin(art){ return art === "arbeit" || art === "vokabeltest"; }
+
 function lingoraPlanBauen(wahl){
   const tageBis = Math.max(0, Math.min(14, wahl.tageBis || 0));
-  const anzahlTage = (wahl.art === "arbeit") ? tageBis + 1 : 1;
+  const anzahlTage = lingoraMitTermin(wahl.art) ? tageBis + 1 : 1;
   const heute = new Date();
   const tage = [];
 
@@ -2123,7 +2162,7 @@ function lingoraPlanBauen(wahl){
     const d = new Date(heute.getTime());
     d.setDate(d.getDate() + i);
     let phase = "aufbau";
-    if(wahl.art === "arbeit"){
+    if(lingoraMitTermin(wahl.art)){
       if(i === anzahlTage - 1) phase = "generalprobe";
       else if(i >= anzahlTage - 3) phase = "vertiefen";
     }
@@ -2234,17 +2273,22 @@ function renderLingoraFrage(){
           <span class="lg-opt-t">Nur üben</span>
           <span class="lg-opt-s">Dranbleiben, ohne Termin im Nacken</span>
         </button>
+        <button class="lg-opt ${w.art==='vokabeltest'?'active':''}" data-lgart="vokabeltest">
+          <span class="lg-opt-ic">🔤</span>
+          <span class="lg-opt-t">Vokabeltest</span>
+          <span class="lg-opt-s">Nur Wörter &ndash; ich plane bis zum Test</span>
+        </button>
         <button class="lg-opt ${w.art==='arbeit'?'active':''}" data-lgart="arbeit">
           <span class="lg-opt-ic">📝</span>
           <span class="lg-opt-t">Klassenarbeit</span>
-          <span class="lg-opt-s">Ich mache dir einen Plan bis zum Termin</span>
+          <span class="lg-opt-s">Wörter und Grammatik, bis zum Termin</span>
         </button>
       </div>`;
     weiterAn = !!w.art;
 
   } else if(schritt === 1){
     inhalt = `
-      <h3 class="lg-frage">Wann ist die Arbeit?</h3>
+      <h3 class="lg-frage">Wann ist ${w.art === "vokabeltest" ? "der Test" : "die Arbeit"}?</h3>
       <div class="lg-gitter">
         ${LINGORA_TAGE.map(t=>`
           <button class="lg-chip ${w.tageBis===t.t?'active':''}" data-lgtage="${t.t}">${t.name}</button>
@@ -2263,7 +2307,7 @@ function renderLingoraFrage(){
             <button class="lg-chip ${w.vokabeln.indexOf(k)>=0?'active':''}" data-lgvok="${escapeHtml(k)}">${escapeHtml(k)}</button>
           `).join("")}
         </div>` : ""}
-      ${GRAMMAR_UNITS.map(u=>{
+      ${w.art === "vokabeltest" ? "" : GRAMMAR_UNITS.map(u=>{
         const themen = GRAMMAR_TOPICS.filter(t=>t.unit===u.nr);
         if(!themen.length) return "";
         return `
@@ -2276,10 +2320,14 @@ function renderLingoraFrage(){
             }).join("")}
           </div>`;
       }).join("")}
-      <p class="muted lg-hinweis" style="margin-top:10px;">
-        ⚠️ heißt: Da hakt es noch. ✓ heißt: Das sitzt schon gut.
-        Ich fange mit dem an, was am wackeligsten ist.
-      </p>`;
+      ${w.art === "vokabeltest" ? `
+        <p class="muted lg-hinweis" style="margin-top:10px;">
+          Beim Vokabeltest geht es nur um Wörter &ndash; Grammatik lasse ich diesmal weg.
+        </p>` : `
+        <p class="muted lg-hinweis" style="margin-top:10px;">
+          ⚠️ heißt: Da hakt es noch. ✓ heißt: Das sitzt schon gut.
+          Ich fange mit dem an, was am wackeligsten ist.
+        </p>`}`;
     weiterAn = (w.vokabeln.length + w.grammatik.length) > 0;
 
   } else {
@@ -2344,15 +2392,15 @@ function renderLingoraFrage(){
       render();
       return;
     }
-    // Die Terminfrage ueberspringen wir, wenn keine Arbeit ansteht.
+    // Die Terminfrage ueberspringen wir nur, wenn gar kein Termin ansteht.
     let n = state.lgSchritt + 1;
-    if(n === 1 && state.lgWahl.art !== "arbeit") n = 2;
+    if(n === 1 && !lingoraMitTermin(state.lgWahl.art)) n = 2;
     state.lgSchritt = n;
     render();
   });
   anKnopf('lg-zurueck', ()=>{
     let n = state.lgSchritt - 1;
-    if(n === 1 && state.lgWahl.art !== "arbeit") n = 0;
+    if(n === 1 && !lingoraMitTermin(state.lgWahl.art)) n = 0;
     state.lgSchritt = Math.max(0, n);
     render();
   });
@@ -2385,7 +2433,7 @@ function renderLingoraPlan(){
       ${lingoraKopfHtml(escapeHtml(spruch))}
       <div class="lg-balken"><div class="lg-balken-fuell" style="width:${f.gesamt ? Math.round(f.fertig/f.gesamt*100) : 0}%;"></div></div>
       <p class="lg-stand">${f.fertig} von ${f.gesamt} Schritten geschafft${
-        p.art === "arbeit" ? ` &middot; Arbeit ${p.tageBis === 0 ? "heute" : "in " + p.tageBis + " Tag" + (p.tageBis === 1 ? "" : "en")}` : ""}</p>
+        lingoraMitTermin(p.art) ? ` &middot; ${p.art === "vokabeltest" ? "Test" : "Arbeit"} ${p.tageBis === 0 ? "heute" : "in " + p.tageBis + " Tag" + (p.tageBis === 1 ? "" : "en")}` : ""}</p>
     </div>
 
     <div class="panel">
@@ -2603,6 +2651,129 @@ function lingoraStartVerdrahten(){
   if(el){ el.addEventListener('click', ()=>lingoraOeffnen("start")); }
 }
 
+
+
+/* =====================================================================
+   "AUFS HANDY HOLEN"
+
+   Android/Chrome und iPhone/Safari sind hier grundverschieden:
+
+   - Chrome meldet sich von selbst mit dem Ereignis "beforeinstallprompt".
+     Das fangen wir ab, halten es fest und zeigen einen eigenen Knopf.
+     Voraussetzung dafuer ist ein Service Worker - deshalb sw.js.
+
+   - Safari auf dem iPhone kennt dieses Ereignis NICHT und wird es auch nie
+     kennen. Dort gibt es keinen Installationsknopf, den eine Webseite
+     ausloesen koennte - nur den Weg ueber "Teilen" und "Zum Home-Bildschirm".
+     Genau deshalb ging es auf dem Android und auf dem iPhone nicht. Auf
+     iOS zeigen wir daher eine Anleitung statt eines Knopfes.
+===================================================================== */
+
+let installEreignis = null;
+
+window.addEventListener("beforeinstallprompt", (e)=>{
+  e.preventDefault();               // Chromes eigene Leiste unterdruecken
+  installEreignis = e;
+  installBannerAuffrischen();
+});
+
+window.addEventListener("appinstalled", ()=>{
+  installEreignis = null;
+  try{ localStorage.setItem("lc-install", "fertig"); }catch(err){}
+  const b = document.getElementById('install-banner');
+  if(b) b.remove();
+  document.body.classList.remove("hat-install-banner");
+});
+
+function istInstalliert(){
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+         window.navigator.standalone === true;
+}
+
+function istIOS(){
+  const ua = navigator.userAgent || "";
+  return /iPad|iPhone|iPod/.test(ua) ||
+         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function istHandy(){
+  return istIOS() || /Android/i.test(navigator.userAgent || "");
+}
+
+/* Nicht nerven: einmal weggetippt, vierzehn Tage Ruhe. */
+const INSTALL_PAUSE_MS = 14 * 24 * 60 * 60 * 1000;
+function installWurdeWeggetippt(){
+  try{
+    const w = localStorage.getItem("lc-install");
+    if(w === "fertig") return true;
+    if(!w) return false;
+    return (Date.now() - parseInt(w, 10)) < INSTALL_PAUSE_MS;
+  }catch(e){ return false; }
+}
+function installMerkenWeg(){
+  try{ localStorage.setItem("lc-install", String(Date.now())); }catch(e){}
+}
+
+const INSTALL_BILDSCHIRME = ["start", "lingoraplan"];
+
+function installBannerAuffrischen(){
+  const alt = document.getElementById('install-banner');
+  const zeigen = istHandy() && !istInstalliert() && !installWurdeWeggetippt() &&
+                 INSTALL_BILDSCHIRME.indexOf(state.screen) >= 0 &&
+                 (installEreignis || istIOS());
+  if(!zeigen){
+    if(alt) alt.remove();
+    document.body.classList.remove("hat-install-banner");
+    return;
+  }
+  document.body.classList.add("hat-install-banner");
+  if(alt) return;                    // schon da, nicht neu bauen
+
+  const b = document.createElement('div');
+  b.id = 'install-banner';
+  b.className = 'install-banner';
+  b.innerHTML = `
+    <img class="ib-icon" src="icon-192.png" alt="">
+    <div class="ib-txt">
+      <span class="ib-t">LingoCrafter aufs Handy holen</span>
+      <span class="ib-s">${installEreignis
+        ? "Dann startest du direkt vom Startbildschirm &ndash; ohne Browser, wie eine richtige App."
+        : "Tippe unten auf <strong>Teilen</strong> <span class=\"ib-teilen\">&#8679;</span> und dann auf <strong>Zum Home-Bildschirm</strong>."}</span>
+    </div>
+    ${installEreignis ? `<button class="ib-btn" id="ib-los">Installieren</button>` : ""}
+    <button class="ib-weg" id="ib-weg" aria-label="Später">✕</button>
+  `;
+  document.body.appendChild(b);
+
+  const los = document.getElementById('ib-los');
+  if(los){
+    los.addEventListener('click', async ()=>{
+      if(!installEreignis) return;
+      const e = installEreignis;
+      installEreignis = null;
+      b.remove();
+      document.body.classList.remove("hat-install-banner");
+      try{
+        e.prompt();
+        const wahl = await e.userChoice;
+        if(wahl && wahl.outcome !== "accepted"){ installMerkenWeg(); }
+      }catch(err){ /* egal - dann eben beim naechsten Mal */ }
+    });
+  }
+  document.getElementById('ib-weg').addEventListener('click', ()=>{
+    installMerkenWeg();
+    b.remove();
+    document.body.classList.remove("hat-install-banner");
+  });
+}
+
+/* Der Service Worker. Ohne ihn gibt es unter Android keinen
+   Installations-Dialog - und keine Offline-Nutzung. */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{ /* z.B. ohne HTTPS */ });
+  });
+}
 
 /* =====================================================================
    LINGORA SCHREIBT
@@ -4474,7 +4645,7 @@ function render(){
     zuletztGezeichnet = state.screen;
   }
   // Lingoras Knopf lebt ausserhalb von #app und ueberlebt das Neuzeichnen.
-  setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); }catch(e){} }, 0);
+  setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); }catch(e){} }, 0);
 
   // Der Elternbereich sperrt sich selbst, sobald man ihn verlaesst - egal
   // ueber welchen Knopf. Damit kommt niemand ohne PIN zurueck hinein.
