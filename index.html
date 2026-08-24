@@ -1399,7 +1399,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "20.0 – Skin-Werkstatt";
+const APP_VERSION = "20.2 – Skin-Werkstatt";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1839,10 +1839,7 @@ function renderSkinWerkstatt(){
         </span>
       </div>
       <button class="btn" id="sk-speichern" style="margin-top:12px;">✓ FIGUR ÜBERNEHMEN</button>
-      <div class="sk-nebenknoepfe">
-        <button class="btn ghost" id="sk-zurueck" ${skinVerlauf.length?'':'disabled'}>↩ Schritt zurück</button>
-        <button class="btn ghost" id="sk-abbrechen">✕ Abbrechen</button>
-      </div>
+      <button class="btn ghost" id="sk-zurueck" style="margin-top:8px;" ${skinVerlauf.length?'':'disabled'}>↩ Schritt zurück</button>
     </div>
 
     <div class="panel sk-import">
@@ -1856,6 +1853,8 @@ function renderSkinWerkstatt(){
       <button class="btn ghost" id="sk-import">📂 Skin-Datei auswählen</button>
       <p class="muted" id="sk-import-info" style="margin:8px 0 0;font-size:12px;"></p>
     </div>
+
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
 
   // ---- Vorschaubilder der Vorlagen und der Frontansicht nachreichen
@@ -1870,18 +1869,23 @@ function renderSkinWerkstatt(){
     if(el && f){ el.style.backgroundImage = "url('" + f + "')"; }
   });
 
-  document.getElementById('back-btn').addEventListener('click', ()=>{
+  // Ein einziger fehlender Knopf darf nie wieder den ganzen Bildschirm
+  // lahmlegen - deshalb laeuft jede Verdrahtung ueber diesen kleinen Helfer.
+  const anKnopf = (id, was)=>{
+    const el = document.getElementById(id);
+    if(el){ el.addEventListener('click', was); }
+    else { console.warn("Skin-Werkstatt: Knopf fehlt:", id); }
+  };
+
+  const verlassen = ()=>{
     state.screen = state.skinReturnTo || "start";
     render(); window.scrollTo(0,0);
-  });
+  };
+  anKnopf('back-btn', verlassen);
 
   // ---- Drehen ueber die Knoepfe
-  document.getElementById('sk-links').addEventListener('click', ()=>{
-    state.skinDrehY -= 45; skinFigurDrehen();
-  });
-  document.getElementById('sk-rechts').addEventListener('click', ()=>{
-    state.skinDrehY += 45; skinFigurDrehen();
-  });
+  anKnopf('sk-links',  ()=>{ state.skinDrehY -= 45; skinFigurDrehen(); });
+  anKnopf('sk-rechts', ()=>{ state.skinDrehY += 45; skinFigurDrehen(); });
 
   document.querySelectorAll('[data-skinmodus]').forEach(el=>{
     el.addEventListener('click', ()=>{ state.skinModus = el.dataset.skinmodus; render(); });
@@ -1924,6 +1928,7 @@ function renderSkinWerkstatt(){
 
   // ---- Malen und Ziehen auf der Buehne
   const buehne = document.getElementById('sk-buehne');
+  if(!buehne){ console.warn("Skin-Werkstatt: Buehne fehlt"); return; }
   let zieht = false, startX = 0, startY = 0, dyStart = 0, dxStart = 0, malStrich = false;
 
   buehne.addEventListener('pointerdown', (e)=>{
@@ -1962,14 +1967,9 @@ function renderSkinWerkstatt(){
   buehne.addEventListener('pointerup', losLassen);
   buehne.addEventListener('pointercancel', losLassen);
 
-  // ---- Speichern und Abbrechen
-  document.getElementById('sk-speichern').addEventListener('click', skinUebernehmen);
-  document.getElementById('sk-abbrechen').addEventListener('click', ()=>{
-    state.screen = state.skinReturnTo || "start";
-    render(); window.scrollTo(0,0);
-  });
-  const zurueckBtn = document.getElementById('sk-zurueck');
-  if(zurueckBtn){ zurueckBtn.addEventListener('click', skinZurueck); }
+  // ---- Speichern und Schritt zurueck
+  anKnopf('sk-speichern', skinUebernehmen);
+  anKnopf('sk-zurueck', skinZurueck);
 
   // ---- Eigene Skin-Datei laden
   const datei = document.getElementById('sk-datei');
@@ -2889,7 +2889,20 @@ function evaluateTyped(input, acceptedList, correctionDisplay){
 --------------------------------------------------- */
 const app = document.getElementById('app');
 
+// Welcher Bildschirm stand zuletzt da? Nur beim Wechsel rollen wir nach oben.
+let zuletztGezeichnet = null;
+
 function render(){
+  // Ein neuer Bildschirm faengt immer oben an.
+  // WICHTIG: Der Rollbalken haengt am Kasten #app, nicht am Fenster - ein
+  // window.scrollTo(0, 0) rollt hier ins Leere. Ohne diese Zeile uebernimmt
+  // ein langer Bildschirm die Rollposition des vorherigen und oeffnet
+  // mittendrin.
+  if(typeof app !== "undefined" && app && state.screen !== zuletztGezeichnet){
+    app.scrollTop = 0;
+    zuletztGezeichnet = state.screen;
+  }
+
   // Der Elternbereich sperrt sich selbst, sobald man ihn verlaesst - egal
   // ueber welchen Knopf. Damit kommt niemand ohne PIN zurueck hinein.
   if(state.screen !== "parents" && state.parentUnlocked){
