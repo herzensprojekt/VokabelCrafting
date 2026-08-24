@@ -782,6 +782,42 @@
   .abschnitt-h{ font-size:15px; margin:0 0 10px; }  .sell-grid{ display:grid; gap:10px; margin:14px 0 6px; }
   /* Der Aufmacher fuer das Belohnungssystem - das Einzige, was es so
      woanders nicht gibt, steht deshalb hervorgehoben ganz oben. */
+  /* Lingoras Chatblasen. Der Kasten selbst faengt keine Tipps ab - nur die
+     Blasen, damit man den Bildschirm dahinter weiter bedienen kann. */
+  .lg-chat{
+    position:fixed; right:14px; bottom:104px; z-index:7999;
+    width:min(74vw, 288px); pointer-events:none;
+    display:flex; flex-direction:column; align-items:flex-end; gap:7px;
+  }
+  .lg-chat-blase{
+    pointer-events:auto; cursor:pointer; max-width:100%;
+    background:#ffffff; border:2px solid #d9cdf5; border-radius:16px 16px 4px 16px;
+    padding:9px 12px; box-shadow:0 4px 14px rgba(30,10,60,0.18);
+    font-family:var(--font); font-size:13.5px; line-height:1.4; color:#3a2470;
+    transition:opacity .45s ease, transform .45s ease;
+    animation: lg-blase-rein .26s cubic-bezier(.2,1.2,.4,1);
+  }
+  .lg-chat-blase.wichtig{ background:#f4eeff; border-color:#b79ae8; font-weight:600; }
+  .lg-chat-blase.weg{ opacity:0; transform:translateY(-8px); }
+  @keyframes lg-blase-rein{
+    from{ opacity:0; transform:translateY(10px) scale(0.94); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  .lg-punkte{ display:inline-flex; gap:4px; padding:2px 0; }
+  .lg-punkte i{
+    width:7px; height:7px; border-radius:50%; background:#b79ae8;
+    animation: lg-huepf 1s infinite ease-in-out;
+  }
+  .lg-punkte i:nth-child(2){ animation-delay:.15s; }
+  .lg-punkte i:nth-child(3){ animation-delay:.3s; }
+  @keyframes lg-huepf{ 0%,60%,100%{ transform:translateY(0); opacity:.5; } 30%{ transform:translateY(-5px); opacity:1; } }
+  .lg-cursor{
+    display:inline-block; width:2px; height:1em; background:#7a4bbf;
+    vertical-align:-2px; margin-left:1px; animation: lg-blink .75s steps(1) infinite;
+  }
+  @keyframes lg-blink{ 0%,50%{ opacity:1; } 51%,100%{ opacity:0; } }
+  .lg-sell-bild{ background:linear-gradient(160deg,#efe6ff,#d9c9f7) !important; overflow:hidden; }
+  .lg-sell-bild img{ width:42px; height:42px; display:block; }
   /* ---------------------------- Lingora ---------------------------- */
   .lingora-knopf{
     position:fixed; right:14px; bottom:16px; z-index:8000;
@@ -1583,7 +1619,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "23.0 – Frag Lingora";
+const APP_VERSION = "23.1 – Lingora schreibt";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2548,6 +2584,229 @@ function lingoraStartHtml(){
 function lingoraStartVerdrahten(){
   const el = document.getElementById('lg-start-plan');
   if(el){ el.addEventListener('click', ()=>lingoraOeffnen("start")); }
+}
+
+
+/* =====================================================================
+   LINGORA SCHREIBT
+
+   Beim Betreten eines Fensters meldet sich Lingora wie in einem Chat: erst
+   die Punkte des Tippens, dann erscheint der Text Buchstabe fuer Buchstabe.
+   Zwei bis drei Nachrichten, die letzte ist die wichtige - sie bleibt
+   stehen, die davor blenden sich aus.
+
+   WICHTIG: Das passiert nur beim WECHSEL des Fensters, nicht bei jedem
+   Neuzeichnen. Sonst wuerde Lingora bei jedem Tipp auf eine Farbe von vorn
+   anfangen und schnell zur Plage.
+===================================================================== */
+
+const lingoraChat = { screen: null, timer: [], box: null, offen: true };
+
+function lingoraName(){
+  const n = (state.playerName || "").trim();
+  return n ? n : "du";
+}
+
+/* Ein paar Begruessungen - der Name kommt gleich mit hinein. */
+function lingoraHallo(){
+  const n = escapeHtml(lingoraName());
+  const stunde = new Date().getHours();
+  const tags = stunde < 11 ? ["Guten Morgen, " + n + "!", "Morgen, " + n + "!"]
+             : stunde < 18 ? ["Hallo " + n + "!", "Da bist du ja, " + n + "!", "Hi " + n + "!"]
+                           : ["Guten Abend, " + n + "!", "Na " + n + ", noch wach?"];
+  return tags[Math.floor(Math.random() * tags.length)];
+}
+
+/* Das schwaechste Thema, ueber das wir schon etwas wissen. */
+function lingoraSchwachstelle(){
+  const bewertet = GRAMMAR_TOPICS
+    .map(t => ({ t: t, i: grammarSkillInfo(t) }))
+    .filter(x => x.i.fenster >= 3)
+    .sort((a, b) => a.i.quote - b.i.quote);
+  return bewertet.length ? bewertet[0] : null;
+}
+
+/* Die Nachrichten je Fenster. Der letzte Eintrag ist der wichtige und
+   bleibt stehen. */
+function lingoraNachrichtenFuer(screen){
+  const n = escapeHtml(lingoraName());
+  const p = lingoraPlan();
+  const tag = p ? lingoraHeutigerTag() : null;
+  const offen = tag ? tag.schritte.filter(s => !s.fertig).length : 0;
+  const muenzen = state.coins || 0;
+
+  switch(screen){
+    case "start": {
+      const m = [lingoraHallo()];
+      if(p && offen){
+        m.push("Dein Plan läuft noch.");
+        m.push({ text: "Heute fehlen dir noch <strong>" + offen + "</strong> " +
+                       (offen === 1 ? "Schritt" : "Schritte") + ". Das schaffst du locker.", wichtig: true });
+      } else if(p){
+        m.push("Heute ist schon alles abgehakt.");
+        m.push({ text: "Genieß den Rest des Tages &ndash; du hast ihn dir verdient. ✨", wichtig: true });
+      } else {
+        m.push(lingoraSpruch(LINGORA_WEISHEIT));
+        m.push({ text: "Wenn du magst, mach ich dir einen Plan. Tipp einfach auf mich.", wichtig: true });
+      }
+      return m;
+    }
+    case "shop":
+      return [lingoraHallo(),
+              "Mal sehen, was dein Konto sagt ...",
+              { text: "Du hast <strong>" + muenzen + "</strong> Münzen. " +
+                      (muenzen >= 100 ? "Da geht schon was!" : "Sammel noch ein bisschen &ndash; es lohnt sich."), wichtig: true }];
+
+    case "leaderboard":
+      return ["Die Rangliste, " + n + "!",
+              "Aber hör mir kurz zu:",
+              { text: "Vergleich dich mit dir von letzter Woche, nicht mit den anderen. Das ist der einzige Vergleich, der zählt.", wichtig: true }];
+
+    case "grammarstats": {
+      const s = lingoraSchwachstelle();
+      return ["Deine Grammatik-Übersicht.",
+              "Ich schau mal, wo es hakt ...",
+              { text: s ? "Am wackeligsten ist gerade <strong>" + escapeHtml(s.t.name) +
+                          "</strong> (" + s.i.prozent + " %). Genau da würde ich anfangen."
+                        : "Noch zu wenig geübt, um etwas zu sagen. Leg los, dann sehen wir weiter.", wichtig: true }];
+    }
+    case "grammarintro":
+      return ["Erst verstehen, dann üben.",
+              { text: "Lies die Regel in Ruhe. Zwei Minuten hier sparen dir zehn Minuten Raten.", wichtig: true }];
+
+    case "skinwerkstatt":
+      return ["Die Werkstatt, " + n + "!",
+              { text: "Bau dir was Schönes. Und keine Sorge &ndash; du kannst alles wieder ändern.", wichtig: true }];
+
+    case "customvocab":
+      return ["Eigene Wörter, gute Idee.",
+              { text: "Genau die Wörter aus deinem Schulbuch üben &ndash; besser geht's nicht.", wichtig: true }];
+
+    case "certificate":
+    case "grammarcertificate": {
+      const gut = (state.lastReason === "finished" || state.grammarGameResult === "won" ||
+                   state.grammarGameResult === "practice" || state.grammarGameResult === "test");
+      return [gut ? "Runde durch!" : "Auch das gehört dazu.",
+              { text: gut ? "Jede Runde macht dich ein Stück sicherer, " + n + "."
+                          : "Nicht ärgern. Fehler zeigen dir nur, wo du noch hinschauen musst.", wichtig: true }];
+    }
+    case "gradecalendar":
+      return ["Deine Noten, " + n + ".",
+              "Kurz was Wichtiges dazu:",
+              { text: "Eine Note ist eine Rückmeldung, kein Urteil über dich. Schau, was du daraus mitnimmst.", wichtig: true }];
+
+    case "lingoraplan":
+      return offen ? ["Dein Plan, " + n + ".",
+                      { text: "Fang oben an. Die Reihenfolge ist nicht zufällig.", wichtig: true }]
+                   : [{ text: "Alles abgehakt. Sehr gut, " + n + "!", wichtig: true }];
+
+    case "parents":
+      return [{ text: "Der Elternbereich. Hier ist alles auf einen Blick.", wichtig: true }];
+
+    // Waehrend einer Uebung nur ein kurzer Zuruf, der von allein verschwindet.
+    case "quiz":
+    case "grammarquiz":
+      return [{ text: lingoraSpruch(["Konzentrier dich, du schaffst das.",
+                                     "Ruhig bleiben. Ein Wort nach dem anderen.",
+                                     "Los geht's, " + n + "!",
+                                     "Nicht raten &ndash; erst denken."]), fluechtig: true }];
+    default:
+      return null;
+  }
+}
+
+/* ---------------------------------------------------- Die Chatblase bauen */
+function lingoraChatBox(){
+  if(lingoraChat.box && document.body.contains(lingoraChat.box)) return lingoraChat.box;
+  const box = document.createElement('div');
+  box.className = 'lg-chat';
+  box.addEventListener('click', ()=>lingoraChatLeeren());
+  document.body.appendChild(box);
+  lingoraChat.box = box;
+  return box;
+}
+
+function lingoraChatLeeren(){
+  lingoraChat.timer.forEach(t => clearTimeout(t));
+  lingoraChat.timer = [];
+  if(lingoraChat.box){ lingoraChat.box.innerHTML = ""; }
+}
+
+/* Text Buchstabe fuer Buchstabe erscheinen lassen. Einfache Auszeichnungen
+   wie <strong> bleiben dabei heil, weil wir sie am Stueck einsetzen. */
+function lingoraTippen(el, html, fertig){
+  const teile = html.split(/(<[^>]+>)/).filter(x => x !== "");
+  let ti = 0, ci = 0, aus = "";
+  const schritt = ()=>{
+    if(ti >= teile.length){ if(fertig) fertig(); return; }
+    const t = teile[ti];
+    if(t.charAt(0) === "<"){ aus += t; ti++; el.innerHTML = aus; lingoraChat.timer.push(setTimeout(schritt, 0)); return; }
+    aus += t.charAt(ci); ci++;
+    el.innerHTML = aus + '<span class="lg-cursor"></span>';
+    if(ci >= t.length){ ti++; ci = 0; }
+    lingoraChat.timer.push(setTimeout(schritt, 16));
+  };
+  schritt();
+}
+
+function lingoraBlaseZeigen(nachricht, istLetzte){
+  const box = lingoraChatBox();
+  const text = (typeof nachricht === "string") ? nachricht : nachricht.text;
+  const wichtig = (typeof nachricht === "object") && nachricht.wichtig;
+  const fluechtig = (typeof nachricht === "object") && nachricht.fluechtig;
+
+  const b = document.createElement('div');
+  b.className = 'lg-chat-blase tippt' + (wichtig ? ' wichtig' : '');
+  b.innerHTML = '<span class="lg-punkte"><i></i><i></i><i></i></span>';
+  box.appendChild(b);
+
+  // Denkpause, dann tippen.
+  const denk = 380 + Math.min(600, text.length * 6);
+  lingoraChat.timer.push(setTimeout(()=>{
+    b.classList.remove('tippt');
+    b.innerHTML = "";
+    lingoraTippen(b, text, ()=>{
+      b.innerHTML = text;      // Cursor weg
+      // Alles ausser der wichtigen Nachricht blendet sich wieder aus.
+      if(!wichtig || fluechtig){
+        const stehzeit = fluechtig ? 2600 : 4200;
+        lingoraChat.timer.push(setTimeout(()=>{
+          b.classList.add('weg');
+          lingoraChat.timer.push(setTimeout(()=>{ if(b.parentNode) b.parentNode.removeChild(b); }, 500));
+        }, stehzeit));
+      }
+    });
+  }, denk));
+
+  return denk + Math.min(1400, text.length * 16) + 260;
+}
+
+const lingoraZuletztGesagt = {};
+const LINGORA_PAUSE_MS = 90000;   // dasselbe Fenster nicht staendig neu kommentieren
+
+function lingoraChatZeigen(){
+  // Nur beim echten Fensterwechsel - nicht bei jedem Neuzeichnen.
+  if(lingoraChat.screen === state.screen) return;
+  lingoraChat.screen = state.screen;
+  lingoraChatLeeren();
+  // Wer zwischen zwei Fenstern hin und her springt, soll nicht jedes Mal
+  // dieselbe Begruessung bekommen.
+  const jetzt = Date.now();
+  if(lingoraZuletztGesagt[state.screen] && jetzt - lingoraZuletztGesagt[state.screen] < LINGORA_PAUSE_MS) return;
+  lingoraZuletztGesagt[state.screen] = jetzt;
+
+  if(!(state.cloudId || state.guest)) return;
+  const msgs = lingoraNachrichtenFuer(state.screen);
+  if(!msgs || !msgs.length) return;
+
+  let versatz = 0;
+  msgs.forEach((m, i)=>{
+    lingoraChat.timer.push(setTimeout(()=>{
+      lingoraBlaseZeigen(m, i === msgs.length - 1);
+    }, versatz));
+    const text = (typeof m === "string") ? m : m.text;
+    versatz += 380 + Math.min(600, text.length * 6) + Math.min(1400, text.length * 16) + 320;
+  });
 }
 
 /* =====================================================================
@@ -4185,7 +4444,7 @@ function render(){
     zuletztGezeichnet = state.screen;
   }
   // Lingoras Knopf lebt ausserhalb von #app und ueberlebt das Neuzeichnen.
-  setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); }catch(e){} }, 0);
+  setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); }catch(e){} }, 0);
 
   // Der Elternbereich sperrt sich selbst, sobald man ihn verlaesst - egal
   // ueber welchen Knopf. Damit kommt niemand ohne PIN zurueck hinein.
@@ -4685,7 +4944,7 @@ function renderLogin(){
 
       <div class="panel">
         <h3 class="abschnitt-h">&#127918; So lernt dein Kind</h3>
-        <div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Üben, das sich nicht so anfühlt</span><span class="sell-s">Fünf Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Wer Spaß hat, übt länger.</span></span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-txt"><span class="sell-t">Vokabeln und Grammatik</span><span class="sell-s">Wortschatz trainieren und Grammatik Thema für Thema &ndash; von der Zeitform bis zur Wortstellung, mit Erklärung und Beispielen.</span></span></div><div class="sell"><span class="sell-i">&#128221;</span><span class="sell-txt"><span class="sell-t">Echte Testarbeiten</span><span class="sell-s">Tests werden benotet, genau wie in der Schule. Den Notenschlüssel stellen Sie als Eltern selbst ein &ndash; mild oder schulisch.</span></span></div><div class="sell"><span class="sell-i">&#128202;</span><span class="sell-txt"><span class="sell-t">Auswertung bis ins Detail</span><span class="sell-s">Jedes Grammatikthema einzeln: was sitzt schon, wo hakt es noch. Kindgerecht als Erz-Balken statt als Zahlenkolonne.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben und Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div><div class="sell"><span class="sell-i">&#10133;</span><span class="sell-txt"><span class="sell-t">Eure Schulvokabeln</span><span class="sell-s">Die Wörter aus dem eigenen Schulbuch eintippen oder aus Excel hochladen.</span></span></div></div>
+        <div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Üben, das sich nicht so anfühlt</span><span class="sell-s">Fünf Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Wer Spaß hat, übt länger.</span></span></div><div class="sell"><span class="sell-i lg-sell-bild"><img src="${LINGORA_BILD}" alt="Lingora"></span><span class="sell-txt"><span class="sell-t">Frag Lingora, den Helfer</span><span class="sell-s">Er fragt, was ansteht &ndash; und baut daraus einen Lernplan mit klaren Schritten, bis zur Klassenarbeit. Ein aufmunterndes Wort hat er auch immer übrig.</span></span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-txt"><span class="sell-t">Vokabeln und Grammatik</span><span class="sell-s">Wortschatz trainieren und Grammatik Thema für Thema &ndash; von der Zeitform bis zur Wortstellung, mit Erklärung und Beispielen.</span></span></div><div class="sell"><span class="sell-i">&#128221;</span><span class="sell-txt"><span class="sell-t">Echte Testarbeiten</span><span class="sell-s">Tests werden benotet, genau wie in der Schule. Den Notenschlüssel stellen Sie als Eltern selbst ein &ndash; mild oder schulisch.</span></span></div><div class="sell"><span class="sell-i">&#128202;</span><span class="sell-txt"><span class="sell-t">Auswertung bis ins Detail</span><span class="sell-s">Jedes Grammatikthema einzeln: was sitzt schon, wo hakt es noch. Kindgerecht als Erz-Balken statt als Zahlenkolonne.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben und Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div><div class="sell"><span class="sell-i">&#10133;</span><span class="sell-txt"><span class="sell-t">Eure Schulvokabeln</span><span class="sell-s">Die Wörter aus dem eigenen Schulbuch eintippen oder aus Excel hochladen.</span></span></div></div>
       </div>
 
       <div class="panel">
