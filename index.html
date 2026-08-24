@@ -605,35 +605,59 @@
   .sk-mbtn.active{ background:#d7f3da; border-color:var(--ok); color:#1e5c28; }
   .sk-tipp{ margin:8px 0 0; font-size:12.5px; text-align:center; }
   .sk-farben{ display:grid; grid-template-columns:repeat(8,1fr); gap:6px; }
+  .sk-teile{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:12px; }
+  .sk-teil{
+    position:relative; display:flex; flex-direction:column; align-items:center; gap:2px;
+    background:#f4f4f4; border:2px solid #e2e2e2; border-radius:11px; padding:7px 2px 9px;
+    cursor:pointer; font-family:var(--font);
+  }
+  .sk-teil.active{ background:#e2f2e4; border-color:var(--ok); }
+  .sk-teil-ic{ font-size:16px; line-height:1; }
+  .sk-teil-name{ font-size:10.5px; font-weight:800; color:#4a4a4a; }
+  .sk-teil-farbe{
+    width:22px; height:7px; border-radius:4px; border:1px solid rgba(0,0,0,0.22);
+  }
+  .sk-farb-kopf{ display:flex; align-items:center; gap:8px; margin:0 0 8px; }
+  .sk-farb-jetzt{
+    width:26px; height:26px; border-radius:8px; border:2px solid rgba(0,0,0,0.2);
+    box-shadow:inset 0 -2px 4px rgba(0,0,0,0.14);
+  }
+  .sk-farb-text{ font-family:var(--font); font-weight:800; font-size:13px; color:#4a4a4a; }
+  .sk-galerie{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .sk-kachel{
+    display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;
+    background:#f5f5f5; border:2px solid #e2e2e2; border-radius:12px; padding:7px 3px 8px;
+    font-family:var(--font);
+  }
+  .sk-kachel.active{ background:#e2f2e4; border-color:var(--ok); box-shadow:0 2px 8px rgba(63,163,77,0.25); }
+  .sk-kachel-bild{ display:flex; align-items:center; justify-content:center; height:56px; }
+  .sk-kachel-name{ font-size:10.5px; font-weight:800; color:#4a4a4a; text-align:center; line-height:1.15; }
+  .sk-item-bild{
+    width:26px; height:52px; background-size:contain; background-repeat:no-repeat;
+    background-position:center; image-rendering:pixelated;
+  }
+  .sk-keins{ font-size:26px; color:#b5b5b5; font-weight:800; }
+  .sk-item{
+    position:absolute; left:0; top:0; image-rendering:pixelated;
+    background-repeat:no-repeat; pointer-events:none;
+  }
   .sk-farbe{
     aspect-ratio:1/1; border-radius:8px; cursor:pointer;
     border:2px solid rgba(0,0,0,0.16); box-shadow:inset 0 -2px 4px rgba(0,0,0,0.12);
   }
   .sk-farbe.active{ border-color:#1e5c28; box-shadow:0 0 0 3px rgba(63,163,77,0.35); transform:scale(1.08); }
-  .sk-eigene{ display:flex; align-items:center; gap:10px; margin-top:12px; }
-  .sk-eigene label{ font-family:var(--font); font-weight:700; font-size:13.5px; color:#4a4a4a; }
-  .sk-eigene input[type="color"]{
-    width:56px; height:36px; padding:0; border:2px solid #e2e2e2; border-radius:10px;
-    background:none; cursor:pointer;
-  }
-  .sk-vorlagen{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-  .sk-vorlage{
-    display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;
-    background:#f5f5f5; border:2px solid #e2e2e2; border-radius:12px; padding:8px 4px;
-  }
   .sk-vor-bild{
-    width:34px; height:60px; background-size:contain; background-repeat:no-repeat;
+    width:40px; height:54px; background-size:contain; background-repeat:no-repeat;
     background-position:center; image-rendering:pixelated;
   }
   .sk-vor-name{ font-family:var(--font); font-weight:700; font-size:11px; color:#4a4a4a; text-align:center; line-height:1.2; }
   .sk-vorschau-zeile{ display:flex; align-items:center; gap:12px; }
   .sk-vorschau-bild{
-    flex:0 0 auto; width:52px; height:92px; border-radius:10px; background:#eef3f6;
+    flex:0 0 auto; width:72px; height:96px; border-radius:10px; background:#eef3f6;
     background-size:contain; background-repeat:no-repeat; background-position:center;
     image-rendering:pixelated; border:2px solid #e0e8ec;
   }
   .sk-vorschau-text{ font-family:var(--font); font-size:13.5px; color:#4a4a4a; line-height:1.35; }
-  .sk-nebenknoepfe{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
   .btn.ghost{
     background:#f0f0f0; color:#5a5a5a; border:2px solid #e0e0e0;
     box-shadow:none; font-size:14px; padding:11px 8px;
@@ -1399,7 +1423,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "20.2 – Skin-Werkstatt";
+const APP_VERSION = "21.0 – Kleiderkammer";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1525,7 +1549,6 @@ const AVATAR_ALPHABET = ".123456789abcdefg";
    Bedarf ein PNG gebaut und gemerkt - so laeuft der Rest der App unveraendert
    weiter, denn ueberall steht weiterhin nur av.src.
 --------------------------------------------------- */
-const SKIN_VORLAGEN = [{"id": "ritter", "name": "Ritter", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABjElEQVR42u2aMU/CQBSAr4ZNMXFxcXF0MXEqqQlxYegfMDEuECZHV0I0JoSYyICDcdXd2UQHB0ZHh/4CBxcWUSy0VN1Mjug7zUGE8n3b4x0HfLx7XOk5ysBJ8+xDyueW2uLzt0pHjppg5tSMgwAEIAABCJhlHNPvvIkwDMV8z5A/rh06VMA/kjEN2NtcEPPNu3C6BZg+oImyOy/mz1uTLehXSyDrFpVXbnzFXrmhsm4xHU2wc39p1QSfX94MFdBOTxOsVGuqUq3NVhPUvq36Qfr2AcMPrLu+tiTeu49aPggCsWT97X2rJXVzdSrO7xV2tPlv676WX8yVnLEtAbbCCEjhtYBX2BXX7CCOtDgZxFq8tpH/0wtGfX1jFEc9cXy/9yrm46g/9H71uHV94VABCEAAAhCAAAQg4Nurwc7TgzggSRIxVipPBSAAAAAAAAAAAGCKGPnxFNvzBaO+/2+Cv8QQQA+ww/Z8wfLKqji/7f1/KgABCEAAAhCAAAT8RMZ2AtvzBaaNEBWAgPHyCUHzfLkviHfwAAAAAElFTkSuQmCC"}, {"id": "waldlauf", "name": "Waldläufer", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABhklEQVR42u2av0vDQBSAL9LJ0aUOHQTBQcFB0NWh0oKD4OAoIggVFYRCxMVB6mQ3cSmC0sm/wUUHd4cM2lXo0MHFItg2P3QTL+gL5Vo0yfdtl5dc4OO9y0tylopgeX7iQ4rvb6yI1xf3ziz1jxlRKQcBCEAAAhCQZqyo53wUrheIcc+X43dO0yID/pBM1AmXJztifP3wPN4l0Lo5NSqB9tu7GC8dX8S/BLIFW+XL9a9xvlxX2YKdjEWQDOiDSrWmKtVauhbB7xzZpeT1AeEDaws5rSRa7Y4Wv2+8iCk7tzlrVFIPV444//TqlDb/7faWFh8vHlhDKwFaYQQk8F1gd2lSrNmu62vjXqj3f17M9XVDr+Pp464vnh+4cjx8vd/Tx871o0UGIAABCEAAAhCAgB/fBp3mq9xohD5qeoHeN42SAQgAAAAAAAAAAIgVA9+eYrq/YND//6PgkxgCWAPMMN1f8DQzJs5v+v+fDEAAAhCAAAQgAAG/kTGdwHR/gYpohMgABAyXTws8hMJKsz2NAAAAAElFTkSuQmCC"}, {"id": "frost", "name": "Frostmagier", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABjklEQVR42u2av0vDQBSAEykd6qyjCA24VHBwajuJRd0EF50KtUJBEHHo4OzkoEMXwS5FcHNwdHJx0MH/QOrkVAXzw6qNoJt4Qd8hV6lpv297ecmVfrx7uSRnWxpu3fBdyt+dN8Tr84tl2/rHDFkDDgIQgAAEIGCQsXX3eR2e+yjmfc+V1wkZx6YCekhCd8Jo60qugOREvAXo/qCOkftreQoknfg3wVQ6Z2Vr4WecrYVWKp3rjyb4dHNh1ARdLxDzTU0FxKoJVitFq1opDlYT/MruQaP/1gHRA9MrW8qUqG+XlPzUZEYs2bX6mdGUOizPiePP7xwr458sjyn5YSdv/9kUYCmMgD58FpjZ3Bfn7NvrsxgXSuu/+sGXwBPjKK2O3Kc7bV+Jw7Z6Wz7dWLCpAAQgAAEIQAACEPDt0+DeakE8wffVhUYQiS+pAAQAAAAAAAAAAMSKrm9PMd1f0O3v/zp4JYYAeoAZpvsLxmeXxPFNv/9TAQhAAAIQgAAEIOAnEqYDmO4vOHqgAhDQSz4AnBd1ycCMIfAAAAAASUVORK5CYII="}, {"id": "lava", "name": "Lavaläufer", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABg0lEQVR42u2asUrDQBiAL1IQxEVEcFBwEEQyuLWCoyDopuDSwWrBwQeIOLi4dnRwEQotxmeQPoEZFIJjBnFz0MUWoqYXHfWKXihXqUm+b0v+yyX5+P/LJTlLJGDb9ocu7qzOao/fPb2yxD9mROQcBCAAAQhAQJ6xkp7zSUgpjeJBEFhkwBApJDWoV5a08Ur9Nt0l4NXKRiXQDt+18YMLP/0lUHRcUW183Ui14Yui42ZjECQD+qDZ8kSz5eVrEPzOzlope/OA3h0rM5NKSbjlcSU+V3vQpuz58rRRSe1fP2r7P1qcUPrf3FtX4qXDS+vPSoCpMAIy+C6wMa+v2UjGynY3VpufLIz1dcJOpPbX6cba9k9hpI2HPceHUr2+47tniwxAAAIQgAAEIAABP74Nnm2Nahu8vKoTjfabui3vyQAEAAAAAAAAAACkiYEvTzFdXzDo//9J8EkMAYwBZpiuL9ie0l+C6f9/MgABCEAAAhCAAAT8RsG0A9P1Bf5NRAYgYIh8Aqstf7zn/190AAAAAElFTkSuQmCC"}];
 
 /* =====================================================================
    DIE SKIN-WERKSTATT
@@ -1584,12 +1607,6 @@ const SKIN_FRONT_B = 16;
 const SKIN_FRONT_H = 32;
 
 /* Farben zum Anklicken. Die ersten sind Hauttoene, dann Haare, dann Stoffe. */
-const SKIN_FARBEN = [
-  "#ffffff","#d0d3d4","#8a8f94","#4a4f54","#2b2b2b","#000000",
-  "#ffe0bd","#f2c9a0","#e8b98a","#c68642","#8d5524","#5c3317",
-  "#c2461f","#e0761f","#d8a33a","#f2e14c","#3f7a3a","#5fbf4a",
-  "#2f6fbf","#7fc4e8","#5a6b8c","#7a4bbf","#c74b9e","#ff7fb0"
-];
 
 /* ------------------------------------------------ Arbeitsbild und Umrechnung */
 let skinCanvas = null;
@@ -1637,40 +1654,6 @@ function skinAusUriLaden(uri, fertig){
   img.src = uri;
 }
 
-/* ---------------------------------------------------- Schnappschuss vorn */
-const skinFrontCache = {};
-
-function skinFrontBauen(uri, fertig){
-  if(!uri){ fertig(""); return; }
-  if(skinFrontCache[uri]){ fertig(skinFrontCache[uri]); return; }
-  const img = new Image();
-  img.onload = ()=>{
-    const c = document.createElement('canvas');
-    c.width = SKIN_FRONT_B; c.height = SKIN_FRONT_H;
-    const ctx = c.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    SKIN_FRONT.forEach(([teil, seite, dx, dy])=>{
-      const f = SKIN_FLAECHEN[teil][seite];
-      ctx.drawImage(img, f[0], f[1], f[2], f[3], dx, dy, f[2], f[3]);
-    });
-    const front = c.toDataURL('image/png');
-    skinFrontCache[uri] = front;
-    fertig(front);
-  };
-  img.onerror = ()=>fertig("");
-  img.src = uri;
-}
-
-/* Wird nach dem Laden eines Spielstands aufgerufen: erzeugt den
-   Schnappschuss und zeichnet den Bildschirm danach neu. */
-function skinFrontAuffrischen(){
-  if(!state.customSkin){ state.customSkinFront = ""; return; }
-  skinFrontBauen(state.customSkin, (front)=>{
-    state.customSkinFront = front;
-    if(typeof render === "function"){ render(); }
-  });
-}
-
 /* ------------------------------------------------------ Die 3D-Ansicht */
 const SKIN_SEITEN = ["vorn","hinten","rechts","links","oben","unten"];
 
@@ -1703,51 +1686,348 @@ function skinFigurHtml(uri, s){
   return flaechen.join("");
 }
 
+const SKIN_VERKLEIDUNGEN = [{"id": "ritter", "name": "Ritter", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABUElEQVR42u2bv0vDQBSA35UurjZ/SlddOrSOplulg+CmOIQuBZ0qFErJ0B+boOCssw4udu1/0lRsQUQQdFLaoonxGa5tvm8KyeVIvry7e8ldjERwNxi+f25vNMoiIvJyev11vLiVN7LCZCTlIAABCEAAAtKMmR3n/8I4GKkuoLK7Y4gABNgj+5tC3vHRt/v9To8ISEUErMOTJgIQ8EMeEFXg0KvP5Ql9vxl6zs3tQ2he4Za2VeP+Yv3a+mgCCKAP0BHV5hd5HAex6t/MOar6DvZcQwTYEuD4VXH8ajoFzN74MkugCfAytORoMz1rAgLvajUioNU9Dx3Hp5MnmkAY9+39WOWfX9/oBNcqAgq1i1jl46bClwNXAAAAAAAAAAD+k8TX6GnXFyT9VZiJEQTQB9glan2Bdv6fCEAAAhCAAIDk8gDt+oKzkxr/DCEAAfb4AH9cVd+4hD+oAAAAAElFTkSuQmCC"}, {"id": "magier", "name": "Magier", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABbUlEQVR42u2asUvDQBSH30n+Bkd10MFBEBdBQQfBJYOrOAgWFxU7dBOXIkp3xXZQiiCIdCkOGR2c7FCcMzg5BkRBpFUU3UIs4TJc8BLyfVMe73hcfvze3ZGLkgTWFps/uvzVXUlJjhmSgoMACIAACIAARUYl7fNJ9D5ejSbQ7lQUDrDpAP9yzsgBwcun0QQWyl2rDnAOzjfFZguIdK06wBkdnjUq8NYLct0CTvu+YlTg67svADneBdIuuON62l3l1HNVmvVN63EURgDWgPR6/uHRk5lxVzu+47dkamwpjJ8CXzt+cmRem3/vP2vzF7frCgfYEqBWb0it3iimANEXz7IItEDRBXCyPkHTk541Afa2t2iBQrTA7upR+LxxOP0njj0IVSektHIcxtWzZRyQawecXO9HIm8gjqMlzZtyJPb5KAEAAAAAAAAA/0rm/vVP+/4/CS5GEIA1IFs9P4jp/T8OQAAEQAAEAAAAiOUXgQRba+2E8vcAAAAASUVORK5CYII="}, {"id": "waldlaeufer", "name": "Waldläufer", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABb0lEQVR42u2bv0tCURSAz43aHPoxuIQVCjq0tbUEFgTV3OQ/0drU1Nrg32GTBQ0JDUVDTTX4QIkih0CNCCKFsClfT+Tc4fZ4vN73TZ53rw/5OPfc8/RqxMLa/upAG784vDISYyYk4SAAAQhAAAKSjLHt8zZ6732nD3BdvjFkQIRM2iZ0Gl2Zy81Kp9ENXP+5lkqn/rcArd1d3i0M4p4B7AIIQEDC+wDbhM38TKDQnXmv6nu2jopqYTzdqznt+6P3d70fSwAB1AA3fq/JerUphZ2sOv++4kluY3EYt25f1PnZYkYd/3zrqeO1g0tDBiAAAQhAgMvjcJS4dnpkgC0DSitptXf/6H/p+3DSl8DSyePwdX0kHtsIiUjm/NlvhKanKIKxzoCH7QU/qDaD8Tgqnjytz/uxpRUGAAAAAAAAAPhrQj+j53q+gG+FQwYB1ICIsZ0pcv39nwxAAAIQgACA8PoA1/MFx3dt/jOEAARExzcVRmHi4YNSCQAAAABJRU5ErkJggg=="}, {"id": "zwerg", "name": "Bergmann", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABQklEQVR42u2av2vCQBSA72qWDqVrRxGlZHQopSC4Sx1d/Rcc+h9095/oWuhi50JBECcRBxF/4OAgWCiloCIWu6rDHcczJDHft+blSD7e3b3knlYW2i+3O9P1++pAqxhzoRIOAhCAAAQgIMlo2z5vY/G9FT3AY22sY5MBfjGn/GLurDLAcwnufw4VAACcUx1gC3jwbw7qhFZ/brynXska64qn15Fo3z8eXzoepTACWANk2Ob8MT8rt2+H60tPNN7z+1STAWEJKJRTqlBOJVPA/otHWQJTIOkCvKg/oLTSC01As/EXjwwo3aWN+/h6s2UKmOhMfp3il5toZQaLoHSAfObKKd61FH7rfSkAAAAAAAAAgFMSeI+etL8g6L/CHIwggDUgXGz9BdLzfzIAAQhAAAIAgqsDpP0FH92ZZg1AAAJC4x8Y7lFOmRunzgAAAABJRU5ErkJggg=="}, {"id": "ninja", "name": "Schattenläufer", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABH0lEQVR42u2aOwrCQBBAd0W0sxZBBQublDZaeAmP4A0sPIWFN/AyFoqgjaRJYRGJWFjZ5QNaK7LrMoYovlcmkyU8ZiabZLSy4HnezXTe932tfpiS+nMQgAAEIAAB/4y2PedtpGkquoEgCDQZgIDiKL8TtFpMXx4fjGdkAE2QJkgJ/HYJ2ALqjeZDiZxPR+M1vf7QWFLb9VKU8s/rS9ejBBBAD5Bhq/lnkiR2Wr9SqYrW2+82mgxAAAIQgADJ63CRSHd6ZIAtA9qdrvE5nmUZJWBiXgud4i+xm9ARTfDLM2BybTnFu26FlYoUAAAAAAAAAMAnyX08RTpfwFfhnEEAPaBgbPMF0v//ZAACEIAABADktw+QzhdE4YFxeQQgoDjuosxSF+X5+isAAAAASUVORK5CYII="}, {"id": "drache", "name": "Drachenreiter", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABo0lEQVR42u2bMUjDQBSGX0ScFJeCOKhQSimCODgpage3DA4umdyVgkPBVdFVyCY6Ck5ZHBy6KRXEirhkCSIFkYKKgyJtMRGxbmmvHBfsJV5L/m+6d3c5kp/37h68i0YBZHN6QzR+sV/QqIfpo5gDASAABIAAECDOaNmc3rA2t8jY22UGeH08vLpLh+t5WjswmX5eH4/ro3NNuQAyC3h1V+oFVAsQ+xAAAIB45wFBE6Ynhplj0n78ED6jbxvCY7WwY0kde3fHc8z6mdUrqfWQCkMA7AFytMb8fcmh9OykcL5TtCk5k/btl4cn4fyTlQHh+Ov7l3B8ceNWgweoEsBMVchMVbpagP4oP761nS+PdbRO0HNu9RObIAToxhAIC9nMUZkAncb8v3vAQiYhzN297x+EgIiqddY0xkdZm8dIgmqnl017KolNsKc9YMhY8tvPJYexuRRtGlye981aQCoMAAAAAAAAAAAAEDaRX1H76/2CsOv/QaAwAgGwB6ilPebbka3/wwMggBjlxdGo6//wAAgAQKR5gOz9gpvyG36ZgQAQQB2/bN546O6Ah5EAAAAASUVORK5CYII="}, {"id": "pirat", "name": "Freibeuter", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABJklEQVR42u2aPwrCMBhHE7GToIu7q9Chu6An8CxOnsC5t/AKnkJcCqlIcXF1UBQctKKuKpgQPkqtvrc2DeHx65c/jVYOwjC8256naapVhampPwcBCEAAAhDwz2jXPO8iz3PRALIs05VJgDFGGWN+KwGraU+UgO3+IhrAYLTQCkpMgO8LzzWj6vsAAHDXgKjTepklks3B+k4cRdZZZZwkorrx3r+0P5bCCKAGyHB98+8cPfcOzSAQ9TdZLjUJQAACEICAD9S/fYDSlR4JcCWg321b5/Hz9cYnYGM4bni19z1Cm4wogt+dgFl88mp/FB6jAwAAAAAAAABIKfyOj/R+AafCBYMAakDJuO4XSP//kwAEIAABCAAobh0gvV8wX+80NQABCCiNB7Y1V3kBvsOMAAAAAElFTkSuQmCC"}, {"id": "eis", "name": "Eismagier", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABgElEQVR42u2av0vDQBTHX6T/grQgCIId/QEFQVoULDq7K+7+AQ5OxslBcHUXheqUTRAEhxZBVETdWlCkwfQHqEjmOAihlXgpHCEN+XyW3OVdjrsv7909cicCAAAAqaXSdL1bz/P+K4fZD+8a3rlteyIiQeUwe9zzNypNd+BB7O3fiIjI9tac/+6j9a41gM3CpBGnAJmadTZw44X877Nmvfrv3K9PwggAIKmEbkFHxyd92+TG+prym52qo9xWd0s5rW3vb/+6/Y2k3QMQgDVAk96YvL68kPnyirL9lXUqhdKiX3+xO8r20zNTSvt311HaD1ZnDTwgLgHMYlbMYjadAvROfJhFIATSLkBm2Aeom+nFJoBZayXDAx6enpW5e6fdVnZQTXsI1N8cZT2IsOSHRTBJHpAfz/nlbv2xrx6EfS8yMTY6lN4AAAAAAAAAAOkg8itquvcLov4rzMEIArAGxEvYnSLd8388AAEQAAEQACC6PED3fsFyeclgDUAABIiNHy9XtWRJ4k1GAAAAAElFTkSuQmCC"}, {"id": "roboter", "name": "Roboter", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABeElEQVR42u2bMUvDQBiG74q/wDV/QMjs4CDo4KBLh3YUF9FFRXAouDi4CBYEoS5CF3HNWKQIVXBwcA74K2o1LXbTSWiC3vVySc82zzOF3Jcjeft+dx98Vyk0XN8GXz/XCzdH4nXrIja+u1mRYoopmQQnP34WKImCgwAIgAAIUGjk6D6fht5b1+oFagc7EgcggDvmxgm6epn/9f7eYhcHFMIBs/BL4wAE+KMO0AUsLa/G6oTnpwflM+eNprKuqO1vW+37h8ensfkvz04kDkAABMhvDdChy/kkH+89o/mj/kA53o8i5XizUZc4wJUAoR+I0A+mvxJM+/Gj135YSTWP53mZphQpgAATSoGssK0cnQmQNucn7oCNclW5jw+Hn6SAisf7O6P4/yYoi6DtBCtr60bxpvt2p90SAAAAAAAAAABZkvsZPdPzBVn3/3XQGEEA1gC3JHM+iW3/HwcggBrnzdG8+/84AAEAcq0DbM8XdNot/jOEAAjgjm8riGRbOkQeCgAAAABJRU5ErkJggg=="}, {"id": "skelett", "name": "Knochenkönig", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABjklEQVR42u2aL0gDURzHf2+smURQMRhEm8GhxRMcV5YsFjVYhAXTgmIxWhTBYlIYGAZjQRDEIJaB4GkQZjAMFIsoOsNAMCjiMwjnkPPd4G5s4z6fcu/Pj8d73/v9fvyOdyIAAAAQWco5S2snpf9r+82fbo/ph8OkFhHxavvNN/v8qpyz6t5EtZAWEZHOuaw7Vql+BNrAZOZSNVOA+JHzUr91//rP0/kden37bOsIUE+Pt0YP6O0bNL6hq5ITyI1HElZTPSAW9RyIAAgQcUJPQHc3JWNSHBhKqDDXD7oeIYAAESceZswvzuz72ieHM3pjd8rtby5fG+23crZx/vzsxJhzxidSCg9AgAaGgBfFYtFz3LbtaAjQigfFA9rVA4JWengAOaDBH0Pzoz1uIVL5Skt3LGu0v3+flS6Vd/u6Y9Vof3Cx1NAQoA4IusBa4VhqS+HavhcL03uyspOvuxQGAAAAAAAAAAgb1WobCvv+3w/uBhGAHNBaMf+X54r5T1a/+388AAEQAAEQAAAAwJNvgaee21Dj4nMAAAAASUVORK5CYII="}, {"id": "elf", "name": "Waldelf", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABZUlEQVR42mNgGAWjYBSMglEwCkbBiAb2VVb/0dnYxHDJW+SaYLCxieGSH0jAGL/fiyKHfHvzgyIHrA7dxziQAcA0mv5HwSgYBaNgBAOCVVCwqTRKNbn29FO8evL3R+GtVic6LqOo2kM3n1LzRnw1OBoAo2UAhQA5Tx5acJnBLkEXr/q9084xmIdpwvlXDz3Gq948SA2v/Jc33/HKzw1dzziaAgYqAJqVPjE0K30amQGA7PHBHAijWWCkBwDLYHcgpS29AQuA2nt8QyMFZLso4227f/35ZzQL4ANy004hOFycqHwcVkovPI9oCCmKjBaCQzoFPMoyQ3AWXEblYwPTzjE8jTdE8Ak0hUfBKBgFo2AUjIJRMApGwSgYBaNgFIyCUTAKqA1ovkSN0vUFtB4VHp0YGQ2A0TJgYAGhNUWUzv+PpoDRABgNgNEAGA2AUTAKaNcOoHR9wYLDD0e3zIwGwGgADBwAAMe1bJc/RtGcAAAAAElFTkSuQmCC"}, {"id": "feuer", "name": "Feuerkämpfer", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABY0lEQVR42u2bv0vDQBTH34mLYhEUpIvo3DkgODo4iZ0tdHV0lOIfIOIqdOjq0FEEJ1fFydnFRQfFKv6ipUFjqpOSZrhwuaRX6eczHdzlJfny3r1H3kVJAjulme/f8eZaQUREGiftv/ndqxcl/5gxGXEQAAEQAAEQYJRR0TyfhnbQs3qAg+s3hQcgAAAAuKkDkhaszk301Qmnj772msPlorauqF48WOX9m+2FPvuL+7dW9qgDEIA9wI6kmI/z+hka2V9fmdTOtzpf2vml+p3CA1wJUG56Um56Qy3AeJ4vHx0fb1ymsnN2/pFpSBECCDCgEMgK28rRmQBpY37gHlCZn9LmcT/sEQI69t5njdYHQWB4hyc2waH2gNr0s9F607y9xScLAAAAAAAAAMiY3M/omZ4vyLr/nwSNEQRgD3BLPObj2Pb/8QAE0OO8OZp3/x8PQACAXOsA2/MFR/dd/hlCAARwxw+t5l4qU+z6ngAAAABJRU5ErkJggg=="}];
+const SKIN_GEGENSTAENDE = [{"id": "schwert", "name": "Schwert", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAAP0lEQVR42mNgQAKfvv38f/Xuk//IYkwMBMCoAghghDFuLLZCCUGN2GOMGKqzXZT/Z7so0zuoUcCNxVb/0R0LAFKkFJm5E9ZIAAAAAElFTkSuQmCC"}, {"id": "axt", "name": "Axt", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAARElEQVR42mNkYGBg6Jo85z8DAwODvoEBAzJwtzVhZGHAAvS11eBsJgYCAKsJF6/ewq4620X5f7aL8n9kMYJWjCqglgIAf3oKxNh6HvYAAAAASUVORK5CYII="}, {"id": "zauberstab", "name": "Zauberstab", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAAQUlEQVR42mNkgIL6Iy/+MyCBRhsJRgYGBgYmZMEGa3GGBmtxZCEGFhQFR18y4AVVXmr/Y4zFUaxiYiAARhXQTQEAyR4LgCE41OoAAAAASUVORK5CYII="}, {"id": "bogen", "name": "Bogen", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAAP0lEQVR42mNgQAO9oSr/e0NV/sP4TMiSL57d+Y+ugQldoHj1HUaYSVgVEDRhVAG1FMDiABYnKAokpFQY0TUAAJP2ECnaT6USAAAAAElFTkSuQmCC"}, {"id": "spitzhacke", "name": "Spitzhacke", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAAQUlEQVR42mNgIAAYT166+Z+BgYHBXE+dEVkCJs4CE5i1ZO1/bCawXLx0BavRWMWzXZT/Z7soo5jERMiRowqopQAAo/cTDStdg6oAAAAASUVORK5CYII="}, {"id": "hammer", "name": "Hammer", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAAO0lEQVR42mNkYGBg2Hn4zH8GLMDd1oSRiYEAYGFgYGC4ePEiTgUETSCoAAXEGIv/jzEW/09dK0YVQAAACDEJ3Xr6DWAAAAAASUVORK5CYII="}, {"id": "schild", "name": "Schild", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAATElEQVR42mNgoBQwMjAwMPTo6//HJlly8SIjC4xjJv4BRfLUSwEGBgYGBiZCVqAoEIuVZhCLlcatgKAJtFHAgsx5tfgpBSbAAmYAAADzxgxtTYP8xAAAAABJRU5ErkJggg=="}, {"id": "laterne", "name": "Laterne", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAAPklEQVR42mNgQAIxxuL/Y4zF/yOLMTEQAIwwxo3FVig6NWKPMWKYIGUnxCBlJ8RAkhV0UMCCzHl26B3DCAUAgV8KxsP4MjkAAAAASUVORK5CYII="}, {"id": "kristall", "name": "Kristall", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAAOklEQVR42mNgGGRgxZOv/1c8+fofWYyJkCa4gvojL/6HS3MxXH/wmaH+yIv/pJtAlIKGoy9p4IvBAADUrBm1zk336wAAAABJRU5ErkJggg=="}, {"id": "zepter", "name": "Zepter", "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAQCAYAAAArij59AAAAQklEQVR42mNkgIIq7/3/GZBA21ZHRgYGBgYmZEFfhvsMvgz3kYVQFWADLMiczQyK+FXfWGz1/8Ziq/8kWTGqgFoKAOAfDLRSp/1tAAAAAElFTkSuQmCC"}];
+
+/* =====================================================================
+   DIE FIGUR ALS REZEPT
+
+   Bisher war die Figur ein Bild, in das man Punkt fuer Punkt hineinmalte.
+   Jetzt wird sie aus Zutaten gebaut: sechs Farben (Haut, Haare, Augen,
+   Oberteil, Hose, Schuhe), dazu eine Verkleidung und ein Gegenstand fuer
+   die Hand. Wer will, malt anschliessend noch von Hand darueber.
+
+   Der Trick dabei: Die von Hand gemalten Punkte werden GETRENNT gemerkt
+   und immer zuletzt aufgetragen. Dadurch loescht eine Farbaenderung sie
+   nicht aus - man kann also erst malen und danach noch die Hose umfaerben.
+===================================================================== */
+
+const FIGUR_STANDARD = {
+  haut:     "#f2c9a0",
+  haar:     "#6b4423",
+  augen:    "#2b2b2b",
+  oberteil: "#5a6b8c",
+  hose:     "#39445a",
+  schuhe:   "#2b2b2b",
+  verkleidung: "",
+  gegenstand:  ""
+};
+
+// Welche Zutat faerbt welchen Bereich? Der Reiter "pinsel" faerbt nichts,
+// sondern setzt nur die Farbe fuer das freie Malen.
+const FIGUR_TEILE = [
+  {id:"haut",     name:"Haut",     icon:"✋"},
+  {id:"haar",     name:"Haare",    icon:"💇"},
+  {id:"augen",    name:"Augen",    icon:"👁️"},
+  {id:"oberteil", name:"Oberteil", icon:"👕"},
+  {id:"hose",     name:"Hose",     icon:"👖"},
+  {id:"schuhe",   name:"Schuhe",   icon:"👟"},
+  {id:"pinsel",   name:"Pinsel",   icon:"🖌️"}
+];
+
+function farbeDunkler(hex, f){
+  f = (f == null) ? 0.78 : f;
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  const z = v => Math.max(0, Math.min(255, Math.round(v*f)));
+  return "#" + [z(r),z(g),z(b)].map(v=>v.toString(16).padStart(2,"0")).join("");
+}
+
+/* ------------------------------------------------ Die Grundfigur zeichnen */
+function figurFlaeche(teil, seite, y0, y1, farbe, x0, x1){
+  const f = SKIN_FLAECHEN[teil][seite];
+  const ax = (x0 == null) ? 0 : x0;
+  const bx = (x1 == null) ? f[2] : x1;
+  skinCtx.fillStyle = farbe;
+  const vy = Math.max(0, y0), by = Math.min(f[3], y1);
+  if(by <= vy || bx <= ax) return;
+  skinCtx.fillRect(f[0] + ax, f[1] + vy, bx - ax, by - vy);
+}
+
+function figurRundum(teil, y0, y1, farbe, seiten){
+  (seiten || ["vorn","hinten","links","rechts"]).forEach(s=>figurFlaeche(teil, s, y0, y1, farbe));
+}
+
+function figurPunkt(teil, seite, x, y, farbe){
+  const f = SKIN_FLAECHEN[teil][seite];
+  if(x < 0 || y < 0 || x >= f[2] || y >= f[3]) return;
+  skinCtx.fillStyle = farbe;
+  skinCtx.fillRect(f[0] + x, f[1] + y, 1, 1);
+}
+
+// Die abgewandten Seiten leicht abdunkeln - das gibt der Figur Tiefe.
+function figurTiefe(){
+  const seiten = [["hinten", 0.90], ["links", 0.95]];
+  seiten.forEach(([seite, f])=>{
+    Object.keys(SKIN_FLAECHEN).forEach(teil=>{
+      const r = SKIN_FLAECHEN[teil][seite];
+      const d = skinCtx.getImageData(r[0], r[1], r[2], r[3]);
+      for(let i = 0; i < d.data.length; i += 4){
+        if(d.data[i+3]){
+          d.data[i]   = Math.round(d.data[i]   * f);
+          d.data[i+1] = Math.round(d.data[i+1] * f);
+          d.data[i+2] = Math.round(d.data[i+2] * f);
+        }
+      }
+      skinCtx.putImageData(d, r[0], r[1]);
+    });
+  });
+}
+
+function figurGrundZeichnen(z){
+  skinCanvasHolen();
+  skinCtx.clearRect(0, 0, SKIN_GROESSE, SKIN_GROESSE);
+
+  // Kopf: Haut rundum, Haare oben, hinten, an den Seiten und als Pony
+  figurRundum("kopf", 0, 8, z.haut);
+  figurFlaeche("kopf", "oben",  0, 8, z.haar);
+  figurFlaeche("kopf", "unten", 0, 8, farbeDunkler(z.haut, 0.82));
+  figurFlaeche("kopf", "hinten",0, 8, z.haar);
+  ["links","rechts"].forEach(s=>figurFlaeche("kopf", s, 0, 3, z.haar));
+  figurFlaeche("kopf", "vorn", 0, 2, z.haar);
+  // Gesicht
+  figurPunkt("kopf","vorn",1,4,"#ffffff");
+  figurPunkt("kopf","vorn",2,4,z.augen);
+  figurPunkt("kopf","vorn",5,4,z.augen);
+  figurPunkt("kopf","vorn",6,4,"#ffffff");
+  figurPunkt("kopf","vorn",3,6,farbeDunkler(z.haut, 0.62));
+  figurPunkt("kopf","vorn",4,6,farbeDunkler(z.haut, 0.62));
+
+  // Oberkoerper und Arme
+  figurRundum("koerper", 0, 12, z.oberteil);
+  figurFlaeche("koerper","oben", 0, 4, farbeDunkler(z.oberteil));
+  figurFlaeche("koerper","unten",0, 4, farbeDunkler(z.oberteil));
+  ["armR","armL"].forEach(a=>{
+    figurRundum(a, 0, 12, z.oberteil);
+    figurFlaeche(a, "oben", 0, 4, farbeDunkler(z.oberteil));
+    figurRundum(a, 8, 12, z.haut);              // Unterarm und Hand
+    figurFlaeche(a, "unten", 0, 4, z.haut);
+  });
+
+  // Beine mit Schuhen
+  ["beinR","beinL"].forEach(b=>{
+    figurRundum(b, 0, 12, z.hose);
+    figurFlaeche(b, "oben", 0, 4, farbeDunkler(z.hose));
+    figurRundum(b, 9, 12, z.schuhe);
+    figurFlaeche(b, "unten", 0, 4, farbeDunkler(z.schuhe));
+  });
+
+  figurTiefe();
+}
+
+/* ------------------------------------- Verkleidungen und Gegenstaende */
+const verkleidungsBilder = {};
+const gegenstandsBilder  = {};
+
+function bilderVorladen(liste, ablage){
+  liste.forEach(v=>{
+    if(ablage[v.id]) return;
+    const im = new Image();
+    im.src = v.png;
+    ablage[v.id] = im;
+  });
+}
+
+function kleiderkammerVorladen(){
+  bilderVorladen(SKIN_VERKLEIDUNGEN, verkleidungsBilder);
+  bilderVorladen(SKIN_GEGENSTAENDE,  gegenstandsBilder);
+}
+
+function verkleidungById(id){ return SKIN_VERKLEIDUNGEN.find(v=>v.id === id) || null; }
+function gegenstandById(id){  return SKIN_GEGENSTAENDE.find(v=>v.id === id) || null; }
+
+/* Baut die komplette Figur neu: Grundfigur, dann die Verkleidung darueber,
+   dann die von Hand gemalten Punkte ganz zuletzt. */
+function figurNeuBauen(){
+  const z = state.figur || (state.figur = Object.assign({}, FIGUR_STANDARD));
+  if(state.figurBasis === "import" && state.importBild && state.importBild.complete){
+    // Ein geladener Skin ist die Grundlage - die Farbregler greifen dann nicht.
+    skinCanvasHolen();
+    skinCtx.clearRect(0, 0, SKIN_GROESSE, SKIN_GROESSE);
+    skinCtx.imageSmoothingEnabled = false;
+    skinCtx.drawImage(state.importBild, 0, 0);
+  } else {
+    figurGrundZeichnen(z);
+  }
+
+  const v = z.verkleidung ? verkleidungsBilder[z.verkleidung] : null;
+  if(v && v.complete && v.naturalWidth){
+    skinCtx.imageSmoothingEnabled = false;
+    skinCtx.drawImage(v, 0, 0);
+  }
+
+  const malerei = state.figurMalerei || {};
+  Object.keys(malerei).forEach(k=>{
+    const t = k.split(",");
+    skinCtx.fillStyle = malerei[k];
+    skinCtx.fillRect(parseInt(t[0],10), parseInt(t[1],10), 1, 1);
+  });
+
+  state.skinUri = skinAlsUri();
+  return state.skinUri;
+}
+/* ------------------------------------------------------- Der Farbkasten
+
+   Der frueher benutzte Systemfarbwaehler (<input type="color">) oeffnet sich
+   nicht auf jedem Geraet - auf Markus' Geraet passierte gar nichts. Deshalb
+   bauen wir den Farbkasten selbst: 48 Farben, alle mit einem Tipp erreichbar,
+   ueberall gleich.
+*/
+function hslZuHex(h, s, l){
+  s /= 100; l /= 100;
+  const k = n => (n + h/30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const z = v => Math.round(v * 255).toString(16).padStart(2, "0");
+  return "#" + z(f(0)) + z(f(8)) + z(f(4));
+}
+
+const FARB_TOENE  = [0, 25, 45, 95, 155, 200, 265, 320];
+const FARB_STUFEN = [{s:82,l:78}, {s:78,l:63}, {s:74,l:49}, {s:70,l:37}, {s:58,l:25}];
+const FARB_GRAU   = ["#ffffff","#dcdfe3","#b3b8bf","#868d95","#5a6068","#3a3f45","#212429","#000000"];
+
+const FARB_PALETTE = FARB_GRAU.concat(
+  FARB_STUFEN.reduce((alle, st)=>alle.concat(FARB_TOENE.map(t=>hslZuHex(t, st.s, st.l))), [])
+);
+
+/* ------------------------------------- Schnappschuss samt Gegenstand
+
+   Die flache Vorderansicht ist jetzt 24 Punkte breit statt 16: rechts ist
+   Platz fuer den Gegenstand in der Hand. Die Figur steht darin mittig.
+*/
+const skinFrontCache = {};
+const SKIN_FRONT_B2 = 24;
+const SKIN_FRONT_OX = 4;
+const ITEM_X = 11, ITEM_Y = 6;
+
+function skinFrontBauen(uri, gegenstandId, fertig){
+  if(typeof gegenstandId === "function"){ fertig = gegenstandId; gegenstandId = ""; }
+  if(!uri){ fertig(""); return; }
+  const schluessel = uri + "|" + (gegenstandId || "");
+  if(skinFrontCache[schluessel]){ fertig(skinFrontCache[schluessel]); return; }
+
+  const img = new Image();
+  img.onload = ()=>{
+    const c = document.createElement('canvas');
+    c.width = SKIN_FRONT_B2; c.height = SKIN_FRONT_H;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    SKIN_FRONT.forEach(([teil, seite, dx, dy])=>{
+      const f = SKIN_FLAECHEN[teil][seite];
+      ctx.drawImage(img, f[0], f[1], f[2], f[3], dx + SKIN_FRONT_OX, dy, f[2], f[3]);
+    });
+    const g = gegenstandId ? gegenstandsBilder[gegenstandId] : null;
+    if(g && g.complete && g.naturalWidth){
+      ctx.drawImage(g, SKIN_FRONT_OX + ITEM_X, ITEM_Y);
+    }
+    const front = c.toDataURL('image/png');
+    skinFrontCache[schluessel] = front;
+    fertig(front);
+  };
+  img.onerror = ()=>fertig("");
+  img.src = uri;
+}
+
+function skinFrontAuffrischen(){
+  if(!state.customSkin){ state.customSkinFront = ""; return; }
+  kleiderkammerVorladen();
+  skinFrontBauen(state.customSkin, state.customGegenstand || "", (front)=>{
+    state.customSkinFront = front;
+    if(typeof render === "function"){ render(); }
+  });
+}
+
+/* --------------------------------------- Der Gegenstand in der 3D-Ansicht
+
+   In Minecraft sind gehaltene Gegenstaende flache Bilder - genau so machen
+   wir es auch: eine einzelne Flaeche neben der Hand, die sich mitdreht.
+*/
+function skinGegenstandHtml(id, s){
+  const g = gegenstandById(id);
+  if(!g) return "";
+  return `<div class="sk-item" style="width:${8*s}px;height:${16*s}px;
+            margin-left:${-4*s}px;margin-top:${-8*s}px;
+            background-image:url('${g.png}');background-size:${8*s}px ${16*s}px;
+            transform:translate3d(${9*s}px,${5*s}px,${2.6*s}px);"></div>`;
+}
 /* ==================================================================
    DER BILDSCHIRM "SKIN-WERKSTATT"
 ================================================================== */
 const SKIN_MASSSTAB = 5;          // Bildschirmpunkte je Skin-Punkt
-let skinVerlauf = [];             // fuer "Zurueck"
+let skinVerlauf = [];             // fuer "Schritt zurueck"
 const SKIN_VERLAUF_MAX = 25;
 
-function skinWerkstattOeffnen(zurueckZu){
-  state.skinReturnTo = zurueckZu || "start";
-  state.skinModus    = "malen";
-  state.skinFarbe    = state.skinFarbe || SKIN_FARBEN[12];
-  state.skinDrehY    = (state.skinDrehY == null) ? -22 : state.skinDrehY;
-  state.skinDrehX    = (state.skinDrehX == null) ?  -8 : state.skinDrehX;
-  skinVerlauf = [];
-
-  const start = state.customSkin || SKIN_VORLAGEN[0].png;
-  skinAusUriLaden(start, ()=>{
-    state.skinUri = skinAlsUri();
-    state.screen  = "skinwerkstatt";
-    render();
-    window.scrollTo(0,0);
-  });
+function figurKopie(){
+  return {
+    figur:   Object.assign({}, state.figur),
+    malerei: Object.assign({}, state.figurMalerei),
+    basis:   state.figurBasis
+  };
 }
 
 function skinVerlaufMerken(){
-  skinVerlauf.push(state.skinUri);
+  skinVerlauf.push(figurKopie());
   if(skinVerlauf.length > SKIN_VERLAUF_MAX){ skinVerlauf.shift(); }
 }
 
 function skinZurueck(){
   if(!skinVerlauf.length) return;
-  const vorher = skinVerlauf.pop();
-  skinAusUriLaden(vorher, ()=>{
-    state.skinUri = skinAlsUri();
-    skinFlaechenAuffrischen(state.skinUri);
-    const btn = document.getElementById('sk-zurueck');
-    if(btn && !skinVerlauf.length){ btn.setAttribute('disabled','true'); }
-  });
+  const alt = skinVerlauf.pop();
+  state.figur        = alt.figur;
+  state.figurMalerei = alt.malerei;
+  state.figurBasis   = alt.basis;
+  figurNeuBauen();
+  render();
+}
+
+function skinWerkstattOeffnen(zurueckZu){
+  state.skinReturnTo = zurueckZu || "start";
+  state.skinModus    = "malen";
+  state.skinTeil     = state.skinTeil || "oberteil";
+  state.skinFarbe    = state.skinFarbe || FARB_PALETTE[26];
+  state.skinDrehY    = (state.skinDrehY == null) ? -22 : state.skinDrehY;
+  state.skinDrehX    = (state.skinDrehX == null) ?  -8 : state.skinDrehX;
+  skinVerlauf = [];
+
+  if(!state.figur)        state.figur = Object.assign({}, FIGUR_STANDARD);
+  if(!state.figurMalerei) state.figurMalerei = {};
+  if(!state.figurBasis)   state.figurBasis = "rezept";
+
+  kleiderkammerVorladen();
+  skinCanvasHolen();
+
+  const weiter = ()=>{
+    figurNeuBauen();
+    state.screen = "skinwerkstatt";
+    render();
+  };
+
+  // Ein importierter Skin ist die Grundlage - der muss erst geladen sein.
+  if(state.figurBasis === "import" && state.customSkin){
+    const im = new Image();
+    im.onload  = ()=>{ state.importBild = im; weiter(); };
+    im.onerror = ()=>{ state.figurBasis = "rezept"; weiter(); };
+    im.src = state.customSkin;
+    return;
+  }
+  // Die Verkleidungsbilder sollen fertig sein, bevor wir zeichnen.
+  const offen = SKIN_VERKLEIDUNGEN.map(v=>verkleidungsBilder[v.id])
+                                  .filter(im=>im && !im.complete);
+  if(!offen.length){ weiter(); return; }
+  let rest = offen.length;
+  const fertig = ()=>{ if(--rest <= 0) weiter(); };
+  offen.forEach(im=>{ im.onload = fertig; im.onerror = fertig; });
+  setTimeout(()=>{ if(rest > 0){ rest = 0; weiter(); } }, 1500);   // Sicherheitsnetz
 }
 
 function skinFlaechenAuffrischen(uri){
   const fig = document.getElementById('sk-figur');
   if(fig){ fig.style.setProperty('--skin', "url('" + uri + "')"); }
   const vor = document.getElementById('sk-vorschau-bild');
-  if(vor){ skinFrontBauen(uri, f=>{ if(f) vor.style.backgroundImage = "url('" + f + "')"; }); }
+  if(vor){
+    skinFrontBauen(uri, (state.figur && state.figur.gegenstand) || "", f=>{
+      if(f) vor.style.backgroundImage = "url('" + f + "')";
+    });
+  }
 }
 
 function skinPunktMalen(el, ex, ey){
@@ -1755,15 +2035,15 @@ function skinPunktMalen(el, ex, ey){
   const f     = SKIN_FLAECHEN[teil][seite];
   // Am Rand einer gedrehten Flaeche rechnet der Browser leicht daneben.
   // Wer die Flaeche getroffen hat, will sie auch bemalen - also runden wir
-  // knappe Treffer auf den naechsten gueltigen Punkt, statt sie zu schlucken.
+  // knappe Treffer auf den naechsten gueltigen Punkt.
   const rand = 2 * SKIN_MASSSTAB;
   if(ex < -rand || ey < -rand || ex > f[2]*SKIN_MASSSTAB + rand || ey > f[3]*SKIN_MASSSTAB + rand) return false;
   const px = Math.max(0, Math.min(f[2]-1, Math.floor(ex / SKIN_MASSSTAB)));
   const py = Math.max(0, Math.min(f[3]-1, Math.floor(ey / SKIN_MASSSTAB)));
-  skinCanvasHolen();
-  skinCtx.fillStyle = state.skinFarbe;
-  skinCtx.fillRect(f[0] + px, f[1] + py, 1, 1);
-  state.skinUri = skinAlsUri();
+  const schluessel = (f[0] + px) + "," + (f[1] + py);
+  if(state.figurMalerei[schluessel] === state.skinFarbe) return false;
+  state.figurMalerei[schluessel] = state.skinFarbe;
+  figurNeuBauen();
   return true;
 }
 
@@ -1774,8 +2054,27 @@ function skinFigurDrehen(){
   }
 }
 
+// Eine Zutat umfaerben (oder, beim Pinsel, nur die Malfarbe wechseln).
+function figurFarbeSetzen(hex){
+  state.skinFarbe = hex;
+  if(state.skinTeil === "pinsel"){ render(); return; }
+  skinVerlaufMerken();
+  state.figur[state.skinTeil] = hex;
+  figurNeuBauen();
+  render();
+}
+
 function renderSkinWerkstatt(){
-  const uri = state.skinUri || SKIN_VORLAGEN[0].png;
+  const uri = state.skinUri || "";
+  const z   = state.figur;
+  const importiert = state.figurBasis === "import";
+  const aktiveFarbe = (state.skinTeil === "pinsel") ? state.skinFarbe : z[state.skinTeil];
+
+  const kachel = (aktiv, daten, inhalt, name)=>`
+    <button class="sk-kachel ${aktiv ? 'active' : ''}" ${daten}>
+      <span class="sk-kachel-bild">${inhalt}</span>
+      <span class="sk-kachel-name">${name}</span>
+    </button>`;
 
   app.innerHTML = `
     ${renderHeader("Skin-Werkstatt", true)}
@@ -1785,6 +2084,7 @@ function renderSkinWerkstatt(){
         <div class="sk-figur" id="sk-figur"
              style="--skin:url('${uri}');transform:rotateX(${state.skinDrehX}deg) rotateY(${state.skinDrehY}deg);">
           ${skinFigurHtml(uri, SKIN_MASSSTAB)}
+          ${skinGegenstandHtml(z.gegenstand, SKIN_MASSSTAB)}
         </div>
       </div>
 
@@ -1804,29 +2104,58 @@ function renderSkinWerkstatt(){
     </div>
 
     <div class="panel">
-      <h3 style="font-size:14px;margin-bottom:8px;">🎨 FARBE</h3>
-      <div class="sk-farben">
-        ${SKIN_FARBEN.map(c=>`
-          <button class="sk-farbe ${state.skinFarbe===c?'active':''}" data-skinfarbe="${c}"
-                  style="background:${c};" aria-label="Farbe ${c}"></button>`).join("")}
+      <h3 style="font-size:14px;margin-bottom:6px;">🎨 FARBEN</h3>
+      ${importiert ? `
+        <p class="muted" style="margin:0 0 10px;font-size:12.5px;">
+          Du hast einen eigenen Skin geladen &ndash; deshalb sind die Farbregler aus.
+          Malen geht weiter, und eine Verkleidung kannst du auch drüberziehen.
+        </p>` : `
+        <p class="muted" style="margin:0 0 8px;font-size:12.5px;">
+          Erst antippen, was du färben willst &ndash; dann die Farbe wählen.
+        </p>
+        <div class="sk-teile">
+          ${FIGUR_TEILE.map(t=>`
+            <button class="sk-teil ${state.skinTeil===t.id?'active':''}" data-skinteil="${t.id}">
+              <span class="sk-teil-ic">${t.icon}</span>
+              <span class="sk-teil-name">${t.name}</span>
+              <span class="sk-teil-farbe" style="background:${t.id==='pinsel'?state.skinFarbe:z[t.id]};"></span>
+            </button>`).join("")}
+        </div>`}
+      <div class="sk-farb-kopf">
+        <span class="sk-farb-jetzt" style="background:${aktiveFarbe};"></span>
+        <span class="sk-farb-text">${state.skinTeil === 'pinsel' ? 'Pinselfarbe' : 'Farbe für ' + (FIGUR_TEILE.find(t=>t.id===state.skinTeil)||{}).name}</span>
       </div>
-      <div class="sk-eigene">
-        <label for="sk-eigenfarbe">Eigene Farbe</label>
-        <input type="color" id="sk-eigenfarbe" value="${state.skinFarbe}">
+      <div class="sk-farben">
+        ${FARB_PALETTE.map(c=>`
+          <button class="sk-farbe ${aktiveFarbe===c?'active':''}" data-skinfarbe="${c}"
+                  style="background:${c};" aria-label="Farbe ${c}"></button>`).join("")}
       </div>
     </div>
 
     <div class="panel">
-      <h3 style="font-size:14px;margin-bottom:8px;">🧱 VORLAGEN</h3>
+      <h3 style="font-size:14px;margin-bottom:6px;">🦸 VERKLEIDUNG</h3>
       <p class="muted" style="margin:0 0 8px;font-size:12.5px;">
-        Achtung: eine Vorlage überschreibt, was du bisher gemalt hast.
+        Legt Helm und Rüstung über deine Figur. Haut, Haare und Hose bleiben, wie du sie gewählt hast.
       </p>
-      <div class="sk-vorlagen">
-        ${SKIN_VORLAGEN.map((v,i)=>`
-          <button class="sk-vorlage" data-skinvorlage="${i}">
-            <span class="sk-vor-bild" id="sk-vor-${i}"></span>
-            <span class="sk-vor-name">${v.name}</span>
-          </button>`).join("")}
+      <div class="sk-galerie">
+        ${kachel(!z.verkleidung, 'data-skinverkleidung=""', '<span class="sk-keins">∅</span>', "Keine")}
+        ${SKIN_VERKLEIDUNGEN.map(v=>kachel(
+            z.verkleidung===v.id,
+            `data-skinverkleidung="${v.id}"`,
+            `<span class="sk-vor-bild" id="sk-vk-${v.id}"></span>`,
+            v.name)).join("")}
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:14px;margin-bottom:6px;">⚔️ IN DIE HAND</h3>
+      <div class="sk-galerie">
+        ${kachel(!z.gegenstand, 'data-skingegenstand=""', '<span class="sk-keins">∅</span>', "Nichts")}
+        ${SKIN_GEGENSTAENDE.map(g=>kachel(
+            z.gegenstand===g.id,
+            `data-skingegenstand="${g.id}"`,
+            `<span class="sk-item-bild" style="background-image:url('${g.png}');"></span>`,
+            g.name)).join("")}
       </div>
     </div>
 
@@ -1851,78 +2180,55 @@ function renderSkinWerkstatt(){
       </p>
       <input type="file" id="sk-datei" accept="image/png,image/*" style="display:none;">
       <button class="btn ghost" id="sk-import">📂 Skin-Datei auswählen</button>
+      ${importiert ? `<button class="btn ghost" id="sk-import-weg" style="margin-top:8px;">↺ Zurück zur gebauten Figur</button>` : ""}
       <p class="muted" id="sk-import-info" style="margin:8px 0 0;font-size:12px;"></p>
     </div>
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
 
-  // ---- Vorschaubilder der Vorlagen und der Frontansicht nachreichen
-  SKIN_VORLAGEN.forEach((v,i)=>{
-    skinFrontBauen(v.png, f=>{
-      const el = document.getElementById('sk-vor-' + i);
-      if(el && f){ el.style.backgroundImage = "url('" + f + "')"; }
-    });
+  // ---- Vorschaubilder nachreichen
+  SKIN_VERKLEIDUNGEN.forEach(v=>{
+    const el = document.getElementById('sk-vk-' + v.id);
+    if(!el) return;
+    figurVorschau(v.id, f=>{ if(f) el.style.backgroundImage = "url('" + f + "')"; });
   });
-  skinFrontBauen(uri, f=>{
-    const el = document.getElementById('sk-vorschau-bild');
-    if(el && f){ el.style.backgroundImage = "url('" + f + "')"; }
-  });
+  skinFlaechenAuffrischen(uri);
 
-  // Ein einziger fehlender Knopf darf nie wieder den ganzen Bildschirm
-  // lahmlegen - deshalb laeuft jede Verdrahtung ueber diesen kleinen Helfer.
+  // ---- Verdrahtung. Ein fehlender Knopf darf nie den Bildschirm lahmlegen.
   const anKnopf = (id, was)=>{
     const el = document.getElementById(id);
     if(el){ el.addEventListener('click', was); }
     else { console.warn("Skin-Werkstatt: Knopf fehlt:", id); }
   };
-
-  const verlassen = ()=>{
-    state.screen = state.skinReturnTo || "start";
-    render(); window.scrollTo(0,0);
-  };
+  const verlassen = ()=>{ state.screen = state.skinReturnTo || "start"; render(); };
   anKnopf('back-btn', verlassen);
-
-  // ---- Drehen ueber die Knoepfe
   anKnopf('sk-links',  ()=>{ state.skinDrehY -= 45; skinFigurDrehen(); });
   anKnopf('sk-rechts', ()=>{ state.skinDrehY += 45; skinFigurDrehen(); });
+  anKnopf('sk-speichern', skinUebernehmen);
+  anKnopf('sk-zurueck', skinZurueck);
 
   document.querySelectorAll('[data-skinmodus]').forEach(el=>{
     el.addEventListener('click', ()=>{ state.skinModus = el.dataset.skinmodus; render(); });
   });
-
-  // ---- Farben
+  document.querySelectorAll('[data-skinteil]').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.skinTeil = el.dataset.skinteil; render(); });
+  });
   document.querySelectorAll('[data-skinfarbe]').forEach(el=>{
+    el.addEventListener('click', ()=>figurFarbeSetzen(el.dataset.skinfarbe));
+  });
+  document.querySelectorAll('[data-skinverkleidung]').forEach(el=>{
     el.addEventListener('click', ()=>{
-      state.skinFarbe = el.dataset.skinfarbe;
-      document.querySelectorAll('[data-skinfarbe]').forEach(b=>b.classList.remove('active'));
-      el.classList.add('active');
-      const eig = document.getElementById('sk-eigenfarbe');
-      if(eig){ eig.value = state.skinFarbe; }
+      skinVerlaufMerken();
+      state.figur.verkleidung = el.dataset.skinverkleidung;
+      figurNeuBauen(); render();
     });
   });
-  const eigen = document.getElementById('sk-eigenfarbe');
-  if(eigen){
-    eigen.addEventListener('input', ()=>{
-      state.skinFarbe = eigen.value;
-      document.querySelectorAll('[data-skinfarbe]').forEach(b=>b.classList.remove('active'));
-    });
-  }
-
-  // ---- Vorlagen
-  document.querySelectorAll('[data-skinvorlage]').forEach(el=>{
+  document.querySelectorAll('[data-skingegenstand]').forEach(el=>{
     el.addEventListener('click', ()=>{
-      const v = SKIN_VORLAGEN[parseInt(el.dataset.skinvorlage, 10)];
-      if(!v) return;
-      showConfirmModal('Vorlage "' + v.name + '" laden? Was du bisher gemalt hast, geht dabei verloren.', ()=>{
-        skinVerlaufMerken();
-        skinAusUriLaden(v.png, ()=>{
-          state.skinUri = skinAlsUri();
-          skinFlaechenAuffrischen(state.skinUri);
-          const b = document.getElementById('sk-zurueck');
-          if(b){ b.removeAttribute('disabled'); }
-        });
-      });
+      skinVerlaufMerken();
+      state.figur.gegenstand = el.dataset.skingegenstand;
+      render();
     });
   });
 
@@ -1935,7 +2241,7 @@ function renderSkinWerkstatt(){
     if(state.skinModus === 'drehen'){
       zieht = true; startX = e.clientX; startY = e.clientY;
       dyStart = state.skinDrehY; dxStart = state.skinDrehX;
-      buehne.setPointerCapture(e.pointerId);
+      try{ buehne.setPointerCapture(e.pointerId); }catch(err){}
       e.preventDefault();
       return;
     }
@@ -1946,7 +2252,7 @@ function renderSkinWerkstatt(){
     if(skinPunktMalen(el, e.offsetX, e.offsetY)){ skinFlaechenAuffrischen(state.skinUri); }
     const b = document.getElementById('sk-zurueck');
     if(b){ b.removeAttribute('disabled'); }
-    el.setPointerCapture(e.pointerId);
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
     e.preventDefault();
   });
 
@@ -1967,10 +2273,6 @@ function renderSkinWerkstatt(){
   buehne.addEventListener('pointerup', losLassen);
   buehne.addEventListener('pointercancel', losLassen);
 
-  // ---- Speichern und Schritt zurueck
-  anKnopf('sk-speichern', skinUebernehmen);
-  anKnopf('sk-zurueck', skinZurueck);
-
   // ---- Eigene Skin-Datei laden
   const datei = document.getElementById('sk-datei');
   const importBtn = document.getElementById('sk-import');
@@ -1982,6 +2284,45 @@ function renderSkinWerkstatt(){
       if(f){ skinDateiLaden(f); }
     });
   }
+  anKnopf('sk-import-weg', ()=>{
+    skinVerlaufMerken();
+    state.figurBasis = "rezept";
+    state.importBild = null;
+    figurNeuBauen(); render();
+  });
+}
+
+/* Kleines Vorschaubild einer Verkleidung auf der Standardfigur. */
+const figurVorschauCache = {};
+function figurVorschau(verkleidungsId, fertig){
+  if(figurVorschauCache[verkleidungsId]){ fertig(figurVorschauCache[verkleidungsId]); return; }
+  const merkFigur = state.figur, merkMalerei = state.figurMalerei, merkBasis = state.figurBasis, merkUri = state.skinUri;
+  state.figur = Object.assign({}, FIGUR_STANDARD, {verkleidung: verkleidungsId});
+  state.figurMalerei = {};
+  state.figurBasis = "rezept";
+  const uri = figurNeuBauen();
+  state.figur = merkFigur; state.figurMalerei = merkMalerei; state.figurBasis = merkBasis;
+  skinFrontBauen(uri, "", f=>{
+    figurVorschauCache[verkleidungsId] = f;
+    // Das Arbeitsbild wieder herstellen - wir haben es fuer die Vorschau benutzt.
+    if(merkBasis === "rezept"){ figurNeuBauen(); } else { state.skinUri = merkUri; }
+    fertig(f);
+  });
+}
+
+function skinUebernehmen(){
+  const uri = state.skinUri || "";
+  skinFrontBauen(uri, state.figur.gegenstand || "", (front)=>{
+    if(!front){ return; }
+    state.customSkin       = uri;
+    state.customSkinFront  = front;
+    state.customGegenstand = state.figur.gegenstand || "";
+    state.avatarId         = CUSTOM_AVATAR_ID;
+    saveProgress();
+    syncToCloud();
+    state.screen = state.skinReturnTo || "start";
+    render();
+  });
 }
 
 // Meldung im Import-Kasten
@@ -2033,30 +2374,21 @@ function skinDateiLaden(datei){
         skinCtx.drawImage(skinCanvas, vx, vy, bb, hh, nx, ny, bb, hh);
         skinCtx.clearRect(vx, vy, bb, hh);
       });
-      state.skinUri = skinAlsUri();
-      skinFlaechenAuffrischen(state.skinUri);
-      const zb = document.getElementById('sk-zurueck');
-      if(zb){ zb.removeAttribute('disabled'); }
-      skinImportInfo("Skin geladen. Du kannst ihn jetzt weiter bemalen.", false);
+      // Das Ergebnis wird die neue Grundlage der Figur.
+      const basis = new Image();
+      basis.onload = ()=>{
+        state.importBild   = basis;
+        state.figurBasis   = "import";
+        state.figurMalerei = {};
+        figurNeuBauen();
+        render();
+        skinImportInfo("Skin geladen. Du kannst ihn jetzt weiter bemalen.", false);
+      };
+      basis.src = skinAlsUri();
     };
     img.src = leser.result;
   };
   leser.readAsDataURL(datei);
-}
-
-function skinUebernehmen(){
-  const uri = state.skinUri || "";
-  skinFrontBauen(uri, (front)=>{
-    if(!front){ return; }
-    state.customSkin      = uri;
-    state.customSkinFront = front;
-    state.avatarId        = CUSTOM_AVATAR_ID;
-    saveProgress();
-    syncToCloud();
-    state.screen = state.skinReturnTo || "start";
-    render();
-    window.scrollTo(0,0);
-  });
 }
 
 
@@ -2153,7 +2485,9 @@ const AVATAR_FOOT_CENTER = {
   lava:56.8, potion:47.8, crystal:48.0, shadow:41.8
 };
 function avatarFootOffset(av, size, facing){
-  let c = av.schmal ? 50
+  // Der Schnappschuss ist 24 Punkte breit, die Figur steht darin von 4 bis 19.
+  // Die Beine liegen bei 8 bis 15 - ihre Mitte ist also 11,5 von 24 = 47,9 %.
+  let c = av.schmal ? 47.9
         : ((av.id === CUSTOM_AVATAR_ID && av.px) ? pixelFussMitte(av.px)
         : ((AVATAR_FOOT_CENTER[av.id] != null) ? AVATAR_FOOT_CENTER[av.id] : 50));
   // Gespiegelt liegen die Fuesse auch spiegelbildlich.
@@ -2295,6 +2629,10 @@ function loadSave(){
     if(Array.isArray(data.hiddenRewards)) state.hiddenRewards = data.hiddenRewards;
     if(typeof data.customAvatar === "string") state.customAvatar = data.customAvatar;
     if(typeof data.customSkin === "string") state.customSkin = data.customSkin;
+    if(typeof data.customGegenstand === "string") state.customGegenstand = data.customGegenstand;
+    if(data.figur && typeof data.figur === "object") state.figur = data.figur;
+    if(data.figurMalerei && typeof data.figurMalerei === "object") state.figurMalerei = data.figurMalerei;
+    if(data.figurBasis === "import" || data.figurBasis === "rezept") state.figurBasis = data.figurBasis;
     if(NOTEN_SCHLUESSEL[data.gradeKey]) state.gradeKey = data.gradeKey;
   }catch(e){ /* Speicher blockiert (z.B. Vorschau-Sandbox) - Standardwerte bleiben */ }
 }
@@ -2318,6 +2656,10 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       hiddenRewards: state.hiddenRewards,
       customAvatar: state.customAvatar,
       customSkin: state.customSkin,
+      customGegenstand: state.customGegenstand,
+      figur: state.figur,
+      figurMalerei: state.figurMalerei,
+      figurBasis: state.figurBasis,
       gradeKey: state.gradeKey
     }));
   }catch(e){ /* Speicher nicht verfügbar - Fortschritt bleibt nur für diese Sitzung erhalten */ }
@@ -2333,6 +2675,12 @@ const state = {
   avatarId: AVATARS[0].id,
   customAvatar: "",        // alt: 256 Zeichen aus dem frueheren Malkasten
   customSkin: "",          // Minecraft-Skin, 64x64, als Bilddatei
+  customGegenstand: "",    // was die Figur in der Hand haelt
+  figur: null,             // Rezept: Farben, Verkleidung, Gegenstand
+  figurMalerei: null,      // von Hand gemalte Punkte, getrennt gemerkt
+  figurBasis: "rezept",    // "rezept" oder "import"
+  importBild: null,
+  skinTeil: "oberteil",
   customSkinFront: "",     // daraus der flache Schnappschuss fuer das Spiel
   skinUri: "",             // Arbeitsstand in der Werkstatt
   skinFarbe: "",
