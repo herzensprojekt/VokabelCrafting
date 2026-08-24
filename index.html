@@ -1491,7 +1491,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "22.2 – Klare Startseite";
+const APP_VERSION = "22.3 – Klare Startseite";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2568,14 +2568,37 @@ function pixelFussMitte(px){
 
 // px darf mitgegeben werden - fuer fremde Spieler in der Rangliste, deren
 // Bild ja nicht im eigenen Zustand steht.
-function avatarById(id, px, front){
+/* Schnappschuesse FREMDER Figuren. In der Cloud steht nur der Skin selbst -
+   die flache Vorderansicht wird daraus hier berechnet und gemerkt. */
+const fremdeFrontBilder = {};
+
+function fremdeFigurFront(customSkin){
+  if(!customSkin) return "";
+  const fertig = fremdeFrontBilder[customSkin];
+  if(fertig) return fertig;
+  if(fertig === undefined){
+    fremdeFrontBilder[customSkin] = "";          // laeuft gerade
+    skinFrontBauen(customSkin, "", (f)=>{
+      if(!f){ return; }
+      fremdeFrontBilder[customSkin] = f;
+      if(typeof render === "function"){ render(); }
+    });
+  }
+  return "";
+}
+
+/* fremd = true bedeutet: Es geht NICHT um den angemeldeten Spieler. Dann darf
+   niemals der eigene Zustand einspringen - sonst tragen ploetzlich alle
+   dasselbe Gesicht. Lieber der Standard-Avatar als das falsche Bild. */
+function avatarById(id, px, front, fremd){
   if(id === CUSTOM_AVATAR_ID){
     // Neu: die selbst gebaute Figur aus der Skin-Werkstatt.
-    const f = (typeof front === "string" && front) ? front : state.customSkinFront;
-    if(f) return { id: CUSTOM_AVATAR_ID, name: "Deine Figur", src: f, schmal: true };
+    const f = (typeof front === "string" && front) ? front
+            : (fremd ? "" : state.customSkinFront);
+    if(f) return { id: CUSTOM_AVATAR_ID, name: fremd ? "Eigene Figur" : "Deine Figur", src: f, schmal: true };
     // Alt: der 16x16-Malkasten von frueher. Der Malkasten selbst gibt es nicht
     // mehr, aber wer damals etwas gemalt hat, behaelt seinen Avatar.
-    const daten = (typeof px === "string" && px) ? px : state.customAvatar;
+    const daten = (typeof px === "string" && px) ? px : (fremd ? "" : state.customAvatar);
     const uri = pixelToDataUri(daten);
     if(uri) return { id: CUSTOM_AVATAR_ID, name: "Selbst gemalt", src: uri, px: daten };
     return AVATARS[0];
@@ -6957,7 +6980,7 @@ function renderLeaderboard(){
 
 function showGradeDetailModal(player){
   if(!player) return;
-  const av = avatarById(player.avatarId, player.customAvatar, player.customSkinFront);
+  const av = avatarById(player.avatarId, player.customAvatar, fremdeFigurFront(player.customSkin), true);
   const entries = Array.isArray(player.gradeEntries) ? player.gradeEntries.slice() : [];
   entries.sort((a,b)=> a.date < b.date ? 1 : -1); // neueste zuerst
   const quote = pickRandom(GRADE_MOTIVATION_QUOTES);
@@ -7009,7 +7032,7 @@ function renderLeaderboardBody(){
       : `<p class="center-text muted">Noch keine Einträge &ndash; sei die/der Erste!</p>`;
   }
   return `<div class="vocab-list" style="max-height:420px;">` + state.leaderboardData.map((p, i)=>{
-    const av = avatarById(p.avatarId, p.customAvatar, p.customSkinFront);
+    const av = avatarById(p.avatarId, p.customAvatar, fremdeFigurFront(p.customSkin), true);
     const isMe = state.cloudId && p.id === state.cloudId;
     const valueHtml = isGrades
       ? `💎 Ø ${(typeof p.avgGrade==="number" ? p.avgGrade.toFixed(2) : "-")}`
