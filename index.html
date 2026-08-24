@@ -730,7 +730,32 @@
   .game-topbar .player-badge{ margin:0; max-width:none; }
 
   /* ---------- Anmeldebildschirm ---------- */
-  .login-hero{ text-align:center; margin-bottom:4px; }  .sell-grid{ display:grid; gap:10px; margin:14px 0 6px; }
+  .login-hero{ text-align:center; margin-bottom:4px; }
+  /* Anmeldeseite: kleineres Logo, damit Anmeldung und Gastzugang ohne
+     Scrollen sichtbar sind. */
+  .login-topbar{ position:relative; }
+  .login-topbar .title-block{ margin-bottom:8px; }
+  /* Spezifitaet beachten: .title-block.start .logo-img zaehlt drei Klassen
+     und wuerde eine kuerzere Regel sonst schlagen. */
+  .login-topbar .title-block.start .logo-img{ max-width:min(52%, 200px); }
+  @media (max-height: 700px){
+    .login-topbar .title-block.start .logo-img{ max-width:min(42%, 160px); }
+    .claim-h{ font-size:21px; }
+    .claim-p{ font-size:14.5px; margin-bottom:10px; }
+  }
+  .claim-h{
+    font-family:var(--font); font-weight:800; font-size:24px; line-height:1.15;
+    text-align:center; color:#1e4515; margin:0 0 6px;
+  }
+  .claim-p{
+    font-family:var(--font); font-size:15.5px; line-height:1.45; text-align:center;
+    color:#40503a; margin:0 0 14px;
+  }
+  .claim-fuss{
+    font-family:var(--font); font-size:12.5px; text-align:center; color:#6a7a62;
+    margin:12px 0 0;
+  }
+  .abschnitt-h{ font-size:15px; margin:0 0 10px; }  .sell-grid{ display:grid; gap:10px; margin:14px 0 6px; }
   /* Der Aufmacher fuer das Belohnungssystem - das Einzige, was es so
      woanders nicht gibt, steht deshalb hervorgehoben ganz oben. */
   .usp-hero{
@@ -1442,7 +1467,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "21.3 – Kleiderkammer";
+const APP_VERSION = "22.0 – Klare Startseite";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -3756,23 +3781,24 @@ function renderLogin(){
   const keineVerbindung = state.cloudChecked && !state.cloudAvailable;
 
   app.innerHTML = `
-    <div style="position:relative;">
+    <div class="login-topbar">
       ${renderHeader("", false, true)}
       <button type="button" class="info-btn" id="info-btn" title="Was ist LingoCrafter?" aria-label="Was ist LingoCrafter?">i</button>
     </div>
 
-    <div class="panel">
-      ${keineVerbindung ? `
+    ${keineVerbindung ? `
+      <div class="panel">
         <div class="login-hero">
-          <h3>📡 Keine Verbindung</h3>
+          <h3>&#128225; Keine Verbindung</h3>
           <p class="muted">LingoCrafter braucht Internet, um dich anzumelden und deinen Fortschritt zu sichern.</p>
         </div>
-        <button class="btn" id="login-retry-btn" style="margin-top:14px;">🔄 NOCHMAL VERSUCHEN</button>
-      ` : `
-        <div class="login-hero">
-          <h3 style="font-size:23px;line-height:1.25;margin-bottom:8px;">&#9876;&#65039; Werde zum Lingo-Crafter!</h3><p style="text-align:center;font-size:16px;line-height:1.5;margin:0 0 4px;">Englisch üben, das sich anfühlt wie ein Spiel &ndash; und am Ende wartet eine Belohnung, die <strong>ihr zu Hause selbst festgelegt habt</strong>.</p><p class="center-text" style="margin:0 0 2px;"><button type="button" class="linkbtn" id="schon-dabei">Schon dabei? Hier geht es zur Anmeldung &#8595;</button></p><div class="usp-hero"><span class="usp-kopf">&#127873; Das Herzstück &ndash; und das gibt es so kein zweites Mal</span><span class="usp-titel">Die Belohnungen bestimmt ihr selbst</span><span class="usp-text">Kein Punktesystem von der Stange. <strong>Die Eltern legen fest</strong>, wofür sich das Üben lohnt &ndash; Filmabend, Schwimmbad, Taschengeld, was auch immer bei euch zählt. Das Kind erspielt sich Münzen und löst sie ein; bestätigt wird mit dem Eltern-PIN. Nichts motiviert ein Kind mehr als eine Belohnung, auf die es selbst hingearbeitet hat.</span></div><div class="sell-grid"><div class="sell"><span class="sell-i">&#129521;</span><span class="sell-txt"><span class="sell-t">Deine eigene Figur</span><span class="sell-s">In der 3D-Werkstatt bauen, färben und bemalen. Zwölf Verkleidungen, Schwert oder Zauberstab in die Hand &ndash; und als Minecraft-Skin zum Mitnehmen.</span></span></div><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Englisch als Spiel</span><span class="sell-s">Fünf Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Üben, das sich nicht nach Üben anfühlt.</span></span></div><div class="sell"><span class="sell-i">&#128202;</span><span class="sell-txt"><span class="sell-t">Auswertung bis ins Detail</span><span class="sell-s">Jedes Grammatikthema einzeln ausgewertet: was sitzt schon, wo hakt es noch. Kindgerecht als Erz-Balken statt als Zahlenkolonne.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben, Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div><div class="sell"><span class="sell-i">&#128221;</span><span class="sell-txt"><span class="sell-t">Echte Testarbeiten</span><span class="sell-s">Vokabel- und Grammatiktests werden benotet &ndash; wie in der Schule. Den Notenschlüssel stellen Sie selbst ein.</span></span></div><div class="sell"><span class="sell-i">&#10133;</span><span class="sell-txt"><span class="sell-t">Eure Schulvokabeln</span><span class="sell-s">Die Wörter aus dem eigenen Schulbuch eintippen oder aus Excel hochladen.</span></span></div></div>
-          <p class="muted" style="margin-top:6px;">Kostenlos &middot; keine Werbung &middot; keine E-Mail nötig &middot; in 10 Sekunden startklar</p>
-        </div>
+        <button class="btn" id="login-retry-btn" style="margin-top:14px;">&#128260; NOCHMAL VERSUCHEN</button>
+      </div>
+    ` : `
+      <div class="panel">
+        <p class="claim-h">Englisch üben, das sich lohnt</p>
+        <p class="claim-p">Vokabeln und Grammatik als Spiel &ndash; und dazu Belohnungen,
+          die <strong>ihr zu Hause selbst festlegt</strong>.</p>
 
         <input type="text" id="player-name-input" maxlength="16" placeholder="Dein Spielername"
                autocomplete="username" value="${escapeHtml(state.playerName)}">
@@ -3780,22 +3806,47 @@ function renderLogin(){
                placeholder="4-stelliger PIN" autocomplete="current-password"
                value="${escapeHtml(state.playerPin)}" style="margin-top:10px;">
 
-        <button class="btn gold" id="register-direct-btn" style="margin-top:12px;font-size:17px;padding:16px;" ${wartet ? "disabled" : ""}>${wartet ? "⏳ MOMENT ..." : "🆕 KOSTENLOSES KONTO ANLEGEN"}</button><button class="btn secondary" id="login-btn" style="margin-top:10px;" ${wartet ? "disabled" : ""}>
-          ${wartet ? "⏳ PRÜFE ..." : "🔓 ANMELDEN"}
-        </button>
+        <button class="btn gold" id="register-direct-btn" style="margin-top:12px;font-size:17px;padding:16px;" ${wartet ? "disabled" : ""}>${wartet ? "&#9203; MOMENT ..." : "&#127381; KOSTENLOSES KONTO ANLEGEN"}</button>
+        <button class="btn secondary" id="login-btn" style="margin-top:10px;" ${wartet ? "disabled" : ""}>${wartet ? "&#9203; PRÜFE ..." : "&#128275; ANMELDEN"}</button>
 
-        ${state.loginError ? `<div class="login-error">⚠️ ${escapeHtml(state.loginError)}</div>` : ""}
-
+        ${state.loginError ? `<div class="login-error">&#9888;&#65039; ${escapeHtml(state.loginError)}</div>` : ""}
         ${state.loginNotice ? `
           <div class="login-note">
             ${escapeHtml(state.loginNotice)}
-            <button class="btn wood" id="register-btn" style="margin-top:12px;" ${wartet ? "disabled" : ""}>🆕 KONTO ANLEGEN</button>
+            <button class="btn wood" id="register-btn" style="margin-top:12px;" ${wartet ? "disabled" : ""}>&#127381; KONTO ANLEGEN</button>
           </div>` : ""}
 
-        <button class="btn wood small" id="guest-btn" style="margin-top:16px;">👀 Erst mal ohne Konto ausprobieren</button>        <details class="eltern"><summary>F&uuml;r Eltern: Was ist das hier?</summary><p>LingoCrafter ist kostenlos, zeigt keine Werbung und verkauft keine Daten. Zum Anlegen eines Kontos reichen ein frei gew&auml;hlter Spielername und eine vierstellige PIN &ndash; keine E-Mail-Adresse, kein echter Name n&ouml;tig.</p><p>Die M&uuml;nzen, die Ihr Kind erspielt, tauscht es gegen Belohnungen ein, die <strong>Sie</strong> festlegen &ndash; vom Filmabend bis zum Taschengeld. Jede Einl&ouml;sung k&ouml;nnen Sie per Link und Eltern-PIN best&auml;tigen.</p></details><p class="login-hint">
+        <button class="btn wood small" id="guest-btn" style="margin-top:14px;">&#128064; Erst mal ohne Konto ausprobieren</button>
+        <p class="claim-fuss">Kostenlos &middot; keine Werbung &middot; keine E-Mail nötig</p>
+      </div>
+
+      <div class="panel">
+        <div class="usp-hero">
+          <span class="usp-kopf">&#127873; Das Herzstück &ndash; und das gibt es so kein zweites Mal</span>
+          <span class="usp-titel">Die Belohnungen bestimmt ihr selbst</span>
+          <span class="usp-text">Kein Punktesystem von der Stange. <strong>Die Eltern legen fest</strong>,
+            wofür sich das Üben lohnt &ndash; Filmabend, Schwimmbad, Taschengeld, was auch immer bei
+            euch zählt. Das Kind erspielt sich Münzen und löst sie ein; bestätigt wird mit dem
+            Eltern-PIN. Nichts motiviert ein Kind mehr als eine Belohnung, auf die es selbst
+            hingearbeitet hat.</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="abschnitt-h">&#127918; So lernt dein Kind</h3>
+        <div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Üben, das sich nicht so anfühlt</span><span class="sell-s">Fünf Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Wer Spaß hat, übt länger.</span></span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-txt"><span class="sell-t">Vokabeln und Grammatik</span><span class="sell-s">Wortschatz trainieren und Grammatik Thema für Thema &ndash; von der Zeitform bis zur Wortstellung, mit Erklärung und Beispielen.</span></span></div><div class="sell"><span class="sell-i">&#128221;</span><span class="sell-txt"><span class="sell-t">Echte Testarbeiten</span><span class="sell-s">Tests werden benotet, genau wie in der Schule. Den Notenschlüssel stellen Sie als Eltern selbst ein &ndash; mild oder schulisch.</span></span></div><div class="sell"><span class="sell-i">&#128202;</span><span class="sell-txt"><span class="sell-t">Auswertung bis ins Detail</span><span class="sell-s">Jedes Grammatikthema einzeln: was sitzt schon, wo hakt es noch. Kindgerecht als Erz-Balken statt als Zahlenkolonne.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben und Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div><div class="sell"><span class="sell-i">&#10133;</span><span class="sell-txt"><span class="sell-t">Eure Schulvokabeln</span><span class="sell-s">Die Wörter aus dem eigenen Schulbuch eintippen oder aus Excel hochladen.</span></span></div></div>
+      </div>
+
+      <div class="panel">
+        <h3 class="abschnitt-h">&#129521; Und weil es Spaß macht</h3>
+        <div class="sell-grid"><div class="sell"><span class="sell-i">&#129521;</span><span class="sell-txt"><span class="sell-t">Die eigene Figur</span><span class="sell-s">In der 3D-Werkstatt bauen, färben und bemalen. Zwölf Verkleidungen, Schwert oder Zauberstab in die Hand &ndash; und als Minecraft-Skin zum Mitnehmen.</span></span></div></div>
+      </div>
+
+      <div class="panel">
+        <details class="eltern"><summary>Für Eltern: Was ist das hier?</summary><p>LingoCrafter ist kostenlos, zeigt keine Werbung und verkauft keine Daten. Zum Anlegen eines Kontos reichen ein frei gewählter Spielername und eine vierstellige PIN &ndash; keine E-Mail-Adresse, kein echter Name nötig.</p><p>Die Münzen, die Ihr Kind erspielt, tauscht es gegen Belohnungen ein, die <strong>Sie</strong> festlegen &ndash; vom Filmabend bis zum Taschengeld. Jede Einlösung können Sie per Link und Eltern-PIN bestätigen.</p></details>
+        <p class="login-hint">
           Name + PIN sind deine Anmeldung. Merk dir den PIN gut &ndash; nur damit
-          kommst du auf einem anderen Gerät an deinen Spielstand.<br>
-          Neu hier? Einfach Wunschnamen und PIN eintippen und auf ANMELDEN tippen.
+          kommst du auf einem anderen Gerät an deinen Spielstand.
         </p>
         <p class="center-text" style="margin-top:12px;">
           <button type="button" class="linkbtn" id="info-login">Was ist LingoCrafter?</button>
@@ -3804,20 +3855,10 @@ function renderLogin(){
           <span style="opacity:0.5;">&middot;</span>
           <button type="button" class="linkbtn" id="datenschutz-login">Datenschutz</button>
         </p>
-      `}
-    </div>
+      </div>
+    `}
   `;
 
-  // Abkuerzung fuer Rueckkehrer: direkt zu den Anmeldefeldern.
-  const schonDabei = document.getElementById('schon-dabei');
-  if(schonDabei){
-    schonDabei.addEventListener('click', ()=>{
-      const feld = document.getElementById('player-name-input');
-      if(!feld) return;
-      feld.scrollIntoView({behavior:"smooth", block:"center"});
-      setTimeout(()=>feld.focus(), 350);
-    });
-  }
   const infoBtn = document.getElementById('info-btn');
   if(infoBtn){ infoBtn.addEventListener('click', oeffneInfo); }
   const impLogin = document.getElementById('impressum-login');
@@ -3893,12 +3934,6 @@ function renderStart(){
       ${state.showLoginForm ? `
         <div class="setting-label" style="margin-top:14px;">Dein Avatar</div>
         <div class="avatar-grid">
-          ${AVATARS.map(av=>`
-            <div class="avatar-option ${state.avatarId===av.id?'selected':''}" data-avatar="${av.id}">
-              <span class="avatar-swatch" style="${avatarStyle(av)}"></span>
-              <span class="aname">${av.name}</span>
-            </div>
-          `).join("")}
           ${eigeneFigurDa() ? `
             <div class="avatar-option ${state.avatarId===CUSTOM_AVATAR_ID?'selected':''}" data-avatar="${CUSTOM_AVATAR_ID}">
               <span class="avatar-swatch" style="${avatarStyle(avatarById(CUSTOM_AVATAR_ID))}"></span>
@@ -3910,6 +3945,12 @@ function renderStart(){
               <span class="aname">Selbst bauen</span>
             </div>
           `}
+          ${AVATARS.map(av=>`
+            <div class="avatar-option ${state.avatarId===av.id?'selected':''}" data-avatar="${av.id}">
+              <span class="avatar-swatch" style="${avatarStyle(av)}"></span>
+              <span class="aname">${av.name}</span>
+            </div>
+          `).join("")}
         </div>
         <button class="btn secondary small" id="avatar-editor-btn" style="margin-top:10px;">
           🧱 ${state.customSkinFront ? "Deine Figur weiterbauen" : "Eigene Figur bauen"}
