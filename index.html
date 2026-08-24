@@ -730,7 +730,26 @@
   .game-topbar .player-badge{ margin:0; max-width:none; }
 
   /* ---------- Anmeldebildschirm ---------- */
-  .login-hero{ text-align:center; margin-bottom:4px; }  .sell-grid{ display:grid; gap:10px; margin:18px 0 6px; }  .sell{ display:flex; align-items:center; gap:14px; text-align:left; background:rgba(255,255,255,0.78); border:1px solid rgba(255,255,255,0.9); border-radius:18px; padding:13px 15px; box-shadow:0 2px 10px rgba(20,30,15,0.08); transition:transform .15s ease, box-shadow .15s ease; }  .sell:hover{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(20,30,15,0.14); }  .sell-i{ flex:0 0 auto; width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:25px; background:linear-gradient(160deg,#f3f8ef,#dcecd4); box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.07); }  .sell:nth-child(1) .sell-i{ background:linear-gradient(160deg,#e6f0ff,#c9dcfb); }  .sell:nth-child(2) .sell-i{ background:linear-gradient(160deg,#f2e9ff,#ddcbfa); }  .sell:nth-child(3) .sell-i{ background:linear-gradient(160deg,#fff6da,#ffe9a8); }  .sell:nth-child(4) .sell-i{ background:linear-gradient(160deg,#e9f7ea,#c8e9cc); }  .sell:nth-child(5) .sell-i{ background:linear-gradient(160deg,#fff0e2,#ffd9b8); }  .sell:nth-child(6) .sell-i{ background:linear-gradient(160deg,#e4f6f8,#c2e8ee); }  .sell-txt{ min-width:0; flex:1 1 auto; }  .sell-t{ display:block; font-weight:800; font-size:15.5px; color:#1e4515; line-height:1.25; }  .sell-s{ display:block; font-size:13.5px; color:#5a5a5a; line-height:1.4; margin-top:3px; }  .eltern{ margin-top:16px; border-top:2px solid rgba(0,0,0,0.07); padding-top:12px; }  .eltern summary{ cursor:pointer; font-size:14px; font-weight:700; color:#4a5a3a; text-align:center; }  .eltern p{ font-size:13.5px; color:#555; line-height:1.55; margin:10px 0 0; text-align:left; }  .guest-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; background:rgba(255,246,214,0.96); border:2px solid var(--gold); border-radius:14px; padding:10px 12px; margin-bottom:12px; }  .guest-txt{ font-size:14px; line-height:1.4; color:#4a3400; text-align:center; flex:1 1 180px; }
+  .login-hero{ text-align:center; margin-bottom:4px; }  .sell-grid{ display:grid; gap:10px; margin:14px 0 6px; }
+  /* Der Aufmacher fuer das Belohnungssystem - das Einzige, was es so
+     woanders nicht gibt, steht deshalb hervorgehoben ganz oben. */
+  .usp-hero{
+    display:block; text-align:left; margin:14px 0 4px; padding:15px 16px 16px;
+    border-radius:20px; border:2px solid rgba(216,163,58,0.55);
+    background:linear-gradient(160deg,#fff8e6,#ffeec4);
+    box-shadow:0 4px 16px rgba(120,90,20,0.16);
+  }
+  .usp-kopf{
+    display:block; font-family:var(--font); font-weight:800; font-size:11.5px;
+    letter-spacing:0.04em; text-transform:uppercase; color:#96701a; margin-bottom:4px;
+  }
+  .usp-titel{
+    display:block; font-family:var(--font); font-weight:800; font-size:19px;
+    line-height:1.25; color:#5c4308; margin-bottom:7px;
+  }
+  .usp-text{
+    display:block; font-family:var(--font); font-size:14.5px; line-height:1.5; color:#4a4230;
+  }  .sell{ display:flex; align-items:center; gap:14px; text-align:left; background:rgba(255,255,255,0.78); border:1px solid rgba(255,255,255,0.9); border-radius:18px; padding:13px 15px; box-shadow:0 2px 10px rgba(20,30,15,0.08); transition:transform .15s ease, box-shadow .15s ease; }  .sell:hover{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(20,30,15,0.14); }  .sell-i{ flex:0 0 auto; width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:25px; background:linear-gradient(160deg,#f3f8ef,#dcecd4); box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.07); }  .sell:nth-child(1) .sell-i{ background:linear-gradient(160deg,#e6f0ff,#c9dcfb); }  .sell:nth-child(2) .sell-i{ background:linear-gradient(160deg,#f2e9ff,#ddcbfa); }  .sell:nth-child(3) .sell-i{ background:linear-gradient(160deg,#fff6da,#ffe9a8); }  .sell:nth-child(4) .sell-i{ background:linear-gradient(160deg,#e9f7ea,#c8e9cc); }  .sell:nth-child(5) .sell-i{ background:linear-gradient(160deg,#fff0e2,#ffd9b8); }  .sell:nth-child(6) .sell-i{ background:linear-gradient(160deg,#e4f6f8,#c2e8ee); }  .sell-txt{ min-width:0; flex:1 1 auto; }  .sell-t{ display:block; font-weight:800; font-size:15.5px; color:#1e4515; line-height:1.25; }  .sell-s{ display:block; font-size:13.5px; color:#5a5a5a; line-height:1.4; margin-top:3px; }  .eltern{ margin-top:16px; border-top:2px solid rgba(0,0,0,0.07); padding-top:12px; }  .eltern summary{ cursor:pointer; font-size:14px; font-weight:700; color:#4a5a3a; text-align:center; }  .eltern p{ font-size:13.5px; color:#555; line-height:1.55; margin:10px 0 0; text-align:left; }  .guest-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; background:rgba(255,246,214,0.96); border:2px solid var(--gold); border-radius:14px; padding:10px 12px; margin-bottom:12px; }  .guest-txt{ font-size:14px; line-height:1.4; color:#4a3400; text-align:center; flex:1 1 180px; }
   .login-hero h3{ font-size:20px; margin-bottom:6px; }
   .login-note{
     margin-top:14px; padding:13px 15px; border-radius:14px;
@@ -1423,7 +1442,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "21.0 – Kleiderkammer";
+const APP_VERSION = "21.3 – Kleiderkammer";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -1897,7 +1916,10 @@ const FARB_PALETTE = FARB_GRAU.concat(
 const skinFrontCache = {};
 const SKIN_FRONT_B2 = 24;
 const SKIN_FRONT_OX = 4;
-const ITEM_X = 11, ITEM_Y = 6;
+// Wo haengt der Gegenstand? Die Hand sitzt am unteren Ende des Arms; der
+// Griff eines Werkzeugs liegt in der unteren Haelfte seines Bildes. Beides
+// muss uebereinander liegen, sonst baumelt das Werkzeug neben der Figur.
+const ITEM_X = 11, ITEM_Y = 3;
 
 function skinFrontBauen(uri, gegenstandId, fertig){
   if(typeof gegenstandId === "function"){ fertig = gegenstandId; gegenstandId = ""; }
@@ -1947,7 +1969,7 @@ function skinGegenstandHtml(id, s){
   return `<div class="sk-item" style="width:${8*s}px;height:${16*s}px;
             margin-left:${-4*s}px;margin-top:${-8*s}px;
             background-image:url('${g.png}');background-size:${8*s}px ${16*s}px;
-            transform:translate3d(${9*s}px,${5*s}px,${2.6*s}px);"></div>`;
+            transform:translate3d(${9*s}px,${-1*s}px,${2.6*s}px);"></div>`;
 }
 /* ==================================================================
    DER BILDSCHIRM "SKIN-WERKSTATT"
@@ -2172,14 +2194,16 @@ function renderSkinWerkstatt(){
     </div>
 
     <div class="panel sk-import">
-      <h3 style="font-size:14px;margin-bottom:4px;">📥 SKIN IMPORTIEREN</h3>
+      <h3 style="font-size:14px;margin-bottom:4px;">📥 SKIN LADEN UND SPEICHERN</h3>
       <p class="muted" style="margin:0 0 10px;font-size:12.5px;">
-        Für alle, die schon einen eigenen Minecraft-Skin haben: hier kannst du
-        die Skin-Datei laden und danach weiter bemalen. Die Datei wird nur in
-        deinem Browser geöffnet und <strong>nirgendwohin geschickt</strong>.
+        Du kannst einen eigenen Minecraft-Skin laden und hier weiter bemalen &ndash;
+        und deine fertige Figur als Skin-Datei speichern, um sie in Minecraft zu
+        benutzen. Beides passiert nur in deinem Browser,
+        <strong>nichts wird irgendwohin geschickt</strong>.
       </p>
       <input type="file" id="sk-datei" accept="image/png,image/*" style="display:none;">
       <button class="btn ghost" id="sk-import">📂 Skin-Datei auswählen</button>
+      <button class="btn ghost" id="sk-export" style="margin-top:8px;">💾 Skin speichern (für Minecraft)</button>
       ${importiert ? `<button class="btn ghost" id="sk-import-weg" style="margin-top:8px;">↺ Zurück zur gebauten Figur</button>` : ""}
       <p class="muted" id="sk-import-info" style="margin:8px 0 0;font-size:12px;"></p>
     </div>
@@ -2284,6 +2308,7 @@ function renderSkinWerkstatt(){
       if(f){ skinDateiLaden(f); }
     });
   }
+  anKnopf('sk-export', skinExportieren);
   anKnopf('sk-import-weg', ()=>{
     skinVerlaufMerken();
     state.figurBasis = "rezept";
@@ -2323,6 +2348,43 @@ function skinUebernehmen(){
     state.screen = state.skinReturnTo || "start";
     render();
   });
+}
+
+/* Den fertigen Skin als Datei sichern. Was dabei herauskommt, ist ein ganz
+   normaler Minecraft-Skin (64 mal 64 Punkte) - er laesst sich also direkt bei
+   Minecraft als Skin hochladen. Der Gegenstand in der Hand gehoert nicht
+   dazu: Skin-Dateien kennen so etwas nicht. */
+function datenUriZuBlob(uri){
+  const teile = uri.split(",");
+  const roh = atob(teile[1]);
+  const feld = new Uint8Array(roh.length);
+  for(let i = 0; i < roh.length; i++){ feld[i] = roh.charCodeAt(i); }
+  return new Blob([feld], {type:"image/png"});
+}
+
+function skinExportieren(){
+  const uri = state.skinUri || state.customSkin || "";
+  if(!uri){ skinImportInfo("Es gibt noch keine Figur zum Speichern.", true); return; }
+  let url = "";
+  try{
+    url = URL.createObjectURL(datenUriZuBlob(uri));
+  }catch(e){
+    skinImportInfo("Das Speichern hat nicht geklappt.", true);
+    return;
+  }
+  const a = document.createElement("a");
+  if("download" in a){
+    a.href = url;
+    a.download = "lingocrafter-skin.png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(e){} }, 8000);
+    skinImportInfo("Gespeichert als lingocrafter-skin.png. Die Datei kannst du bei Minecraft als Skin hochladen.", false);
+  } else {
+    window.open(url, "_blank");
+    skinImportInfo("Das Bild ist in einem neuen Fenster offen - lange darauf tippen und sichern.", false);
+  }
 }
 
 // Meldung im Import-Kasten
@@ -3708,8 +3770,8 @@ function renderLogin(){
         <button class="btn" id="login-retry-btn" style="margin-top:14px;">🔄 NOCHMAL VERSUCHEN</button>
       ` : `
         <div class="login-hero">
-          <h3 style="font-size:23px;line-height:1.25;margin-bottom:10px;">&#9876;&#65039; Werde zum Lingo-Crafter!</h3><p style="text-align:center;font-size:16px;line-height:1.5;margin:0 0 14px;">Englisch-Vokabeln und Grammatik &uuml;ben, bessere Noten schreiben &ndash; und dir dabei <strong>echte Belohnungen</strong> erspielen.</p><div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">5 Spielarten</span><span class="sell-s">Auswahl, Eintippen, Gemischt, die Challenge und der Flutungsraum</span></span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-txt"><span class="sell-t">Grammatik</span><span class="sell-s">Üben, Test schreiben oder dem Wasser davonklettern</span></span></div><div class="sell"><span class="sell-i">&#129689;</span><span class="sell-txt"><span class="sell-t">Echte Belohnungen</span><span class="sell-s">Münzen sammeln und gegen das eintauschen, was ihr zu Hause vereinbart</span></span></div><div class="sell"><span class="sell-i">&#128221;</span><span class="sell-txt"><span class="sell-t">Schulnote</span><span class="sell-s">Vokabeltest und Grammatiktest werden benotet – wie in echt</span></span></div><div class="sell"><span class="sell-i">&#127942;</span><span class="sell-txt"><span class="sell-t">Rangliste</span><span class="sell-s">Miss dich mit deinen Freunden, bei Münzen und bei Noten</span></span></div><div class="sell"><span class="sell-i">&#10133;</span><span class="sell-txt"><span class="sell-t">Eigene Vokabeln</span><span class="sell-s">Tipp deine Schulvokabeln ein oder lade sie aus Excel hoch</span></span></div></div>
-          <p class="muted" style="margin-top:6px;">Kostenlos &middot; keine Werbung &middot; in 10 Sekunden startklar</p>
+          <h3 style="font-size:23px;line-height:1.25;margin-bottom:8px;">&#9876;&#65039; Werde zum Lingo-Crafter!</h3><p style="text-align:center;font-size:16px;line-height:1.5;margin:0 0 4px;">Englisch üben, das sich anfühlt wie ein Spiel &ndash; und am Ende wartet eine Belohnung, die <strong>ihr zu Hause selbst festgelegt habt</strong>.</p><p class="center-text" style="margin:0 0 2px;"><button type="button" class="linkbtn" id="schon-dabei">Schon dabei? Hier geht es zur Anmeldung &#8595;</button></p><div class="usp-hero"><span class="usp-kopf">&#127873; Das Herzstück &ndash; und das gibt es so kein zweites Mal</span><span class="usp-titel">Die Belohnungen bestimmt ihr selbst</span><span class="usp-text">Kein Punktesystem von der Stange. <strong>Die Eltern legen fest</strong>, wofür sich das Üben lohnt &ndash; Filmabend, Schwimmbad, Taschengeld, was auch immer bei euch zählt. Das Kind erspielt sich Münzen und löst sie ein; bestätigt wird mit dem Eltern-PIN. Nichts motiviert ein Kind mehr als eine Belohnung, auf die es selbst hingearbeitet hat.</span></div><div class="sell-grid"><div class="sell"><span class="sell-i">&#129521;</span><span class="sell-txt"><span class="sell-t">Deine eigene Figur</span><span class="sell-s">In der 3D-Werkstatt bauen, färben und bemalen. Zwölf Verkleidungen, Schwert oder Zauberstab in die Hand &ndash; und als Minecraft-Skin zum Mitnehmen.</span></span></div><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Englisch als Spiel</span><span class="sell-s">Fünf Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Üben, das sich nicht nach Üben anfühlt.</span></span></div><div class="sell"><span class="sell-i">&#128202;</span><span class="sell-txt"><span class="sell-t">Auswertung bis ins Detail</span><span class="sell-s">Jedes Grammatikthema einzeln ausgewertet: was sitzt schon, wo hakt es noch. Kindgerecht als Erz-Balken statt als Zahlenkolonne.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben, Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div><div class="sell"><span class="sell-i">&#128221;</span><span class="sell-txt"><span class="sell-t">Echte Testarbeiten</span><span class="sell-s">Vokabel- und Grammatiktests werden benotet &ndash; wie in der Schule. Den Notenschlüssel stellen Sie selbst ein.</span></span></div><div class="sell"><span class="sell-i">&#10133;</span><span class="sell-txt"><span class="sell-t">Eure Schulvokabeln</span><span class="sell-s">Die Wörter aus dem eigenen Schulbuch eintippen oder aus Excel hochladen.</span></span></div></div>
+          <p class="muted" style="margin-top:6px;">Kostenlos &middot; keine Werbung &middot; keine E-Mail nötig &middot; in 10 Sekunden startklar</p>
         </div>
 
         <input type="text" id="player-name-input" maxlength="16" placeholder="Dein Spielername"
@@ -3746,6 +3808,16 @@ function renderLogin(){
     </div>
   `;
 
+  // Abkuerzung fuer Rueckkehrer: direkt zu den Anmeldefeldern.
+  const schonDabei = document.getElementById('schon-dabei');
+  if(schonDabei){
+    schonDabei.addEventListener('click', ()=>{
+      const feld = document.getElementById('player-name-input');
+      if(!feld) return;
+      feld.scrollIntoView({behavior:"smooth", block:"center"});
+      setTimeout(()=>feld.focus(), 350);
+    });
+  }
   const infoBtn = document.getElementById('info-btn');
   if(infoBtn){ infoBtn.addEventListener('click', oeffneInfo); }
   const impLogin = document.getElementById('impressum-login');
@@ -6571,10 +6643,15 @@ function renderInfo(){
       <h3 style="font-size:16px;margin-bottom:8px;">WAS IST LINGOCRAFTER?</h3>
       <div class="info-text">
         <p>
-          Angefangen hat alles als Hilfe für meinen Sohn. Englisch üben war zäh, Karteikarten
-          langweilig &ndash; also habe ich ihm etwas gebaut, das sich eher nach Spiel anfühlt
-          als nach Hausaufgabe. Aus der Bastelei für ein Kind wurde ein kleines Familienprojekt,
-          das inzwischen auch Freunde von ihm benutzen.
+          Angefangen hat alles mit einer Idee: meinem Sohn das Vokabellernen leichter machen.
+          Karteikarten waren zäh &ndash; also habe ich ihm etwas gebaut, das sich nach Spiel
+          anfühlt statt nach Hausaufgabe. Daraus wurde ein kleines Familienprojekt, das
+          inzwischen auch seine Freunde benutzen.
+        </p>
+        <p>
+          Heute hilft er sogar mit, die App zu verbessern &ndash; mit dem Blick eines
+          Elfjährigen, also aus einer ganz anderen Perspektive als meiner. Ein spannendes
+          Projekt.
         </p>
         <p>
           LingoCrafter ist <strong>kostenlos</strong>, zeigt <strong>keine Werbung</strong> und
