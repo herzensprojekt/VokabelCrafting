@@ -891,6 +891,33 @@
     color:#ffffff; background:#7a4bbf; border-radius:8px;
     padding:2px 6px; white-space:nowrap; text-align:center; pointer-events:none;
   }
+  /* Das Kreuz sitzt oben LINKS - oben rechts sitzt schon der Zaehler. */
+  .lingora-knopf .lg-zu{
+    position:absolute; left:-6px; top:-6px;
+    width:24px; height:24px; border-radius:12px;
+    background:#ffffff; color:#6b4bb5; border:2px solid #7a4bbf;
+    font-family:var(--font); font-weight:800; font-size:12px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; padding:0;
+    box-shadow:0 2px 6px rgba(60,30,110,0.28);
+  }
+  /* Etwas mehr Flaeche zum Treffen, ohne das Kreuz optisch aufzublasen -
+     24 Punkte sind fuer Kinderfinger sonst zu wenig. */
+  .lingora-knopf .lg-zu::after{
+    content:""; position:absolute; left:-5px; top:-5px; right:-5px; bottom:-5px;
+  }
+
+  /* Stumm: nur noch ein kleines Symbol, das man wieder antippen kann. */
+  .lingora-knopf.klein{
+    width:36px; height:36px; bottom:16px; right:12px;
+    border-width:2px; opacity:0.62;
+    box-shadow:0 2px 8px rgba(90,50,160,0.2);
+  }
+  .lingora-knopf.klein .lg-lebt{ width:30px; height:30px; top:50%; }
+  .lingora-knopf.klein .lg-knopf-text,
+  .lingora-knopf.klein .lg-zu,
+  .lingora-knopf.klein .lg-punkt{ display:none; }
+
   .lingora-knopf .lg-punkt{
     position:absolute; right:-3px; top:-3px; min-width:22px; height:22px;
     border-radius:11px; background:var(--danger,#c2461f); color:#fff;
@@ -1683,7 +1710,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "25.2 – Zurück geht zurück";
+const APP_VERSION = "25.4 – Lingora lässt sich wegklicken";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2032,6 +2059,7 @@ let lingoraBewegungFehlt = false;   // Datei nicht da? Dann gar nicht erst versu
 
 function lingoraRegen(){
   if(lingoraRegtSich || lingoraBewegungFehlt) return;
+  if(typeof lingoraIstStill === "function" && lingoraIstStill()) return;
   if(document.hidden) return;
   const traeger = document.querySelectorAll('.lg-lebt');
   if(!traeger.length) return;
@@ -2664,6 +2692,28 @@ function lingoraZurueckVerdrahten(){
 /* ------------------------------------------- Der Knopf, der mitlaeuft */
 const LINGORA_STILL = ["quiz", "grammarquiz", "lingorafrage", "lingoraplan"];
 
+/* Stummschaltung - pro Profil, damit Geschwister sich nicht ins Gehege
+   kommen. Bewusst nur auf dem Geraet gespeichert: dafuer muessten sonst
+   die Firestore-Regeln erweitert werden, und es ist eine Geraete-Vorliebe,
+   keine Spielstandsinformation. */
+function lingoraStillSchluessel(){
+  return "lc-lingora-still-" + (state.cloudId || (state.guest ? "gast" : "-"));
+}
+function lingoraIstStill(){
+  try{ return localStorage.getItem(lingoraStillSchluessel()) === "ja"; }
+  catch(e){ return false; }
+}
+function lingoraStillSetzen(still){
+  try{
+    if(still) localStorage.setItem(lingoraStillSchluessel(), "ja");
+    else localStorage.removeItem(lingoraStillSchluessel());
+  }catch(e){}
+  try{ lingoraChatLeeren(); }catch(e){}
+  lingoraChat.screen = null;      // damit die Begruessung spaeter wiederkommt
+  lingoraKnopfAuffrischen();
+  if(!still){ try{ lingoraChatZeigen(); }catch(e){} }
+}
+
 function lingoraKnopfAuffrischen(){
   let el = document.getElementById('lingora-knopf');
   const zeigen = !!(state.cloudId || state.guest) && LINGORA_STILL.indexOf(state.screen) < 0;
@@ -2674,12 +2724,37 @@ function lingoraKnopfAuffrischen(){
     el.className = 'lingora-knopf';
     el.title = "Frag Lingora!";
     el.innerHTML = `<span class="lg-lebt"><img src="${LINGORA_BILD}" alt=""></span>`
-                  + `<span class="lg-knopf-text">Frag<br>Lingora!</span>`;
-    el.addEventListener('click', ()=>lingoraOeffnen(state.screen));
-    el.addEventListener('pointerdown', lingoraRegen);
+                  + `<span class="lg-knopf-text">Frag<br>Lingora!</span>`
+                  + `<span class="lg-zu" role="button" tabindex="0"`
+                  + ` aria-label="Lingora ausblenden" title="Lingora ausblenden">✕</span>`;
+    el.addEventListener('click', (ev)=>{
+      // Das Kreuz gehoert zum Knopf, soll ihn aber nicht oeffnen.
+      if(ev.target.closest && ev.target.closest('.lg-zu')){
+        ev.preventDefault(); ev.stopPropagation();
+        lingoraStillSetzen(true);
+        return;
+      }
+      if(lingoraIstStill()){ lingoraStillSetzen(false); return; }
+      lingoraOeffnen(state.screen);
+    });
+    el.addEventListener('pointerdown', (ev)=>{
+      if(ev.target.closest && ev.target.closest('.lg-zu')) return;
+      if(lingoraIstStill()) return;
+      lingoraRegen();
+    });
     document.body.appendChild(el);
   }
   el.style.display = "";
+
+  // Stumm: kleines Symbol, keine Beschriftung, kein Zaehler, kein Kreuz.
+  const still = lingoraIstStill();
+  el.classList.toggle('klein', still);
+  el.title = still ? "Lingora wieder einblenden" : "Frag Lingora!";
+  if(still){
+    const alt = el.querySelector('.lg-punkt');
+    if(alt) alt.remove();
+    return;
+  }
   const p = lingoraPlan();
   const tag = lingoraHeutigerTag();
   const offen = tag ? tag.schritte.filter(s=>!s.fertig).length : 0;
@@ -2934,7 +3009,11 @@ function lcZurueckSchritt(){
 
 function lcPufferLegen(){
   if(lcPuffer) return;
-  try{ window.history.pushState({lc:1}, ""); lcPuffer = true; }catch(e){}
+  try{
+    window.history.pushState({lc:1}, "");
+    lcPuffer = true;
+    lcGewarnt = false;   // frischer Eintrag heisst: es wird auch frisch gewarnt
+  }catch(e){}
 }
 
 /* Nach jedem Zeichnen aufgerufen: sorgt dafuer, dass immer ein Eintrag
@@ -2967,11 +3046,18 @@ window.addEventListener('popstate', function(){
   if(lcZurueckSchritt()){ lcPufferLegen(); return; }
 
   // Wir sind ganz vorn. Ein Wisch soll die App nicht aus Versehen
-  // schliessen - einmal freundlich warnen, beim zweiten Mal gehen wir.
+  // schliessen - also einmal freundlich warnen.
+  //
+  // WICHTIG: Hier wird KEIN neuer Eintrag nachgelegt. Sonst wuerde der
+  // naechste Wisch nur diesen Eintrag verbrauchen und wirkte wirkungslos -
+  // die App ginge erst beim dritten Wisch zu, obwohl die Meldung etwas
+  // anderes verspricht. Ohne Eintrag geht der naechste Wisch wirklich raus.
   if(!lcGewarnt){
     lcGewarnt = true;
     lcHinweis("Nochmal zurück, dann wird LingoCrafter geschlossen");
-    lcPufferLegen();
+    // Wer es sich anders ueberlegt, soll nicht dauerhaft ungesichert
+    // dastehen: nach vier Sekunden sichern wir wieder ab.
+    setTimeout(lcPufferLegen, 4000);
   }
   // sonst: kein neuer Eintrag - der Browser verlaesst die Seite wie gewohnt
 });
@@ -3187,6 +3273,8 @@ const lingoraZuletztGesagt = {};
 const LINGORA_PAUSE_MS = 90000;   // dasselbe Fenster nicht staendig neu kommentieren
 
 function lingoraChatZeigen(){
+  // Weggeklickt heisst weggeklickt: keine Nachrichten, keine Bewegung.
+  if(typeof lingoraIstStill === "function" && lingoraIstStill()){ lingoraChatLeeren(); return; }
   lingoraWegtippenVorbereiten();
   setTimeout(lingoraRegen, 260);          // beim Betreten eines Fensters
   // Nur beim echten Fensterwechsel - nicht bei jedem Neuzeichnen.
