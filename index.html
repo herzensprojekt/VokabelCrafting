@@ -1283,6 +1283,43 @@
 
   /* ---------- Question card (readable content font) ---------- */
   .word-card{ text-align:center; padding:14px 10px; }
+
+  /* ------------------------------------------------------------------
+     ENG WAEHREND EINER RUNDE
+
+     Nur auf niedrigen Bildschirmen und nur waehrend einer Uebung. Auf
+     einem grossen Bildschirm bleibt alles, wie es war.
+     ------------------------------------------------------------------ */
+  @media (max-height: 900px){
+    body.runde-laeuft .title-block{ margin-bottom:2px; }
+    body.runde-laeuft .title-block .logo-img{
+      max-width:132px; animation:none;   /* 250 -> 132: spart rund 90 Punkte */
+    }
+    body.runde-laeuft .title-block p{ margin:2px 0 0; font-size:13px; }
+    body.runde-laeuft .hud{ margin-bottom:2px; }
+    body.runde-laeuft .progress-outer{ margin:4px 0; }
+    body.runde-laeuft .word-card{ padding:10px 10px; margin-top:6px; }
+    body.runde-laeuft .term-image{ font-size:44px; margin-bottom:4px; }
+    body.runde-laeuft .choices{ gap:7px; margin-top:10px; }
+    body.runde-laeuft .choice-btn{
+      /* Nicht weiter als 46 Punkte - darunter treffen Kinderfinger
+         nicht mehr zuverlaessig. */
+      padding:10px 12px; min-height:46px; font-size:17px;
+    }
+    /* Die Rueckmeldung erscheint erst NACH dem Antworten und schiebt die
+       letzte Antwort sonst wieder ueber den Rand. Sie ist der Lernmoment -
+       "Richtig! apple = Apfel" - und muss mit aufs Bild. */
+    body.runde-laeuft .feedback{ margin-top:10px; padding:10px 14px; font-size:16px; }
+  }
+  /* Sehr niedrige Bildschirme (iPhone SE quer, kleine Androidgeraete) */
+  @media (max-height: 700px){
+    body.runde-laeuft .title-block .logo-img{ max-width:104px; }
+    body.runde-laeuft .word-card{ padding:8px 10px; }
+    body.runde-laeuft .term-image{ font-size:36px; }
+    body.runde-laeuft .choices{ gap:6px; margin-top:8px; }
+    body.runde-laeuft .choice-btn{ padding:8px 12px; min-height:44px; }
+    body.runde-laeuft .feedback{ margin-top:8px; padding:8px 12px; font-size:15px; }
+  }
   .word-card .eyebrow{ font-family:var(--font); font-size:13px; color:#4a4a4a; letter-spacing:1px; margin-bottom:10px; }
   .term-image{ font-size:64px; line-height:1; margin-bottom:8px; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2)); }
   .word-card .term{
@@ -1710,7 +1747,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "25.4 – Lingora lässt sich wegklicken";
+const APP_VERSION = "25.6 – Alle Antworten sichtbar";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -3275,6 +3312,11 @@ const LINGORA_PAUSE_MS = 90000;   // dasselbe Fenster nicht staendig neu komment
 function lingoraChatZeigen(){
   // Weggeklickt heisst weggeklickt: keine Nachrichten, keine Bewegung.
   if(typeof lingoraIstStill === "function" && lingoraIstStill()){ lingoraChatLeeren(); return; }
+  // Vor der Anmeldung sagt Lingora nichts - und merkt sich deshalb auch
+  // nichts. Der Anmeldebildschirm heisst intern ebenfalls "start"; wuerde
+  // er hier durchlaufen, gaelte der Startbildschirm nach dem Anmelden als
+  // bereits begruesst und das Kind bekaeme kein Wort zu hoeren.
+  if(!(state.cloudId || state.guest)) return;
   lingoraWegtippenVorbereiten();
   setTimeout(lingoraRegen, 260);          // beim Betreten eines Fensters
   // Nur beim echten Fensterwechsel - nicht bei jedem Neuzeichnen.
@@ -3285,11 +3327,12 @@ function lingoraChatZeigen(){
   // dieselbe Begruessung bekommen.
   const jetzt = Date.now();
   if(lingoraZuletztGesagt[state.screen] && jetzt - lingoraZuletztGesagt[state.screen] < LINGORA_PAUSE_MS) return;
-  lingoraZuletztGesagt[state.screen] = jetzt;
 
-  if(!(state.cloudId || state.guest)) return;
   const msgs = lingoraNachrichtenFuer(state.screen);
   if(!msgs || !msgs.length) return;
+  // Die Pause laeuft erst, wenn wirklich etwas gesagt wurde - nicht schon,
+  // wenn wir kurz vorbeischauen und dann doch schweigen.
+  lingoraZuletztGesagt[state.screen] = jetzt;
 
   let versatz = 0;
   msgs.forEach((m, i)=>{
@@ -4937,6 +4980,12 @@ function render(){
   }
   // Damit der Zurueck-Wisch etwas zum Verbrauchen hat.
   try{ lcVerlaufAuffrischen(); }catch(e){}
+  // Waehrend einer Runde zaehlt nur eines: Frage und Antworten muessen
+  // ohne Scrollen sichtbar sein. Die Markierung schaltet das enge Layout.
+  try{
+    document.body.classList.toggle('runde-laeuft',
+      state.screen === "quiz" || state.screen === "grammarquiz");
+  }catch(e){}
   // Lingoras Knopf lebt ausserhalb von #app und ueberlebt das Neuzeichnen.
   setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); }catch(e){} }, 0);
 
