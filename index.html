@@ -424,6 +424,20 @@
   .asp-antwort.gut{ background:#d7f3da; color:#1e5c28; }
   .asp-antwort.fast{ background:#fdf1c7; color:#6e5300; }
   .asp-antwort.nochmal{ background:#eceff3; color:#3a4450; }
+  /* Die Schwierigkeitswahl im Flutungsraum */
+  .flut-wahl{
+    display:flex; align-items:center; gap:14px; width:100%;
+    margin-bottom:10px; padding:16px 14px; text-align:left;
+    border:none; border-radius:16px; cursor:pointer; color:#fff;
+    box-shadow:0 3px 10px rgba(0,0,0,.22);
+  }
+  .flut-wahl.leicht{ background:linear-gradient(135deg,#3f86d8,#1d4f92); }
+  .flut-wahl.schwer{ background:linear-gradient(135deg,#1d4f92,#0d2a52); }
+  .flut-ic{ font-size:34px; line-height:1; flex:0 0 auto; }
+  .flut-txt{ display:flex; flex-direction:column; gap:3px; }
+  .flut-txt strong{ font-family:var(--font); font-weight:800; font-size:18px; }
+  .flut-txt small{ font-family:var(--font); font-size:13px; line-height:1.4; opacity:.92; }
+
   .asp-datenschutz{
     font-family:var(--font); font-size:11.5px; line-height:1.4;
     opacity:.7; margin:8px 2px 0; text-align:center;
@@ -1839,7 +1853,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "27.5 – Hören und Sprechen";
+const APP_VERSION = "28.0 – Hören, Sprechen, Fluten";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -4508,6 +4522,7 @@ const state = {
   wortStand: {},           // Lernkartei je Vokabel: {b:Box, d:fällig, r:richtig, f:falsch}
   boxTreffer: {},          // gemessene Trefferquote je Box - Grundlage der Prognose
   ausspracheStand: {},     // was gerade im Aussprache-Modus passiert
+  flutGewaehlt: false,     // Schwierigkeit im Flutungsraum schon gewählt?
   lingoraPlan: null,       // Lingoras Lernplan
   lingoraAktiv: null,      // welcher Planschritt gerade laeuft
   lingoraZurueck: false,   // Rueckweg zum Plan anbieten
@@ -5293,6 +5308,14 @@ function sprachStimmenLaden(){
    British English unterrichtet wird. Dann amerikanisch, dann irgendeine.
    Gibt es gar keine lokale, ist eine Netzstimme besser als Stille. */
 function sprachStimmeEnglisch(){
+  // IMMER frisch fragen. Ein gemerktes Stimmenobjekt kann veraltet sein,
+  // sobald der Browser die Liste austauscht - und ein speak() mit einer
+  // veralteten Stimme schlaegt in Chrome STILL fehl: kein Ton, kein
+  // Fehler, nichts. Genau das Bild, das Markus gemeldet hat.
+  try{
+    const frisch = window.speechSynthesis.getVoices();
+    if(frisch && frisch.length) sprachStimmen = frisch;
+  }catch(e){}
   if(!sprachStimmen.length) sprachStimmenLaden();
   const en = sprachStimmen.filter(v=>/^en/i.test(v.lang || ""));
   if(!en.length) return null;
@@ -5365,11 +5388,15 @@ function sprachVorlesen(text, fertig){
   const losschicken = ()=>{
     if(erledigt) return;
     versuche++;
-    const meinVersuch = versuche;
+    const meinVersuch = versuche;   // Versuch 2 laeuft bewusst ohne eigene Stimmenwahl
     let gestartet = false;
     try{
       const u = new SpeechSynthesisUtterance(String(text));
-      const stimme = sprachStimmeEnglisch();
+      // Beim ZWEITEN Versuch bewusst OHNE eigene Stimmenwahl: Genau die
+      // ist der haeufigste Grund, warum nichts kommt. Ohne sie sucht der
+      // Browser selbst eine passende - lieber eine andere englische
+      // Stimme als Stille.
+      const stimme = (meinVersuch === 1) ? sprachStimmeEnglisch() : null;
       if(stimme) u.voice = stimme;
       u.lang  = (stimme && stimme.lang) || "en-GB";
       u.rate  = 0.88;                            // etwas langsamer als normal
@@ -5553,6 +5580,60 @@ function hoerKnoepfeVerdrahten(){
   });
 }
 
+/* =====================================================================
+   DER FLUTUNGSRAUM - erst das Spiel, dann die Schwierigkeit
+
+   Vorher standen zwei Kacheln nebeneinander, die dasselbe Spiel meinten.
+   Das kostet Platz und zwingt zu einer Entscheidung, bevor man ueberhaupt
+   weiss, worum es geht. Jetzt: eine Kachel fuers Spiel, danach die Frage
+   nach der Schwierigkeit - mit einem Satz dazu, was der Unterschied ist.
+===================================================================== */
+
+function renderFlutWahl(){
+  app.innerHTML = `
+    ${renderHeader("Der Flutungsraum", true)}
+    ${playerBadgeHtml(true)}
+
+    <div class="panel center-text">
+      <div style="font-size:52px;line-height:1;">🌊</div>
+      <h3 style="margin:8px 0 4px;">Wie soll es laufen?</h3>
+      <p class="muted" style="margin:0 0 4px;">Du kannst jederzeit wechseln.</p>
+    </div>
+
+    <button class="flut-wahl leicht" id="flut-leicht">
+      <span class="flut-ic">🏊</span>
+      <span class="flut-txt">
+        <strong>Ruhig</strong>
+        <small>Das Wasser steigt nur, wenn du daneben liegst.
+        Du hast so viel Zeit zum Nachdenken, wie du brauchst.</small>
+      </span>
+    </button>
+
+    <button class="flut-wahl schwer" id="flut-schwer">
+      <span class="flut-ic">🌊</span>
+      <span class="flut-txt">
+        <strong>Schwer</strong>
+        <small>Das Wasser steigt von allein &ndash; und bei einem Fehler
+        rutschst du eine Stufe runter. Für alle, die es spannend mögen.</small>
+      </span>
+    </button>
+
+    <div style="height:10px;"></div>
+    <button class="btn danger" id="back-btn">◀ ZURÜCK</button>
+  `;
+
+  const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  anKnopf('flut-leicht', ()=>{ state.mode = "flood";     flutStarten(); });
+  anKnopf('flut-schwer', ()=>{ state.mode = "floodhard"; flutStarten(); });
+  anKnopf('back-btn',    ()=>{ state.screen = "start"; render(); });
+}
+
+/* Startet die Runde wirklich - ohne noch einmal hierher zu schicken. */
+function flutStarten(){
+  state.flutGewaehlt = true;
+  startGame();
+}
+
 function renderAussprache(){
   const woerter = state.queue || [];
   if(!woerter.length || state.currentIndex >= woerter.length){
@@ -5668,6 +5749,9 @@ function renderAussprache(){
         }
         state.ausspracheStand = {zeigen: st.zeigen, laeuft: false, rueckmeldung: text, art: art, gehoert: true};
         render();
+        // Zur Kontrolle: So klingt es richtig. Genau dafuer ist dieser
+        // Modus da - erst selbst versuchen, dann hoeren, wie es sein soll.
+        setTimeout(()=>{ sprachVorlesen(ziel); }, 450);
       },
       fehler: (art)=>{
         const texte = {
@@ -5775,6 +5859,7 @@ function render(){
   if(state.screen==="grammarintro") return renderGrammarIntro();
   if(state.screen==="grammarquiz") return renderGrammarQuiz();
   if(state.screen==="grammarcertificate") return renderGrammarCertificate();
+  if(state.screen==="flutwahl") return renderFlutWahl();
   if(state.screen==="aussprache") return renderAussprache();
   if(state.screen==="aussprachefertig") return renderAusspracheFertig();
   if(state.screen==="radar") return renderRadar();
@@ -6504,14 +6589,7 @@ function renderStart(){
           <span class="gm-ic">🌊</span>
           <span class="gm-txt">
             <span class="gm-name">Der Flutungsraum</span>
-            <small>Klettere dem Wasser davon</small>
-          </span>
-        </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='floodhard'?'active':''}" data-mode="floodhard" aria-pressed="${state.mode==='floodhard'}">
-          <span class="gm-ic">🌊</span>
-          <span class="gm-txt">
-            <span class="gm-name">Flutungsraum &ndash; Schwer</span>
-            <small>Wasser steigt von allein, falsch = eine Stufe runter</small>
+            <small>Klettere dem Wasser davon &ndash; ruhig oder schwer</small>
           </span>
         </button>
       </div>
@@ -6735,6 +6813,14 @@ function startGame(){
   } else {
     buildQueue();
   }
+  // Beim Flutungsraum wird erst gefragt, wie schwer es sein soll.
+  if((state.mode === "flood" || state.mode === "floodhard") && !state.flutGewaehlt){
+    state.screen = "flutwahl";
+    render();
+    return;
+  }
+  state.flutGewaehlt = false;      // gilt nur fuer diesen einen Start
+
   if(state.mode === "aussprache"){
     // Zwoelf Woerter laut zu sagen ist genug fuer eine Runde - achtzig
     // waeren eine Zumutung, und die Stimme wird heiser.
