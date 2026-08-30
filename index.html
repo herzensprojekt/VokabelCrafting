@@ -456,6 +456,12 @@
     margin:10px 0 0; padding:9px 11px; border-radius:10px;
     background:rgba(194,70,31,.10); font-size:12.5px; line-height:1.5;
   }
+  .befund-oeffnen{
+    display:block; margin:8px 0; padding:9px 14px;
+    font-family:var(--font); font-weight:700; font-size:13px;
+    background:#5b32a0; color:#fff; border:none; border-radius:10px;
+    cursor:pointer; min-height:40px;
+  }
   .befund-rat{ margin:10px 0 4px; font-size:13px; }
   .befund-liste{ margin:0; padding-left:18px; font-size:12.5px; line-height:1.5; }
   .befund-liste li{ margin-bottom:6px; }
@@ -900,41 +906,51 @@
     border:1px solid rgba(210,160,90,.30);
     box-shadow:0 3px 12px rgba(150,110,60,.14);
   }
-  .hero-ic{ display:block; font-size:30px; line-height:1; margin-bottom:6px; }
   .hero-titel{
-    font-family:var(--serif); font-weight:700; font-size:21px; line-height:1.25;
-    color:#6b4a1f; margin:0 0 6px;
+    font-family:var(--serif); font-weight:700; font-size:24px; line-height:1.22;
+    color:#6b4a1f; margin:0 0 8px;
   }
   .hero-text{
     font-family:var(--font); font-size:13.5px; line-height:1.55;
     color:#6f5a41; margin:0;
   }
 
-  .kachel-reihe{
-    display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
-    gap:8px; margin-bottom:14px;
-  }
+  /* Eine Spalte, Symbol links, Ueberschrift daneben - wie in der
+     ausfuehrlichen Erklaerung weiter unten. Nebeneinander liest sich eine
+     Ueberschrift schneller als untereinander. */
+  .kachel-reihe{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
   .kachel{
-    display:flex; flex-direction:column; gap:4px;
-    padding:12px 11px; border-radius:16px; text-align:left;
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; border-radius:16px; text-align:left;
     background:rgba(255,253,248,.92);
     border:1px solid rgba(200,170,130,.30);
     box-shadow:0 2px 7px rgba(150,120,80,.10);
   }
-  .kachel-ic{ font-size:20px; line-height:1; }
+  .kachel-ic{
+    flex:0 0 auto; width:44px; height:44px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; font-size:23px;
+    background:linear-gradient(160deg,#fff6e6,#f6e2c4);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px rgba(0,0,0,.06);
+    overflow:hidden;
+  }
+  /* Lingora bekommt sein Gesicht statt eines Symbols. */
+  .kachel-ic.lingora-ic{ background:linear-gradient(160deg,#efe6ff,#d9c9f7); padding:0; }
+  .kachel-ic.lingora-ic img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .kachel-txt{ min-width:0; flex:1 1 auto; display:flex; flex-direction:column; gap:2px; }
   .kachel-t{
-    font-family:var(--font); font-weight:700; font-size:13.5px; line-height:1.25;
+    font-family:var(--font); font-weight:800; font-size:14.5px; line-height:1.25;
     color:#4a3a28; overflow-wrap:anywhere;
   }
   .kachel-s{
-    font-family:var(--font); font-size:11.8px; line-height:1.4;
+    font-family:var(--font); font-size:12.5px; line-height:1.4;
     color:#7a6852;
   }
 
   /* Auf sehr schmalen Geraeten lieber untereinander als abgeschnitten. */
   @media (max-width: 340px){
-    .kachel-reihe{ grid-template-columns:1fr; }
-    .hero-titel{ font-size:25px; }
+    .hero-titel{ font-size:21px; }
+    .kachel{ padding:11px 12px; gap:10px; }
+    .kachel-ic{ width:38px; height:38px; font-size:20px; }
   }
 
   /* Anmeldeseite: kleineres Logo, damit Anmeldung und Gastzugang ohne
@@ -1937,7 +1953,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "30.0 – Warme Startseite";
+const APP_VERSION = "30.3 – Warme Startseite";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -5397,6 +5413,14 @@ function sprachStimmenLaden(){
    Danach erst: Britisches Englisch zuerst, weil in der Schule meist
    British English unterrichtet wird. Dann amerikanisch, dann irgendeine.
    Gibt es gar keine lokale, ist eine Netzstimme besser als Stille. */
+/* Android meldet Sprachkennungen wie "en_GB" mit Unterstrich. Der
+   Web-Standard verlangt "en-GB" mit Bindestrich. Wer den Wert ungeprueft
+   weiterreicht, setzt eine ungueltige Sprache - und bekommt vom Geraet
+   ein "synthesis-failed" zurueck. */
+function sprachKennung(l){
+  return String(l || "").replace(/_/g, "-").trim() || "en-GB";
+}
+
 function sprachStimmeEnglisch(){
   // IMMER frisch fragen. Ein gemerktes Stimmenobjekt kann veraltet sein,
   // sobald der Browser die Liste austauscht - und ein speak() mit einer
@@ -5492,7 +5516,7 @@ function sprachVorlesen(text, fertig){
       //   3. ganz ohne Vorgabe - das Geraet entscheidet alles
       const stimme = (meinVersuch === 1) ? sprachStimmeEnglisch() : null;
       if(stimme) u.voice = stimme;
-      if(meinVersuch < 3){ u.lang = (stimme && stimme.lang) || "en-GB"; }
+      if(meinVersuch < 3){ u.lang = sprachKennung(stimme && stimme.lang); }
       sprachBefundDaten.versuche = meinVersuch;
       // Nur der ERSTE Versuch waehlt eine Stimme - die spaeteren lassen sie
       // absichtlich weg. Wuerde hier der letzte Versuch stehen, meldete der
@@ -5500,7 +5524,8 @@ function sprachVorlesen(text, fertig){
       if(meinVersuch === 1){
         sprachBefundDaten.stimme = stimme ? (stimme.name + " / " + stimme.lang
                                     + (stimme.localService ? " / lokal" : " / Netz")) : "keine gefunden";
-        sprachBefundDaten.lang = u.lang || "(ohne Angabe)";
+        sprachBefundDaten.lang = (u.lang || "(ohne Angabe)")
+          + (stimme && stimme.lang && stimme.lang !== u.lang ? "  (korrigiert von " + stimme.lang + ")" : "");
       }
       u.rate  = 0.88;                            // etwas langsamer als normal
       u.pitch = 1.0;
@@ -5715,6 +5740,7 @@ function sprachBefundHtml(){
   const zeilen = [
     ["Stimmen auf dem Gerät", stimmen.length + " insgesamt, " + en.length + " englische, davon " + lokal + " lokal"],
     ["Gewählte Stimme",       d.stimme || "(noch nichts versucht)"],
+    ["Gesetzte Sprache",      d.lang || "(noch nichts versucht)"],
     ["Versuche",              (d.versuche || 0) + " von 3"],
     ["Gerät hat begonnen",    d.start ? "ja" : "NEIN – das ist der Knackpunkt"],
     ["Gerät hat beendet",     d.ende ? "ja" : "nein"],
@@ -5745,8 +5771,11 @@ function sprachBefundHtml(){
         <li><strong>Sprachdaten nachinstallieren.</strong> In den Android-Einstellungen unter
             <em>Bedienungshilfen &rarr; Text-in-Sprache</em> die englische Stimme herunterladen.
             Ohne die Daten meldet das Gerät eine Stimme, kann sie aber nicht sprechen.</li>
-        ${alsApp ? `<li><strong>Einmal im normalen Browser testen.</strong> Vom Startbildschirm
-            aus verhält sich die Sprachausgabe auf manchen Geräten anders.</li>` : ""}
+        ${alsApp ? `<li><strong>Einmal im normalen Browser testen.</strong> Du benutzt
+            LingoCrafter gerade als App vom Startbildschirm. Unter Android ist das eine eigene
+            Hülle, in der sich die Sprachausgabe anders verhält als im Browser.
+            <button type="button" class="befund-oeffnen" id="befund-browser">Im Browser öffnen</button>
+            Klappt <em>Vormachen</em> dort, liegt es an der App-Hülle &ndash; und wir wissen es sicher.</li>` : ""}
       </ul>
     </div>`;
 }
@@ -5874,6 +5903,13 @@ function renderAussprache(){
       });
       render();
     });
+  });
+
+  anKnopf('befund-browser', ()=>{
+    // Aus einer installierten App heraus oeffnet _blank den normalen
+    // Browser. Im Browser selbst ist es einfach ein zweiter Tab - beides
+    // ist in Ordnung.
+    try{ window.open(location.href.split("#")[0], "_blank", "noopener"); }catch(e){}
   });
 
   anKnopf('asp-warum', ()=>{
@@ -6485,50 +6521,64 @@ function renderLogin(){
       </div>
     ` : `
       <div class="hero">
-        <span class="hero-ic">🎁</span>
-        <h2 class="hero-titel">Die Belohnungen bestimmt ihr selbst</h2>
-        <p class="hero-text">Filmabend, Schwimmbad, Taschengeld &ndash; ihr legt fest,
-          wofür sich das Üben lohnt. Das Kind erspielt sich die Münzen dafür.</p>
+        <h2 class="hero-titel">Englisch lernen &amp;<br>Belohnungen sammeln</h2>
+        <p class="hero-text">Spielend Vokabeln &amp; Grammatik lernen, Punkte verdienen
+          und gegen echte Belohnungen eintauschen.</p>
       </div>
 
       <div class="kachel-reihe">
         <div class="kachel">
-          <span class="kachel-ic">🎮</span>
-          <span class="kachel-t">Üben, das sich nicht so anfühlt</span>
-          <span class="kachel-s">Fünf Spiele statt Karteikarten. Wer Spaß hat, übt länger.</span>
+          <span class="kachel-ic">🎁</span>
+          <span class="kachel-txt">
+            <span class="kachel-t">Belohnungen, die ihr festlegt</span>
+            <span class="kachel-s">Filmabend, Schwimmbad, Taschengeld &ndash; ihr bestimmt, wofür sich das Üben lohnt.</span>
+          </span>
         </div>
         <div class="kachel">
-          <span class="kachel-ic">🧭</span>
-          <span class="kachel-t">Ein Helfer, der den Plan macht</span>
-          <span class="kachel-s">Lingora fragt, was ansteht, und teilt es in Schritte auf.</span>
+          <span class="kachel-ic">🎮</span>
+          <span class="kachel-txt">
+            <span class="kachel-t">Üben, das sich nicht so anfühlt</span>
+            <span class="kachel-s">Fünf Spiele statt Karteikarten. Wer Spaß hat, übt länger.</span>
+          </span>
+        </div>
+        <div class="kachel">
+          <span class="kachel-ic lingora-ic"><img src="${LINGORA_BILD}" alt="Lingora"></span>
+          <span class="kachel-txt">
+            <span class="kachel-t">Lingora macht den Plan</span>
+            <span class="kachel-s">Er fragt, was ansteht, und teilt es in klare Schritte auf.</span>
+          </span>
         </div>
         <div class="kachel">
           <span class="kachel-ic">📦</span>
-          <span class="kachel-t">Wiederholen, bevor man vergisst</span>
-          <span class="kachel-s">Jedes Wort kommt genau dann wieder, wenn es wackelig wird.</span>
+          <span class="kachel-txt">
+            <span class="kachel-t">Wiederholen, bevor man vergisst</span>
+            <span class="kachel-s">Jedes Wort kommt genau dann wieder, wenn es wackelig wird.</span>
+          </span>
         </div>
         <div class="kachel">
           <span class="kachel-ic">📝</span>
-          <span class="kachel-t">Proben wie in der Schule</span>
-          <span class="kachel-s">Mit Note &ndash; und vorher einer ehrlichen Einschätzung.</span>
+          <span class="kachel-txt">
+            <span class="kachel-t">Proben wie in der Schule</span>
+            <span class="kachel-s">Mit Note &ndash; und vorher einer ehrlichen Einschätzung.</span>
+          </span>
         </div>
         <div class="kachel">
           <span class="kachel-ic">🗣️</span>
-          <span class="kachel-t">Laut sprechen trauen</span>
-          <span class="kachel-s">Das Wort hören, nachsprechen, Rückmeldung bekommen.</span>
+          <span class="kachel-txt">
+            <span class="kachel-t">Laut sprechen trauen</span>
+            <span class="kachel-s">Das Wort hören, nachsprechen, Rückmeldung bekommen.</span>
+          </span>
         </div>
         <div class="kachel">
           <span class="kachel-ic">👨‍👩‍👧</span>
-          <span class="kachel-t">Eltern sehen, wie es läuft</span>
-          <span class="kachel-s">Ohne Werbung, ohne E-Mail, ohne Datenhandel.</span>
+          <span class="kachel-txt">
+            <span class="kachel-t">Eltern sehen, wie es läuft</span>
+            <span class="kachel-s">Ohne Werbung, ohne E-Mail, ohne Datenhandel.</span>
+          </span>
         </div>
       </div>
 
       <div class="panel">
-        <p class="claim-h">Englisch lernen,<br>das sich wirklich lohnt.</p>
-        <p class="claim-p">Spielend Vokabeln &amp; Grammatik meistern, Punkte verdienen
-          und gegen echte Belohnungen eintauschen.</p>
-
         <input type="text" id="player-name-input" maxlength="16" placeholder="Dein Spielername"
                autocomplete="username" value="${escapeHtml(state.playerName)}">
         <input type="password" id="player-pin-input" maxlength="4" inputmode="numeric" pattern="[0-9]*"
