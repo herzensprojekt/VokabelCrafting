@@ -914,7 +914,26 @@
   /* Eine Spalte, Symbol links, Ueberschrift daneben - wie in der
      ausfuehrlichen Erklaerung weiter unten. Nebeneinander liest sich eine
      Ueberschrift schneller als untereinander. */
-  .kachel-reihe{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .kachel-reihe{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .lingora-vorstellen{ margin:0 0 14px; font-size:15px; padding:13px; }
+
+  /* Lingoras Vorstellungsseite */
+  .li-bild{ width:96px; height:96px; border-radius:50%; object-fit:cover;
+    border:3px solid #7a4bbf; background:#efe6ff; }
+  .li-titel{ font-family:var(--serif); font-weight:700; font-size:22px;
+    color:#4a3a28; margin:10px 0 6px; }
+  .li-h{ font-size:16px; margin:0 0 8px; }
+  .li-text{ font-family:var(--font); font-size:14px; line-height:1.55;
+    color:#4a4a4a; margin:0 0 8px; }
+  .li-schritte{ margin:0 0 10px; padding-left:20px;
+    font-family:var(--font); font-size:14px; line-height:1.7; }
+  .li-beispiel{ display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:14px; border-radius:16px; background:rgba(122,75,191,.08); text-align:center; }
+  .li-bsp-zeile{ font-family:var(--font); font-size:12.5px; opacity:.75; }
+  .li-bsp-note{ font-family:var(--font); font-weight:800; font-size:26px;
+    color:#fff; background:#c9a227; border-radius:12px; padding:4px 16px; }
+  .li-bsp-note.gut{ background:#5a9e3f; }
+  .li-bsp-pfeil{ font-family:var(--font); font-size:12px; opacity:.7; margin-top:4px; }
 
   /* Klappkaesten: Alles Ausfuehrliche ist da, draengt sich aber nicht auf.
      Ein zugeklappter Kasten sieht aus wie eine Zeile - erst wer tippt,
@@ -1542,6 +1561,16 @@
        letzte Antwort sonst wieder ueber den Rand. Sie ist der Lernmoment -
        "Richtig! apple = Apfel" - und muss mit aufs Bild. */
     body.runde-laeuft .feedback{ margin-top:10px; padding:10px 14px; font-size:16px; }
+    /* Die Aussprache-Uebung hat besonders viele Zeilen untereinander. */
+    body.runde-laeuft .asp-knoepfe{ margin-top:8px; gap:6px; }
+    body.runde-laeuft .asp-hoeren,
+    body.runde-laeuft .asp-zeigen{ padding:8px 12px; min-height:40px; font-size:13px; }
+    body.runde-laeuft .asp-mikro{ margin-top:10px; min-height:50px; font-size:16px; }
+    body.runde-laeuft .asp-loesung{ font-size:21px; margin-top:6px; }
+    body.runde-laeuft .asp-antwort{ margin-top:9px; padding:10px 12px; font-size:14px; }
+    body.runde-laeuft .asp-quelle,
+    body.runde-laeuft .asp-datenschutz{ margin-top:6px; font-size:10.5px; }
+    body.runde-laeuft .asp-zugabe{ font-size:11px; margin-bottom:6px; }
   }
   /* Sehr niedrige Bildschirme (iPhone SE quer, kleine Androidgeraete) */
   @media (max-height: 700px){
@@ -1979,7 +2008,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "35.1 – Aussprache als Zugabe";
+const APP_VERSION = "36.1 – Lingora stellt sich vor";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -6344,8 +6373,8 @@ function renderAussprache(){
 
     <div class="panel word-card">
       <div class="eyebrow">SAG ES AUF ENGLISCH</div>
-      <p class="asp-zugabe">Hier kommen nur Wörter dran, zu denen es eine echte Aufnahme gibt
-        &ndash; das ist längst nicht zu jeder Vokabel der Fall.</p>
+      ${state.currentIndex === 0 ? `<p class="asp-zugabe">Hier kommen nur Wörter dran, zu denen es
+        eine echte Aufnahme gibt &ndash; das ist nicht zu jeder Vokabel der Fall.</p>` : ""}
       ${w.img ? `<div class="term-image">${w.img}</div>` : ""}
       <div class="term">${escapeHtml(w.de)}</div>
 
@@ -6361,11 +6390,10 @@ function renderAussprache(){
           <span class="asp-mikro-ic">${st.laeuft ? "🔴" : "🎤"}</span>
           <span>${st.laeuft ? "Ich höre zu ..." : "Jetzt sprechen"}</span>
         </button>
-        <p class="asp-datenschutz">${st.gehoert
-          ? (sprachZuletztLokal
+        ${st.gehoert ? `<p class="asp-datenschutz">${sprachZuletztLokal
               ? "🔒 Das hat dein Gerät selbst ausgewertet &ndash; deine Stimme ist hiergeblieben."
-              : "ℹ️ Zum Erkennen wurde die Aufnahme kurz ausgewertet &ndash; wie bei der Sprachsuche.")
-          : "Dein Gerät versucht zuerst, dich selbst zu verstehen."}</p>
+              : "ℹ️ Zum Erkennen wurde die Aufnahme kurz ausgewertet &ndash; wie bei der Sprachsuche."
+            }</p>` : ""}
       ` : `
         <div class="asp-hinweis">
           <strong>Dein Browser kann nicht zuhören.</strong>
@@ -6374,14 +6402,13 @@ function renderAussprache(){
         </div>
       `}
 
+      ${st.rueckmeldung ? `<div class="asp-antwort ${st.art}">${st.rueckmeldung}</div>` : ""}
       ${(function(){
         const q = commonsBekannt(ziel);
         if(!q) return "";
-        return `<p class="asp-quelle">🎙️ Echte Aufnahme von
-          <strong>${escapeHtml(q.sprecher)}</strong> &middot; ${escapeHtml(q.lizenz)}
-          &middot; Wikimedia Commons</p>`;
+        return `<p class="asp-quelle">🎙️ ${escapeHtml(q.sprecher)} &middot;
+          ${escapeHtml(q.lizenz)} &middot; Wikimedia Commons</p>`;
       })()}
-      ${st.rueckmeldung ? `<div class="asp-antwort ${st.art}">${st.rueckmeldung}</div>` : ""}
 
     </div>
 
@@ -6525,7 +6552,8 @@ function render(){
   // ohne Scrollen sichtbar sein. Die Markierung schaltet das enge Layout.
   try{
     document.body.classList.toggle('runde-laeuft',
-      state.screen === "quiz" || state.screen === "grammarquiz");
+      state.screen === "quiz" || state.screen === "grammarquiz"
+      || state.screen === "aussprache");
   }catch(e){}
   // Lingoras Knopf lebt ausserhalb von #app und ueberlebt das Neuzeichnen.
   setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); }catch(e){} }, 0);
@@ -6540,6 +6568,7 @@ function render(){
   // Eltern-Bestaetigungslink sowie Impressum und Datenschutz - letztere
   // muessen von jeder Seite aus zugaenglich sein, auch vom Anmeldebildschirm.
   if(state.screen==="parentconfirm") return renderParentConfirm();
+  if(state.screen==="lingorainfo") return renderLingoraInfo();
   if(state.screen==="impressum") return renderImpressum();
   if(state.screen==="datenschutz") return renderDatenschutz();
   if(state.screen==="info") return renderInfo();
@@ -6993,6 +7022,59 @@ function zumAnmeldefeld(fokus){
   }catch(e){}
 }
 
+/* Stellt Lingora vor - auch fuer jemanden, der die App zum ersten Mal
+   sieht und mit dem Namen nichts anfangen kann. */
+function renderLingoraInfo(){
+  app.innerHTML = `
+    ${renderHeader("Lingora", true)}
+
+    <div class="panel center-text">
+      <img class="li-bild" src="${LINGORA_BILD}" alt="Lingora">
+      <h3 class="li-titel">Das ist Lingora</h3>
+      <p class="li-text">Ein Helfer, der in der App wohnt. Er fragt dein Kind, was ansteht &ndash;
+        und baut daraus einen Plan mit klaren Schritten. Zwischendurch hat er ein aufmunterndes
+        Wort übrig.</p>
+    </div>
+
+    <div class="panel">
+      <h3 class="li-h">🗓️ So entsteht ein Plan</h3>
+      <ol class="li-schritte">
+        <li><strong>Was steht an?</strong> Nur üben &ndash; oder eine Klassenarbeit?</li>
+        <li><strong>Wann ist sie?</strong> Heute, morgen, in einer Woche.</li>
+        <li><strong>Was musst du können?</strong> Vokabeln und Grammatikthemen antippen.</li>
+        <li><strong>Wie viel Zeit hast du?</strong> 10 bis 45 Minuten am Tag.</li>
+      </ol>
+      <p class="li-text">Daraus wird ein Plan über die Tage bis zur Arbeit &ndash; der letzte Tag
+        ist die Generalprobe. Jeder Schritt lässt sich antippen und startet genau diese Übung.</p>
+    </div>
+
+    <div class="panel">
+      <h3 class="li-h">🎯 Und der Klassenarbeits-Radar</h3>
+      <p class="li-text">Lingora rechnet aus, wie es gerade steht &ndash; aus den Wörtern, die schon
+        sitzen, und denen, die noch wackeln:</p>
+      <div class="li-beispiel">
+        <span class="li-bsp-zeile">Wenn die Arbeit heute wäre</span>
+        <span class="li-bsp-note">3 bis 3&minus;</span>
+        <span class="li-bsp-pfeil">↓ wenn du deinen Plan durchziehst</span>
+        <span class="li-bsp-note gut">2 bis 2&minus;</span>
+      </div>
+      <p class="li-text" style="margin-top:10px;">
+        Das ist eine <strong>Schätzung, keine Vorhersage</strong>. Sie liegt in neun von zehn Fällen
+        in der angegebenen Spanne, und sie steht nie allein da &ndash; darunter steht immer, was
+        konkret zu tun ist. Solange zu wenig geübt wurde, nennt Lingora bewusst gar keine Note.
+      </p>
+      <p class="li-text">
+        Gerechnet wird auf dem Gerät. Es geht nichts an einen Server, und es wird nichts
+        hochgeladen.
+      </p>
+    </div>
+
+    <button class="btn" id="li-zurueck">◀ ZURÜCK ZUR STARTSEITE</button>
+  `;
+  const b = document.getElementById('li-zurueck');
+  if(b) b.addEventListener('click', ()=>{ state.screen = "start"; render(); });
+}
+
 function renderLogin(){
   const wartet = state.loginBusy;
   const keineVerbindung = state.cloudChecked && !state.cloudAvailable;
@@ -7037,12 +7119,17 @@ function renderLogin(){
         <div class="kachel">
           <span class="kachel-ic lingora-ic"><img src="${LINGORA_BILD}" alt="Lingora"></span>
           <span class="kachel-txt">
-            <span class="kachel-t">Lingora macht den Plan</span>
-            <span class="kachel-s">Er fragt, was ansteht, und teilt es in klare Schritte auf.</span>
+            <span class="kachel-t">Ein Helfer, der den Plan macht</span>
+            <span class="kachel-s">Lingora lebt in der App. Er fragt, was ansteht &ndash; und macht
+              daraus einen Lernplan bis zur Klassenarbeit.</span>
           </span>
         </div>
 
       </div>
+
+      <button class="btn wood lingora-vorstellen" id="lingora-mehr-btn">
+        🧭 Wie Lingora bis zur Klassenarbeit plant
+      </button>
 
       <div class="panel">
         <input type="text" id="player-name-input" maxlength="16" placeholder="Dein Spielername"
@@ -7106,6 +7193,9 @@ function renderLogin(){
       </div>
     `}
   `;
+
+  const lingoraMehr = document.getElementById('lingora-mehr-btn');
+  if(lingoraMehr){ lingoraMehr.addEventListener('click', ()=>{ state.screen = "lingorainfo"; render(); }); }
 
   const anmeldeSprung = document.getElementById('zur-anmeldung');
   if(anmeldeSprung){ anmeldeSprung.addEventListener('click', ()=>zumAnmeldefeld(true)); }
