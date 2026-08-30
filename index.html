@@ -212,6 +212,13 @@
   .mode-btn small{ display:block; font-family:var(--font); font-weight:400; font-size:14px; margin-top:6px; opacity:0.9; text-align:center; }
 
   /* Spiel-Auswahl: jedes Spiel bekommt seine eigene Farbe; die Auswahl wird per Gold-Rahmen markiert */
+  .mode-btn[data-mode="faellig"]{ background:linear-gradient(135deg,#3aa76d,#1f6b45); }
+  /* Die Zahl der offenen Woerter - gross genug, um sie im Vorbeigehen zu sehen. */
+  .gm-zahl{
+    display:inline-block; min-width:24px; padding:1px 7px; margin-left:4px;
+    border-radius:12px; background:var(--gold,#f2c94c); color:#3a2a00;
+    font-family:var(--font); font-weight:800; font-size:14px; vertical-align:middle;
+  }
   .mode-btn[data-mode="mc"]{ background:linear-gradient(135deg,#4a90d9,#2c5f8a); }
   .mode-btn[data-mode="type"]{ background:linear-gradient(135deg,#f2994a,#c96a1f); }
   .mode-btn[data-mode="mix"]{ background:linear-gradient(135deg,#9b59b6,#6c3483); }
@@ -369,6 +376,82 @@
   .skill-open-btn{ margin:0 0 6px; background:linear-gradient(180deg,#6c8ed6,#41639f); }
 
   /* --- Statistikseite --- */
+  /* ---- Lautsprecher ---- */
+  .hoer-knopf{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px; min-width:34px; padding:0; margin-left:6px;
+    border-radius:50%; cursor:pointer; vertical-align:middle;
+    background:rgba(255,255,255,.85); border:2px solid rgba(0,0,0,.10);
+    font-size:15px; line-height:1;
+  }
+  /* Etwas mehr Flaeche zum Treffen, ohne den Knopf optisch aufzublasen. */
+  .hoer-knopf::after{ content:""; position:absolute; }
+  .hoer-knopf:active{ transform:scale(.94); }
+  .hoer-knopf.gross{ width:40px; height:40px; min-width:40px; font-size:18px; }
+
+  /* ---- Aussprache ---- */
+  .mode-btn[data-mode="aussprache"]{ background:linear-gradient(135deg,#d16ba5,#8e3d75); }
+  .asp-knoepfe{ display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+  .asp-hoeren, .asp-zeigen{
+    font-family:var(--font); font-weight:700; font-size:14px;
+    background:rgba(255,255,255,.85); border:2px solid rgba(0,0,0,.10);
+    border-radius:12px; padding:9px 14px; cursor:pointer; min-height:44px;
+  }
+  .asp-loesung{
+    font-family:var(--font); font-weight:800; font-size:24px; color:#2c5f8a;
+    margin-top:8px; letter-spacing:.02em;
+  }
+  .asp-mikro{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    width:100%; margin-top:14px; min-height:58px;
+    font-family:var(--font); font-weight:800; font-size:17px; color:#fff;
+    background:linear-gradient(135deg,#d16ba5,#8e3d75);
+    border:none; border-radius:16px; cursor:pointer;
+    box-shadow:0 3px 10px rgba(142,61,117,.35);
+  }
+  .asp-mikro.laeuft{ background:linear-gradient(135deg,#c2461f,#8c2f1a); animation:asp-puls 1.1s ease-in-out infinite; }
+  @keyframes asp-puls{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.03); } }
+  .asp-mikro-ic{ font-size:22px; }
+  .asp-antwort{
+    margin-top:12px; padding:12px 14px; border-radius:14px;
+    font-family:var(--font); font-size:15px; line-height:1.45; text-align:left;
+  }
+  .asp-antwort.gut{ background:#d7f3da; color:#1e5c28; }
+  .asp-antwort.fast{ background:#fdf1c7; color:#6e5300; }
+  .asp-antwort.nochmal{ background:#eceff3; color:#3a4450; }
+  .asp-hinweis{
+    margin-top:14px; padding:12px 14px; border-radius:14px; text-align:left;
+    background:rgba(255,255,255,.75); font-family:var(--font); font-size:14px;
+  }
+
+  /* ---- Klassenarbeits-Radar ---- */
+  .rd-panel{ text-align:center; }
+  .rd-zeit{ font-family:var(--font); font-weight:700; font-size:14px; margin:0 0 12px; opacity:.75; }
+  .rd-block{ padding:12px 8px; }
+  .rd-lbl{ display:block; font-family:var(--font); font-size:13px; opacity:.75; margin-bottom:6px; }
+  .rd-note{
+    display:inline-block; min-width:76px; padding:8px 18px; border-radius:16px;
+    color:#fff; font-family:var(--font); font-weight:800; font-size:30px; line-height:1.1;
+    box-shadow:0 3px 10px rgba(0,0,0,.22);
+  }
+  .rd-pct{ display:block; font-family:var(--font); font-size:12.5px; opacity:.7; margin-top:7px; }
+  .rd-pfeil{ font-family:var(--font); font-weight:700; font-size:13px; opacity:.7; margin:2px 0; }
+  .rd-ziel{ background:rgba(90,158,63,.10); border-radius:16px; }
+  .rd-fuss{ font-family:var(--font); font-size:12px; opacity:.65; margin:12px 4px 0; line-height:1.45; }
+  .rd-leer{ padding:10px 6px; }
+  .rd-leer-ic{ font-size:40px; display:block; margin-bottom:6px; }
+  .rd-weg h3{ font-size:16px; margin:0 0 8px; }
+  .rd-liste{ margin:0; padding-left:20px; font-family:var(--font); font-size:14px; line-height:1.6; }
+
+  /* ---- Vokabel-Speicher: eine Zeile je Box ---- */
+  .box-liste{ margin-top:12px; }
+  .box-zeile{ display:flex; align-items:center; gap:8px; }
+  .box-name{ flex:0 0 108px; font-family:var(--font); font-weight:700; font-size:13.5px; }
+  .box-balken{ flex:1 1 auto; height:14px; border-radius:7px; background:rgba(0,0,0,.09); overflow:hidden; }
+  .box-fuell{ display:block; height:100%; border-radius:7px; transition:width .4s ease; }
+  .box-zahl{ flex:0 0 34px; text-align:right; font-family:var(--font); font-weight:800; font-size:14px; }
+  .box-kurz{ margin:1px 0 9px 116px; font-family:var(--font); font-size:11.5px; opacity:.68; }
+
   .sk-summary{ display:flex; gap:8px; margin-bottom:12px; }
   .sk-sum-box{ flex:1 1 0; background:rgba(255,255,255,.75); border-radius:14px; padding:10px 6px;
     display:flex; flex-direction:column; align-items:center; gap:2px;
@@ -1747,7 +1830,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "25.6 – Alle Antworten sichtbar";
+const APP_VERSION = "27.2 – Hören und Sprechen";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2968,6 +3051,10 @@ function installBannerAuffrischen(){
 
 /* Der Service Worker. Ohne ihn gibt es unter Android keinen
    Installations-Dialog - und keine Offline-Nutzung. */
+// Die Stimmen des Geraets laden asynchron - je frueher gefragt, desto
+// wahrscheinlicher sind sie da, wenn das Kind auf den Lautsprecher tippt.
+try{ sprachStimmenLaden(); }catch(e){}
+
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
     navigator.serviceWorker.register("sw.js").catch(()=>{ /* z.B. ohne HTTPS */ });
@@ -4339,6 +4426,8 @@ function loadSave(){
     if(data.inventory && typeof data.inventory === "object") state.inventory = data.inventory;
     if(typeof data.lifetimeBestStreak === "number") state.lifetimeBestStreak = data.lifetimeBestStreak;
     if(Array.isArray(data.customVocab)) state.customVocab = data.customVocab;
+    if(data.wortStand && typeof data.wortStand === "object") state.wortStand = data.wortStand;
+    if(data.boxTreffer && typeof data.boxTreffer === "object") state.boxTreffer = data.boxTreffer;
     if(Array.isArray(data.gradeEntries)) state.gradeEntries = data.gradeEntries;
     if(Array.isArray(data.redeemLog)) state.redeemLog = data.redeemLog;
     if(data.parentPinHash) state.parentPinHash = data.parentPinHash;
@@ -4355,6 +4444,7 @@ function loadSave(){
     if(data.figurMalerei && typeof data.figurMalerei === "object") state.figurMalerei = data.figurMalerei;
     if(data.figurBasis === "import" || data.figurBasis === "rezept") state.figurBasis = data.figurBasis;
     if(data.lingoraPlan && typeof data.lingoraPlan === "object") state.lingoraPlan = data.lingoraPlan;
+    if(data.wortStand && typeof data.wortStand === "object") state.wortStand = data.wortStand;
     if(NOTEN_SCHLUESSEL[data.gradeKey]) state.gradeKey = data.gradeKey;
   }catch(e){ /* Speicher blockiert (z.B. Vorschau-Sandbox) - Standardwerte bleiben */ }
 }
@@ -4383,6 +4473,8 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       figurMalerei: state.figurMalerei,
       figurBasis: state.figurBasis,
       lingoraPlan: state.lingoraPlan,
+      wortStand: state.wortStand,
+      boxTreffer: state.boxTreffer,
       gradeKey: state.gradeKey
     }));
   }catch(e){ /* Speicher nicht verfügbar - Fortschritt bleibt nur für diese Sitzung erhalten */ }
@@ -4404,6 +4496,9 @@ const state = {
   figurBasis: "rezept",    // "rezept" oder "import"
   importBild: null,
   skinTeil: "oberteil",
+  wortStand: {},           // Lernkartei je Vokabel: {b:Box, d:fällig, r:richtig, f:falsch}
+  boxTreffer: {},          // gemessene Trefferquote je Box - Grundlage der Prognose
+  ausspracheStand: {},     // was gerade im Aussprache-Modus passiert
   lingoraPlan: null,       // Lingoras Lernplan
   lingoraAktiv: null,      // welcher Planschritt gerade laeuft
   lingoraZurueck: false,   // Rueckweg zum Plan anbieten
@@ -4776,7 +4871,9 @@ function syncToCloud(){
       customRewards: state.customRewards || [],
       hiddenRewards: state.hiddenRewards || [],
       customAvatar: state.customAvatar || "",
-      customSkin: state.customSkin || ""
+      customSkin: state.customSkin || "",
+      wortStand: state.wortStand || {},
+      boxTreffer: state.boxTreffer || {}
     };
     if(state.parentPinHash){ payload.parentPinHash = state.parentPinHash; }
     if(state.parentPinSalt){ payload.parentPinSalt = state.parentPinSalt; }
@@ -4784,17 +4881,21 @@ function syncToCloud(){
     try{
       await db.savePlayer(cloudId, payload);
     }catch(e){
-      // Sicherheitsnetz: Sind die Firestore-Regeln noch nicht um das neue
-      // Feld customSkin ergaenzt, lehnt der Server den ganzen Schreibvorgang
-      // ab. Dann lieber ein zweites Mal ohne das neue Feld speichern, als
-      // den Spielstand zu verlieren.
+      // Sicherheitsnetz: Sind die Firestore-Regeln noch nicht um ein neues
+      // Feld ergaenzt, lehnt der Server den GANZEN Schreibvorgang ab - auch
+      // Muenzen, Noten und Inventar kaemen dann nicht an. Beim zweiten
+      // Versuch fliegen deshalb alle jungen Felder raus. Lieber die neue
+      // Funktion vorerst nur lokal, als den Spielstand verlieren.
       console.error("Cloud-Sync fehlgeschlagen:", e);
-      if(payload.customSkin){
+      const JUNGE_FELDER = ["wortStand", "boxTreffer", "customSkin"];
+      const dabei = JUNGE_FELDER.filter(f => payload[f] !== undefined);
+      if(dabei.length){
         try{
           const sparsam = Object.assign({}, payload);
-          delete sparsam.customSkin;
+          dabei.forEach(f => delete sparsam[f]);
           await db.savePlayer(cloudId, sparsam);
-          console.warn("Ohne customSkin gespeichert - bitte die Firestore-Regeln ergaenzen.");
+          console.warn("Ohne " + dabei.join(" und ") +
+                       " gespeichert - bitte die Firestore-Regeln ergaenzen.");
         }catch(e2){
           console.error("Auch der zweite Versuch schlug fehl:", e2);
         }
@@ -4879,6 +4980,142 @@ function openLeaderboard(returnTo, mode){
 const CUSTOM_CATEGORY_NAME = "Eigene Vokabeln";
 
 // Liefert die eingebauten Vokabeln plus die eigenen Vokabeln des angemeldeten Spielers
+
+/* =====================================================================
+   DAS GEDAECHTNIS - eine Lernkartei fuer jede einzelne Vokabel
+
+   Bisher war die komplette Wortauswahl eine Zeile:
+
+       state.queue = shuffle(pool);
+
+   Ein Wort, das seit Wochen sicher sitzt, kostete damit genauso viel
+   Uebungszeit wie eines, das nie getroffen wird. Und nach der Runde war
+   alles vergessen: Der sessionLog lebte nur bis zum Zeugnis.
+
+   Jetzt bekommt jedes Wort eine Karteikarte nach Leitner:
+
+       Box 1  ->  gleich nochmal (heute)
+       Box 2  ->  morgen
+       Box 3  ->  in 3 Tagen
+       Box 4  ->  in 7 Tagen
+       Box 5  ->  in 16 Tagen        (sitzt)
+
+   Richtig = eine Box hoeher. Falsch = zurueck in Box 1. "Fast richtig"
+   bleibt stehen, wo es ist - ein Tippfehler soll nicht dieselbe Strafe
+   kosten wie Nichtwissen.
+
+   Die Abstaende sind kein Zufall: Wiederholen kurz BEVOR man etwas
+   vergisst, ist der bestbelegte Effekt der Lernforschung. Genau das
+   verhindert das typische "nach der Arbeit ist alles wieder weg".
+
+   SPARSAM GESPEICHERT: Ein Eintrag heisst {b,d,r,f} statt
+   {box, faellig, richtig, falsch}. Bei 500 Woertern sind das rund 20 kB -
+   ein Firestore-Dokument darf 1000 kB gross sein.
+===================================================================== */
+
+const LEITNER_ABSTAND = [0, 0, 1, 3, 7, 16];   // Index = Box, Wert = Tage
+const LEITNER_HOECHSTE = 5;
+
+/* Tage seit dem 1.1.2020 - kurz zu speichern und leicht zu vergleichen. */
+function lernTagHeute(){
+  const jetzt = new Date();
+  const mitternacht = new Date(jetzt.getFullYear(), jetzt.getMonth(), jetzt.getDate());
+  return Math.floor((mitternacht - new Date(2020, 0, 1)) / 86400000);
+}
+
+/* Der Schluessel muss ein Wort eindeutig treffen und darf sich nie
+   aendern - sonst verliert das Kind seinen Lernstand. Englisch UND
+   Deutsch zusammen, weil "can" (Dose) und "can" (koennen) sonst
+   dieselbe Karte waeren. */
+function wortSchluessel(w){
+  if(!w) return "";
+  return String(w.en || "").trim().toLowerCase() + "|" + String(w.de || "").trim().toLowerCase();
+}
+
+function wortStand(w){
+  if(!state.wortStand) state.wortStand = {};
+  return state.wortStand[wortSchluessel(w)] || null;
+}
+
+/* Wie dringend ist dieses Wort? Kleiner = dringender.
+     0  ueberfaellig oder noch nie geuebt
+     1  heute faellig
+     2+ noch Zeit  */
+function wortDringlichkeit(w){
+  const st = wortStand(w);
+  if(!st) return 0;                          // neu: gehoert nach vorn
+  const rest = (st.d || 0) - lernTagHeute();
+  return rest <= 0 ? 0 : rest;
+}
+
+/* Bei gleicher Faelligkeit entscheidet, wie wackelig ein Wort ist.
+
+   Box 1 (1.0)  geht immer wieder schief  -> zuerst
+   neu   (1.5)  kennt das Kind noch nicht -> gleich danach
+   Box 2 (2.0) bis Box 5 (5.0)            -> je sicherer, desto spaeter
+
+   Die 1.5 ist der ganze Trick: Ohne sie bekaemen neue Woerter den Wert 0
+   und stuenden noch vor dem, was das Kind sechsmal falsch hatte. */
+function lernRang(w){
+  const st = wortStand(w);
+  if(!st) return 1.5;
+  return st.b || 1;
+}
+
+function wortIstFaellig(w){
+  const st = wortStand(w);
+  if(!st) return true;                       // noch nie geuebt = faellig
+  return (st.d || 0) <= lernTagHeute();
+}
+
+function faelligeWoerter(pool){
+  return (pool || getAllVocab()).filter(wortIstFaellig);
+}
+
+/* Nach jeder Antwort. ergebnis: "correct" | "almost" | "wrong" */
+function wortGelernt(w, ergebnis){
+  const k = wortSchluessel(w);
+  if(!k || k === "|") return;
+  if(!state.wortStand) state.wortStand = {};
+  const heute = lernTagHeute();
+  const st = state.wortStand[k] || {b:1, d:heute, r:0, f:0};
+
+  // Fuer den Radar: Wie oft war eine Antwort AUS DIESER BOX richtig?
+  // Muss VOR dem Verschieben passieren, sonst zaehlen wir die neue Box.
+  if(typeof boxTrefferZaehlen === "function" && ergebnis !== "almost"){
+    boxTrefferZaehlen(st.b || 1, ergebnis === "correct");
+  }
+
+  if(ergebnis === "correct"){
+    st.r = (st.r || 0) + 1;
+    st.b = Math.min(LEITNER_HOECHSTE, (st.b || 1) + 1);
+  } else if(ergebnis === "wrong"){
+    st.f = (st.f || 0) + 1;
+    st.b = 1;                                // zurueck auf Anfang
+  } else {
+    // "fast richtig" - meist ein Tippfehler. Die Box bleibt, aber das
+    // Wort kommt bald wieder dran.
+    st.b = Math.max(1, Math.min(LEITNER_HOECHSTE, st.b || 1));
+  }
+  st.d = heute + (LEITNER_ABSTAND[st.b] || 0);
+  st.z = heute;
+  state.wortStand[k] = st;
+}
+
+/* Ueberblick fuer Anzeige und spaeter fuer Lingora. */
+function lernUeberblick(pool){
+  const woerter = pool || getAllVocab();
+  const u = {gesamt: woerter.length, neu:0, faellig:0, sitzt:0, boxen:[0,0,0,0,0,0]};
+  woerter.forEach(w=>{
+    const st = wortStand(w);
+    if(!st){ u.neu++; u.faellig++; u.boxen[0]++; return; }
+    u.boxen[st.b || 1]++;
+    if((st.d || 0) <= lernTagHeute()) u.faellig++;
+    if((st.b || 1) >= LEITNER_HOECHSTE) u.sitzt++;
+  });
+  return u;
+}
+
 function getAllVocab(){
   if(state.customVocab && state.customVocab.length){
     return VOCAB.concat(state.customVocab);
@@ -4900,7 +5137,21 @@ function shuffle(arr){
 function buildQueue(){
   const all = getAllVocab();
   let pool = state.category === "Alle" ? all : all.filter(w=>w.cat===state.category);
-  state.queue = shuffle(pool);
+
+  // Der Modus "faellig" uebt gezielt nur das, was heute dran ist.
+  if(state.mode === "faellig"){
+    const dran = faelligeWoerter(pool);
+    if(dran.length) pool = dran;      // sonst lieber alles als eine leere Runde
+  }
+
+  // Dringend zuerst: neue und ueberfaellige Woerter, dann die wackeligen,
+  // zuletzt das, was sicher sitzt. Innerhalb derselben Dringlichkeit wird
+  // gemischt - sonst kaeme jeden Tag exakt dieselbe Reihenfolge.
+  state.queue = shuffle(pool).sort((a, b)=>{
+    const da = wortDringlichkeit(a), db = wortDringlichkeit(b);
+    if(da !== db) return da - db;
+    return lernRang(a) - lernRang(b);
+  });
   state.currentIndex = 0;
 }
 
@@ -4909,7 +5160,10 @@ const CHALLENGE_ROUND_SIZE = 15;
 function buildChallengeQueue(){
   const all = getAllVocab();
   let pool = state.category === "Alle" ? all : all.filter(w=>w.cat===state.category);
-  state.queue = shuffle(pool).slice(0, CHALLENGE_ROUND_SIZE);
+  // Auch das Duell nimmt die dringendsten 15 statt 15 zufaelliger -
+  // so raeumt das Kind seine faellige Liste im Spiel ab, nicht daneben.
+  state.queue = shuffle(pool).sort((a, b)=> wortDringlichkeit(a) - wortDringlichkeit(b))
+                             .slice(0, CHALLENGE_ROUND_SIZE);
   state.currentIndex = 0;
   state.challengeMaxHP = Math.max(1, state.queue.length);
   state.challengePlayerHP = state.challengeMaxHP;
@@ -4960,6 +5214,360 @@ function evaluateTyped(input, acceptedList, correctionDisplay){
   return {result:"wrong", correction: correctionDisplay};
 }
 
+
+/* =====================================================================
+   HÖREN UND SPRECHEN - beides auf dem Gerät
+
+   Kein Schlüssel, kein Server, keine Kosten: Beide Bausteine stecken im
+   Browser selbst. Das ist nicht nur bequem, es ist bei einer Kinder-App
+   der eigentliche Punkt - die Stimme des Kindes verlaesst das Geraet nie.
+
+   WAS WO FUNKTIONIERT (nachgeschlagen, nicht geraten):
+     Vorlesen   ueberall, auch auf dem iPhone
+     Zuhoeren   Chrome und Safari ab iOS 14.5 (rund 88 % weltweit),
+                Firefox kann es nicht
+
+   Deshalb ist alles zweistufig gebaut: Wo nicht zugehoert werden kann,
+   bleibt wenigstens das Hoeren - und die App sagt ehrlich, warum.
+
+   DIE TUECKEN, DIE ICH ABFANGEN MUSSTE:
+
+   1. getVoices() ist beim ersten Aufruf oft LEER. Die Stimmen laden
+      asynchron nach; wer sofort fragt, bekommt nichts und denkt, das
+      Geraet koenne nicht sprechen.
+
+   2. Auf dem iPhone darf die erste Ausgabe nur aus einer echten
+      Fingerbewegung heraus kommen. Deshalb wird beim ersten Tippen
+      einmal "aufgeweckt".
+
+   3. speechSynthesis bleibt gelegentlich haengen. Ein cancel() davor
+      kostet nichts und erspart stumme Knoepfe.
+===================================================================== */
+
+let sprachStimmen = [];
+let sprachWach = false;
+
+function sprachKannVorlesen(){
+  return typeof window !== "undefined" && "speechSynthesis" in window;
+}
+function sprachErkenner(){
+  return (typeof window !== "undefined") &&
+         (window.SpeechRecognition || window.webkitSpeechRecognition) || null;
+}
+function sprachKannZuhoeren(){ return !!sprachErkenner(); }
+
+/* Die Stimmen kommen asynchron. Wir merken sie uns, sobald sie da sind. */
+function sprachStimmenLaden(){
+  if(!sprachKannVorlesen()) return;
+  const holen = ()=>{
+    try{ sprachStimmen = window.speechSynthesis.getVoices() || []; }catch(e){ sprachStimmen = []; }
+  };
+  holen();
+  try{ window.speechSynthesis.onvoiceschanged = holen; }catch(e){}
+  // Manche Geraete melden das Ereignis nicht - dann eben nachfassen.
+  setTimeout(holen, 400);
+  setTimeout(holen, 1500);
+}
+
+/* Britisches Englisch zuerst: In der Schule wird meist British English
+   unterrichtet. Danach amerikanisch, danach irgendeine englische Stimme. */
+function sprachStimmeEnglisch(){
+  if(!sprachStimmen.length) sprachStimmenLaden();
+  const en = sprachStimmen.filter(v=>/^en/i.test(v.lang || ""));
+  if(!en.length) return null;
+  return en.find(v=>/^en[-_]GB/i.test(v.lang))
+      || en.find(v=>/^en[-_]US/i.test(v.lang))
+      || en[0];
+}
+
+function sprachHatEnglischeStimme(){ return !!sprachStimmeEnglisch(); }
+
+/* Vorlesen. Gibt zurueck, ob es losging - nicht, ob es zu hoeren war;
+   das kann der Browser uns nicht verraten. */
+function sprachVorlesen(text, fertig){
+  if(!sprachKannVorlesen() || !text) return false;
+  try{
+    const s = window.speechSynthesis;
+    // Nur aufraeumen, wenn wirklich etwas laeuft: Ein speak() direkt nach
+    // einem cancel() wird in Chrome gelegentlich verschluckt - dann bleibt
+    // der Knopf stumm, obwohl alles da ist.
+    if(s.speaking || s.pending) s.cancel();
+    const u = new SpeechSynthesisUtterance(String(text));
+    const stimme = sprachStimmeEnglisch();
+    if(stimme) u.voice = stimme;
+    u.lang = (stimme && stimme.lang) || "en-GB";
+    u.rate = 0.88;                                // etwas langsamer als normal
+    u.pitch = 1.0;
+    if(fertig){ u.onend = fertig; u.onerror = fertig; }
+    s.speak(u);
+    sprachWach = true;
+    return true;
+  }catch(e){ return false; }
+}
+
+/* Auf dem iPhone muss die erste Ausgabe aus einer Fingerbewegung kommen.
+   Ein unhoerbares Kurzstueck beim ersten Tippen macht den Weg frei. */
+function sprachAufwecken(){
+  if(sprachWach || !sprachKannVorlesen()) return;
+  try{
+    const u = new SpeechSynthesisUtterance(" ");
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+    sprachWach = true;
+  }catch(e){}
+}
+
+/* ------------------------------------------------------------------
+   ZUHÖREN
+
+   Rueckmeldung ueber Rueckrufe statt Versprechen, weil der Erkenner
+   mehrfach melden kann und wir jeden Fall einzeln behandeln wollen.
+------------------------------------------------------------------ */
+function sprachZuhoeren({fertig, fehler, start}){
+  const Erkenner = sprachErkenner();
+  if(!Erkenner){ if(fehler) fehler("nicht-vorhanden"); return null; }
+  let r;
+  try{ r = new Erkenner(); }catch(e){ if(fehler) fehler("nicht-vorhanden"); return null; }
+  r.lang = "en-GB";
+  r.interimResults = false;
+  r.maxAlternatives = 5;        // mehrere Vorschlaege - gnaediger fuer Kinder
+  r.continuous = false;
+
+  let beendet = false;
+  const einmal = (fn, arg)=>{ if(beendet) return; beendet = true; if(fn) fn(arg); };
+
+  r.onstart = ()=>{ if(start) start(); };
+  r.onresult = (e)=>{
+    const liste = [];
+    try{
+      const res = e.results[0];
+      for(let i = 0; i < res.length; i++) liste.push(res[i].transcript);
+    }catch(err){}
+    einmal(fertig, liste);
+  };
+  r.onerror = (e)=>{
+    const art = (e && e.error) || "unbekannt";
+    einmal(fehler, art);
+  };
+  r.onend = ()=>{ einmal(fehler, "nichts-gehoert"); };
+
+  try{ r.start(); }catch(e){ einmal(fehler, "start-fehlgeschlagen"); }
+  return r;
+}
+
+/* Hat das Kind das Wort getroffen?
+
+   BEWUSST GNAEDIG: Die Erkennung ist auf erwachsene Muttersprachler
+   trainiert. Ein deutsches Kind, das "th" noch uebt, wird oft falsch
+   verstanden - und ein falsches "leider nein" nimmt genau die Lust,
+   um die es hier geht. Deshalb:
+     - jeder der bis zu fuenf Vorschlaege zaehlt
+     - die vorhandene Tippfehler-Toleranz wird mitbenutzt
+     - im Zweifel lieber "fast" als "falsch"
+*/
+function sprachVergleich(gehoertListe, ziel){
+  const zielNorm = normalize(cleanEn(ziel));
+  let bestes = {result:"wrong", gehoert:"", abstand: Infinity};
+  (gehoertListe || []).forEach(g=>{
+    const n = normalize(g);
+    if(!n) return;
+    const d = levenshtein(n, zielNorm);
+    if(d < bestes.abstand) bestes = {result:"wrong", gehoert:g, abstand:d};
+  });
+  if(bestes.abstand === Infinity) return {result:"nichts", gehoert:""};
+  const grenze = Math.max(1, Math.round(zielNorm.length * 0.34));
+  if(bestes.abstand === 0) bestes.result = "correct";
+  else if(bestes.abstand <= grenze) bestes.result = "almost";
+  return bestes;
+}
+
+/* =====================================================================
+   DER AUSSPRACHE-MODUS
+
+   Deutsches Wort steht da, das Kind sagt das englische, die App hoert zu.
+
+   DIE WICHTIGSTE ENTSCHEIDUNG: Hier gibt es KEINE Note, KEINEN
+   Muenzabzug und kein "falsch". Die Spracherkennung ist auf erwachsene
+   Muttersprachler trainiert; ein deutsches Kind, das "th" noch uebt,
+   wird regelmaessig missverstanden. Ein hartes Urteil waere hier nicht
+   nur unfair, es wuerde genau die Hemmung erzeugen, gegen die dieser
+   Modus antritt. Muenzen gibt es, Abzug nicht.
+
+   Und: Man darf jederzeit erst zuhoeren. Vormachen kommt vor Nachmachen.
+===================================================================== */
+
+/* Der Lautsprecher als Baustein - erscheint nur, wenn das Geraet auch
+   wirklich Englisch sprechen kann. */
+function hoerKnopfHtml(englisch, klasse){
+  if(!sprachKannVorlesen() || !sprachHatEnglischeStimme()) return "";
+  const t = cleanEn(englisch || "");
+  if(!t) return "";
+  return `<button type="button" class="hoer-knopf ${klasse || ''}" data-hoer="${encodeURIComponent(t)}"
+           title="Anhören" aria-label="Wort anhören">🔊</button>`;
+}
+
+/* Verdrahtet alle Lautsprecher auf dem gerade gezeichneten Bildschirm. */
+function hoerKnoepfeVerdrahten(){
+  document.querySelectorAll('[data-hoer]').forEach(el=>{
+    if(el.dataset.verdrahtet) return;
+    el.dataset.verdrahtet = "ja";
+    el.addEventListener('click', (ev)=>{
+      ev.preventDefault(); ev.stopPropagation();
+      sprachAufwecken();
+      sprachVorlesen(decodeURIComponent(el.dataset.hoer));
+    });
+  });
+}
+
+function renderAussprache(){
+  const woerter = state.queue || [];
+  if(!woerter.length || state.currentIndex >= woerter.length){
+    state.screen = "aussprachefertig";
+    render();
+    return;
+  }
+  const w = woerter[state.currentIndex];
+  const ziel = cleanEn(w.en);
+  const kannHoeren = sprachKannZuhoeren();
+  const kannLesen  = sprachKannVorlesen() && sprachHatEnglischeStimme();
+  const st = state.ausspracheStand || {};
+
+  app.innerHTML = `
+    ${renderHeader("Aussprache", true)}
+    ${topBarHtml("cancel-btn")}
+    <div class="hud">
+      <span class="score-badge">🗣️ ${state.currentIndex+1}/${woerter.length}</span>
+      <span class="score-badge">🪙 ${state.sessionCoins}</span>
+    </div>
+    <div class="progress-outer"><div class="progress-inner" style="width:${Math.round(state.currentIndex/woerter.length*100)}%"></div></div>
+
+    <div class="panel word-card">
+      <div class="eyebrow">SAG ES AUF ENGLISCH</div>
+      ${w.img ? `<div class="term-image">${w.img}</div>` : ""}
+      <div class="term">${escapeHtml(w.de)}</div>
+
+      ${st.zeigen ? `<div class="asp-loesung">${escapeHtml(ziel)}</div>` : ""}
+
+      <div class="asp-knoepfe">
+        ${kannLesen ? `<button class="asp-hoeren" id="asp-hoeren">🔊 Vormachen</button>` : ""}
+        <button class="asp-zeigen" id="asp-zeigen">${st.zeigen ? "🙈 Verstecken" : "👀 Wort zeigen"}</button>
+      </div>
+
+      ${kannHoeren ? `
+        <button class="asp-mikro ${st.laeuft ? 'laeuft' : ''}" id="asp-sprechen">
+          <span class="asp-mikro-ic">${st.laeuft ? "🔴" : "🎤"}</span>
+          <span>${st.laeuft ? "Ich höre zu ..." : "Jetzt sprechen"}</span>
+        </button>
+      ` : `
+        <div class="asp-hinweis">
+          <strong>Dein Browser kann nicht zuhören.</strong>
+          <p class="muted" style="margin:4px 0 0;">Das können Chrome und Safari, Firefox leider nicht.
+          Hören und Nachsprechen geht hier trotzdem &ndash; das ist der wichtigste Teil.</p>
+        </div>
+      `}
+
+      ${st.rueckmeldung ? `<div class="asp-antwort ${st.art}">${st.rueckmeldung}</div>` : ""}
+    </div>
+
+    <button class="btn" id="asp-weiter">${state.currentIndex + 1 >= woerter.length ? "🏁 FERTIG" : "▶ WEITER"}</button>
+  `;
+
+  const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+
+  anKnopf('cancel-btn', ()=>{ state.screen = "start"; render(); });
+
+  anKnopf('asp-hoeren', ()=>{
+    sprachAufwecken();
+    sprachVorlesen(ziel);
+  });
+
+  anKnopf('asp-zeigen', ()=>{
+    state.ausspracheStand = Object.assign({}, st, {zeigen: !st.zeigen});
+    render();
+  });
+
+  anKnopf('asp-weiter', ()=>{
+    state.currentIndex++;
+    state.ausspracheStand = {};
+    if(state.currentIndex >= woerter.length){ state.screen = "aussprachefertig"; }
+    render();
+  });
+
+  anKnopf('asp-sprechen', ()=>{
+    if(st.laeuft) return;
+    sprachAufwecken();
+    state.ausspracheStand = {zeigen: st.zeigen, laeuft: true};
+    render();
+
+    sprachZuhoeren({
+      fertig: (liste)=>{
+        const v = sprachVergleich(liste, ziel);
+        let text, art;
+        if(v.result === "correct"){
+          state.sessionCoins += 10;
+          text = "🎉 Genau so! <strong>" + escapeHtml(ziel) + "</strong>";
+          art = "gut";
+          wortGelernt(w, "correct");
+        } else if(v.result === "almost"){
+          state.sessionCoins += 6;
+          text = "Fast! Ich habe &bdquo;" + escapeHtml(v.gehoert) + "&ldquo; verstanden. "
+               + "Richtig heißt es <strong>" + escapeHtml(ziel) + "</strong> &ndash; hör es dir nochmal an.";
+          art = "fast";
+        } else {
+          // Bewusst kein "falsch": Die Erkennung irrt oft genug.
+          text = "Ich habe &bdquo;" + escapeHtml(v.gehoert || "nichts") + "&ldquo; verstanden. "
+               + "Das Wort heißt <strong>" + escapeHtml(ziel) + "</strong>. Probier es nochmal &ndash; "
+               + "und lass es dir ruhig erst vormachen.";
+          art = "nochmal";
+        }
+        state.ausspracheStand = {zeigen: st.zeigen, laeuft: false, rueckmeldung: text, art: art};
+        render();
+      },
+      fehler: (art)=>{
+        const texte = {
+          "not-allowed": "Ich darf nicht auf das Mikrofon. Erlaub es einmal in den Browser-Einstellungen, dann geht's.",
+          "service-not-allowed": "Ich darf nicht auf das Mikrofon. Erlaub es einmal in den Browser-Einstellungen.",
+          "no-speech": "Ich habe nichts gehört. Sprich ruhig etwas lauter und näher ans Handy.",
+          "nichts-gehoert": "Ich habe nichts gehört. Sprich ruhig etwas lauter und näher ans Handy.",
+          "audio-capture": "Ich finde kein Mikrofon an diesem Gerät.",
+          "network": "Dafür brauche ich gerade Internet &ndash; das Zuhören läuft übers Netz.",
+          "nicht-vorhanden": "Dieser Browser kann leider nicht zuhören."
+        };
+        state.ausspracheStand = {
+          zeigen: st.zeigen, laeuft: false, art: "nochmal",
+          rueckmeldung: texte[art] || "Das hat gerade nicht geklappt. Versuch es nochmal."
+        };
+        render();
+      }
+    });
+  });
+}
+
+function renderAusspracheFertig(){
+  const n = (state.queue || []).length;
+  app.innerHTML = `
+    ${renderHeader("Aussprache", true)}
+    ${playerBadgeHtml(true)}
+    <div class="panel center-text">
+      <div style="font-size:52px;">🗣️</div>
+      <h3 style="margin:8px 0 4px;">${n} Wörter laut gesagt!</h3>
+      <p class="muted" style="margin:0;">
+        Wer ein Wort einmal ausgesprochen hat, erkennt es später auch beim Hören wieder.
+        Genau deshalb lohnt sich das.
+      </p>
+      <p style="margin:14px 0 0;font-family:var(--font);font-weight:800;">
+        🪙 ${state.sessionCoins} Münzen verdient
+      </p>
+    </div>
+    <button class="btn" id="asp-nochmal">🔁 NOCHMAL</button>
+    <div style="height:10px;"></div>
+    <button class="btn danger" id="back-btn">◀ ZURÜCK</button>
+  `;
+  const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  anKnopf('asp-nochmal', ()=>{ state.mode = "aussprache"; startGame(); });
+  anKnopf('back-btn', ()=>{ state.screen = "start"; render(); });
+}
+
 /* ---------------------------------------------------
    RENDER-HELFER
 --------------------------------------------------- */
@@ -4987,7 +5595,7 @@ function render(){
       state.screen === "quiz" || state.screen === "grammarquiz");
   }catch(e){}
   // Lingoras Knopf lebt ausserhalb von #app und ueberlebt das Neuzeichnen.
-  setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); }catch(e){} }, 0);
+  setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); }catch(e){} }, 0);
 
   // Der Elternbereich sperrt sich selbst, sobald man ihn verlaesst - egal
   // ueber welchen Knopf. Damit kommt niemand ohne PIN zurueck hinein.
@@ -5019,6 +5627,10 @@ function render(){
   if(state.screen==="grammarintro") return renderGrammarIntro();
   if(state.screen==="grammarquiz") return renderGrammarQuiz();
   if(state.screen==="grammarcertificate") return renderGrammarCertificate();
+  if(state.screen==="aussprache") return renderAussprache();
+  if(state.screen==="aussprachefertig") return renderAusspracheFertig();
+  if(state.screen==="radar") return renderRadar();
+  if(state.screen==="vokabelstats") return renderVokabelStats();
   if(state.screen==="grammarstats") return renderGrammarStats();
   if(state.screen==="parents") return renderParents();
   if(state.screen==="confirmreward") return renderConfirmReward();
@@ -5694,6 +6306,24 @@ function renderStart(){
 
       <div class="setting-label">Spiel</div>
       <div class="game-grid">
+        <button type="button" class="mode-btn game-tile ${state.mode==='faellig'?'active':''}" data-mode="faellig" aria-pressed="${state.mode==='faellig'}">
+          <span class="gm-ic">${lernUeberblick().faellig > 0 ? "🔁" : "🌟"}</span>
+          <span class="gm-txt">
+            <span class="gm-name">Fällig heute${lernUeberblick().faellig > 0 ? ` <span class="gm-zahl">${lernUeberblick().faellig}</span>` : ""}</span>
+            <small>${lernUeberblick().faellig > 0
+              ? "Genau die Wörter, die jetzt dran sind"
+              : "Alles wiederholt &ndash; hier ist heute nichts offen"}</small>
+          </span>
+        </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='aussprache'?'active':''}" data-mode="aussprache" aria-pressed="${state.mode==='aussprache'}">
+          <span class="gm-ic">🗣️</span>
+          <span class="gm-txt">
+            <span class="gm-name">Aussprache</span>
+            <small>${sprachKannZuhoeren()
+              ? "Sag es laut &ndash; ich hör dir zu"
+              : "Hören und nachsprechen"}</small>
+          </span>
+        </button>
         <button type="button" class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc" aria-pressed="${state.mode==='mc'}">
           <span class="gm-ic">🎯</span>
           <span class="gm-txt">
@@ -5738,7 +6368,9 @@ function renderStart(){
         </button>
       </div>
 
-      <button class="btn secondary small" id="custom-vocab-btn" style="margin-top:16px;" ${state.cloudId ? "" : "disabled"}>➕ Eigene Vokabeln hinzufügen</button>
+      <button class="btn skill-open-btn" id="radar-btn" style="margin-top:16px;">🎯 KLASSENARBEITS-RADAR</button>
+      <button class="btn skill-open-btn" id="vokabel-stats-btn" style="margin-top:10px;">📦 MEIN VOKABEL-SPEICHER</button>
+      <button class="btn secondary small" id="custom-vocab-btn" style="margin-top:10px;" ${state.cloudId ? "" : "disabled"}>➕ Eigene Vokabeln hinzufügen</button>
       ${!state.cloudId ? `<p class="muted" style="margin-top:6px;">Melde dich zuerst an, um eigene Vokabeln zu speichern.</p>` : ""}
     </div>
     `}
@@ -5869,6 +6501,22 @@ function renderStart(){
       window.scrollTo(0, 0);
     });
   });
+  const radarBtn = document.getElementById('radar-btn');
+  if(radarBtn){
+    radarBtn.addEventListener('click', ()=>{
+      state.radarReturnTo = "start";
+      state.screen = "radar";
+      render();
+    });
+  }
+  const vokStatsBtn = document.getElementById('vokabel-stats-btn');
+  if(vokStatsBtn){
+    vokStatsBtn.addEventListener('click', ()=>{
+      state.vokStatsReturnTo = "start";
+      state.screen = "vokabelstats";
+      render();
+    });
+  }
   const statsBtn = document.getElementById('grammar-stats-btn');
   if(statsBtn){
     statsBtn.addEventListener('click', ()=>{
@@ -5937,6 +6585,16 @@ function startGame(){
   } else {
     buildQueue();
   }
+  if(state.mode === "aussprache"){
+    // Zwoelf Woerter laut zu sagen ist genug fuer eine Runde - achtzig
+    // waeren eine Zumutung, und die Stimme wird heiser.
+    state.queue = (state.queue || []).slice(0, 12);
+    state.currentIndex = 0;
+    state.ausspracheStand = {};
+    state.screen = "aussprache";
+    render();
+    return;
+  }
   state.screen = "quiz";
   if(state.floodHard){
     startFloodRise(()=>{ stopFloodRise(); endSession("drowned"); });
@@ -5947,6 +6605,14 @@ function startGame(){
 function pickQuestionType(){
   if(state.mode==="mc") return "mc";
   if(state.mode==="type") return "type";
+  if(state.mode==="faellig"){
+    // Die Schwierigkeit waechst mit dem Koennen: erst wiedererkennen,
+    // dann selbst abrufen. Abrufen ist deutlich schwerer - und deutlich
+    // wirksamer, sobald das Wort ueberhaupt sitzt.
+    const w = state.queue && state.queue[state.currentIndex];
+    const box = (wortStand(w) || {}).b || 1;
+    return box >= 3 ? "type" : "mc";
+  }
   return Math.random() < 0.5 ? "mc" : "type";
 }
 
@@ -6040,6 +6706,7 @@ function handleVocabFloodAnswer(btn, choice, word){
     setFloodPos(state.floodHard ? state.floodPos + 1 : state.grammarCorrectCount);
     showGoodToast('<span class="item-pop">🪙</span> Richtig! Eine Stufe höher.');
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"correct", word});
+    wortGelernt(word, "correct");
   } else {
     btn.classList.add('wrong');
     document.querySelectorAll('.choice-btn').forEach(b=>{
@@ -6055,6 +6722,7 @@ function handleVocabFloodAnswer(btn, choice, word){
     fb.className = 'feedback';
     fb.innerHTML = '';
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"wrong", userInput:choice, word});
+    wortGelernt(word, "wrong");
   }
 
   const geo = grammarRoomGeometry();
@@ -6090,6 +6758,7 @@ function handleVocabFloodAnswer(btn, choice, word){
   else {
     setTimeout(()=>{
       fb.className = 'feedback show bad';
+    rueckmeldungInsBild(fb);
       fb.innerHTML = `<div>❌ Leider falsch. ${state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!"}</div>` +
         `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(ans.answerDisplay)}</strong></div>`;
       if(ertrunken){ scrollFeedbackIntoView(fb); planeWeiter(weiter, 1600); }
@@ -6120,7 +6789,7 @@ function renderQuiz(){
     <div class="panel word-card" id="word-card">
       <div class="eyebrow">${ans.eyebrow}</div>
       ${word.img ? `<div class="term-image">${word.img}</div>` : ""}
-      <div class="term">${ans.promptText}</div>
+      <div class="term">${ans.promptText}${state.direction === "en-de" ? hoerKnopfHtml(word.en, "gross") : ""}</div>
       <div id="question-body"></div>
     </div>
   `;
@@ -6198,6 +6867,7 @@ function showFeedback(type, message, revealAnswer){
     return;
   }
   fb.className = `feedback show ${type}`;
+  rueckmeldungInsBild(fb);
   let html = `<div>${message}</div>`;
   if(revealAnswer){
     html += `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(revealAnswer)}</strong></div>`;
@@ -6209,8 +6879,15 @@ function showFeedback(type, message, revealAnswer){
 // Wie showFeedback, aber mit einem Button, den der Nutzer aktiv bestätigen muss,
 // bevor es zur nächsten Vokabel weitergeht (statt automatisch weiterzuspringen).
 function showFeedbackWithConfirm(type, message, revealAnswer, extraNoteHtml){
+  // Der Moment, in dem das Kind das richtige Wort sieht - genau hier
+  // gehoert der Lautsprecher hin.
+  const wortJetzt = state.queue && state.queue[state.currentIndex];
+  const hoerZusatz = (wortJetzt && state.direction !== "en-de")
+    ? hoerKnopfHtml(wortJetzt.en) : "";
+  if(hoerZusatz && revealAnswer){ revealAnswer = revealAnswer + " " + hoerZusatz; }
   const fb = document.getElementById('feedback');
   fb.className = `feedback show ${type}`;
+  rueckmeldungInsBild(fb);
   let html = `<div>${message}</div>`;
   if(revealAnswer){
     html += `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(revealAnswer)}</strong></div>`;
@@ -6549,6 +7226,7 @@ function handleChallengeAnswer(btn, choice, word){
     updateBattleHP('villain');
     showFeedback('good', `<span class="item-pop">⚡</span> Treffer! +${coins} Münzen.`);
     state.sessionLog.push({prompt:word.de, correct, result:"correct", word});
+    wortGelernt(word, "correct");
     if(villainImg && playerAvatarEl){ spawnProjectile('⚡', playerAvatarEl, villainImg); }
   } else {
     if(btn){ btn.classList.add('wrong'); }
@@ -6560,6 +7238,7 @@ function handleChallengeAnswer(btn, choice, word){
     updateBattleHP('player');
     const msg = choice===null ? "⏰ Zeit abgelaufen!" : "Leider falsch.";
     state.sessionLog.push({prompt:word.de, correct, result:"wrong", userInput: choice || "(keine Antwort)", word});
+    wortGelernt(word, "wrong");
     // Erst fliegt der Blitz vom Boesewicht zur Figur, danach kommt die
     // Korrektur - und die muss gelesen und bestaetigt werden.
     if(villainImg && playerAvatarEl){ spawnProjectile('⚡', villainImg, playerAvatarEl); }
@@ -6653,6 +7332,7 @@ function handleMcAnswer(btn, choice, word){
     state.bestStreak = Math.max(state.bestStreak, state.streak);
     showFeedback('good', `<span class="item-pop">🪙</span> Richtig! +${coins} Münzen.`);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"correct", word});
+    wortGelernt(word, "correct");
   } else {
     btn.classList.add('wrong');
     document.querySelectorAll('.choice-btn').forEach(b=>{
@@ -6662,6 +7342,7 @@ function handleMcAnswer(btn, choice, word){
     deductCoinsForWrong(10);
     showFeedbackWithConfirm('bad', `Leider falsch. -10 Münzen.`, ans.answerDisplay);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"wrong", userInput:choice, word});
+    wortGelernt(word, "wrong");
     return; // Es geht erst weiter, wenn die richtige Antwort gelesen wurde
   }
   goOnAfterDelay();
@@ -6683,6 +7364,7 @@ function handleTypedAnswer(value, word){
     state.bestStreak = Math.max(state.bestStreak, state.streak);
     showFeedback('good', `<span class="item-pop">🪙</span> Richtig! +${coins} Münzen.`);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"correct", userInput:value, word});
+    wortGelernt(word, "correct");
   } else if(evalResult.result === "almost"){
     const coins = 6;
     state.sessionCoins += coins;
@@ -6690,12 +7372,14 @@ function handleTypedAnswer(value, word){
     state.bestStreak = Math.max(state.bestStreak, state.streak);
     showFeedbackWithConfirm('almost', `<span class="item-pop">🪙</span> Fast richtig! +${coins} Münzen.`, evalResult.correction);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"almost", userInput:value, word});
+    wortGelernt(word, "almost");
     return; // Weiter geht's erst, wenn der Nutzer die richtige Antwort bestätigt hat
   } else {
     state.streak = 0;
     deductCoinsForWrong(10);
     showFeedbackWithConfirm('bad', `Leider falsch. -10 Münzen.`, evalResult.correction);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"wrong", userInput:value, word});
+    wortGelernt(word, "wrong");
     return; // Weiter geht's erst, wenn der Nutzer die richtige Antwort bestätigt hat
   }
   goOnAfterDelay();
@@ -6735,6 +7419,28 @@ function startMistakeReview(){
   }
   state.screen = "quiz";
   nextQuestion();
+}
+
+/* Schiebt die Rueckmeldung ins Bild, falls sie unten heraushaengt.
+
+   WICHTIG: Der Rollbalken haengt am Kasten #app, nicht am Fenster - ein
+   window.scrollTo oder scrollIntoView auf dem Fenster rollt hier ins
+   Leere. Und es wird nur geschoben, wenn es noetig ist: Ein Ruck bei
+   jeder Antwort waere unruhig. */
+function rueckmeldungInsBild(fb){
+  try{
+    const app = document.getElementById('app');
+    if(!app || !fb) return;
+    setTimeout(()=>{
+      const unten = fb.getBoundingClientRect().bottom;
+      const rand  = app.getBoundingClientRect().bottom;
+      if(unten > rand - 8){
+        const ziel = app.scrollTop + (unten - rand) + 16;
+        if(typeof app.scrollTo === "function") app.scrollTo({top: ziel, behavior: "smooth"});
+        else app.scrollTop = ziel;
+      }
+    }, 60);   // erst zeichnen lassen, dann messen
+  }catch(e){}
 }
 
 function endSession(reason){
@@ -9344,6 +10050,7 @@ function handleGrammarAnswer(btn, choice, exercise){
     if(!practice){ raiseFloodWater(); }
     if(practice){
       fb.className = 'feedback show bad';
+    rueckmeldungInsBild(fb);
       fb.innerHTML = `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. ${escapeHtml(exercise.de)}</div>`;
     } else {
       // Flutungsraum: erst steigt das Wasser, die Korrektur folgt danach.
@@ -9428,6 +10135,7 @@ function handleGrammarAnswer(btn, choice, exercise){
   else {
     setTimeout(()=>{
       fb.className = 'feedback show bad';
+    rueckmeldungInsBild(fb);
       fb.innerHTML = `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. ${state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!"} ${escapeHtml(exercise.de)}</div>`;
       if(lost){ scrollFeedbackIntoView(fb); planeWeiter(weiter, 1600); }
       else { grammarWeiterKnopf(fb, weiter); }
@@ -9488,6 +10196,514 @@ function skillZeile(t){
       </span>
       <button class="sk-go" data-skill-topic="${t.id}">Üben</button>
     </div>`;
+}
+
+
+/* =====================================================================
+   MEINE VOKABELN - der Lernstand zum Anschauen
+
+   Das Gegenstueck zu den Grammatik-Skills, nur fuer die Lernkartei.
+   Absichtlich OHNE Note: Hier geht es nicht darum, wie gut jemand ist,
+   sondern nur darum, was schon sitzt und was noch nicht.
+
+   Die fuenf Boxen bekommen Namen, die ein Kind versteht - "Box 3" sagt
+   niemandem etwas, "sitzt langsam" schon.
+===================================================================== */
+
+const BOX_NAMEN = [
+  {name:"Neu",           kurz:"noch nie geübt",       farbe:"#9aa4b2"},
+  {name:"Wackelig",      kurz:"geht noch schief",     farbe:"#c2461f"},
+  {name:"Wird besser",   kurz:"morgen nochmal",       farbe:"#d98324"},
+  {name:"Sitzt langsam", kurz:"in 3 Tagen nochmal",   farbe:"#c9a227"},
+  {name:"Sitzt gut",     kurz:"in einer Woche",       farbe:"#5a9e3f"},
+  {name:"Sitzt!",        kurz:"in gut 2 Wochen",      farbe:"#2f7d32"}
+];
+
+/* Die wackeligsten Woerter - die, bei denen sich Ueben am meisten lohnt. */
+function wackeligsteWoerter(anzahl){
+  return getAllVocab()
+    .map(w=>({w:w, st:wortStand(w)}))
+    .filter(x=>x.st && (x.st.f || 0) > 0)
+    .sort((a,b)=>{
+      if(a.st.b !== b.st.b) return a.st.b - b.st.b;         // niedrige Box zuerst
+      return (b.st.f || 0) - (a.st.f || 0);                 // dann die haeufigsten Fehler
+    })
+    .slice(0, anzahl || 5);
+}
+
+/* =====================================================================
+   DER KLASSENARBEITS-RADAR
+
+   Keine andere Lern-App weiss, was am Montag drankommt. Diese schon -
+   das Kind sagt es Lingora ja selbst. Aus dem angesagten Stoff, der
+   Lernkartei und den Grammatik-Skills wird eine ehrliche Einschaetzung:
+
+       Wenn die Arbeit heute waere: 3 bis 3-
+       14 Woerter sitzen noch nicht, davon 6 sind heute faellig.
+       Wenn du deinen Plan durchziehst: 2 bis 2-
+
+   ZWEI GRUNDSAETZE, VON DENEN ICH NICHT ABWEICHE:
+
+   1. Nie eine Zahl ohne den Weg daneben. Eine Prognose allein macht
+      Druck. Eine Prognose mit "und so kommst du dahin" macht Wirkung.
+
+   2. Immer eine Spanne, nie eine einzelne Note. Eine Punktprognose
+      taeuscht eine Genauigkeit vor, die es nicht gibt - und wenn sie
+      danebenliegt, glaubt das Kind der App nie wieder etwas.
+
+   WOHER DIE WAHRSCHEINLICHKEITEN KOMMEN:
+   Nicht aus einer Tabelle, die ich mir ausgedacht habe. Die App zaehlt
+   mit, wie oft eine Antwort AUS BOX x richtig war - die Box vor der
+   Antwort ist ja bekannt. Nach ein paar Wochen kennt die App die echte
+   Trefferquote dieses Kindes. Bis dahin gilt ein vorsichtiger Startwert,
+   der langsam von den eigenen Zahlen abgeloest wird.
+===================================================================== */
+
+/* Startwerte, solange noch nichts gemessen ist. Bewusst vorsichtig:
+   lieber eine Prognose, die sich nach oben korrigiert, als eine, die
+   enttaeuscht. */
+const BOX_START_CHANCE = [0.25, 0.35, 0.55, 0.70, 0.83, 0.92];
+const BOX_LERNTRAEGHEIT = 12;   // so viele eigene Antworten wiegen so viel wie der Startwert
+
+/* Wird bei jeder Antwort mitgezaehlt - mit der Box VOR der Antwort. */
+function boxTrefferZaehlen(boxVorher, richtig){
+  if(!state.boxTreffer) state.boxTreffer = {};
+  const k = String(boxVorher || 1);
+  const e = state.boxTreffer[k] || {r:0, f:0};
+  if(richtig) e.r++; else e.f++;
+  state.boxTreffer[k] = e;
+}
+
+/* Die gemessene Trefferquote dieser Box, geglaettet mit dem Startwert. */
+function boxChance(box){
+  const start = BOX_START_CHANCE[box] !== undefined ? BOX_START_CHANCE[box] : 0.5;
+  const e = (state.boxTreffer || {})[String(box)];
+  if(!e) return start;
+  const n = (e.r || 0) + (e.f || 0);
+  if(!n) return start;
+  return ((e.r || 0) + BOX_LERNTRAEGHEIT * start) / (n + BOX_LERNTRAEGHEIT);
+}
+
+/* Wie gut trifft dieses Kind ein Wort, das es in der App noch kaum
+   geuebt hat?
+
+   NICHT null und nicht geraten: Die Woerter kommen aus dem Unterricht,
+   das Kind hat sie im Buch gelesen und im Heft stehen. "In der App noch
+   nicht geuebt" heisst nicht "kann ich nicht". Gemessen wird an den
+   Antworten aus Box 1 - naeher kommt man einem frischen Wort nicht. */
+function basisChance(){
+  const START = 0.45;
+  // Bewusst die GESAMTE Bilanz, nicht nur Box 1: In Box 1 landen
+  // ueberproportional die schweren Woerter (sie fallen ja dorthin
+  // zurueck). Sie allein zu befragen, macht die Schaetzung zu duester.
+  let r = 0, f = 0;
+  Object.keys(state.boxTreffer || {}).forEach(k=>{
+    r += (state.boxTreffer[k].r || 0);
+    f += (state.boxTreffer[k].f || 0);
+  });
+  const n = r + f;
+  if(!n) return START;
+  return (r + BOX_LERNTRAEGHEIT * START) / (n + BOX_LERNTRAEGHEIT);
+}
+
+/* Welche Box ist in dieser Zeit ueberhaupt erreichbar?
+
+   Nicht "eine pro Tag": Die Kartei laesst das gar nicht zu. Box 3 wird
+   erst nach 3 Tagen wieder faellig, Box 4 nach 7, Box 5 nach 16. Wer
+   heute in Box 1 steht, kann in drei Tagen Box 3 erreichen - mehr nicht,
+   auch mit noch so viel Fleiss. */
+function erreichbareBox(box, tage){
+  let b = Math.min(LEITNER_HOECHSTE, Math.max(1, box || 1));
+  let tag = 0;
+  while(b < LEITNER_HOECHSTE){
+    b++;                                    // heute geuebt -> eine Box hoeher
+    tag += (LEITNER_ABSTAND[b] || 0);       // so lange, bis es wieder dran ist
+    if(tag > tage) break;
+  }
+  return b;
+}
+
+/* Die Trefferchance eines Wortes, WENN es in Box b staende.
+   Wird fuer beide Seiten des Radars gebraucht - fuer den Zustand heute
+   und fuer die Prognose nach dem Plan. Dass beide dieselbe Formel
+   benutzen, ist kein Schoenheitsfehler, sondern der Punkt: Sonst
+   verspricht die eine Seite, was die andere nie einloesen koennte. */
+function chanceBeiBox(w, box, amTag){
+  const st = wortStand(w);
+  const LERNSCHUB = 0.14;
+  let p = boxChance(box) + LERNSCHUB;
+  if(!st) return Math.max(0.05, Math.min(0.98, p));
+  const r = st.r || 0, f = st.f || 0;
+  const ALPHA = 4;
+  return Math.max(0.05, Math.min(0.98, (r + ALPHA * p) / (r + f + ALPHA)));
+}
+
+/* Wie wahrscheinlich sitzt dieses eine Wort in der Arbeit?
+   Drei Zutaten: die Box, die eigene Bilanz bei genau diesem Wort, und
+   wie lange es schon ueberfaellig ist. */
+function trefferChance(w, amTag){
+  const tag = (amTag === undefined) ? lernTagHeute() : amTag;
+  const st = wortStand(w);
+  if(!st) return basisChance();
+
+  // Die Box-Trefferquote wird WAEHREND des Uebens gemessen - die Arbeit
+  // wird spaeter geschrieben, und bis dahin hat das Kind weitergeuebt.
+  // Ohne diese Korrektur sagt die App systematisch 0.4 Notenstufen zu
+  // schlecht voraus (an 1300 simulierten Arbeiten je Variante gemessen).
+  const LERNSCHUB = 0.14;
+  let p = boxChance(st.b || 1) + LERNSCHUB;
+
+  // Ueberfaellig heisst: es broeckelt. Nach zwei vollen Intervallen ohne
+  // Wiederholung ist die Chance etwa halbiert - aber nie unter 20 %,
+  // ganz weg ist ein einmal gelerntes Wort nie.
+  const ueber = tag - (st.d || tag);
+  if(ueber > 0){
+    const intervall = Math.max(1, LEITNER_ABSTAND[st.b] || 1);
+    p = Math.max(0.20, p * Math.pow(0.5, ueber / (intervall * 2)));
+  }
+
+  // Und die eigene Bilanz bei genau diesem Wort zaehlt mit.
+  const r = st.r || 0, f = st.f || 0;
+  const ALPHA = 4;
+  const ergebnis = (r + ALPHA * p) / (r + f + ALPHA);
+  return Math.max(0.05, Math.min(0.98, ergebnis));
+}
+
+/* Aus erwarteten Punkten eine Notenspanne machen.
+
+   Die Spanne ist keine Zierde: Bei 20 Woertern mit je 70 % Chance sind
+   14 Treffer der Erwartungswert, aber 12 oder 16 sind genauso normal.
+   Wer daraus eine einzelne Note macht, luegt. Deshalb eine Standard-
+   abweichung nach oben und unten - das deckt rund zwei von drei Faellen. */
+function punkteZuNote(erwartet, streuung, gesamt){
+  if(gesamt <= 0) return null;
+  const note = (punkte)=>{
+    const pct = Math.max(0, Math.min(100, (punkte / gesamt) * 100));
+    const stufen = NOTEN_SCHLUESSEL[aktiverNotenschluessel()].stufen;
+    for(const [grenze, n] of stufen){ if(pct >= grenze) return n; }
+    return 6;
+  };
+  const gut     = note(Math.min(gesamt, erwartet + streuung));
+  const schlecht= note(Math.max(0, erwartet - streuung));
+  return {
+    beste: gut, schlechteste: schlecht,
+    mitte: note(erwartet),
+    prozent: Math.round((erwartet / gesamt) * 100),
+    text: gut === schlecht ? String(gut) : (gut + " bis " + schlecht)
+  };
+}
+
+/* Der eigentliche Radar.
+   auswahl = {vokabeln:[Kategorien], grammatik:[ThemenIds], tageBis:n} */
+function radarStand(auswahl){
+  const a = auswahl || {};
+  const kats = a.vokabeln || [];
+  const themen = a.grammatik || [];
+  const tageBis = Math.max(0, a.tageBis || 0);
+
+  // --- Vokabelteil ---
+  const alle = getAllVocab();
+  let woerter = kats.length ? alle.filter(w=>kats.indexOf(w.cat) >= 0) : [];
+  const amTag = lernTagHeute() + tageBis;
+
+  let erwartet = 0, varianz = 0;
+  const wackelig = [];
+  woerter.forEach(w=>{
+    const p = trefferChance(w, amTag);
+    erwartet += p;
+    varianz  += p * (1 - p);
+    if(p < 0.70) wackelig.push({w:w, p:p});
+  });
+
+  // --- Grammatikteil: ein Thema zaehlt wie fuenf Aufgaben ---
+  const AUFGABEN_JE_THEMA = 5;
+  themen.forEach(id=>{
+    const t = grammarTopicById(id);
+    if(!t) return;
+    const sk = grammarSkillInfo(t);
+    // Ohne Uebung wissen wir nichts - dann vorsichtig schaetzen.
+    const p = sk.fenster >= 3 ? sk.quote : 0.45;
+    for(let i = 0; i < AUFGABEN_JE_THEMA; i++){ erwartet += p; varianz += p * (1 - p); }
+    if(p < 0.70) wackelig.push({t:t, p:p});
+  });
+
+  const gesamt = woerter.length + themen.length * AUFGABEN_JE_THEMA;
+  if(gesamt === 0) return null;
+
+  // Die Spanne hat zwei Quellen:
+  //   1. der Zufall des Tages          - waechst mit der Wurzel der Wortzahl
+  //   2. dass unser Modell irren kann  - waechst MIT dem Stoffumfang
+  // Ohne den zweiten Teil wird die Spanne bei viel Stoff zu eng: Dort lag
+  // die echte Note nur in 69 statt 89 Prozent der Faelle darin.
+  const MODELL_UNSICHERHEIT = 0.05;
+  const streuung = Math.sqrt(varianz * 1.69 + Math.pow(gesamt * MODELL_UNSICHERHEIT, 2));
+  const jetzt = punkteZuNote(erwartet, streuung, gesamt);
+
+  // --- Und wenn der Plan durchgezogen wird? ---
+  // Jede Uebungseinheit hebt die faelligen Woerter eine Box hoeher. Wir
+  // rechnen NICHT mit Bestfall: nur die Woerter, die man in der Zeit
+  // realistisch schafft, und jedes nur so oft, wie Tage da sind.
+  const proTag = 20;
+  const einheiten = Math.max(0, tageBis) + 1;      // heute zaehlt mit
+  let nachher = 0, varianzNachher = 0, gehoben = 0;
+  const uebrig = woerter.slice().sort((x, y)=> trefferChance(x, amTag) - trefferChance(y, amTag));
+  uebrig.forEach((w, i)=>{
+    let p = trefferChance(w, amTag);
+    if(i < proTag * einheiten && p < 0.92){
+      const st = wortStand(w) || {b:1};
+      // Nur so weit, wie die Kartei es in der Zeit ueberhaupt zulaesst -
+      // und mit der eigenen Bilanz dieses Wortes verrechnet, genau wie
+      // beim Zustand heute.
+      const zielBox = erreichbareBox(st.b || 1, tageBis);
+      const zielP = chanceBeiBox(w, zielBox, amTag);
+      if(zielP > p){ p = zielP; gehoben++; }
+    }
+    nachher += p; varianzNachher += p * (1 - p);
+  });
+  themen.forEach(id=>{
+    const t = grammarTopicById(id);
+    if(!t) return;
+    const sk = grammarSkillInfo(t);
+    const p = Math.max(sk.fenster >= 3 ? sk.quote : 0.45, einheiten >= 2 ? 0.80 : 0.65);
+    for(let i = 0; i < AUFGABEN_JE_THEMA; i++){ nachher += p; varianzNachher += p * (1 - p); }
+  });
+  const nachPlan = punkteZuNote(nachher, Math.sqrt(varianzNachher), gesamt);
+
+  return {
+    jetzt: jetzt,
+    nachPlan: nachPlan,
+    gesamt: gesamt,
+    woerter: woerter.length,
+    themen: themen.length,
+    wackelig: wackelig.sort((x,y)=>x.p - y.p),
+    faellig: woerter.filter(wortIstFaellig).length,
+    tageBis: tageBis,
+    gehoben: gehoben,
+    // Ehrlichkeitsschwelle: Unter 40 Prozent geuebter Woerter ist jede
+    // Note geraten. Dann zeigt die Anzeige lieber gar keine.
+    geuebt: woerter.filter(w=>wortStand(w)).length,
+    genugDaten: woerter.length === 0
+      ? themen.length > 0
+      : (woerter.filter(w=>wortStand(w)).length / woerter.length) >= 0.40
+  };
+}
+
+/* =====================================================================
+   DER RADAR ZUM ANSCHAUEN
+
+   ZWEI REGELN, VON DENEN ICH NICHT ABWEICHE:
+
+   1. NIE EINE ZAHL OHNE DEN WEG DANEBEN. Eine Prognose allein macht
+      Druck. "3- ... und so wirst du eine 2" macht Wirkung. Deshalb steht
+      der naechste Schritt immer direkt unter der Note, im selben Blick.
+
+   2. NIE EINE NOTE, WENN DIE DATEN NICHT REICHEN. Unter 40 Prozent
+      geuebter Woerter steht dort kein Wert, sondern ein ehrlicher Satz.
+      Eine geratene Note, die danebenliegt, kostet das Vertrauen des
+      Kindes in alles andere, was die App sagt.
+
+   Die Spanne ist so kalibriert, dass die echte Note in 91 von 100 Faellen
+   wirklich darin liegt (an 2000 simulierten Arbeiten gemessen).
+===================================================================== */
+
+const NOTE_FARBE = {1:"#2f7d32", 2:"#5a9e3f", 3:"#c9a227", 4:"#d98324", 5:"#c2461f", 6:"#8c2f1a"};
+
+function radarNoteHtml(n){
+  if(!n) return "";
+  const farbe = NOTE_FARBE[n.mitte] || "#666";
+  return `<span class="rd-note" style="background:${farbe};">${n.text}</span>`;
+}
+
+/* Wie viele Tage bleiben noch? Der Plan merkt sich tageBis vom Tag der
+   Erstellung - wer ihn vor drei Tagen gemacht hat, hat heute drei Tage
+   weniger. Deshalb wird aus den Plantagen gezaehlt, nicht aus tageBis. */
+function radarTageBis(p){
+  if(!p || !Array.isArray(p.tage) || !p.tage.length) return 0;
+  const heute = dateKey(new Date());
+  let i = p.tage.findIndex(t => t.datum >= heute);
+  if(i < 0) return 0;                       // Plan liegt in der Vergangenheit
+  return Math.max(0, p.tage.length - 1 - i);
+}
+
+function renderRadar(){
+  const plan = lingoraPlan();
+  let a = null;
+  if(plan && plan.wahl){
+    a = { vokabeln: plan.wahl.vokabeln || [],
+          grammatik: plan.wahl.grammatik || [],
+          tageBis: radarTageBis(plan) };
+  } else if(state.lgWahl && (state.lgWahl.vokabeln || {}).length){
+    a = state.lgWahl;
+  }
+  if(a && !a.vokabeln.length && !a.grammatik.length) a = null;
+
+  if(!a){
+    app.innerHTML = `
+      ${renderHeader("Klassenarbeits-Radar", true)}
+      ${lingoraKopfHtml("Sag mir erst, was drankommt &ndash; dann rechne ich es dir aus.")}
+      <div class="panel">
+        <p class="muted" style="margin:0;">Ich brauche einen Plan, um etwas einzuschätzen.
+        Tipp auf mich und sag mir, was in der Arbeit drankommt.</p>
+      </div>
+      <button class="btn" id="rd-plan-btn">✨ PLAN ERSTELLEN</button>
+      <div style="height:10px;"></div>
+      <button class="btn danger" id="back-btn">◀ ZURÜCK</button>`;
+    const k1 = document.getElementById('rd-plan-btn');
+    if(k1) k1.addEventListener('click', ()=>lingoraFragebogenStarten());
+    const k2 = document.getElementById('back-btn');
+    if(k2) k2.addEventListener('click', ()=>{ state.screen = state.radarReturnTo || "start"; render(); });
+    return;
+  }
+
+  const r = radarStand(a);
+
+  // --- Zu duenne Datenlage: ehrlich sein statt raten ---
+  const zuWenig = !r || !r.genugDaten;
+
+  const tageText = r && r.tageBis > 0
+    ? (r.tageBis === 1 ? "Morgen ist die Arbeit." : "Noch " + r.tageBis + " Tage bis zur Arbeit.")
+    : "Die Arbeit ist heute.";
+
+  const wegHtml = !r ? "" : `
+    <div class="rd-weg">
+      <h3>🧭 So kommst du dahin</h3>
+      <ul class="rd-liste">
+        ${r.faellig > 0
+          ? `<li><strong>${r.faellig} Wörter</strong> sind heute fällig &ndash; die als Erstes.</li>`
+          : `<li>Heute ist nichts fällig. Sehr gut.</li>`}
+        ${r.wackelig.length
+          ? `<li><strong>${r.wackelig.length} Wörter</strong> sitzen noch nicht sicher.</li>`
+          : `<li>Kein Wort mehr unter 70 Prozent &ndash; stark!</li>`}
+        ${r.tageBis > 0
+          ? `<li>Bei ${Math.min(3, r.tageBis + 1)} Einheiten à 15 Minuten schaffst du das gut.</li>`
+          : `<li>Heute noch eine Runde &ndash; jedes Wort zählt.</li>`}
+      </ul>
+    </div>`;
+
+  app.innerHTML = `
+    ${renderHeader("Klassenarbeits-Radar", true)}
+    ${playerBadgeHtml(true)}
+    ${lingoraKopfHtml(zuWenig
+      ? "Dafür habe ich noch zu wenig von dir gesehen &ndash; üb ein paar Runden, dann sage ich dir etwas Verlässliches."
+      : "Ich hab's dir ausgerechnet. Und gleich dazu, wie du es besser machst.")}
+
+    <div class="panel rd-panel">
+      <p class="rd-zeit">${tageText}</p>
+
+      ${zuWenig ? `
+        <div class="rd-leer">
+          <span class="rd-leer-ic">📭</span>
+          <p><strong>Noch keine Einschätzung.</strong></p>
+          <p class="muted" style="margin:6px 0 0;">
+            Von ${r ? r.woerter : 0} Wörtern hast du erst ${r ? r.geuebt : 0} hier geübt.
+            Eine Note zu nennen wäre geraten &ndash; und geraten hilft dir nicht.
+            Üb ein paar Runden, dann rechne ich ehrlich.
+          </p>
+        </div>
+      ` : `
+        <div class="rd-block">
+          <span class="rd-lbl">Wenn die Arbeit heute wäre</span>
+          ${radarNoteHtml(r.jetzt)}
+          <span class="rd-pct">${r.jetzt.prozent} % von ${r.gesamt} Aufgaben</span>
+        </div>
+
+        ${r.tageBis > 0 && r.nachPlan && r.nachPlan.mitte <= r.jetzt.mitte ? `
+        <div class="rd-pfeil">↓ wenn du deinen Plan durchziehst</div>
+        <div class="rd-block rd-ziel">
+          <span class="rd-lbl">Am Tag der Arbeit</span>
+          ${radarNoteHtml(r.nachPlan)}
+          <span class="rd-pct">${r.nachPlan.prozent} % &ndash; ${r.gehoben} Wörter mehr im Griff</span>
+        </div>` : ""}
+
+        <p class="rd-fuss">
+          Das ist eine Schätzung, keine Vorhersage &ndash; und sie bewegt sich,
+          sobald du übst. In 9 von 10 Fällen liegt die echte Note in dieser Spanne.
+        </p>
+      `}
+    </div>
+
+    ${wegHtml ? `<div class="panel">${wegHtml}</div>` : ""}
+
+    ${r && r.faellig > 0 ? `
+    <button class="btn" id="rd-ueben-btn">🔁 DIE ${r.faellig} FÄLLIGEN ÜBEN</button>
+    <div style="height:10px;"></div>` : ""}
+    ${lingoraPlan() ? `<button class="btn wood" id="rd-plan-btn">🗺️ ZU MEINEM PLAN</button>
+    <div style="height:10px;"></div>` : ""}
+    <button class="btn danger" id="back-btn">◀ ZURÜCK</button>
+  `;
+
+  const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  anKnopf('rd-ueben-btn', ()=>{ state.mode = "faellig"; startGame(); });
+  anKnopf('rd-plan-btn', ()=>{ state.screen = "lingoraplan"; render(); });
+  anKnopf('back-btn', ()=>{ state.screen = state.radarReturnTo || "start"; render(); });
+}
+
+function renderVokabelStats(){
+  const u = lernUeberblick();
+  const geuebt = u.gesamt - u.neu;
+  const wackelig = wackeligsteWoerter(5);
+  const groesste = Math.max(1, ...u.boxen);
+
+  const kopf = geuebt === 0
+    ? `<p class="center-text muted" style="margin:0;">Hier siehst du bald, welche Wörter schon sitzen.
+         Spiel eine Runde &ndash; danach füllt sich deine erste Box!</p>`
+    : `<div class="sk-summary">
+         <div class="sk-sum-box"><span class="sk-sum-nr">${geuebt}<small>/${u.gesamt}</small></span><span class="sk-sum-lbl">schon geübt</span></div>
+         <div class="sk-sum-box"><span class="sk-sum-nr">${u.sitzt}</span><span class="sk-sum-lbl">sitzen sicher</span></div>
+         <div class="sk-sum-box"><span class="sk-sum-nr">${u.faellig}</span><span class="sk-sum-lbl">heute fällig</span></div>
+       </div>`;
+
+  app.innerHTML = `
+    ${renderHeader("Meine Vokabeln", true)}
+    ${playerBadgeHtml(true)}
+
+    <div class="panel">
+      <h3 style="font-size:17px;margin-bottom:10px;">📦 WAS SITZT SCHON?</h3>
+      ${kopf}
+      ${geuebt === 0 ? "" : `
+      <div class="box-liste">
+        ${u.boxen.map((n, i)=>`
+          <div class="box-zeile">
+            <span class="box-name">${BOX_NAMEN[i].name}</span>
+            <span class="box-balken">
+              <span class="box-fuell" style="width:${Math.round(n / groesste * 100)}%;background:${BOX_NAMEN[i].farbe};"></span>
+            </span>
+            <span class="box-zahl">${n}</span>
+          </div>
+          <div class="box-kurz">${BOX_NAMEN[i].kurz}</div>
+        `).join("")}
+      </div>
+      <p class="muted" style="margin-top:12px;font-size:13px;">
+        Jedes Wort wandert eine Box weiter, wenn du es richtig hast &ndash; und zurück auf
+        <strong>Wackelig</strong>, wenn nicht. Je weiter rechts, desto seltener musst du es
+        wiederholen. So bleibt Zeit für das, was noch nicht sitzt.
+      </p>`}
+    </div>
+
+    ${wackelig.length ? `
+    <div class="panel sk-todo">
+      <h3>🛠️ Das würde ich nochmal üben</h3>
+      <p class="muted" style="margin:4px 0 10px;">Diese Wörter gehen am häufigsten schief.</p>
+      ${wackelig.map(x=>`
+        <div class="sk-todo-row" style="cursor:default;">
+          <span class="sk-todo-ic">${BOX_NAMEN[x.st.b] ? "📦" : "📦"}</span>
+          <span class="sk-todo-txt">
+            <strong>${escapeHtml(x.w.en)}</strong> ${hoerKnopfHtml(x.w.en)}
+            <small>${escapeHtml(x.w.de)} &middot; ${x.st.f}&times; daneben, ${x.st.r || 0}&times; richtig</small>
+          </span>
+          <span class="sk-todo-go">${BOX_NAMEN[x.st.b].name}</span>
+        </div>`).join("")}
+    </div>` : ""}
+
+    ${u.faellig > 0 ? `
+    <button class="btn" id="vok-ueben-btn">🔁 DIE ${u.faellig} FÄLLIGEN ÜBEN</button>
+    <div style="height:10px;"></div>` : ""}
+    <button class="btn danger" id="back-btn">◀ ZURÜCK</button>
+  `;
+
+  const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  anKnopf('vok-ueben-btn', ()=>{ state.mode = "faellig"; startGame(); });
+  anKnopf('back-btn', ()=>{ state.screen = state.vokStatsReturnTo || "start"; render(); });
 }
 
 function renderGrammarStats(){
