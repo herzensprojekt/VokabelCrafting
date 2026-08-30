@@ -1983,7 +1983,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "31.2 – Aufgeräumte Startseite";
+const APP_VERSION = "32.1 – Vorlesen neu gedacht";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -5585,26 +5585,60 @@ function sprachVorlesen(text, fertig, sanft){
       s.speak(u);
     }catch(e){ abschluss(false); return; }
 
-    // Der Wachhund - nur fuer genau diesen Versuch. Der erste bekommt
-    // eine ganze Sekunde: Auf einem Handy muss die Sprachausgabe manchmal
-    // erst hochfahren, und ein zu frueher Abbruch macht genau das kaputt,
-    // was er retten soll.
-    setTimeout(()=>{
+    /* Der Wachhund.
+
+       WICHTIG: Er darf sich NICHT allein auf onstart verlassen. Manche
+       Motoren melden dieses Ereignis gar nicht oder stark verzoegert -
+       ein Wachhund, der dann abbricht, wuergt eine Ausgabe ab, die gerade
+       spricht. Deshalb wird zusaetzlich das System selbst gefragt.
+
+       Drei Faelle nach der Wartezeit:
+         onstart kam            -> alles gut, nichts tun
+         System sagt "spricht"  -> weiter abwarten (bis zu 6 Sekunden)
+         System sagt nichts     -> wirklich nichts passiert, neu ansetzen  */
+    let letztesSprechen = 0;
+    const nachsehen = (seit)=>{
+      // Hat das System zwischendurch gesprochen und ist jetzt fertig,
+      // ohne ein onend zu melden? Dann war es erfolgreich.
+      if(!gestartet && !erledigt && letztesSprechen > 0){
+        let spricht2 = false;
+        try{ spricht2 = !!s.speaking; }catch(e){}
+        if(!spricht2){ sprachBefundDaten.start = true; abschluss(true); return; }
+      }
       if(gestartet || erledigt || versuche !== meinVersuch) return;
+      let spricht = false;
+      try{ spricht = !!s.speaking; }catch(e){}
+      if(spricht){
+        letztesSprechen = seit;
+        if(seit >= 2500){
+          // Zweieinhalb Sekunden "spricht" fuer ein einzelnes Wort: Das
+          // ist laengst gesprochen. Wer das jetzt noch behauptet, ist
+          // eingefroren. Laenger zu warten hilft niemandem - drei
+          // Versuche a sechs Sekunden waeren achtzehn Sekunden Schweigen.
+          nochmal();
+        } else {
+          setTimeout(()=>nachsehen(seit + 500), 500);
+        }
+        return;
+      }
       nochmal();
-    }, meinVersuch === 1 ? 1000 : 700);
+    };
+    setTimeout(()=>nachsehen(meinVersuch === 1 ? 1000 : 700),
+               meinVersuch === 1 ? 1000 : 700);
   };
 
   // WICHTIG - hier lag der Fehler: Ein speak() direkt nach einem cancel()
   // wird in Chrome verschluckt. Haengt die Warteschlange erst einmal, war
   // damit JEDER weitere Versuch zum Scheitern verurteilt: einmal kaputt,
   // immer kaputt. Deshalb wird nach dem Aufraeumen kurz gewartet.
-  let musstePutzen = false;
-  try{
-    if(s.speaking || s.pending){ s.cancel(); musstePutzen = true; }
-  }catch(e){}
-  if(musstePutzen) setTimeout(losschicken, 180);
-  else losschicken();
+  // IMMER aufraeumen, nicht nur wenn etwas laeuft. Die Dokumentation zum
+  // Einfrieren der Sprachausgabe ist da eindeutig: Ein cancel() vor dem
+  // speak() loest die Blockade zuverlaessig. Ich hatte das frueher auf
+  // "nur bei Bedarf" eingeschraenkt und mir damit genau dieses Mittel
+  // genommen. Die 200 ms danach verhindern, dass das speak() im cancel()
+  // untergeht.
+  try{ s.cancel(); }catch(e){}
+  setTimeout(losschicken, 200);
   return true;
 }
 
