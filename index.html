@@ -381,6 +381,22 @@
   .werkzeug-leiste{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
   .werkzeug-leiste .btn{ margin:0; }
 
+  .stimmen-schritte{
+    margin:0 0 12px; padding-left:20px;
+    font-family:var(--font); font-size:13.5px; line-height:1.6;
+  }
+  .stimmen-warnung{
+    margin:0 0 12px; padding:10px 12px; border-radius:12px;
+    background:rgba(217,131,36,.12); font-family:var(--font);
+    font-size:12.5px; line-height:1.5;
+  }
+  .stimmen-feld{
+    width:100%; font-family:ui-monospace, Menlo, Consolas, monospace;
+    font-size:11px; line-height:1.4; padding:10px; border-radius:12px;
+    border:1px solid rgba(0,0,0,.15); background:#f7f7f5; color:#333;
+    resize:vertical; white-space:pre;
+  }
+
   /* ---- Lautsprecher ---- */
   .hoer-knopf{
     display:inline-flex; align-items:center; justify-content:center;
@@ -466,6 +482,10 @@
   .befund-liste{ margin:0; padding-left:18px; font-size:12.5px; line-height:1.5; }
   .befund-liste li{ margin-bottom:6px; }
 
+  .asp-quelle{
+    font-family:var(--font); font-size:11px; line-height:1.4;
+    opacity:.65; margin:8px 2px 0; text-align:center;
+  }
   .asp-datenschutz{
     font-family:var(--font); font-size:11.5px; line-height:1.4;
     opacity:.7; margin:8px 2px 0; text-align:center;
@@ -1983,7 +2003,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "32.1 – Vorlesen neu gedacht";
+const APP_VERSION = "34.1 – Echte Aussprache";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -5478,6 +5498,323 @@ function sprachStimmeIstLokal(){
 
 function sprachHatEnglischeStimme(){ return !!sprachStimmeEnglisch(); }
 
+/* ---------------------------------------------------------------
+   EIGENE SPRACHDATEIEN
+
+   Aus jedem englischen Wort wird derselbe Dateiname gebildet wie im
+   Skript stimmen-bauen.sh: kleingeschrieben, Klammern weg, alles ausser
+   Buchstaben und Ziffern zu Bindestrichen. "at the moment" wird also zu
+   "at-the-moment.m4a".
+
+   WICHTIG: Diese Regel MUSS mit dem Skript uebereinstimmen. Weicht sie
+   ab, findet die App keine einzige Datei - und niemand merkt warum.
+   --------------------------------------------------------------- */
+const TON_ORDNER = "stimmen/";
+/* Was haben wir schon gesucht? Verhindert, dass fuer jedes Wort immer
+   wieder vergeblich angefragt wird. */
+const tonBekannt = {};
+
+function tonName(englisch){
+  let roh = cleanEn(String(englisch || "")).toLowerCase();
+  // Akzente in Grundbuchstaben umwandeln: "café" wurde sonst zu "caf",
+  // und zwei aehnliche Woerter konnten sich gegenseitig ueberschreiben.
+  try{ roh = roh.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }catch(e){}
+  roh = roh.replace(/ß/g, "ss").replace(/æ/g, "ae").replace(/ø/g, "o");
+  const name = roh.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return name || "";
+}
+
+/* Spielt die Datei zum Wort ab. fertig(true) wenn sie geklungen hat,
+   fertig(false) wenn es sie nicht gibt oder sie nicht laeuft. */
+function tonAbspielen(englisch, fertig){
+  const name = tonName(englisch);
+  if(!name || tonBekannt[name] === false){ if(fertig) fertig(false); return false; }
+  try{
+    const a = new Audio(TON_ORDNER + name + ".m4a");
+    a.preload = "auto";
+    let erledigt = false;
+    const schluss = (ok)=>{
+      if(erledigt) return;
+      erledigt = true;
+      tonBekannt[name] = ok;
+      if(fertig) fertig(ok);
+    };
+    a.onended = ()=>schluss(true);
+    a.onerror = ()=>schluss(false);
+    const p = a.play();
+    if(p && p.catch) p.catch(()=>schluss(false));
+    // Kommt binnen zwei Sekunden weder Ende noch Fehler, laeuft es
+    // vermutlich doch - dann nicht ewig warten.
+    setTimeout(()=>{ if(!erledigt && a.currentTime > 0) schluss(true); }, 2000);
+    setTimeout(()=>schluss(false), 6000);
+    return true;
+  }catch(e){ if(fertig) fertig(false); return false; }
+}
+
+/* Baut das Skript, das die Sprachdateien erzeugt - aus dem Wortschatz,
+   den es JETZT gibt. Eingebaute und eigene Vokabeln zusammen.
+
+   Der Dateiname kommt aus tonName() - derselben Funktion, mit der die
+   App die Dateien spaeter sucht. Zwei getrennte Regeln waeren die
+   sicherste Art, dass es eines Tages still nicht mehr passt. */
+/* Woerter, die denselben Dateinamen ergaeben. Lieber sichtbar machen
+   als still das eine mit dem anderen ueberschreiben. */
+function stimmenDoppelt(){
+  const nach = {};
+  getAllVocab().forEach(w=>{
+    const n = tonName(w.en);
+    const t = cleanEn(String(w.en || "")).trim();
+    if(!n || !t) return;
+    if(!nach[n]) nach[n] = [];
+    if(nach[n].indexOf(t) < 0) nach[n].push(t);
+  });
+  return Object.keys(nach).filter(n=>nach[n].length > 1).map(n=>({name:n, woerter:nach[n]}));
+}
+
+function stimmenSkript(){
+  const gesehen = {};
+  const zeilen = [];
+  getAllVocab().forEach(w=>{
+    const name = tonName(w.en);
+    const text = cleanEn(String(w.en || "")).trim();
+    if(!name || !text || gesehen[name]) return;
+    gesehen[name] = true;
+    zeilen.push('bauen "' + name + '" "' + text.replace(/"/g, '\\"') + '"');
+  });
+  return [
+    '#!/bin/bash',
+    '# LingoCrafter - Sprachdateien erzeugen (' + zeilen.length + ' Wörter)',
+    '# Erzeugt aus jeder Vokabel eine kleine Audiodatei mit einer Stimme,',
+    '# die auf diesem Mac schon installiert ist. Danach den entstandenen',
+    '# Ordner "stimmen" zu GitHub hochladen, neben die index.html.',
+    '',
+    'set -e',
+    'STIMME="Daniel"       # britisches Englisch, in macOS enthalten',
+    'TEMPO=150',
+    'ORDNER="stimmen"',
+    '',
+    'if ! say -v "?" | grep -q "^$STIMME "; then',
+    '  echo "Stimme $STIMME fehlt. Verfügbar:"; say -v "?" | grep -E "en_(GB|US)"; exit 1',
+    'fi',
+    'mkdir -p "$ORDNER"',
+    'bauen() {',
+    '  say -v "$STIMME" -r $TEMPO -o /tmp/lc_ton.aiff "$2"',
+    '  afconvert -f m4af -d aac -b 48000 /tmp/lc_ton.aiff "$ORDNER/$1.m4a" >/dev/null',
+    '  echo "   $1.m4a"',
+    '}',
+    ''
+  ].concat(zeilen).concat([
+    '',
+    'rm -f /tmp/lc_ton.aiff',
+    'echo',
+    'echo "Fertig: ' + zeilen.length + ' Dateien im Ordner $ORDNER"'
+  ]).join("\n");
+}
+
+function renderStimmenSkript(){
+  const skript = stimmenSkript();
+  const anzahl = (skript.match(/^bauen /gm) || []).length;
+  app.innerHTML = `
+    ${renderHeader("Sprachdateien", true)}
+    <div class="panel">
+      <h3 style="font-size:16px;margin:0 0 6px;">🔊 Sprachdateien erzeugen</h3>
+      <p class="muted" style="margin:0 0 10px;font-size:13px;">
+        Damit das Vorlesen auf <strong>jedem</strong> Gerät klingt &ndash; auch dort, wo die
+        eingebaute Sprachausgabe streikt. Enthält alle ${anzahl} Wörter, auch die selbst
+        hinzugefügten.
+      </p>
+      ${(function(){
+        const d = stimmenDoppelt();
+        if(!d.length) return "";
+        return `<div class="stimmen-warnung">
+          <strong>⚠️ ${d.length} ${d.length === 1 ? "Wort ergibt" : "Wörter ergeben"} denselben Dateinamen.</strong>
+          Davon wird jeweils nur eine Aufnahme erzeugt &ndash; die anderen klingen dann gleich.
+          <ul style="margin:6px 0 0;padding-left:18px;">
+            ${d.slice(0,5).map(x=>`<li>${escapeHtml(x.woerter.join("  /  "))}</li>`).join("")}
+          </ul>
+        </div>`;
+      })()}
+      <ol class="stimmen-schritte">
+        <li>Unten auf <strong>Kopieren</strong> tippen.</li>
+        <li>Am Mac das Programm <em>Terminal</em> öffnen.</li>
+        <li>In einen leeren Ordner wechseln, einfügen, Eingabetaste.</li>
+        <li>Den entstandenen Ordner <strong>stimmen</strong> zu GitHub hochladen &ndash;
+            auf dieselbe Ebene wie <em>index.html</em>.</li>
+      </ol>
+      <textarea id="stimmen-text" class="stimmen-feld" readonly rows="8">${escapeHtml(skript)}</textarea>
+      <button class="btn" id="stimmen-kopieren" style="margin-top:10px;">📋 KOPIEREN</button>
+      <p class="muted" id="stimmen-status" style="margin:8px 0 0;font-size:12.5px;"></p>
+    </div>
+    <button class="btn danger" id="back-btn">◀ ZURÜCK</button>
+  `;
+  const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  anKnopf('stimmen-kopieren', async ()=>{
+    const feld = document.getElementById('stimmen-text');
+    const status = document.getElementById('stimmen-status');
+    try{
+      await navigator.clipboard.writeText(feld.value);
+      status.textContent = "✅ Kopiert. Jetzt im Terminal einfügen.";
+    }catch(e){
+      // Ohne Zwischenablage-Recht: wenigstens alles markieren.
+      feld.removeAttribute("readonly"); feld.select(); feld.setSelectionRange(0, 999999);
+      status.textContent = "Alles markiert &ndash; bitte von Hand kopieren.";
+    }
+  });
+  anKnopf('back-btn', ()=>{ state.screen = "parents"; render(); });
+}
+
+
+/* =====================================================================
+   ECHTE MENSCHLICHE AUSSPRACHE VON WIKIMEDIA COMMONS
+
+   Die Idee kam von Markus, und sie hat einen Vorteil, den keine andere
+   Loesung hat: KEIN Schluessel, KEIN Skript, KEIN Terminal. Wikimedia
+   erlaubt Anfragen direkt aus dem Browser - im Gegensatz zu ElevenLabs,
+   das solche Anfragen abweist (nachgemessen).
+
+   WAS ICH VORHER GEPRUEFT HABE:
+
+     Abdeckung   17 von 26 Stichprobenwoertern gefunden. Die Luecken sind
+                 fast alle Wendungen ("at the moment", "to clear out").
+                 Deshalb ist das hier eine Ergaenzung, kein Ersatz: Wo
+                 nichts da ist, uebernimmt wie bisher die Geraetestimme.
+
+     Format      Commons liefert .ogg - das spielt aeltere Safari nicht.
+                 Es gibt aber MP3-Fassungen ueber dieselbe Schnittstelle,
+                 und die werden bevorzugt. Sonst waere es auf Nokies
+                 iPhone still geblieben, ohne dass jemand wuesste warum.
+
+     Lizenz      CC BY-SA 3.0, CC BY 3.0, teils gemeinfrei. Namensnennung
+                 ist Pflicht - Sprecher und Lizenz werden deshalb
+                 mitgespeichert und angezeigt.
+
+   WARUM IM VORAUS GESUCHT WIRD: Eine Tonausgabe braucht eine
+   Fingerbewegung. Wuerden wir erst beim Tippen im Netz nachfragen, waere
+   die Erlaubnis womoeglich schon abgelaufen, bis die Antwort da ist.
+   Deshalb wird beim Zeichnen eines Bildschirms schon nachgeschlagen und
+   gemerkt - beim Tippen liegt die Adresse dann bereit.
+===================================================================== */
+
+const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
+const COMMONS_SPEICHER = "lc-commons-v1";
+let commonsCache = null;
+
+function commonsLaden(){
+  if(commonsCache) return commonsCache;
+  try{ commonsCache = JSON.parse(localStorage.getItem(COMMONS_SPEICHER) || "{}"); }
+  catch(e){ commonsCache = {}; }
+  return commonsCache;
+}
+function commonsSichern(){
+  try{ localStorage.setItem(COMMONS_SPEICHER, JSON.stringify(commonsCache || {})); }catch(e){}
+}
+
+/* Kandidaten fuer den Dateinamen. Britisch zuerst - in der Schule wird
+   britisches Englisch unterrichtet. */
+function commonsKandidaten(englisch){
+  const roh = cleanEn(String(englisch || "")).trim();
+  if(!roh || /\s/.test(roh.replace(/^to\s+/i, ""))) {
+    // Mehrere Woerter: Commons hat dazu praktisch nichts. Ausser bei
+    // "to gehen" - da faellt das "to" weg und es bleibt ein Wort uebrig.
+    const ohneTo = roh.replace(/^to\s+/i, "");
+    if(/\s/.test(ohneTo)) return [];
+    return commonsKandidaten(ohneTo);
+  }
+  const k = roh.replace(/^to\s+/i, "");
+  const g = k.charAt(0).toUpperCase() + k.slice(1);
+  return ["File:En-uk-" + k + ".ogg", "File:En-us-" + k + ".ogg",
+          "File:En-uk-" + g + ".ogg", "File:En-us-" + g + ".ogg",
+          "File:En-au-" + k + ".ogg"];
+}
+
+/* Sucht die Aufnahme und merkt sie sich. Ruft fertig(eintrag|null). */
+function commonsSuchen(englisch, fertig){
+  const name = tonName(englisch);
+  const cache = commonsLaden();
+  if(!name){ if(fertig) fertig(null); return; }
+  if(cache[name] !== undefined){ if(fertig) fertig(cache[name]); return; }
+
+  const titel = commonsKandidaten(englisch);
+  if(!titel.length){ cache[name] = null; commonsSichern(); if(fertig) fertig(null); return; }
+
+  const url = COMMONS_API + "?action=query&format=json&origin=*"
+            + "&prop=videoinfo&viprop=url|derivatives|extmetadata"
+            + "&titles=" + encodeURIComponent(titel.join("|"));
+  fetch(url).then(r=>r.json()).then(j=>{
+    const seiten = (j.query && j.query.pages) || {};
+    let bester = null, besterRang = 99;
+    Object.keys(seiten).forEach(id=>{
+      const p = seiten[id];
+      if(p.missing !== undefined) return;
+      const vi = (p.videoinfo && p.videoinfo[0]) || {};
+      // Britisch schlaegt amerikanisch schlaegt Rest.
+      const rang = /En-uk/i.test(p.title) ? 0 : /En-us/i.test(p.title) ? 1 : 2;
+      if(rang >= besterRang) return;
+      // MP3 bevorzugen - .ogg spielt aelteres Safari nicht ab.
+      let quelle = vi.url || "";
+      (vi.derivatives || []).forEach(d=>{
+        if(d && d.src && /mp3/i.test(String(d.type || "") + String(d.src))) quelle = d.src;
+      });
+      if(!quelle) return;
+      const m = vi.extmetadata || {};
+      const entferneTags = (x)=>String(x || "").replace(/<[^>]*>/g, "").trim();
+      bester = {
+        url: quelle,
+        datei: p.title.replace(/^File:/, ""),
+        sprecher: entferneTags(m.Artist && m.Artist.value).slice(0, 60) || "unbekannt",
+        lizenz: entferneTags(m.LicenseShortName && m.LicenseShortName.value) || "siehe Commons"
+      };
+      besterRang = rang;
+    });
+    cache[name] = bester;      // auch null wird gemerkt: nicht nochmal suchen
+    commonsSichern();
+    if(fertig) fertig(bester);
+  }).catch(()=>{
+    // Kein Netz: NICHT als "gibt es nicht" merken, sonst wird nie wieder gesucht.
+    if(fertig) fertig(null);
+  });
+}
+
+/* Was schon bekannt ist - ohne Netz, ohne Warten. */
+function commonsBekannt(englisch){
+  const name = tonName(englisch);
+  const cache = commonsLaden();
+  return name && cache[name] ? cache[name] : null;
+}
+
+/* Im Voraus nachschlagen, damit beim Tippen alles bereitliegt. */
+function commonsVorbereiten(woerter){
+  if(!Array.isArray(woerter)) woerter = [woerter];
+  const cache = commonsLaden();
+  woerter.slice(0, 8).forEach((w, i)=>{
+    const en = (w && w.en) || w;
+    const name = tonName(en);
+    if(!name || cache[name] !== undefined) return;
+    setTimeout(()=>commonsSuchen(en), 120 * i);   // gestaffelt, nicht als Schwall
+  });
+}
+
+/* Spielt die Commons-Aufnahme ab. fertig(true) wenn sie geklungen hat. */
+function commonsAbspielen(englisch, fertig){
+  const e = commonsBekannt(englisch);
+  if(!e || !e.url){ if(fertig) fertig(false); return false; }
+  try{
+    const a = new Audio(e.url);
+    let erledigt = false;
+    const schluss = (ok)=>{ if(erledigt) return; erledigt = true; if(fertig) fertig(ok); };
+    a.onended = ()=>schluss(true);
+    a.onerror = ()=>schluss(false);
+    const p = a.play();
+    if(p && p.catch) p.catch(()=>schluss(false));
+    setTimeout(()=>{ if(!erledigt && a.currentTime > 0) schluss(true); }, 1500);
+    // Nach vier Sekunden aufgeben. Eine Vokabel-Aufnahme ist unter einer
+    // Sekunde lang; wer bis dahin nichts gemeldet hat, spielt nichts ab -
+    // dann lieber zuegig zur Geraetestimme als lange Stille.
+    setTimeout(()=>schluss(false), 4000);
+    return true;
+  }catch(err){ if(fertig) fertig(false); return false; }
+}
+
 /* Vorlesen - mit Wachhund.
 
    Die Sprachausgabe in Chrome verklemmt sich gelegentlich: speaking meldet
@@ -5508,7 +5845,34 @@ function sprachHatEnglischeStimme(){ return !!sprachStimmeEnglisch(); }
    Fingerdruck, darf also scheitern, aber unter keinen Umstaenden die
    Warteschlange beschaedigen. */
 function sprachVorlesen(text, fertig, sanft){
-  if(!sprachKannVorlesen() || !text) return false;
+  if(!text) return false;
+  // Erst die eigene Aufnahme versuchen - die klingt auf jedem Geraet
+  // gleich und braucht keinen Sprachmotor.
+  const name = tonName(text);
+  // Nach der eigenen Aufnahme kommt Commons, erst danach das Geraet.
+  const dannCommons = ()=>{
+    if(commonsBekannt(text)){
+      return commonsAbspielen(text, (ok)=>{
+        if(ok){ if(fertig) fertig(true); return; }
+        sprachGeraet(text, fertig, sanft);
+      });
+    }
+    // Noch nichts bekannt: fuers naechste Mal nachschlagen, jetzt das Geraet.
+    try{ commonsSuchen(text); }catch(e){}
+    return sprachGeraet(text, fertig, sanft);
+  };
+  if(name && tonBekannt[name] !== false){
+    return tonAbspielen(text, (ok)=>{
+      if(ok){ if(fertig) fertig(true); return; }
+      dannCommons();
+    });
+  }
+  return dannCommons();
+}
+
+/* Der bisherige Weg ueber die Stimme des Geraets. */
+function sprachGeraet(text, fertig, sanft){
+  if(!sprachKannVorlesen() || !text){ if(fertig) fertig(false); return false; }
   const s = window.speechSynthesis;
   let erledigt = false;     // Rueckruf schon gegeben?
   let versuche = 0;         // wie oft haben wir es probiert? (bis zu drei)
@@ -5782,7 +6146,12 @@ function sprachVergleich(gehoertListe, ziel){
 /* Der Lautsprecher als Baustein - erscheint nur, wenn das Geraet auch
    wirklich Englisch sprechen kann. */
 function hoerKnopfHtml(englisch, klasse){
-  if(!sprachKannVorlesen() || !sprachHatEnglischeStimme()) return "";
+  // Der Knopf lohnt sich, sobald ES IRGENDEINEN Weg gibt: eine eigene
+  // Aufnahme ODER eine Stimme auf dem Geraet.
+  const eigeneMoeglich = tonName(englisch) && tonBekannt[tonName(englisch)] !== false;
+  const commonsMoeglich = !!commonsBekannt(englisch);
+  if(!eigeneMoeglich && !commonsMoeglich
+     && !(sprachKannVorlesen() && sprachHatEnglischeStimme())) return "";
   const t = cleanEn(englisch || "");
   if(!t) return "";
   return `<button type="button" class="hoer-knopf ${klasse || ''}" data-hoer="${encodeURIComponent(t)}"
@@ -5825,6 +6194,12 @@ function sprachBefundHtml(){
               || window.navigator.standalone === true;
   const d = sprachBefundDaten || {};
   const zeilen = [
+    ["Eigene Aufnahme",       (function(){
+        const k = Object.keys(tonBekannt);
+        if(!k.length) return "noch nicht gesucht";
+        const da = k.filter(x=>tonBekannt[x]).length;
+        return da ? (da + " von " + k.length + " gefunden") : "keine gefunden (Ordner fehlt?)";
+      })()],
     ["Stimmen auf dem Gerät", stimmen.length + " insgesamt, " + en.length + " englische, davon " + lokal + " lokal"],
     ["Gewählte Stimme",       d.stimme || "(noch nichts versucht)"],
     ["Gesetzte Sprache",      d.lang || "(noch nichts versucht)"],
@@ -5923,7 +6298,9 @@ function renderAussprache(){
   const w = woerter[state.currentIndex];
   const ziel = cleanEn(w.en);
   const kannHoeren = sprachKannZuhoeren();
-  const kannLesen  = sprachKannVorlesen() && sprachHatEnglischeStimme();
+  const kannLesen  = (tonName(ziel) && tonBekannt[tonName(ziel)] !== false)
+                     || !!commonsBekannt(ziel)
+                     || (sprachKannVorlesen() && sprachHatEnglischeStimme());
   const st = state.ausspracheStand || {};
 
   app.innerHTML = `
@@ -5965,6 +6342,13 @@ function renderAussprache(){
         </div>
       `}
 
+      ${(function(){
+        const q = commonsBekannt(ziel);
+        if(!q) return "";
+        return `<p class="asp-quelle">🎙️ Echte Aufnahme von
+          <strong>${escapeHtml(q.sprecher)}</strong> &middot; ${escapeHtml(q.lizenz)}
+          &middot; Wikimedia Commons</p>`;
+      })()}
       ${st.rueckmeldung ? `<div class="asp-antwort ${st.art}">${st.rueckmeldung}</div>` : ""}
       ${st.stumm ? `<button type="button" class="befund-knopf" id="asp-warum">
           ${st.befund ? "Details ausblenden" : "Warum klappt das nicht?"}
@@ -6163,6 +6547,7 @@ function render(){
   if(state.screen==="flutwahl") return renderFlutWahl();
   if(state.screen==="aussprache") return renderAussprache();
   if(state.screen==="aussprachefertig") return renderAusspracheFertig();
+  if(state.screen==="stimmenskript") return renderStimmenSkript();
   if(state.screen==="radar") return renderRadar();
   if(state.screen==="vokabelstats") return renderVokabelStats();
   if(state.screen==="grammarstats") return renderGrammarStats();
@@ -7185,6 +7570,9 @@ function startGame(){
     state.queue = (state.queue || []).slice(0, 12);
     state.currentIndex = 0;
     state.ausspracheStand = {};
+    // Im Voraus nachschlagen: Beim Tippen muss die Adresse schon da sein,
+    // sonst ist die Erlaubnis zum Tonabspielen abgelaufen.
+    try{ commonsVorbereiten(state.queue); }catch(e){}
     state.screen = "aussprache";
     render();
     return;
@@ -8985,6 +9373,15 @@ function renderParents(){
     ${state.parentTab === 'belohnungen' ? belohnungen : uebersicht}
 
     <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:4px;">🔊 SPRACHDATEIEN</h3>
+      <p class="muted" style="margin:0 0 10px;font-size:12.5px;">
+        Damit das Vorlesen auf jedem Gerät funktioniert &ndash; auch bei selbst
+        hinzugefügten Vokabeln. Nach neuen Wörtern einmal wiederholen.
+      </p>
+      <button class="btn secondary small" id="stimmen-btn">🔊 Sprachdateien erzeugen</button>
+    </div>
+
+    <div class="panel">
       <h3 style="font-size:15px;margin-bottom:4px;">🎓 NOTENSCHLÜSSEL</h3>
       <p class="muted" style="margin:0 0 10px;font-size:12.5px;">
         Ein Test hat hier meist zehn Aufgaben &ndash; da ist ein einziger Fehler schon
@@ -9055,6 +9452,9 @@ function renderParents(){
       render();
     });
   });
+  const stimmenBtn = document.getElementById('stimmen-btn');
+  if(stimmenBtn){ stimmenBtn.addEventListener('click', ()=>{ state.screen = "stimmenskript"; render(); }); }
+
   document.querySelectorAll('[data-ptab]').forEach(el=>{
     el.addEventListener('click', ()=>{
       if(state.parentTab === 'belohnungen'){ rewardDraftLesen(); }
