@@ -438,6 +438,24 @@
   .flut-txt strong{ font-family:var(--font); font-weight:800; font-size:18px; }
   .flut-txt small{ font-family:var(--font); font-size:13px; line-height:1.4; opacity:.92; }
 
+  /* Die Selbstauskunft, wenn das Vorlesen nicht klappt */
+  .befund-knopf{
+    display:block; width:100%; margin-top:8px; padding:9px;
+    font-family:var(--font); font-weight:700; font-size:13px;
+    background:rgba(255,255,255,.8); border:2px solid rgba(0,0,0,.12);
+    border-radius:12px; cursor:pointer; min-height:40px;
+  }
+  .befund{
+    margin-top:8px; padding:12px; border-radius:12px; text-align:left;
+    background:rgba(255,255,255,.85); font-family:var(--font);
+  }
+  .befund-tab{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .befund-tab td{ padding:4px 2px; vertical-align:top; border-bottom:1px solid rgba(0,0,0,.07); }
+  .befund-tab td:first-child{ width:44%; opacity:.7; }
+  .befund-rat{ margin:10px 0 4px; font-size:13px; }
+  .befund-liste{ margin:0; padding-left:18px; font-size:12.5px; line-height:1.5; }
+  .befund-liste li{ margin-bottom:6px; }
+
   .asp-datenschutz{
     font-family:var(--font); font-size:11.5px; line-height:1.4;
     opacity:.7; margin:8px 2px 0; text-align:center;
@@ -861,9 +879,80 @@
 
   /* ---------- Anmeldebildschirm ---------- */
   .login-hero{ text-align:center; margin-bottom:4px; }
+  /* ---------------------------------------------------------------
+     DER KOPF DER STARTSEITE
+
+     Ein Blick soll reichen. Deshalb genau eine Aussage gross - die
+     Belohnungen - und darunter sechs Kacheln mit je drei bis fuenf
+     Woertern. Alles Ausfuehrliche steht unter der Anmeldung.
+     --------------------------------------------------------------- */
+  .hero{
+    position:relative; overflow:hidden;
+    margin:0 0 12px; padding:22px 20px 20px;
+    border-radius:24px; color:#fff; text-align:center;
+    background:linear-gradient(145deg,#7a4bbf 0%,#5b32a0 45%,#3d1f74 100%);
+    box-shadow:0 10px 30px rgba(61,31,116,.35);
+  }
+  /* Ein weicher Lichtschein - modern, aber ohne Bilddatei. */
+  .hero::before{
+    content:""; position:absolute; left:-30%; top:-70%;
+    width:160%; height:160%; pointer-events:none;
+    background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.22), transparent 60%);
+  }
+  .hero > *{ position:relative; }
+  .hero-marke{
+    display:inline-block; margin-bottom:10px; padding:5px 12px;
+    border-radius:999px; background:rgba(255,255,255,.18);
+    font-family:var(--font); font-weight:700; font-size:11px;
+    letter-spacing:.06em; text-transform:uppercase;
+  }
+  .hero-titel{
+    font-family:var(--serif); font-weight:700; font-size:29px; line-height:1.15;
+    letter-spacing:-0.02em; margin:0 0 8px;
+  }
+  .hero-titel em{ font-style:normal; color:var(--gold,#f2c94c); }
+  .hero-text{
+    font-family:var(--font); font-size:14.5px; line-height:1.5;
+    margin:0; opacity:.94;
+  }
+  .hero-muenzen{ margin-top:12px; font-size:20px; letter-spacing:6px; opacity:.9; }
+
+  .kachel-reihe{
+    display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:8px; margin-bottom:14px;
+  }
+  .kachel{
+    display:flex; flex-direction:column; gap:3px;
+    padding:12px 11px; border-radius:16px; text-align:left;
+    background:rgba(255,255,255,.82);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.9);
+    box-shadow:0 2px 8px rgba(40,20,80,.10);
+  }
+  .kachel-ic{ font-size:21px; line-height:1; }
+  .kachel-t{
+    font-family:var(--font); font-weight:800; font-size:14px; line-height:1.2;
+    overflow-wrap:anywhere;
+  }
+  .kachel-s{ font-family:var(--font); font-size:11.8px; line-height:1.35; opacity:.72; }
+
+  /* Auf sehr schmalen Geraeten lieber untereinander als abgeschnitten. */
+  @media (max-width: 340px){
+    .kachel-reihe{ grid-template-columns:1fr; }
+    .hero-titel{ font-size:25px; }
+  }
+
   /* Anmeldeseite: kleineres Logo, damit Anmeldung und Gastzugang ohne
      Scrollen sichtbar sind. */
   .login-topbar{ position:relative; }
+  /* Abkuerzung fuer alle, die schon ein Konto haben. */
+  .zur-anmeldung{
+    position:absolute; right:8px; bottom:2px;
+    font-family:var(--font); font-weight:700; font-size:12.5px;
+    padding:7px 12px; min-height:36px; border-radius:999px; cursor:pointer;
+    background:rgba(255,255,255,.85); border:1px solid rgba(0,0,0,.10);
+    color:#3d1f74; box-shadow:0 2px 6px rgba(0,0,0,.12);
+  }
   .login-topbar .title-block{ margin-bottom:8px; }
   /* Spezifitaet beachten: .title-block.start .logo-img zaehlt drei Klassen
      und wuerde eine kuerzere Regel sonst schlagen. */
@@ -1853,7 +1942,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "28.0 – Hören, Sprechen, Fluten";
+const APP_VERSION = "29.1 – Neue Startseite";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -5273,6 +5362,12 @@ let sprachWach = false;
 /* Lief der letzte Erkennungsversuch auf dem Geraet? Bestimmt, was die
    Oberflaeche dem Kind ueber sein Mikrofon sagt. */
 let sprachZuletztLokal = false;
+/* Haelt die Ausgabe-Objekte fest. Bekannter Fehler in Chrome: Wird eine
+   Ausgabe nicht referenziert, kann die Speicherbereinigung sie wegraeumen,
+   bevor sie gesprochen hat - ohne jedes Ereignis. */
+const sprachFesthalten = [];
+/* Was ist beim letzten Vorlesen wirklich passiert? Fuer die Selbstauskunft. */
+let sprachBefundDaten = {versuche:0, start:false, ende:false, fehler:"", stimme:"", lang:""};
 
 function sprachKannVorlesen(){
   return typeof window !== "undefined" && "speechSynthesis" in window;
@@ -5363,7 +5458,8 @@ function sprachVorlesen(text, fertig){
   if(!sprachKannVorlesen() || !text) return false;
   const s = window.speechSynthesis;
   let erledigt = false;     // Rueckruf schon gegeben?
-  let versuche = 0;         // wie oft haben wir es probiert?
+  let versuche = 0;         // wie oft haben wir es probiert? (bis zu drei)
+  sprachBefundDaten = {versuche:0, start:false, ende:false, fehler:"", stimme:"", lang:""};
   let wartet   = false;     // laeuft gerade ein Neustart?
   let aktuell  = null;      // die gerade losgeschickte Ausgabe
 
@@ -5378,7 +5474,7 @@ function sprachVorlesen(text, fertig){
   };
   const nochmal = ()=>{
     if(erledigt || wartet) return;
-    if(versuche >= 2){ abschluss(false); return; }
+    if(versuche >= 3){ abschluss(false); return; }
     wartet = true;
     abhaengen();                     // sonst loest unser cancel() ein onerror aus
     try{ s.cancel(); }catch(e){}
@@ -5392,19 +5488,29 @@ function sprachVorlesen(text, fertig){
     let gestartet = false;
     try{
       const u = new SpeechSynthesisUtterance(String(text));
-      // Beim ZWEITEN Versuch bewusst OHNE eigene Stimmenwahl: Genau die
-      // ist der haeufigste Grund, warum nichts kommt. Ohne sie sucht der
-      // Browser selbst eine passende - lieber eine andere englische
-      // Stimme als Stille.
+      // Die drei Versuche werden bewusst immer anspruchsloser:
+      //   1. mit gewaehlter Stimme und Sprache
+      //   2. ohne eigene Stimme (haeufigste Ursache), nur Sprache
+      //   3. ganz ohne Vorgabe - das Geraet entscheidet alles
       const stimme = (meinVersuch === 1) ? sprachStimmeEnglisch() : null;
       if(stimme) u.voice = stimme;
-      u.lang  = (stimme && stimme.lang) || "en-GB";
+      if(meinVersuch < 3){ u.lang = (stimme && stimme.lang) || "en-GB"; }
+      sprachBefundDaten.versuche = meinVersuch;
+      sprachBefundDaten.stimme = stimme ? (stimme.name + " / " + stimme.lang
+                                  + (stimme.localService ? " / lokal" : " / Netz")) : "(keine)";
+      sprachBefundDaten.lang = u.lang || "(keine)";
       u.rate  = 0.88;                            // etwas langsamer als normal
       u.pitch = 1.0;
-      u.onstart = ()=>{ gestartet = true; };
-      u.onend   = ()=>{ abschluss(true); };
-      u.onerror = ()=>{ nochmal(); };
+      u.onstart = ()=>{ gestartet = true; sprachBefundDaten.start = true; };
+      u.onend   = ()=>{ sprachBefundDaten.ende = true; abschluss(true); };
+      u.onerror = (ev)=>{ sprachBefundDaten.fehler = (ev && ev.error) || "unbekannt"; nochmal(); };
       aktuell = u;
+      sprachFesthalten.push(u);                    // vor der Speicherbereinigung schuetzen
+      if(sprachFesthalten.length > 8) sprachFesthalten.shift();
+      // Chrome laesst die Ausgabe gelegentlich "pausiert" zurueck. Dann
+      // wird alles eingereiht und nie begonnen - genau das beobachtete
+      // Bild. Ein resume() kostet nichts.
+      try{ s.resume(); }catch(e){}
       s.speak(u);
     }catch(e){ abschluss(false); return; }
 
@@ -5589,6 +5695,49 @@ function hoerKnoepfeVerdrahten(){
    nach der Schwierigkeit - mit einem Satz dazu, was der Unterschied ist.
 ===================================================================== */
 
+/* Was hat das Geraet beim letzten Vorlesen wirklich getan?
+   Absichtlich in ganzen Saetzen: Das soll ein Elternteil vorlesen koennen,
+   ohne Fachbegriffe zu kennen. */
+function sprachBefundHtml(){
+  let stimmen = [], en = [], lokal = 0;
+  try{
+    stimmen = window.speechSynthesis.getVoices() || [];
+    en = stimmen.filter(v=>/^en/i.test(v.lang || ""));
+    lokal = en.filter(v=>v.localService).length;
+  }catch(e){}
+  const s = window.speechSynthesis || {};
+  const alsApp = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+              || window.navigator.standalone === true;
+  const d = sprachBefundDaten || {};
+  const zeilen = [
+    ["Stimmen auf dem Gerät", stimmen.length + " insgesamt, " + en.length + " englische, davon " + lokal + " lokal"],
+    ["Gewählte Stimme",       d.stimme || "(noch nichts versucht)"],
+    ["Versuche",              (d.versuche || 0) + " von 3"],
+    ["Gerät hat begonnen",    d.start ? "ja" : "NEIN – das ist der Knackpunkt"],
+    ["Gerät hat beendet",     d.ende ? "ja" : "nein"],
+    ["Fehlermeldung",         d.fehler || "keine"],
+    ["Ausgabe gerade",        "spricht: " + (!!s.speaking) + ", wartet: " + (!!s.pending) + ", pausiert: " + (!!s.paused)],
+    ["Läuft als App",         alsApp ? "ja (vom Startbildschirm)" : "nein (im Browser)"]
+  ];
+  return `
+    <div class="befund">
+      <table class="befund-tab">
+        ${zeilen.map(([a,b])=>`<tr><td>${a}</td><td>${escapeHtml(String(b))}</td></tr>`).join("")}
+      </table>
+      <p class="befund-rat"><strong>Das hilft am häufigsten:</strong></p>
+      <ul class="befund-liste">
+        <li><strong>Medienlautstärke prüfen.</strong> Die Sprachausgabe läuft nicht über die
+            Klingel-, sondern über die <em>Medien</em>-Lautstärke. Lautstärketaste drücken und
+            dort den Regler für Medien hochziehen.</li>
+        <li><strong>Sprachdaten nachinstallieren.</strong> In den Android-Einstellungen unter
+            <em>Bedienungshilfen &rarr; Text-in-Sprache</em> die englische Stimme herunterladen.
+            Ohne die Daten meldet das Gerät eine Stimme, kann sie aber nicht sprechen.</li>
+        ${alsApp ? `<li><strong>Einmal im normalen Browser testen.</strong> Vom Startbildschirm
+            aus verhält sich die Sprachausgabe auf manchen Geräten anders.</li>` : ""}
+      </ul>
+    </div>`;
+}
+
 function renderFlutWahl(){
   app.innerHTML = `
     ${renderHeader("Der Flutungsraum", true)}
@@ -5687,6 +5836,10 @@ function renderAussprache(){
       `}
 
       ${st.rueckmeldung ? `<div class="asp-antwort ${st.art}">${st.rueckmeldung}</div>` : ""}
+      ${st.stumm ? `<button type="button" class="befund-knopf" id="asp-warum">
+          ${st.befund ? "Details ausblenden" : "Warum klappt das nicht?"}
+        </button>` : ""}
+      ${st.stumm && st.befund ? sprachBefundHtml() : ""}
     </div>
 
     <button class="btn" id="asp-weiter">${state.currentIndex + 1 >= woerter.length ? "🏁 FERTIG" : "▶ WEITER"}</button>
@@ -5702,11 +5855,18 @@ function renderAussprache(){
       // Lieber ehrlich sagen, dass nichts kam, als einen toten Knopf.
       state.ausspracheStand = Object.assign({}, state.ausspracheStand || {}, {
         art: "nochmal",
+        stumm: true,
         rueckmeldung: "Die Sprachausgabe deines Geräts hat gerade nicht reagiert. "
                     + "Tipp nochmal auf <strong>Vormachen</strong> &ndash; meistens klappt es dann."
       });
       render();
     });
+  });
+
+  anKnopf('asp-warum', ()=>{
+    state.ausspracheStand = Object.assign({}, state.ausspracheStand || {},
+                                          {befund: !state.ausspracheStand.befund});
+    render();
   });
 
   anKnopf('asp-zeigen', ()=>{
@@ -5807,6 +5967,8 @@ const app = document.getElementById('app');
 
 // Welcher Bildschirm stand zuletzt da? Nur beim Wechsel rollen wir nach oben.
 let zuletztGezeichnet = null;
+/* Damit der Sprung zur Anmeldung nur einmal je Besuch passiert. */
+let loginSchonGerollt = false;
 
 function render(){
   // Ein neuer Bildschirm faengt immer oben an.
@@ -6274,6 +6436,21 @@ function oeffneInfo(){
   window.scrollTo(0, 0);
 }
 
+/* Rollt zum Anmeldefeld. Der Rollbalken haengt am Kasten #app, nicht am
+   Fenster - ein window.scrollTo waere wirkungslos. */
+function zumAnmeldefeld(fokus){
+  try{
+    const app = document.getElementById('app');
+    const feld = document.getElementById('player-name-input');
+    if(!app || !feld) return;
+    const ziel = app.scrollTop + feld.getBoundingClientRect().top
+               - app.getBoundingClientRect().top - 24;
+    if(typeof app.scrollTo === "function") app.scrollTo({top: Math.max(0, ziel), behavior: "smooth"});
+    else app.scrollTop = Math.max(0, ziel);
+    if(fokus) setTimeout(()=>{ try{ feld.focus({preventScroll:true}); }catch(e){} }, 420);
+  }catch(e){}
+}
+
 function renderLogin(){
   const wartet = state.loginBusy;
   const keineVerbindung = state.cloudChecked && !state.cloudAvailable;
@@ -6282,6 +6459,7 @@ function renderLogin(){
     <div class="login-topbar">
       ${renderHeader("", false, true)}
       <button type="button" class="info-btn" id="info-btn" title="Was ist LingoCrafter?" aria-label="Was ist LingoCrafter?">i</button>
+      <button type="button" class="zur-anmeldung" id="zur-anmeldung">Anmelden ↓</button>
     </div>
 
     ${keineVerbindung ? `
@@ -6293,6 +6471,47 @@ function renderLogin(){
         <button class="btn" id="login-retry-btn" style="margin-top:14px;">&#128260; NOCHMAL VERSUCHEN</button>
       </div>
     ` : `
+      <div class="hero">
+        <span class="hero-marke">Das gibt es so kein zweites Mal</span>
+        <h2 class="hero-titel">Belohnungen,<br>die <em>ihr</em> festlegt</h2>
+        <p class="hero-text">Filmabend. Schwimmbad. Taschengeld.
+          Ihr bestimmt, wofür sich Üben lohnt &ndash; nicht wir.</p>
+        <div class="hero-muenzen"><span>🪙</span><span>🪙</span><span>🪙</span></div>
+      </div>
+
+      <div class="kachel-reihe">
+        <div class="kachel">
+          <span class="kachel-ic">🧭</span>
+          <span class="kachel-t">Lingora plant</span>
+          <span class="kachel-s">Sagt dir, was heute dran ist &ndash; rechnet auf dem Gerät.</span>
+        </div>
+        <div class="kachel">
+          <span class="kachel-ic">📝</span>
+          <span class="kachel-t">Probe&shy;arbeiten</span>
+          <span class="kachel-s">Mit Note. Und einer ehrlichen Prognose vorher.</span>
+        </div>
+        <div class="kachel">
+          <span class="kachel-ic">🎮</span>
+          <span class="kachel-t">Fünf Spiele</span>
+          <span class="kachel-s">Üben, das sich nicht so anfühlt.</span>
+        </div>
+        <div class="kachel">
+          <span class="kachel-ic">🗣️</span>
+          <span class="kachel-t">Aussprache</span>
+          <span class="kachel-s">Sag es laut &ndash; das Handy hört zu.</span>
+        </div>
+        <div class="kachel">
+          <span class="kachel-ic">📦</span>
+          <span class="kachel-t">Merkt jedes Wort</span>
+          <span class="kachel-s">Wiederholt genau dann, wenn du es vergisst.</span>
+        </div>
+        <div class="kachel">
+          <span class="kachel-ic">🔒</span>
+          <span class="kachel-t">Bleibt bei euch</span>
+          <span class="kachel-s">Keine Werbung, keine E-Mail, keine Daten&shy;händler.</span>
+        </div>
+      </div>
+
       <div class="panel">
         <p class="claim-h">Englisch lernen,<br>das sich wirklich lohnt.</p>
         <p class="claim-p">Spielend Vokabeln &amp; Grammatik meistern, Punkte verdienen
@@ -6356,6 +6575,17 @@ function renderLogin(){
       </div>
     `}
   `;
+
+  const anmeldeSprung = document.getElementById('zur-anmeldung');
+  if(anmeldeSprung){ anmeldeSprung.addEventListener('click', ()=>zumAnmeldefeld(true)); }
+
+  // Wer schon einmal hier war, will sich anmelden - nicht die Werbung
+  // nochmal lesen. Nur beim ersten Zeichnen, sonst springt es bei jedem
+  // Tastendruck.
+  if(!loginSchonGerollt && (state.playerName || "").trim()){
+    loginSchonGerollt = true;
+    setTimeout(()=>zumAnmeldefeld(false), 260);
+  }
 
   const infoBtn = document.getElementById('info-btn');
   if(infoBtn){ infoBtn.addEventListener('click', oeffneInfo); }
