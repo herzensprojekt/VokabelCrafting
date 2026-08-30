@@ -454,34 +454,10 @@
   .flut-txt strong{ font-family:var(--font); font-weight:800; font-size:18px; }
   .flut-txt small{ font-family:var(--font); font-size:13px; line-height:1.4; opacity:.92; }
 
-  /* Die Selbstauskunft, wenn das Vorlesen nicht klappt */
-  .befund-knopf{
-    display:block; width:100%; margin-top:8px; padding:9px;
-    font-family:var(--font); font-weight:700; font-size:13px;
-    background:rgba(255,255,255,.8); border:2px solid rgba(0,0,0,.12);
-    border-radius:12px; cursor:pointer; min-height:40px;
+  .asp-zugabe{
+    font-family:var(--font); font-size:11.5px; line-height:1.45;
+    opacity:.7; margin:2px 4px 8px; text-align:center;
   }
-  .befund{
-    margin-top:8px; padding:12px; border-radius:12px; text-align:left;
-    background:rgba(255,255,255,.85); font-family:var(--font);
-  }
-  .befund-tab{ width:100%; border-collapse:collapse; font-size:12.5px; }
-  .befund-tab td{ padding:4px 2px; vertical-align:top; border-bottom:1px solid rgba(0,0,0,.07); }
-  .befund-tab td:first-child{ width:44%; opacity:.7; }
-  .befund-urteil{
-    margin:10px 0 0; padding:9px 11px; border-radius:10px;
-    background:rgba(194,70,31,.10); font-size:12.5px; line-height:1.5;
-  }
-  .befund-oeffnen{
-    display:block; margin:8px 0; padding:9px 14px;
-    font-family:var(--font); font-weight:700; font-size:13px;
-    background:#5b32a0; color:#fff; border:none; border-radius:10px;
-    cursor:pointer; min-height:40px;
-  }
-  .befund-rat{ margin:10px 0 4px; font-size:13px; }
-  .befund-liste{ margin:0; padding-left:18px; font-size:12.5px; line-height:1.5; }
-  .befund-liste li{ margin-bottom:6px; }
-
   .asp-quelle{
     font-family:var(--font); font-size:11px; line-height:1.4;
     opacity:.65; margin:8px 2px 0; text-align:center;
@@ -2003,7 +1979,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "34.1 – Echte Aussprache";
+const APP_VERSION = "35.1 – Aussprache als Zugabe";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -4672,6 +4648,7 @@ const state = {
   wortStand: {},           // Lernkartei je Vokabel: {b:Box, d:fällig, r:richtig, f:falsch}
   boxTreffer: {},          // gemessene Trefferquote je Box - Grundlage der Prognose
   ausspracheStand: {},     // was gerade im Aussprache-Modus passiert
+  ausspracheVorrat: [],    // Wörter, unter denen nach Aufnahmen gesucht wird
   flutGewaehlt: false,     // Schwierigkeit im Flutungsraum schon gewählt?
   lingoraPlan: null,       // Lingoras Lernplan
   lingoraAktiv: null,      // welcher Planschritt gerade laeuft
@@ -5775,6 +5752,68 @@ function commonsSuchen(englisch, fertig){
   });
 }
 
+/* Sucht fuer VIELE Woerter auf einmal. Die Schnittstelle erlaubt bis zu
+   50 Titel je Anfrage; bei zwei Kandidaten je Wort sind das 25 Woerter.
+   Ohne dieses Buendeln waere die Suche vor einer Runde zu langsam. */
+function commonsAlleSuchen(woerter, fertig){
+  const cache = commonsLaden();
+  const offen = [];
+  woerter.forEach(w=>{
+    const en = (w && w.en) || w;
+    const name = tonName(en);
+    if(!name || cache[name] !== undefined) return;
+    const k = commonsKandidaten(en);
+    if(!k.length){ cache[name] = null; return; }   // Wendung: gibt es dort nicht
+    offen.push({name: name, en: en, titel: k.slice(0, 2)});   // uk und us
+  });
+  if(!offen.length){ commonsSichern(); if(fertig) fertig(); return; }
+
+  let rest = 0;
+  const pakete = [];
+  for(let i = 0; i < offen.length; i += 25) pakete.push(offen.slice(i, i + 25));
+  rest = pakete.length;
+
+  pakete.forEach(paket=>{
+    const titel = [];
+    paket.forEach(x=>x.titel.forEach(t=>titel.push(t)));
+    const url = COMMONS_API + "?action=query&format=json&origin=*"
+              + "&prop=videoinfo&viprop=url|derivatives|extmetadata"
+              + "&titles=" + encodeURIComponent(titel.join("|"));
+    fetch(url).then(r=>r.json()).then(j=>{
+      const seiten = (j.query && j.query.pages) || {};
+      Object.keys(seiten).forEach(id=>{
+        const p = seiten[id];
+        if(p.missing !== undefined) return;
+        const zugehoerig = paket.find(x=>x.titel.indexOf(p.title) >= 0);
+        if(!zugehoerig) return;
+        const vi = (p.videoinfo && p.videoinfo[0]) || {};
+        const rang = /En-uk/i.test(p.title) ? 0 : 1;
+        const schon = cache[zugehoerig.name];
+        if(schon && schon.rang <= rang) return;      // britisch behalten
+        let quelle = vi.url || "";
+        (vi.derivatives || []).forEach(d=>{
+          if(d && d.src && /mp3/i.test(String(d.type || "") + String(d.src))) quelle = d.src;
+        });
+        if(!quelle) return;
+        const m = vi.extmetadata || {};
+        const ohne = (x)=>String(x || "").replace(/<[^>]*>/g, "").trim();
+        cache[zugehoerig.name] = {
+          url: quelle, rang: rang,
+          datei: p.title.replace(/^File:/, ""),
+          sprecher: ohne(m.Artist && m.Artist.value).slice(0, 60) || "unbekannt",
+          lizenz: ohne(m.LicenseShortName && m.LicenseShortName.value) || "siehe Commons"
+        };
+      });
+      // Was jetzt noch offen ist, gibt es dort nicht.
+      paket.forEach(x=>{ if(cache[x.name] === undefined) cache[x.name] = null; });
+      if(--rest === 0){ commonsSichern(); if(fertig) fertig(); }
+    }).catch(()=>{
+      // Kein Netz: nichts als "fehlt" merken, sonst wird nie wieder gesucht.
+      if(--rest === 0){ commonsSichern(); if(fertig) fertig(); }
+    });
+  });
+}
+
 /* Was schon bekannt ist - ohne Netz, ohne Warten. */
 function commonsBekannt(englisch){
   const name = tonName(englisch);
@@ -6179,69 +6218,15 @@ function hoerKnoepfeVerdrahten(){
    nach der Schwierigkeit - mit einem Satz dazu, was der Unterschied ist.
 ===================================================================== */
 
-/* Was hat das Geraet beim letzten Vorlesen wirklich getan?
-   Absichtlich in ganzen Saetzen: Das soll ein Elternteil vorlesen koennen,
-   ohne Fachbegriffe zu kennen. */
-function sprachBefundHtml(){
-  let stimmen = [], en = [], lokal = 0;
-  try{
-    stimmen = window.speechSynthesis.getVoices() || [];
-    en = stimmen.filter(v=>/^en/i.test(v.lang || ""));
-    lokal = en.filter(v=>v.localService).length;
-  }catch(e){}
-  const s = window.speechSynthesis || {};
-  const alsApp = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
-              || window.navigator.standalone === true;
-  const d = sprachBefundDaten || {};
-  const zeilen = [
-    ["Eigene Aufnahme",       (function(){
-        const k = Object.keys(tonBekannt);
-        if(!k.length) return "noch nicht gesucht";
-        const da = k.filter(x=>tonBekannt[x]).length;
-        return da ? (da + " von " + k.length + " gefunden") : "keine gefunden (Ordner fehlt?)";
-      })()],
-    ["Stimmen auf dem Gerät", stimmen.length + " insgesamt, " + en.length + " englische, davon " + lokal + " lokal"],
-    ["Gewählte Stimme",       d.stimme || "(noch nichts versucht)"],
-    ["Gesetzte Sprache",      d.lang || "(noch nichts versucht)"],
-    ["Sprechtempo",           d.tempo || "(noch nichts versucht)"],
-    ["Versuche",              (d.versuche || 0) + " von 3"],
-    ["Gerät hat begonnen",    d.start ? "ja" : "NEIN – das ist der Knackpunkt"],
-    ["Gerät hat beendet",     d.ende ? "ja" : "nein"],
-    ["Fehlermeldung",         d.fehler || "keine"],
-    ["Ausgabe gerade",        "spricht: " + (!!s.speaking) + ", wartet: " + (!!s.pending) + ", pausiert: " + (!!s.paused)],
-    ["Läuft als App",         alsApp ? "ja (vom Startbildschirm)" : "nein (im Browser)"]
-  ];
-  return `
-    <div class="befund">
-      <table class="befund-tab">
-        ${zeilen.map(([a,b])=>`<tr><td>${a}</td><td>${escapeHtml(String(b))}</td></tr>`).join("")}
-      </table>
-      ${d.fehler === "synthesis-failed" ? `
-        <p class="befund-urteil">Diese Meldung kommt <strong>vom Gerät</strong>, nicht von
-        LingoCrafter: Die App hat sauber angefragt, die Android-Sprachausgabe antwortet
-        &bdquo;kann ich nicht&ldquo;. Das betrifft dann meist auch andere Apps, die vorlesen.</p>` : ""}
-      <p class="befund-rat"><strong>Das hilft am häufigsten:</strong></p>
-      <ul class="befund-liste">
-        ${d.fehler === "synthesis-failed" ? `
-        <li><strong>Sprachausgabe-Motor prüfen.</strong> Android-Einstellungen &rarr;
-            <em>Bedienungshilfen &rarr; Text-in-Sprache</em>. Dort auf das Zahnrad neben dem
-            Motor tippen und die Sprache <em>Englisch</em> herunterladen. Direkt darüber gibt es
-            einen Knopf <em>Anhören</em> &ndash; wenn schon der stumm bleibt, liegt es sicher
-            nicht an LingoCrafter.</li>` : ""}
-        <li><strong>Medienlautstärke prüfen.</strong> Die Sprachausgabe läuft nicht über die
-            Klingel-, sondern über die <em>Medien</em>-Lautstärke. Lautstärketaste drücken und
-            dort den Regler für Medien hochziehen.</li>
-        <li><strong>Sprachdaten nachinstallieren.</strong> In den Android-Einstellungen unter
-            <em>Bedienungshilfen &rarr; Text-in-Sprache</em> die englische Stimme herunterladen.
-            Ohne die Daten meldet das Gerät eine Stimme, kann sie aber nicht sprechen.</li>
-        ${alsApp ? `<li><strong>Einmal im normalen Browser testen.</strong> Du benutzt
-            LingoCrafter gerade als App vom Startbildschirm. Unter Android ist das eine eigene
-            Hülle, in der sich die Sprachausgabe anders verhält als im Browser.
-            <button type="button" class="befund-oeffnen" id="befund-browser">Im Browser öffnen</button>
-            Klappt <em>Vormachen</em> dort, liegt es an der App-Hülle &ndash; und wir wissen es sicher.</li>` : ""}
-      </ul>
-    </div>`;
-}
+/* Hier stand einmal eine ausfuehrliche Selbstauskunft der Sprachausgabe
+   ("Geraet hat begonnen: NEIN") mit Tipps zu Medienlautstaerke und
+   Sprachdaten. Sie war ein Werkzeug fuer die Fehlersuche und hat ihren
+   Zweck erfuellt: Sie hat den abwuergenden Wachhund und den Unterstrich
+   in en_GB sichtbar gemacht.
+
+   Fuer ein Kind ist so eine Tabelle unverstaendlich und beunruhigend -
+   und seit die Aussprache-Uebung nur noch Woerter nimmt, zu denen es
+   wirklich eine Aufnahme gibt, hat sie auch keinen Anlass mehr. */
 
 function renderFlutWahl(){
   app.innerHTML = `
@@ -6288,6 +6273,51 @@ function flutStarten(){
   startGame();
 }
 
+/* Kurzer Zwischenschritt: erst nachschlagen, dann die Runde bauen.
+   Ohne ihn wuesste die App nicht, welche Woerter sie vorsprechen kann. */
+function renderAusspracheSuche(){
+  app.innerHTML = `
+    ${renderHeader("Aussprache", true)}
+    <div class="panel center-text">
+      <div style="font-size:44px;">🎙️</div>
+      <h3 style="margin:10px 0 4px;">Ich suche Aufnahmen ...</h3>
+      <p class="muted" style="margin:0;">Einen Moment &ndash; ich schaue nach, zu welchen
+        Wörtern es eine echte Stimme gibt.</p>
+    </div>
+  `;
+  const pool = state.ausspracheVorrat || [];
+  commonsAlleSuchen(pool, ()=>{
+    const mitTon = pool.filter(w=>
+      commonsBekannt(w.en) || (tonName(w.en) && tonBekannt[tonName(w.en)] === true));
+    if(!mitTon.length){
+      state.screen = "ausspracheleer";
+      render();
+      return;
+    }
+    state.queue = mitTon.slice(0, 12);
+    state.currentIndex = 0;
+    state.ausspracheStand = {};
+    state.screen = "aussprache";
+    render();
+  });
+}
+
+function renderAusspracheLeer(){
+  app.innerHTML = `
+    ${renderHeader("Aussprache", true)}
+    <div class="panel center-text">
+      <div style="font-size:44px;">🤷</div>
+      <h3 style="margin:10px 0 4px;">Diesmal keine Aufnahmen</h3>
+      <p class="muted" style="margin:0;">Zu den Wörtern aus diesem Bereich habe ich gerade
+        keine Aufnahmen gefunden. Versuch es mit einer anderen Kategorie &ndash; oder später
+        nochmal, falls du gerade kein Internet hast.</p>
+    </div>
+    <button class="btn danger" id="back-btn">◀ ZURÜCK</button>
+  `;
+  const b = document.getElementById('back-btn');
+  if(b) b.addEventListener('click', ()=>{ state.screen = "start"; render(); });
+}
+
 function renderAussprache(){
   const woerter = state.queue || [];
   if(!woerter.length || state.currentIndex >= woerter.length){
@@ -6314,6 +6344,8 @@ function renderAussprache(){
 
     <div class="panel word-card">
       <div class="eyebrow">SAG ES AUF ENGLISCH</div>
+      <p class="asp-zugabe">Hier kommen nur Wörter dran, zu denen es eine echte Aufnahme gibt
+        &ndash; das ist längst nicht zu jeder Vokabel der Fall.</p>
       ${w.img ? `<div class="term-image">${w.img}</div>` : ""}
       <div class="term">${escapeHtml(w.de)}</div>
 
@@ -6350,10 +6382,7 @@ function renderAussprache(){
           &middot; Wikimedia Commons</p>`;
       })()}
       ${st.rueckmeldung ? `<div class="asp-antwort ${st.art}">${st.rueckmeldung}</div>` : ""}
-      ${st.stumm ? `<button type="button" class="befund-knopf" id="asp-warum">
-          ${st.befund ? "Details ausblenden" : "Warum klappt das nicht?"}
-        </button>` : ""}
-      ${st.stumm && st.befund ? sprachBefundHtml() : ""}
+
     </div>
 
     <button class="btn" id="asp-weiter">${state.currentIndex + 1 >= woerter.length ? "🏁 FERTIG" : "▶ WEITER"}</button>
@@ -6375,19 +6404,6 @@ function renderAussprache(){
       });
       render();
     });
-  });
-
-  anKnopf('befund-browser', ()=>{
-    // Aus einer installierten App heraus oeffnet _blank den normalen
-    // Browser. Im Browser selbst ist es einfach ein zweiter Tab - beides
-    // ist in Ordnung.
-    try{ window.open(location.href.split("#")[0], "_blank", "noopener"); }catch(e){}
-  });
-
-  anKnopf('asp-warum', ()=>{
-    state.ausspracheStand = Object.assign({}, state.ausspracheStand || {},
-                                          {befund: !state.ausspracheStand.befund});
-    render();
   });
 
   anKnopf('asp-zeigen', ()=>{
@@ -6545,6 +6561,8 @@ function render(){
   if(state.screen==="grammarquiz") return renderGrammarQuiz();
   if(state.screen==="grammarcertificate") return renderGrammarCertificate();
   if(state.screen==="flutwahl") return renderFlutWahl();
+  if(state.screen==="aussprachesuche") return renderAusspracheSuche();
+  if(state.screen==="ausspracheleer") return renderAusspracheLeer();
   if(state.screen==="aussprache") return renderAussprache();
   if(state.screen==="aussprachefertig") return renderAusspracheFertig();
   if(state.screen==="stimmenskript") return renderStimmenSkript();
@@ -7291,15 +7309,6 @@ function renderStart(){
               : "Alles wiederholt &ndash; hier ist heute nichts offen"}</small>
           </span>
         </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='aussprache'?'active':''}" data-mode="aussprache" aria-pressed="${state.mode==='aussprache'}">
-          <span class="gm-ic">🗣️</span>
-          <span class="gm-txt">
-            <span class="gm-name">Aussprache</span>
-            <small>${sprachKannZuhoeren()
-              ? "Sag es laut &ndash; ich hör dir zu"
-              : "Hören und nachsprechen"}</small>
-          </span>
-        </button>
         <button type="button" class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc" aria-pressed="${state.mode==='mc'}">
           <span class="gm-ic">🎯</span>
           <span class="gm-txt">
@@ -7333,6 +7342,13 @@ function renderStart(){
           <span class="gm-txt">
             <span class="gm-name">Der Flutungsraum</span>
             <small>Klettere dem Wasser davon &ndash; ruhig oder schwer</small>
+          </span>
+        </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='aussprache'?'active':''}" data-mode="aussprache" aria-pressed="${state.mode==='aussprache'}">
+          <span class="gm-ic">🗣️</span>
+          <span class="gm-txt">
+            <span class="gm-name">Aussprache &ndash; die Zugabe</span>
+            <small>Echte Stimmen zum Nachsprechen &ndash; für einen Teil der Wörter</small>
           </span>
         </button>
       </div>
@@ -7567,13 +7583,11 @@ function startGame(){
   if(state.mode === "aussprache"){
     // Zwoelf Woerter laut zu sagen ist genug fuer eine Runde - achtzig
     // waeren eine Zumutung, und die Stimme wird heiser.
-    state.queue = (state.queue || []).slice(0, 12);
-    state.currentIndex = 0;
-    state.ausspracheStand = {};
-    // Im Voraus nachschlagen: Beim Tippen muss die Adresse schon da sein,
-    // sonst ist die Erlaubnis zum Tonabspielen abgelaufen.
-    try{ commonsVorbereiten(state.queue); }catch(e){}
-    state.screen = "aussprache";
+    // Erst nachschlagen, welche Woerter ueberhaupt eine Aufnahme haben -
+    // dann besteht die Runde nur aus solchen. Ein Kind soll nichts
+    // nachsprechen, das es nie gehoert hat.
+    state.ausspracheVorrat = (state.queue || []).slice(0, 40);
+    state.screen = "aussprachesuche";
     render();
     return;
   }
