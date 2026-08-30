@@ -919,6 +919,36 @@
      ausfuehrlichen Erklaerung weiter unten. Nebeneinander liest sich eine
      Ueberschrift schneller als untereinander. */
   .kachel-reihe{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+
+  /* Klappkaesten: Alles Ausfuehrliche ist da, draengt sich aber nicht auf.
+     Ein zugeklappter Kasten sieht aus wie eine Zeile - erst wer tippt,
+     bekommt den ganzen Text. */
+  .klapp{
+    margin-bottom:8px; border-radius:16px; overflow:hidden;
+    background:rgba(255,253,248,.92);
+    border:1px solid rgba(200,170,130,.30);
+    box-shadow:0 2px 7px rgba(150,120,80,.10);
+  }
+  .klapp > summary{
+    display:flex; align-items:center; gap:12px;
+    padding:14px; cursor:pointer; list-style:none;
+    font-family:var(--font); font-weight:800; font-size:15px; color:#4a3a28;
+  }
+  .klapp > summary::-webkit-details-marker{ display:none; }
+  /* Der Pfeil rechts - dreht sich beim Aufklappen. */
+  .klapp > summary::after{
+    content:"⌄"; margin-left:auto; font-size:19px; line-height:1;
+    opacity:.55; transition:transform .18s ease;
+  }
+  .klapp[open] > summary::after{ transform:rotate(180deg); }
+  .klapp[open] > summary{ border-bottom:1px solid rgba(200,170,130,.28); }
+  .klapp-ic{
+    flex:0 0 auto; width:36px; height:36px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+    background:linear-gradient(160deg,#fff6e6,#f6e2c4);
+  }
+  .klapp > *:not(summary){ padding:0 14px 14px; }
+  .klapp .sell-grid{ padding-top:12px; }
   .kachel{
     display:flex; align-items:center; gap:12px;
     padding:12px 14px; border-radius:16px; text-align:left;
@@ -1953,7 +1983,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "30.3 – Warme Startseite";
+const APP_VERSION = "31.2 – Aufgeräumte Startseite";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -5378,7 +5408,7 @@ let sprachZuletztLokal = false;
    bevor sie gesprochen hat - ohne jedes Ereignis. */
 const sprachFesthalten = [];
 /* Was ist beim letzten Vorlesen wirklich passiert? Fuer die Selbstauskunft. */
-let sprachBefundDaten = {versuche:0, start:false, ende:false, fehler:"", stimme:"", lang:""};
+let sprachBefundDaten = {versuche:0, start:false, ende:false, fehler:"", stimme:"", lang:"", tempo:""};
 
 function sprachKannVorlesen(){
   return typeof window !== "undefined" && "speechSynthesis" in window;
@@ -5473,12 +5503,16 @@ function sprachHatEnglischeStimme(){ return !!sprachStimmeEnglisch(); }
 
    fertig(ok) wird genau einmal gerufen: true = hat gesprochen,
    false = das Geraet hat nicht reagiert. */
-function sprachVorlesen(text, fertig){
+/* sanft = true: ein einziger Versuch, kein Nachsetzen, kein cancel.
+   Fuer das automatische Vorlesen nach dem Sprechen - das laeuft ohne
+   Fingerdruck, darf also scheitern, aber unter keinen Umstaenden die
+   Warteschlange beschaedigen. */
+function sprachVorlesen(text, fertig, sanft){
   if(!sprachKannVorlesen() || !text) return false;
   const s = window.speechSynthesis;
   let erledigt = false;     // Rueckruf schon gegeben?
   let versuche = 0;         // wie oft haben wir es probiert? (bis zu drei)
-  sprachBefundDaten = {versuche:0, start:false, ende:false, fehler:"", stimme:"", lang:""};
+  sprachBefundDaten = {versuche:0, start:false, ende:false, fehler:"", stimme:"", lang:"", tempo:""};
   let wartet   = false;     // laeuft gerade ein Neustart?
   let aktuell  = null;      // die gerade losgeschickte Ausgabe
 
@@ -5493,7 +5527,9 @@ function sprachVorlesen(text, fertig){
   };
   const nochmal = ()=>{
     if(erledigt || wartet) return;
-    if(versuche >= 3){ abschluss(false); return; }
+    // Im sanften Modus wird nicht nachgesetzt - ein gescheiterter
+    // Hintergrundversuch soll nichts hinterlassen.
+    if(sanft || versuche >= 3){ abschluss(false); return; }
     wartet = true;
     abhaengen();                     // sonst loest unser cancel() ein onerror aus
     try{ s.cancel(); }catch(e){}
@@ -5513,7 +5549,7 @@ function sprachVorlesen(text, fertig){
       // Die drei Versuche werden bewusst immer anspruchsloser:
       //   1. mit gewaehlter Stimme und Sprache
       //   2. ohne eigene Stimme (haeufigste Ursache), nur Sprache
-      //   3. ganz ohne Vorgabe - das Geraet entscheidet alles
+      //   3. ganz ohne Vorgabe - keine Stimme, keine Sprache, kein Tempo
       const stimme = (meinVersuch === 1) ? sprachStimmeEnglisch() : null;
       if(stimme) u.voice = stimme;
       if(meinVersuch < 3){ u.lang = sprachKennung(stimme && stimme.lang); }
@@ -5527,8 +5563,15 @@ function sprachVorlesen(text, fertig){
         sprachBefundDaten.lang = (u.lang || "(ohne Angabe)")
           + (stimme && stimme.lang && stimme.lang !== u.lang ? "  (korrigiert von " + stimme.lang + ")" : "");
       }
-      u.rate  = 0.88;                            // etwas langsamer als normal
-      u.pitch = 1.0;
+      // Beim dritten Versuch bleibt auch die Geschwindigkeit unangetastet.
+      // Manche Android-Motoren antworten auf eine veraenderte Rate mit
+      // "synthesis-failed" - dann muessten alle Versuche scheitern, die
+      // sie mitschicken. Genau das Bild zeigt Markus' Befund ("3 von 3").
+      if(meinVersuch < 3){
+        u.rate  = 0.88;                          // etwas langsamer als normal
+        u.pitch = 1.0;
+      }
+      sprachBefundDaten.tempo = (meinVersuch < 3) ? "0.88 (langsamer)" : "Standard";
       u.onstart = ()=>{ gestartet = true; sprachBefundDaten.start = true; };
       u.onend   = ()=>{ sprachBefundDaten.ende = true; abschluss(true); };
       u.onerror = (ev)=>{ sprachBefundDaten.fehler = (ev && ev.error) || "unbekannt"; nochmal(); };
@@ -5542,16 +5585,26 @@ function sprachVorlesen(text, fertig){
       s.speak(u);
     }catch(e){ abschluss(false); return; }
 
-    // Der Wachhund - nur fuer genau diesen Versuch. 600 ms sind
-    // grosszuegig: im gesunden Fall kam onstart nach rund 50 ms.
+    // Der Wachhund - nur fuer genau diesen Versuch. Der erste bekommt
+    // eine ganze Sekunde: Auf einem Handy muss die Sprachausgabe manchmal
+    // erst hochfahren, und ein zu frueher Abbruch macht genau das kaputt,
+    // was er retten soll.
     setTimeout(()=>{
       if(gestartet || erledigt || versuche !== meinVersuch) return;
       nochmal();
-    }, 600);
+    }, meinVersuch === 1 ? 1000 : 700);
   };
 
-  try{ if(s.speaking || s.pending) s.cancel(); }catch(e){}
-  losschicken();
+  // WICHTIG - hier lag der Fehler: Ein speak() direkt nach einem cancel()
+  // wird in Chrome verschluckt. Haengt die Warteschlange erst einmal, war
+  // damit JEDER weitere Versuch zum Scheitern verurteilt: einmal kaputt,
+  // immer kaputt. Deshalb wird nach dem Aufraeumen kurz gewartet.
+  let musstePutzen = false;
+  try{
+    if(s.speaking || s.pending){ s.cancel(); musstePutzen = true; }
+  }catch(e){}
+  if(musstePutzen) setTimeout(losschicken, 180);
+  else losschicken();
   return true;
 }
 
@@ -5741,6 +5794,7 @@ function sprachBefundHtml(){
     ["Stimmen auf dem Gerät", stimmen.length + " insgesamt, " + en.length + " englische, davon " + lokal + " lokal"],
     ["Gewählte Stimme",       d.stimme || "(noch nichts versucht)"],
     ["Gesetzte Sprache",      d.lang || "(noch nichts versucht)"],
+    ["Sprechtempo",           d.tempo || "(noch nichts versucht)"],
     ["Versuche",              (d.versuche || 0) + " von 3"],
     ["Gerät hat begonnen",    d.start ? "ja" : "NEIN – das ist der Knackpunkt"],
     ["Gerät hat beendet",     d.ende ? "ja" : "nein"],
@@ -5960,7 +6014,9 @@ function renderAussprache(){
         render();
         // Zur Kontrolle: So klingt es richtig. Genau dafuer ist dieser
         // Modus da - erst selbst versuchen, dann hoeren, wie es sein soll.
-        setTimeout(()=>{ sprachVorlesen(ziel); }, 450);
+        // Sanft: Das laeuft ohne Fingerdruck. Chrome darf das ablehnen -
+        // dann passiert eben nichts, statt die Warteschlange zu zerstoeren.
+        setTimeout(()=>{ sprachVorlesen(ziel, null, true); }, 450);
       },
       fehler: (art)=>{
         const texte = {
@@ -6548,34 +6604,7 @@ function renderLogin(){
             <span class="kachel-s">Er fragt, was ansteht, und teilt es in klare Schritte auf.</span>
           </span>
         </div>
-        <div class="kachel">
-          <span class="kachel-ic">📦</span>
-          <span class="kachel-txt">
-            <span class="kachel-t">Wiederholen, bevor man vergisst</span>
-            <span class="kachel-s">Jedes Wort kommt genau dann wieder, wenn es wackelig wird.</span>
-          </span>
-        </div>
-        <div class="kachel">
-          <span class="kachel-ic">📝</span>
-          <span class="kachel-txt">
-            <span class="kachel-t">Proben wie in der Schule</span>
-            <span class="kachel-s">Mit Note &ndash; und vorher einer ehrlichen Einschätzung.</span>
-          </span>
-        </div>
-        <div class="kachel">
-          <span class="kachel-ic">🗣️</span>
-          <span class="kachel-txt">
-            <span class="kachel-t">Laut sprechen trauen</span>
-            <span class="kachel-s">Das Wort hören, nachsprechen, Rückmeldung bekommen.</span>
-          </span>
-        </div>
-        <div class="kachel">
-          <span class="kachel-ic">👨‍👩‍👧</span>
-          <span class="kachel-txt">
-            <span class="kachel-t">Eltern sehen, wie es läuft</span>
-            <span class="kachel-s">Ohne Werbung, ohne E-Mail, ohne Datenhandel.</span>
-          </span>
-        </div>
+
       </div>
 
       <div class="panel">
@@ -6599,7 +6628,8 @@ function renderLogin(){
         <p class="claim-fuss">Kostenlos &middot; keine Werbung &middot; keine E-Mail nötig</p>
       </div>
 
-      <div class="panel">
+      <details class="klapp">
+        <summary><span class="klapp-ic">🎁</span><span>Wie das mit den Belohnungen geht</span></summary>
         <div class="usp-hero">
           <span class="usp-kopf">&#127873; Das Herzstück &ndash; und das gibt es so kein zweites Mal</span>
           <span class="usp-titel">Die Belohnungen bestimmt ihr selbst</span>
@@ -6609,17 +6639,19 @@ function renderLogin(){
             Eltern-PIN. Nichts motiviert ein Kind mehr als eine Belohnung, auf die es selbst
             hingearbeitet hat.</span>
         </div>
-      </div>
+      </details>
 
-      <div class="panel">
-        <h3 class="abschnitt-h">&#127918; So lernt dein Kind</h3>
+      <details class="klapp">
+        <summary><span class="klapp-ic">🎮</span><span>Alles, was drin ist</span></summary>
         <div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Üben, das sich nicht so anfühlt</span><span class="sell-s">Fünf Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Wer Spaß hat, übt länger.</span></span></div><div class="sell"><span class="sell-i lg-sell-bild"><img src="${LINGORA_BILD}" alt="Lingora"></span><span class="sell-txt"><span class="sell-t">Frag Lingora, den Helfer</span><span class="sell-s">Er fragt, was ansteht &ndash; und baut daraus einen Lernplan mit klaren Schritten, bis zur Klassenarbeit. Ein aufmunterndes Wort hat er auch immer übrig.</span></span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-txt"><span class="sell-t">Vokabeln und Grammatik</span><span class="sell-s">Wortschatz trainieren und Grammatik Thema für Thema &ndash; von der Zeitform bis zur Wortstellung, mit Erklärung und Beispielen.</span></span></div><div class="sell"><span class="sell-i">&#128221;</span><span class="sell-txt"><span class="sell-t">Echte Testarbeiten</span><span class="sell-s">Tests werden benotet, genau wie in der Schule. Den Notenschlüssel stellen Sie als Eltern selbst ein &ndash; mild oder schulisch.</span></span></div><div class="sell"><span class="sell-i">&#128202;</span><span class="sell-txt"><span class="sell-t">Auswertung bis ins Detail</span><span class="sell-s">Jedes Grammatikthema einzeln: was sitzt schon, wo hakt es noch. Kindgerecht als Erz-Balken statt als Zahlenkolonne.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben und Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div><div class="sell"><span class="sell-i">&#10133;</span><span class="sell-txt"><span class="sell-t">Eure Schulvokabeln</span><span class="sell-s">Die Wörter aus dem eigenen Schulbuch eintippen oder aus Excel hochladen.</span></span></div></div>
       </div>
 
-      <div class="panel">
-        <h3 class="abschnitt-h">&#129521; Und weil es Spaß macht</h3>
-        <div class="sell-grid"><div class="sell"><span class="sell-i">&#129521;</span><span class="sell-txt"><span class="sell-t">Die eigene Figur</span><span class="sell-s">In der 3D-Werkstatt bauen, färben und bemalen. Zwölf Verkleidungen, Schwert oder Zauberstab in die Hand &ndash; und als Minecraft-Skin zum Mitnehmen.</span></span></div></div>
-      </div>
+      </details>
+
+      <details class="klapp">
+        <summary><span class="klapp-ic">🧱</span><span>Und weil es Spaß macht</span></summary>
+        <div class="sell-grid"><div class="sell"><span class="sell-i">&#129521;</span><span class="sell-txt"><span class="sell-t">Die eigene Figur</span><span class="sell-s">In der 3D-Werkstatt bauen, färben und bemalen. Zwölf Verkleidungen, Schwert oder Zauberstab in die Hand &ndash; und als Minecraft-Skin zum Mitnehmen.</span></span></div>
+      </details>
 
       <div class="panel">
         <details class="eltern"><summary>Für Eltern: Was ist das hier?</summary><p>LingoCrafter ist kostenlos, zeigt keine Werbung und verkauft keine Daten. Zum Anlegen eines Kontos reichen ein frei gewählter Spielername und eine vierstellige PIN &ndash; keine E-Mail-Adresse, kein echter Name nötig.</p><p>Die Münzen, die Ihr Kind erspielt, tauscht es gegen Belohnungen ein, die <strong>Sie</strong> festlegen &ndash; vom Filmabend bis zum Taschengeld. Jede Einlösung können Sie per Link und Eltern-PIN bestätigen.</p></details>
