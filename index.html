@@ -440,6 +440,8 @@
   .asp-antwort.gut{ background:#d7f3da; color:#1e5c28; }
   .asp-antwort.fast{ background:#fdf1c7; color:#6e5300; }
   .asp-antwort.nochmal{ background:#eceff3; color:#3a4450; }
+  /* Nach dem dritten Versuch: freundlich, nicht nach Fehler aussehend. */
+  .asp-antwort.aufgeben{ background:#e8eefb; color:#2c3e63; }
   /* Die Schwierigkeitswahl im Flutungsraum */
   .flut-wahl{
     display:flex; align-items:center; gap:14px; width:100%;
@@ -2008,7 +2010,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "36.1 – Lingora stellt sich vor";
+const APP_VERSION = "37.1 – Fairer beim Zuhören";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -6180,17 +6182,52 @@ function sprachZuhoeren({fertig, fehler, start}){
      - die vorhandene Tippfehler-Toleranz wird mitbenutzt
      - im Zweifel lieber "fast" als "falsch"
 */
-function sprachVergleich(gehoertListe, ziel){
-  const zielNorm = normalize(cleanEn(ziel));
-  let bestes = {result:"wrong", gehoert:"", abstand: Infinity};
-  (gehoertListe || []).forEach(g=>{
-    const n = normalize(g);
-    if(!n) return;
-    const d = levenshtein(n, zielNorm);
-    if(d < bestes.abstand) bestes = {result:"wrong", gehoert:g, abstand:d};
+/* Alle Fassungen, die als richtig gelten duerfen.
+
+   In der Vokabelliste steht "to earn" - ein Kind sagt aber meistens nur
+   "earn", so steht es ja auch an der Tafel. Und Spracherkenner ergaenzen
+   gern Woerter, die niemand gesagt hat ("the glass"). Beides darf nicht
+   als Fehler zaehlen. */
+function sprachFassungen(text){
+  const roh = normalize(cleanEn(String(text || "")));
+  const raus = [roh];
+  const ohneTo = roh.replace(/^to\s+/, "");
+  if(ohneTo && ohneTo !== roh) raus.push(ohneTo);
+  raus.slice().forEach(v=>{
+    const ohneArtikel = v.replace(/^(the|a|an)\s+/, "");
+    if(ohneArtikel && raus.indexOf(ohneArtikel) < 0) raus.push(ohneArtikel);
   });
+  return raus.filter(x=>x);
+}
+
+/* Steht das Zielwort als GANZES Wort im Gehoerten? Dann ist es gesagt
+   worden, auch wenn der Erkenner noch etwas drumherum gebaut hat. */
+function sprachEnthalten(gehoert, ziele){
+  const g = " " + gehoert + " ";
+  return ziele.some(z => z.length >= 3 && g.indexOf(" " + z + " ") >= 0);
+}
+
+function sprachVergleich(gehoertListe, ziel){
+  const ziele = sprachFassungen(ziel);
+  const laenge = ziele[ziele.length - 1].length || 1;   // die kuerzeste Fassung
+  let bestes = {result:"wrong", gehoert:"", abstand: Infinity};
+
+  (gehoertListe || []).forEach(g=>{
+    const gRoh = normalize(g);
+    if(!gRoh) return;
+    // Auch das Gehoerte darf sein "to" und seinen Artikel verlieren.
+    sprachFassungen(gRoh).forEach(gv=>{
+      ziele.forEach(z=>{
+        const d = levenshtein(gv, z);
+        if(d < bestes.abstand) bestes = {result:"wrong", gehoert:g, abstand:d};
+      });
+    });
+    // Enthaelt das Gehoerte das Zielwort vollstaendig? Dann ist es richtig.
+    if(sprachEnthalten(gRoh, ziele)) bestes = {result:"wrong", gehoert:g, abstand:0};
+  });
+
   if(bestes.abstand === Infinity) return {result:"nichts", gehoert:""};
-  const grenze = Math.max(1, Math.round(zielNorm.length * 0.34));
+  const grenze = Math.max(1, Math.round(laenge * 0.34));
   if(bestes.abstand === 0) bestes.result = "correct";
   else if(bestes.abstand <= grenze) bestes.result = "almost";
   return bestes;
@@ -6412,7 +6449,9 @@ function renderAussprache(){
 
     </div>
 
-    <button class="btn" id="asp-weiter">${state.currentIndex + 1 >= woerter.length ? "🏁 FERTIG" : "▶ WEITER"}</button>
+    <button class="btn ${st.art === "aufgeben" ? "gold" : ""}" id="asp-weiter">${
+      state.currentIndex + 1 >= woerter.length ? "🏁 FERTIG"
+        : (st.art === "aufgeben" ? "▶ NÄCHSTES WORT" : "▶ WEITER")}</button>
   `;
 
   const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
@@ -6466,12 +6505,23 @@ function renderAussprache(){
           art = "fast";
         } else {
           // Bewusst kein "falsch": Die Erkennung irrt oft genug.
-          text = "Ich habe &bdquo;" + escapeHtml(v.gehoert || "nichts") + "&ldquo; verstanden. "
-               + "Das Wort heißt <strong>" + escapeHtml(ziel) + "</strong>. Probier es nochmal &ndash; "
-               + "und lass es dir ruhig erst vormachen.";
-          art = "nochmal";
+          const versuch = (st.versuche || 0) + 1;
+          if(versuch >= 3){
+            // Ab hier liegt es nicht mehr am Kind - und das muss es hoeren.
+            text = "Diesmal will die Erkennung nicht. <strong>Das liegt nicht an dir</strong> &ndash; "
+                 + "sie ist auf Erwachsene trainiert und tut sich mit manchen Wörtern schwer. "
+                 + "Hör dir <strong>" + escapeHtml(ziel) + "</strong> noch einmal an und geh weiter.";
+            art = "aufgeben";
+          } else {
+            text = "Ich habe &bdquo;" + escapeHtml(v.gehoert || "nichts") + "&ldquo; verstanden. "
+                 + "Das Wort heißt <strong>" + escapeHtml(ziel) + "</strong>. Probier es nochmal &ndash; "
+                 + "und lass es dir ruhig erst vormachen.";
+            art = "nochmal";
+          }
         }
-        state.ausspracheStand = {zeigen: st.zeigen, laeuft: false, rueckmeldung: text, art: art, gehoert: true};
+        state.ausspracheStand = {zeigen: st.zeigen, laeuft: false, rueckmeldung: text, art: art,
+                                 gehoert: true,
+                                 versuche: (v.result === "correct") ? 0 : (st.versuche || 0) + 1};
         render();
         // Zur Kontrolle: So klingt es richtig. Genau dafuer ist dieser
         // Modus da - erst selbst versuchen, dann hoeren, wie es sein soll.
