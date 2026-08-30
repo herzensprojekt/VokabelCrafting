@@ -452,6 +452,10 @@
   .befund-tab{ width:100%; border-collapse:collapse; font-size:12.5px; }
   .befund-tab td{ padding:4px 2px; vertical-align:top; border-bottom:1px solid rgba(0,0,0,.07); }
   .befund-tab td:first-child{ width:44%; opacity:.7; }
+  .befund-urteil{
+    margin:10px 0 0; padding:9px 11px; border-radius:10px;
+    background:rgba(194,70,31,.10); font-size:12.5px; line-height:1.5;
+  }
   .befund-rat{ margin:10px 0 4px; font-size:13px; }
   .befund-liste{ margin:0; padding-left:18px; font-size:12.5px; line-height:1.5; }
   .befund-liste li{ margin-bottom:6px; }
@@ -886,55 +890,46 @@
      Belohnungen - und darunter sechs Kacheln mit je drei bis fuenf
      Woertern. Alles Ausfuehrliche steht unter der Anmeldung.
      --------------------------------------------------------------- */
+  /* Warm statt grell: Ein Lernprogramm fuer ein Kind soll aussehen wie
+     ein freundliches Heft, nicht wie ein Spielautomat. Creme, Bernstein,
+     weiches Braun - und keine Flaeche, die nach Aufmerksamkeit schreit. */
   .hero{
-    position:relative; overflow:hidden;
-    margin:0 0 12px; padding:22px 20px 20px;
-    border-radius:24px; color:#fff; text-align:center;
-    background:linear-gradient(145deg,#7a4bbf 0%,#5b32a0 45%,#3d1f74 100%);
-    box-shadow:0 10px 30px rgba(61,31,116,.35);
+    margin:0 0 10px; padding:16px 18px;
+    border-radius:20px; text-align:center;
+    background:linear-gradient(160deg,#fff6e6 0%,#ffeccf 100%);
+    border:1px solid rgba(210,160,90,.30);
+    box-shadow:0 3px 12px rgba(150,110,60,.14);
   }
-  /* Ein weicher Lichtschein - modern, aber ohne Bilddatei. */
-  .hero::before{
-    content:""; position:absolute; left:-30%; top:-70%;
-    width:160%; height:160%; pointer-events:none;
-    background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.22), transparent 60%);
-  }
-  .hero > *{ position:relative; }
-  .hero-marke{
-    display:inline-block; margin-bottom:10px; padding:5px 12px;
-    border-radius:999px; background:rgba(255,255,255,.18);
-    font-family:var(--font); font-weight:700; font-size:11px;
-    letter-spacing:.06em; text-transform:uppercase;
-  }
+  .hero-ic{ display:block; font-size:30px; line-height:1; margin-bottom:6px; }
   .hero-titel{
-    font-family:var(--serif); font-weight:700; font-size:29px; line-height:1.15;
-    letter-spacing:-0.02em; margin:0 0 8px;
+    font-family:var(--serif); font-weight:700; font-size:21px; line-height:1.25;
+    color:#6b4a1f; margin:0 0 6px;
   }
-  .hero-titel em{ font-style:normal; color:var(--gold,#f2c94c); }
   .hero-text{
-    font-family:var(--font); font-size:14.5px; line-height:1.5;
-    margin:0; opacity:.94;
+    font-family:var(--font); font-size:13.5px; line-height:1.55;
+    color:#6f5a41; margin:0;
   }
-  .hero-muenzen{ margin-top:12px; font-size:20px; letter-spacing:6px; opacity:.9; }
 
   .kachel-reihe{
     display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
     gap:8px; margin-bottom:14px;
   }
   .kachel{
-    display:flex; flex-direction:column; gap:3px;
+    display:flex; flex-direction:column; gap:4px;
     padding:12px 11px; border-radius:16px; text-align:left;
-    background:rgba(255,255,255,.82);
-    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-    border:1px solid rgba(255,255,255,.9);
-    box-shadow:0 2px 8px rgba(40,20,80,.10);
+    background:rgba(255,253,248,.92);
+    border:1px solid rgba(200,170,130,.30);
+    box-shadow:0 2px 7px rgba(150,120,80,.10);
   }
-  .kachel-ic{ font-size:21px; line-height:1; }
+  .kachel-ic{ font-size:20px; line-height:1; }
   .kachel-t{
-    font-family:var(--font); font-weight:800; font-size:14px; line-height:1.2;
-    overflow-wrap:anywhere;
+    font-family:var(--font); font-weight:700; font-size:13.5px; line-height:1.25;
+    color:#4a3a28; overflow-wrap:anywhere;
   }
-  .kachel-s{ font-family:var(--font); font-size:11.8px; line-height:1.35; opacity:.72; }
+  .kachel-s{
+    font-family:var(--font); font-size:11.8px; line-height:1.4;
+    color:#7a6852;
+  }
 
   /* Auf sehr schmalen Geraeten lieber untereinander als abgeschnitten. */
   @media (max-width: 340px){
@@ -1942,7 +1937,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "29.1 – Neue Startseite";
+const APP_VERSION = "30.0 – Warme Startseite";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -5478,7 +5473,10 @@ function sprachVorlesen(text, fertig){
     wartet = true;
     abhaengen();                     // sonst loest unser cancel() ein onerror aus
     try{ s.cancel(); }catch(e){}
-    setTimeout(()=>{ wartet = false; losschicken(); }, 60);
+    // Muss die Sprachausgabe erst hochfahren - was in einer installierten
+    // App vorkommt -, waren 60 Millisekunden viel zu knapp. Jetzt wird mit
+    // jedem Versuch geduldiger gewartet.
+    setTimeout(()=>{ wartet = false; losschicken(); }, versuche === 1 ? 600 : 1200);
   };
 
   const losschicken = ()=>{
@@ -5496,9 +5494,14 @@ function sprachVorlesen(text, fertig){
       if(stimme) u.voice = stimme;
       if(meinVersuch < 3){ u.lang = (stimme && stimme.lang) || "en-GB"; }
       sprachBefundDaten.versuche = meinVersuch;
-      sprachBefundDaten.stimme = stimme ? (stimme.name + " / " + stimme.lang
-                                  + (stimme.localService ? " / lokal" : " / Netz")) : "(keine)";
-      sprachBefundDaten.lang = u.lang || "(keine)";
+      // Nur der ERSTE Versuch waehlt eine Stimme - die spaeteren lassen sie
+      // absichtlich weg. Wuerde hier der letzte Versuch stehen, meldete der
+      // Befund immer "(keine)" und fuehrte in die Irre.
+      if(meinVersuch === 1){
+        sprachBefundDaten.stimme = stimme ? (stimme.name + " / " + stimme.lang
+                                    + (stimme.localService ? " / lokal" : " / Netz")) : "keine gefunden";
+        sprachBefundDaten.lang = u.lang || "(ohne Angabe)";
+      }
       u.rate  = 0.88;                            // etwas langsamer als normal
       u.pitch = 1.0;
       u.onstart = ()=>{ gestartet = true; sprachBefundDaten.start = true; };
@@ -5724,8 +5727,18 @@ function sprachBefundHtml(){
       <table class="befund-tab">
         ${zeilen.map(([a,b])=>`<tr><td>${a}</td><td>${escapeHtml(String(b))}</td></tr>`).join("")}
       </table>
+      ${d.fehler === "synthesis-failed" ? `
+        <p class="befund-urteil">Diese Meldung kommt <strong>vom Gerät</strong>, nicht von
+        LingoCrafter: Die App hat sauber angefragt, die Android-Sprachausgabe antwortet
+        &bdquo;kann ich nicht&ldquo;. Das betrifft dann meist auch andere Apps, die vorlesen.</p>` : ""}
       <p class="befund-rat"><strong>Das hilft am häufigsten:</strong></p>
       <ul class="befund-liste">
+        ${d.fehler === "synthesis-failed" ? `
+        <li><strong>Sprachausgabe-Motor prüfen.</strong> Android-Einstellungen &rarr;
+            <em>Bedienungshilfen &rarr; Text-in-Sprache</em>. Dort auf das Zahnrad neben dem
+            Motor tippen und die Sprache <em>Englisch</em> herunterladen. Direkt darüber gibt es
+            einen Knopf <em>Anhören</em> &ndash; wenn schon der stumm bleibt, liegt es sicher
+            nicht an LingoCrafter.</li>` : ""}
         <li><strong>Medienlautstärke prüfen.</strong> Die Sprachausgabe läuft nicht über die
             Klingel-, sondern über die <em>Medien</em>-Lautstärke. Lautstärketaste drücken und
             dort den Regler für Medien hochziehen.</li>
@@ -6472,43 +6485,42 @@ function renderLogin(){
       </div>
     ` : `
       <div class="hero">
-        <span class="hero-marke">Das gibt es so kein zweites Mal</span>
-        <h2 class="hero-titel">Belohnungen,<br>die <em>ihr</em> festlegt</h2>
-        <p class="hero-text">Filmabend. Schwimmbad. Taschengeld.
-          Ihr bestimmt, wofür sich Üben lohnt &ndash; nicht wir.</p>
-        <div class="hero-muenzen"><span>🪙</span><span>🪙</span><span>🪙</span></div>
+        <span class="hero-ic">🎁</span>
+        <h2 class="hero-titel">Die Belohnungen bestimmt ihr selbst</h2>
+        <p class="hero-text">Filmabend, Schwimmbad, Taschengeld &ndash; ihr legt fest,
+          wofür sich das Üben lohnt. Das Kind erspielt sich die Münzen dafür.</p>
       </div>
 
       <div class="kachel-reihe">
         <div class="kachel">
-          <span class="kachel-ic">🧭</span>
-          <span class="kachel-t">Lingora plant</span>
-          <span class="kachel-s">Sagt dir, was heute dran ist &ndash; rechnet auf dem Gerät.</span>
-        </div>
-        <div class="kachel">
-          <span class="kachel-ic">📝</span>
-          <span class="kachel-t">Probe&shy;arbeiten</span>
-          <span class="kachel-s">Mit Note. Und einer ehrlichen Prognose vorher.</span>
-        </div>
-        <div class="kachel">
           <span class="kachel-ic">🎮</span>
-          <span class="kachel-t">Fünf Spiele</span>
-          <span class="kachel-s">Üben, das sich nicht so anfühlt.</span>
+          <span class="kachel-t">Üben, das sich nicht so anfühlt</span>
+          <span class="kachel-s">Fünf Spiele statt Karteikarten. Wer Spaß hat, übt länger.</span>
         </div>
         <div class="kachel">
-          <span class="kachel-ic">🗣️</span>
-          <span class="kachel-t">Aussprache</span>
-          <span class="kachel-s">Sag es laut &ndash; das Handy hört zu.</span>
+          <span class="kachel-ic">🧭</span>
+          <span class="kachel-t">Ein Helfer, der den Plan macht</span>
+          <span class="kachel-s">Lingora fragt, was ansteht, und teilt es in Schritte auf.</span>
         </div>
         <div class="kachel">
           <span class="kachel-ic">📦</span>
-          <span class="kachel-t">Merkt jedes Wort</span>
-          <span class="kachel-s">Wiederholt genau dann, wenn du es vergisst.</span>
+          <span class="kachel-t">Wiederholen, bevor man vergisst</span>
+          <span class="kachel-s">Jedes Wort kommt genau dann wieder, wenn es wackelig wird.</span>
         </div>
         <div class="kachel">
-          <span class="kachel-ic">🔒</span>
-          <span class="kachel-t">Bleibt bei euch</span>
-          <span class="kachel-s">Keine Werbung, keine E-Mail, keine Daten&shy;händler.</span>
+          <span class="kachel-ic">📝</span>
+          <span class="kachel-t">Proben wie in der Schule</span>
+          <span class="kachel-s">Mit Note &ndash; und vorher einer ehrlichen Einschätzung.</span>
+        </div>
+        <div class="kachel">
+          <span class="kachel-ic">🗣️</span>
+          <span class="kachel-t">Laut sprechen trauen</span>
+          <span class="kachel-s">Das Wort hören, nachsprechen, Rückmeldung bekommen.</span>
+        </div>
+        <div class="kachel">
+          <span class="kachel-ic">👨‍👩‍👧</span>
+          <span class="kachel-t">Eltern sehen, wie es läuft</span>
+          <span class="kachel-s">Ohne Werbung, ohne E-Mail, ohne Datenhandel.</span>
         </div>
       </div>
 
