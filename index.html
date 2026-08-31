@@ -1884,11 +1884,6 @@
 
 /* --- Aufklappbares: Einstellungen und "Mehr" ------------------------ */
 .einstell, .mehr-block{ border:0; }
-.einstell > summary, .mehr-block > summary{
-  display:flex; align-items:baseline; gap:8px;
-  cursor:pointer; list-style:none;
-  font-family:var(--font); font-weight:800; font-size:15px;
-}
 .einstell > summary::-webkit-details-marker,
 .mehr-block > summary::-webkit-details-marker{ display:none; }
 .einstell-w{ font-weight:600; font-size:13px; color:#8a8073; }
@@ -1962,12 +1957,16 @@
      genau auf - sonst sitzt ein Rahmen im Rahmen und ringsum bleibt
      Flaeche ungenutzt. */
   padding:14px 16px; margin:-18px -18px 0;
-  border:0; border-bottom:2px solid #cfe3d2;
+  border:0; border-bottom:2px solid #bcd9c3;
   border-radius:16px 16px 0 0;
-  background:linear-gradient(180deg,#eef9f0,#ffffff);
+  background:linear-gradient(165deg,#e6f4e9 0%,#f4fbf6 60%,#ffffff 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.9);
   cursor:pointer; list-style:none; box-sizing:border-box;
 }
-.einstell:not([open]) .einstell-knopf{ border-radius:16px; border-bottom:0; margin-bottom:-18px; }
+.einstell:not([open]) .einstell-knopf{
+  border-radius:16px; border-bottom:0; margin-bottom:-18px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 0 rgba(60,110,70,0.10);
+}
 .einstell-knopf::-webkit-details-marker{ display:none; }
 .einstell-knopf::after{ content:none; }
 .einstell[open] .einstell-knopf{ margin-bottom:14px; }
@@ -1977,6 +1976,7 @@
    passiert, wenn man auf Start tippt. */
 .ek-ic{
   flex:0 0 auto; width:44px; height:44px; border-radius:14px; font-size:23px;
+  border:2px solid rgba(255,255,255,0.95);
   display:flex; align-items:center; justify-content:center;
   background:linear-gradient(160deg,#eaf9e7,#c9ecc7);
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.08);
@@ -1988,14 +1988,14 @@
 .ek-ic[data-mode="flood"],
 .ek-ic[data-mode="floodhard"] { background:linear-gradient(160deg,#e1f6f9,#bce6ee); }
 .ek-ic[data-mode="aussprache"]{ background:linear-gradient(160deg,#fdf0f6,#f6cde2); }
-.ek-txt{ display:flex; flex-direction:column; min-width:0; flex:1; padding-top:1px; }
+.ek-txt{ display:flex; flex-direction:column; min-width:0; flex:1; }
 .ek-hinweis{
   display:block; margin-top:5px;
   font-size:12px; font-weight:600; color:#7d8a7f;
 }
 .ek-l{
-  font-size:11px; font-weight:800; letter-spacing:.07em; color:#6f9276;
-  line-height:1.1;
+  font-size:11px; font-weight:800; letter-spacing:.07em; color:#5f8468;
+  line-height:1.35;                 /* auf Hoehe der ersten Bildzeile */
 }
 .ek-w{
   font-family:var(--font); font-weight:800; font-size:17px;
@@ -2070,6 +2070,17 @@ summary.mehr-knopf::after{ content:none; }
 .mehr-spiele[open] > summary::after{ content:"👆"; }
 .ms-u{ font-weight:600; font-size:12px; color:#7d8a7f; }
 .mehr-spiele[open] > summary{ margin-bottom:10px; }
+
+/* --- Grammatik: was jetzt zaehlt, steht oben ------------------------ */
+.gram-jetzt{
+  background:#f3f8f2; border:2px solid #dbe8d8;
+  border-radius:14px; padding:10px 12px; margin:0 0 14px;
+}
+.gram-jetzt-l{
+  margin:0 0 8px; font-size:11px; font-weight:800;
+  letter-spacing:.07em; color:#6f8a72;
+}
+.gram-tile.vorschlag small{ color:#4a7a52; font-weight:700; }
 </style>
 </head>
 <body>
@@ -2323,7 +2334,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "46.0 – Wegstein";
+const APP_VERSION = "46.2 – Wegstein";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -8117,6 +8128,51 @@ function renderLogin(){
 /* ---------------------------------------------------
    START-SCREEN
 --------------------------------------------------- */
+/* Bei 26 Themen ist die Frage nicht "welche gibt es", sondern "welches
+   jetzt". Genau drei Antworten darauf, in dieser Reihenfolge:
+
+     1. das zuletzt geuebte   - Fortsetzen schlaegt Wechseln
+     2. das schwaechste       - dort bringt Ueben am meisten
+     3. das erste unberuehrte - was man nie angefasst hat, faellt sonst
+                                dauerhaft hinten runter
+
+   Damit erreicht ein Kind den ueblichen Fall mit EINEM Tipp, ohne
+   ueberhaupt eine Unit zu oeffnen. Die vollstaendige Gliederung bleibt
+   darunter - sie verschwindet nicht, sie muss nur nicht mehr
+   durchsucht werden. */
+function grammatikVorschlaege(){
+  const raus = [];
+  const rein = (t, grund)=>{
+    if(!t || t.locked) return;
+    if(raus.some(x => x.t.id === t.id)) return;
+    raus.push({t: t, grund: grund});
+  };
+  const z = state.zuletztGeuebt;
+  if(z && z.bereich === "grammar") rein(grammarTopicById(z.topic), "zuletzt geübt");
+
+  const schwach = GRAMMAR_TOPICS
+    .map(t => ({t: t, i: grammarSkillInfo(t)}))
+    .filter(x => x.i.genug && x.i.quote < 0.7)
+    .sort((a, b) => a.i.quote - b.i.quote)[0];
+  if(schwach) rein(schwach.t, "da hakt es noch");
+
+  const neu = GRAMMAR_TOPICS.find(t => !t.locked && grammarSkillInfo(t).fenster === 0);
+  rein(neu, "noch nie geübt");
+
+  return raus.slice(0, 3);
+}
+
+/* Welche Unit soll offen sein, wenn noch keine gewaehlt wurde? Die,
+   in der zuletzt gearbeitet wurde - sonst die mit dem schwaechsten
+   Thema, sonst die erste. */
+function grammatikOffeneUnit(){
+  if(state.grammarOpenUnit != null) return state.grammarOpenUnit;
+  const v = grammatikVorschlaege();
+  if(v.length) return v[0].t.unit;
+  const erste = GRAMMAR_UNITS.find(u => grammarTopicsOfUnit(u.nr).length);
+  return erste ? erste.nr : null;
+}
+
 function renderStart(){
   const cats = categories();
 
@@ -8213,11 +8269,29 @@ function renderStart(){
         }).join("")}
       </div>
       ` : `
-      <div class="unit-tipp">👇 <span>Tippe auf eine Unit, um ihre Themen aufzuklappen.</span></div>
+      ${(function(){
+        const v = grammatikVorschlaege();
+        if(!v.length) return "";
+        return `
+        <div class="gram-jetzt">
+          <p class="gram-jetzt-l">FÜR DICH JETZT</p>
+          <div class="mode-grid">
+            ${v.map(x=>`
+              <button type="button" class="mode-btn gram-tile vorschlag" data-grammar-topic="${x.t.id}" data-unit="${x.t.unit}">
+                <span class="gt-icon">${x.t.icon}</span>
+                <span class="gt-txt">
+                  <span class="gt-name">${escapeHtml(x.t.name)}</span>
+                  <small>${escapeHtml(x.grund)}</small>
+                </span>
+              </button>`).join("")}
+          </div>
+        </div>`;
+      })()}
+      <div class="unit-tipp">👇 <span>Alle Themen nach Units &ndash; tippe eine an.</span></div>
       ${GRAMMAR_UNITS.map(u=>{
         const themen = grammarTopicsOfUnit(u.nr);
         if(themen.length === 0) return "";
-        const offen = state.grammarOpenUnit === u.nr;
+        const offen = grammatikOffeneUnit() === u.nr;
         const geuebt = themen.filter(t=>grammarSkillInfo(t).fenster > 0).length;
         return `
         <div class="unit-block ${offen ? 'offen' : ''}">
