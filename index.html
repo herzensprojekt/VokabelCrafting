@@ -5534,12 +5534,53 @@ function tonName(englisch){
 
 /* Spielt die Datei zum Wort ab. fertig(true) wenn sie geklungen hat,
    fertig(false) wenn es sie nicht gibt oder sie nicht laeuft. */
+/* Welche Aufnahme laeuft gerade? Ohne diese Referenz laesst sich eine
+   angefangene Wiedergabe nicht stoppen - und genau das war der Grund,
+   weshalb das Mikrofon bei manchen Woertern zuverlaessig nichts hoerte:
+   die Aufnahme lief noch, Wiedergabe und Mikrofon stritten um dasselbe
+   Audiogeraet. Wortabhaengig, weil jede Aufnahme anders lang ist. */
+let tonLaeuft = null;
+
+/* Meldet eine Aufnahme als "die laeuft gerade" an. Die Referenz wird
+   erst durch die echten Audio-Ereignisse geloescht, NICHT wenn die App
+   dem Aufrufer schon vorab Vollzug meldet - sonst ist eine lange
+   Aufnahme mittendrin nicht mehr stoppbar. */
+function tonAnmelden(a){
+  tonLaeuft = a;
+  const ab = ()=>{ if(tonLaeuft === a) tonLaeuft = null; };
+  try{
+    a.addEventListener('ended', ab);
+    a.addEventListener('error', ab);
+    a.addEventListener('pause', ab);
+  }catch(e){}
+  return a;
+}
+
+function tonAllesStoppen(){
+  let lief = false;
+  try{
+    if(tonLaeuft){
+      lief = !tonLaeuft.paused && tonLaeuft.currentTime > 0;
+      tonLaeuft.pause();
+      try{ tonLaeuft.currentTime = 0; }catch(e){}
+      tonLaeuft = null;
+    }
+  }catch(e){ tonLaeuft = null; }
+  try{
+    const sy = window.speechSynthesis;
+    if(sy && (sy.speaking || sy.pending)){ sy.cancel(); lief = true; }
+  }catch(e){}
+  return lief;
+}
+
 function tonAbspielen(englisch, fertig){
   const name = tonName(englisch);
   if(!name || tonBekannt[name] === false){ if(fertig) fertig(false); return false; }
   try{
+    tonAllesStoppen();
     const a = new Audio(TON_ORDNER + name + ".m4a");
     a.preload = "auto";
+    tonAnmelden(a);
     let erledigt = false;
     const schluss = (ok)=>{
       if(erledigt) return;
@@ -5869,9 +5910,12 @@ function commonsAbspielen(englisch, fertig){
   const e = commonsBekannt(englisch);
   if(!e || !e.url){ if(fertig) fertig(false); return false; }
   try{
+    tonAllesStoppen();
     const a = new Audio(e.url);
+    tonAnmelden(a);
     let erledigt = false;
-    const schluss = (ok)=>{ if(erledigt) return; erledigt = true; if(fertig) fertig(ok); };
+    const schluss = (ok)=>{ if(erledigt) return; erledigt = true;
+                            if(fertig) fertig(ok); };
     a.onended = ()=>schluss(true);
     a.onerror = ()=>schluss(false);
     const p = a.play();
@@ -6096,12 +6140,11 @@ function sprachAufwecken(){ /* absichtlich leer - siehe oben */ }
    mehrfach melden kann und wir jeden Fall einzeln behandeln wollen.
 ------------------------------------------------------------------ */
 function sprachZuhoeren({fertig, fehler, start}){
-  // Erst Ruhe schaffen: Spricht die App noch, hoert das Mikrofon sie
-  // statt das Kind.
-  try{
-    const s = window.speechSynthesis;
-    if(s && (s.speaking || s.pending)) s.cancel();
-  }catch(e){}
+  // Erst wirklich Ruhe schaffen - Geraetestimme UND laufende Aufnahme.
+  // Lief gerade etwas, braucht das Geraet einen Moment, um von Wiedergabe
+  // auf Aufnahme umzuschalten. Ohne diese Pause hoert das Mikrofon auf
+  // Android haeufig gar nichts.
+  const liefNochTon = tonAllesStoppen();
   const Erkenner = sprachErkenner();
   if(!Erkenner){ if(fehler) fehler("nicht-vorhanden"); return null; }
   let r;
@@ -6123,10 +6166,13 @@ function sprachZuhoeren({fertig, fehler, start}){
     }
   }catch(e){ sprachZuletztLokal = false; }
 
-  let beendet = false, hatGestartet = false;
+  let beendet = false, hatGestartet = false, hatTon = false;
   const einmal = (fn, arg)=>{ if(beendet) return; beendet = true; if(fn) fn(arg); };
 
   r.onstart = ()=>{ hatGestartet = true; if(start) start(); };
+  // audiostart heisst: das Mikrofon liefert Daten. Bleibt das aus, war
+  // nicht "zu leise gesprochen" - dann kam ueberhaupt kein Ton an.
+  r.onaudiostart = ()=>{ hatTon = true; };
   r.onresult = (e)=>{
     const liste = [];
     try{
@@ -6144,6 +6190,9 @@ function sprachZuhoeren({fertig, fehler, start}){
     if(sprachZuletztLokal && (art === "language-not-supported" || art === "service-not-allowed")){
       sprachZuletztLokal = false;
       beendet = true;                       // dieser Versuch ist abgehakt
+      // Der erste Erkenner haelt sonst weiter das Mikrofon fest - dann
+      // bekommt der zweite nichts und meldet "nichts gehoert".
+      try{ r.abort(); }catch(eAb){}
       try{
         const r2 = new Erkenner();
         r2.lang = "en-GB"; r2.interimResults = false;
@@ -6166,9 +6215,15 @@ function sprachZuhoeren({fertig, fehler, start}){
   };
   // Ist der Erkenner nie gestartet, war nicht "nichts zu hoeren" - dann
   // ist er gar nicht erst angesprungen. Zwei verschiedene Sachen.
-  r.onend = ()=>{ einmal(fehler, hatGestartet ? "nichts-gehoert" : "nicht-gestartet"); };
+  r.onend = ()=>{
+    if(!hatGestartet) return einmal(fehler, "nicht-gestartet");
+    einmal(fehler, hatTon ? "nichts-gehoert" : "kein-ton");
+  };
 
-  try{ r.start(); }catch(e){ einmal(fehler, "start-fehlgeschlagen"); }
+  const losgehen = ()=>{
+    try{ r.start(); }catch(e){ einmal(fehler, "start-fehlgeschlagen"); }
+  };
+  if(liefNochTon) setTimeout(losgehen, 260); else losgehen();
   return r;
 }
 
@@ -6535,6 +6590,8 @@ function renderAussprache(){
           "service-not-allowed": "Ich darf nicht auf das Mikrofon. Erlaub es einmal in den Browser-Einstellungen.",
           "no-speech": "Ich habe nichts gehört. Sprich ruhig etwas lauter und näher ans Handy.",
           "nichts-gehoert": "Ich habe nichts gehört. Sprich ruhig etwas lauter und näher ans Handy.",
+          "kein-ton": "Das Mikrofon hat nichts geliefert &ndash; das lag nicht an dir. "
+                    + "Tipp einfach nochmal auf den Knopf.",
           "audio-capture": "Ich finde kein Mikrofon an diesem Gerät.",
           "network": "Dafür brauche ich gerade Internet &ndash; das Zuhören läuft übers Netz.",
           "nicht-vorhanden": "Dieser Browser kann leider nicht zuhören.",
