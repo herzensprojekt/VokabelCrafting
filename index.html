@@ -1891,10 +1891,6 @@
 }
 .einstell > summary::-webkit-details-marker,
 .mehr-block > summary::-webkit-details-marker{ display:none; }
-.einstell > summary::after, .mehr-block > summary::after{
-  content:"▾"; margin-left:auto; opacity:.5; font-size:13px;
-}
-.einstell[open] > summary::after, .mehr-block[open] > summary::after{ content:"▴"; }
 .einstell-w{ font-weight:600; font-size:13px; color:#8a8073; }
 .mehr-block{
   background:rgba(255,255,255,0.72);
@@ -1962,14 +1958,19 @@
    kann, sondern was passiert, wenn das Kind jetzt auf Start tippt. */
 .einstell-knopf{
   display:flex; align-items:center; gap:12px;
-  padding:12px 14px; margin:-4px -4px 0;
-  border:2px solid #cfe3d2; border-radius:14px;
-  background:linear-gradient(180deg,#f4fbf5,#fff);
-  cursor:pointer; list-style:none; min-height:56px; box-sizing:border-box;
+  /* Die negativen Raender heben den Innenabstand des Panels (18 px)
+     genau auf - sonst sitzt ein Rahmen im Rahmen und ringsum bleibt
+     Flaeche ungenutzt. */
+  padding:14px 16px; margin:-18px -18px 0;
+  border:0; border-bottom:2px solid #cfe3d2;
+  border-radius:16px 16px 0 0;
+  background:linear-gradient(180deg,#eef9f0,#ffffff);
+  cursor:pointer; list-style:none; box-sizing:border-box;
 }
+.einstell:not([open]) .einstell-knopf{ border-radius:16px; border-bottom:0; margin-bottom:-18px; }
 .einstell-knopf::-webkit-details-marker{ display:none; }
 .einstell-knopf::after{ content:none; }
-.einstell[open] .einstell-knopf{ margin-bottom:4px; }
+.einstell[open] .einstell-knopf{ margin-bottom:14px; }
 /* Dasselbe Bildchen wie auf den Spielkacheln - kein Zahnrad. Ein
    Zahnrad bedeutet fuer Erwachsene "Einstellungen"; ein Kind sieht
    ein Maschinenteil. Das Symbol des Spiels sagt dagegen sofort, was
@@ -1990,13 +1991,13 @@
 .ek-txt{ display:flex; flex-direction:column; min-width:0; flex:1; }
 .ek-l{
   font-size:11px; font-weight:800; letter-spacing:.07em; color:#6f9276;
+  line-height:1.1;
 }
 .ek-w{
-  font-family:var(--font); font-weight:800; font-size:16px;
-  color:#1e5c28; line-height:1.25; margin-top:2px;
+  font-family:var(--font); font-weight:800; font-size:17px;
+  color:#1e5c28; line-height:1.2; margin-top:3px;
 }
-.ek-pfeil{ flex:0 0 auto; color:#6f9276; font-size:15px; transition:transform .15s ease; }
-.einstell[open] .ek-pfeil{ transform:rotate(180deg); }
+.ek-pfeil{ flex:0 0 auto; font-size:26px; line-height:1; }
 
 /* --- "Mehr" als richtiger Knopf ------------------------------------
    Kinder lesen Form, nicht Semantik. Ein Aufklapp-Pfeil in
@@ -2283,7 +2284,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "44.0 – Glutkern";
+const APP_VERSION = "44.1 – Glutkern";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -8185,7 +8186,7 @@ function renderStart(){
                          mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
                          aussprache:"Aussprache"})[state.mode] || "Spiel"}</span>
         </span>
-        <span class="ek-pfeil">▾</span>
+        <span class="ek-pfeil">${state.einstellOffen ? "👆" : "👇"}</span>
       </summary>
       <h3 style="font-size:16px;margin:12px 0 10px;">VOKABELBLOCK</h3>
       <select id="cat-select">
@@ -8432,7 +8433,11 @@ function renderStart(){
   }
   const einstell = document.getElementById('einstell-block');
   if(einstell){
-    einstell.addEventListener('toggle', ()=>{ state.einstellOffen = einstell.open; });
+    einstell.addEventListener('toggle', ()=>{
+      state.einstellOffen = einstell.open;
+      const f = einstell.querySelector('.ek-pfeil');
+      if(f) f.textContent = einstell.open ? "👆" : "👇";
+    });
   }
   const catSelect = document.getElementById('cat-select');
   if(catSelect){
