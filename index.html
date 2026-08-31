@@ -1868,6 +1868,48 @@
 .lw-chip-txt{ display:flex; flex-direction:column; min-width:0; }
 .lw-chip-n{ font-weight:800; font-size:15px; }
 .lw-chip-z{ font-size:12px; color:#8a8073; margin-top:2px; }
+
+/* --- Startseite: eine Zeile bleibt eine Zeile -----------------------
+   Gemessen hatte die alte Beschriftung 283 px bei 308 px Platz - sie
+   passte rechnerisch und brach auf einem Geraet mit groesserer
+   Systemschrift trotzdem um. Kurze Beschriftung plus nowrap, damit es
+   nicht mehr auf Kante genaeht ist.                                   */
+.title-block.start.compact .logo-img{ max-width:min(50%, 186px); }
+.btn.einzeilig{
+  white-space:nowrap;
+  font-size:clamp(14px, 4.2vw, 18px);
+  letter-spacing:0;
+}
+.lg-start.jetzt{ border:2px solid #e8dcc8; background:linear-gradient(180deg,#fffdf8,#fff); }
+
+/* --- Aufklappbares: Einstellungen und "Mehr" ------------------------ */
+.einstell, .mehr-block{ border:0; }
+.einstell > summary, .mehr-block > summary{
+  display:flex; align-items:baseline; gap:8px;
+  cursor:pointer; list-style:none;
+  font-family:var(--font); font-weight:800; font-size:15px;
+}
+.einstell > summary::-webkit-details-marker,
+.mehr-block > summary::-webkit-details-marker{ display:none; }
+.einstell > summary::after, .mehr-block > summary::after{
+  content:"▾"; margin-left:auto; opacity:.5; font-size:13px;
+}
+.einstell[open] > summary::after, .mehr-block[open] > summary::after{ content:"▴"; }
+.einstell-w{ font-weight:600; font-size:13px; color:#8a8073; }
+.mehr-block{
+  background:rgba(255,255,255,0.72);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  border-radius:16px; padding:12px 14px; margin-bottom:10px;
+}
+.mehr-block[open]{ padding-bottom:4px; }
+
+/* --- Fuer Erwachsene: da, aber leise ------------------------------- */
+.erwachsene{ margin-top:18px; opacity:.85; }
+.linkbtn.abmelden{
+  display:block; margin:10px auto 0;
+  font-size:13px; color:#8a7f72; text-decoration:underline;
+  background:none; border:0; cursor:pointer;
+}
 </style>
 </head>
 <body>
@@ -2121,7 +2163,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "40.0 – Mein Lernweg";
+const APP_VERSION = "41.0 – Aufgeräumt, und Lingora spricht";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -3188,45 +3230,149 @@ function lingoraTagesWeisheit(){
   return LINGORA_WEISHEIT[tagImJahr % LINGORA_WEISHEIT.length];
 }
 
+/* =====================================================================
+   LINGORA SPRICHT
+
+   64 aufgenommene Saetze in stimme/. Fehlt eine Datei, bleibt Lingora
+   an dieser Stelle einfach still - man kann also mit fuenf Saetzen
+   anfangen und spaeter ergaenzen.
+
+   DAS WICHTIGSTE HIER IST DIE ZURUECKHALTUNG.
+
+   Eine Stimme, die bei jeder Antwort etwas sagt, wird nach drei Tagen
+   abgeschaltet - und dann hilft sie nie wieder. Deshalb drei Bremsen,
+   die zusammenwirken:
+
+     1. Mindestabstand: nie zweimal binnen 40 Sekunden.
+     2. Wahrscheinlichkeit je Anlass: ein Treffer wird selten kommentiert,
+        ein durchgehaltener langer Lauf fast immer.
+     3. Nie zweimal derselbe Satz hintereinander.
+
+   Und eine Vorfahrtsregel: Lingora schweigt, wenn gerade ein englisches
+   Wort vorgesprochen wird oder das Mikrofon zuhoert. Der Unterricht geht
+   vor die Begleitung.
+===================================================================== */
+
+const STIMME_ORDNER = "stimme/";
+const STIMME_ABSTAND = 40000;          // ms zwischen zwei Aeusserungen
+
+const STIMME_GRUPPEN = {
+  hallo:     5, zurueck: 3, start:     5, gut:       6, endlich: 4,
+  daneben:   5, zaeh:    4, serie:     4, dran:      4, geschafft: 4,
+  arbeit:    5, danach:  2, nebenbei:  8, schluss:   5
+};
+
+let stimmeZuletzt = 0;
+let stimmeLetzteDatei = "";
+let stimmeFehlt = {};                  // was einmal fehlte, wird nicht wieder versucht
+
+function stimmeDarfReden(){
+  if(typeof lingoraIstStill === "function" && lingoraIstStill()) return false;
+  // Vorfahrt fuer den Unterricht: laeuft eine Vokabelaufnahme oder die
+  // Geraetestimme, sagt Lingora nichts.
+  try{
+    if(typeof tonLaeuft !== "undefined" && tonLaeuft && !tonLaeuft.paused) return false;
+    const sy = window.speechSynthesis;
+    if(sy && (sy.speaking || sy.pending)) return false;
+  }catch(e){}
+  return (Date.now() - stimmeZuletzt) >= STIMME_ABSTAND;
+}
+
+/* gruppe: Schluessel aus STIMME_GRUPPEN
+   chance: 0..1 - wie oft dieser Anlass ueberhaupt kommentiert wird   */
+function stimmeSagen(gruppe, chance){
+  const anzahl = STIMME_GRUPPEN[gruppe];
+  if(!anzahl) return false;
+  if(typeof chance === "number" && Math.random() > chance) return false;
+  if(!stimmeDarfReden()) return false;
+
+  // Aus den vorhandenen Nummern eine auswaehlen, die weder fehlt noch
+  // gerade eben gelaufen ist.
+  const moeglich = [];
+  for(let i = 1; i <= anzahl; i++){
+    const name = gruppe + "-" + (i < 10 ? "0" : "") + i;
+    const datei = "lingora-" + name + ".mp3";
+    if(stimmeFehlt[datei]) continue;
+    if(datei === stimmeLetzteDatei && anzahl > 1) continue;
+    moeglich.push(datei);
+  }
+  if(!moeglich.length) return false;
+  const datei = moeglich[Math.floor(Math.random() * moeglich.length)];
+
+  try{
+    if(typeof tonAllesStoppen === "function") tonAllesStoppen();
+    const a = new Audio(STIMME_ORDNER + datei);
+    if(typeof tonAnmelden === "function") tonAnmelden(a);
+    a.onerror = ()=>{ stimmeFehlt[datei] = true; };
+    const p = a.play();
+    if(p && p.catch) p.catch(()=>{ /* ohne Fingerdruck abgelehnt - egal */ });
+    stimmeZuletzt = Date.now();
+    stimmeLetzteDatei = datei;
+    return true;
+  }catch(e){ return false; }
+}
+
+/* Begruessung beim Oeffnen. Wer laenger weg war, wird anders begruesst -
+   das kostet nichts und macht aus einer Ansage eine Beziehung. */
+function stimmeBegruessen(){
+  let letzter = 0;
+  try{ letzter = parseInt(localStorage.getItem("lingoraLetzterBesuch") || "0", 10) || 0; }catch(e){}
+  const heute = lernTagHeute();
+  try{ localStorage.setItem("lingoraLetzterBesuch", String(heute)); }catch(e){}
+  if(letzter && heute - letzter >= 4) return stimmeSagen("zurueck", 1);
+  if(letzter === heute) return false;              // heute schon begruesst
+  return stimmeSagen("hallo", 1);
+}
+
 function lingoraStartHtml(){
   if(!(state.cloudId || state.guest)) return "";
   const p = lingoraPlan();
   const tag = p ? lingoraHeutigerTag() : null;
   const offen = tag ? tag.schritte.filter(s=>!s.fertig).length : 0;
+  const schritt = lernwegNaechsterSchritt();
+  lingoraJetzt = schritt;              // fuer den Klick aufbewahren
 
-  if(p && tag){
-    const f = lingoraFortschritt();
-    return `
-      <div class="panel lg-start ${offen ? '' : 'fertig'}">
-        <div class="lg-kopf klein" style="margin-bottom:10px;">
-          <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
-          <div class="lg-blase">${offen
-            ? "Dein Plan wartet: noch <strong>" + offen + "</strong> " + (offen === 1 ? "Schritt" : "Schritte") + " für heute."
-            : "Für heute ist alles abgehakt. Stark!"}</div>
-        </div>
-        <div class="lg-balken"><div class="lg-balken-fuell" style="width:${f.gesamt ? Math.round(f.fertig/f.gesamt*100) : 0}%;"></div></div>
-        <button class="btn" id="lg-start-plan" style="margin-top:10px;">📅 ZU LINGORAS PLAN</button>
-        <button class="btn secondary" id="lg-lernweg" style="margin-top:8px;">🧭 MEIN LERNWEG &ndash; WO STEHE ICH?</button>
-      </div>`;
-  }
+  const satz = offen
+    ? "Dein Plan läuft &ndash; noch <strong>" + offen + "</strong> "
+      + (offen === 1 ? "Schritt" : "Schritte") + " für heute."
+    : (p ? "Für heute ist alles abgehakt. Stark!"
+         : escapeHtml(lingoraHallo()));
 
   return `
-    <div class="panel lg-start">
-      <div class="lg-kopf klein" style="margin-bottom:10px;">
+    <div class="panel lg-start jetzt">
+      <div class="lg-kopf klein" style="margin-bottom:12px;">
         <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
-        <div class="lg-blase">${escapeHtml(lingoraTagesWeisheit())}</div>
+        <div class="lg-blase">${satz}</div>
       </div>
-      <button class="btn" id="lg-lernweg">🧭 MEIN LERNWEG &ndash; WO STEHE ICH?</button>
-      <button class="btn secondary" id="lg-start-plan" style="margin-top:8px;">📅 LINGORA, MACH MIR EINEN PLAN</button>
+      <p class="lw-jetzt-l">DAS IST JETZT DRAN</p>
+      <p class="lw-jetzt-t">${escapeHtml(schritt.titel)}</p>
+      <p class="lw-jetzt-g">${escapeHtml(schritt.grund)}</p>
+      <button class="btn einzeilig" id="lg-jetzt">${schritt.knopf}</button>
+      <button class="btn secondary einzeilig" id="lg-lernweg" style="margin-top:8px;">🧭 MEIN LERNWEG</button>
     </div>`;
 }
+
+let lingoraJetzt = null;
 
 function lingoraStartVerdrahten(){
   const el = document.getElementById('lg-start-plan');
   if(el){ el.addEventListener('click', ()=>lingoraOeffnen("start")); }
   const lw = document.getElementById('lg-lernweg');
   if(lw){ lw.addEventListener('click', ()=>{ state.screen = "lernweg"; render(); }); }
+  const jetzt = document.getElementById('lg-jetzt');
+  if(jetzt){ jetzt.addEventListener('click', ()=>{ if(lingoraJetzt) lingoraJetzt.los(); }); }
+  // Einmal am Tag begruesst Lingora hoerbar. Der erste Fingerdruck des
+  // Kindes ist der Anlass - vorher darf ein Browser gar nichts abspielen.
+  if(!stimmeBegruesstDiesenBesuch){
+    const einmal = ()=>{
+      stimmeBegruesstDiesenBesuch = true;
+      document.removeEventListener('pointerdown', einmal);
+      stimmeBegruessen();
+    };
+    document.addEventListener('pointerdown', einmal, {once:true});
+  }
 }
+let stimmeBegruesstDiesenBesuch = false;
 
 
 
@@ -5371,6 +5517,12 @@ function faelligeWoerter(pool){
 
 /* Nach jeder Antwort. ergebnis: "correct" | "almost" | "wrong" */
 function wortGelernt(w, ergebnis){
+  // Im Aussprache-Modus schweigt Lingora: dort wird gleich das richtige
+  // Wort vorgesprochen, und zwei Stimmen uebereinander helfen niemandem.
+  if(state.mode !== "aussprache" && typeof stimmeSagen === "function"){
+    if(ergebnis === "correct") stimmeSagen("gut", 0.15);
+    else                      stimmeSagen("daneben", 0.22);
+  }
   const k = wortSchluessel(w);
   if(!k || k === "|") return;
   if(!state.wortStand) state.wortStand = {};
@@ -7485,7 +7637,7 @@ function renderStart(){
 
   app.innerHTML = `
     <div style="position:relative;">
-      ${renderHeader("", false, true)}
+      ${renderHeader("", !!(state.cloudId || state.guest), true)}
       <button type="button" class="info-btn" id="info-start-btn" title="Was ist LingoCrafter?" aria-label="Was ist LingoCrafter?">i</button>
     </div>
     ${lingoraStartHtml()}
@@ -7501,7 +7653,7 @@ function renderStart(){
         </div>
         <span class="coin-chip">🪙 ${state.coins}</span>
       </div>
-      ${state.guest ? `<button class="btn gold small" id="signup-btn" style="margin-top:10px;width:auto;margin-right:8px;">🆕 Konto anlegen</button>` : `<button class="btn danger small" id="logout-btn" style="margin-top:10px;width:auto;margin-right:8px;">🚪 Abmelden</button>`}<button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
+      ${state.guest ? `<button class="btn gold small" id="signup-btn" style="margin-top:10px;width:auto;margin-right:8px;">🆕 Konto anlegen</button>` : ``}<button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
         ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
       </button>
 
@@ -7596,7 +7748,13 @@ function renderStart(){
     </div>
     ` : `
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:10px;">VOKABELBLOCK</h3>
+      <details class="einstell" ${state.einstellOffen ? "open" : ""} id="einstell-block">
+      <summary><span class="einstell-t">⚙️ Einstellen</span>
+        <span class="einstell-w">${escapeHtml(state.category)} &middot; ${
+          ({faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest", mix:"Gemischt",
+            challenge:"Challenge", flood:"Flutungsraum", aussprache:"Aussprache"})[state.mode] || "Spiel"
+        }</span></summary>
+      <h3 style="font-size:16px;margin:12px 0 10px;">VOKABELBLOCK</h3>
       <select id="cat-select">
         ${cats.map(c=>`<option value="${c}" ${state.category===c?'selected':''}>${c}</option>`).join("")}
         <option value="__eigene">➕ Eigene Vokabeln hinzufügen …</option>
@@ -7667,7 +7825,7 @@ function renderStart(){
           </span>
         </button>
       </div>
-
+      </details>
     </div>
     `}
 
@@ -7685,6 +7843,8 @@ function renderStart(){
     <p class="muted center-text" style="margin:10px auto 0;padding:12px 16px;background:rgba(255,255,255,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:14px;">${state.mainMode==='grammar' ? 'Auch bei Grammatik gibt\'s für jede richtige Antwort Münzen &ndash; genau wie beim Vokabeln lernen.' : 'Für jede richtige Antwort gibt\'s Münzen. Bei falschen oder leeren Antworten werden 10 Münzen abgezogen (dein Kontostand geht dabei nie unter 0). Am Ende jeder Übung wartet dein Zertifikat &ndash; die verdienten Münzen kannst du danach im Shop eintauschen.'}</p>
 
     <div style="height:14px;"></div>
+    <details class="mehr-block">
+    <summary><span class="einstell-t">📦 Mehr</span><span class="einstell-w">Shop, Noten, Rangliste, Inventar</span></summary>
     <button class="btn gold" id="shop-btn" ${state.guest ? "disabled" : ""}>🛒 SHOP ÖFFNEN</button>${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Shop, Rangliste und Notenkalender gibt es mit Konto.</p>` : ""}
     <div style="height:10px;"></div>
     <button class="btn diamond" id="grade-calendar-btn" ${state.cloudId ? "" : "disabled"}>💎 NOTENKALENDER</button>
@@ -7692,12 +7852,18 @@ function renderStart(){
     <div style="height:10px;"></div>
     <button class="btn secondary" id="leaderboard-btn" ${state.guest ? "disabled" : ""}>🏆 RANGLISTE ANSEHEN</button>
     <div style="height:10px;"></div>
-    <button class="btn parent-open-btn" id="parents-btn" ${state.guest ? "disabled" : ""}>👨‍👩‍👧 ELTERNBEREICH</button>
-    ${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Im Testmodus nicht verfügbar.</p>` : ""}
-
     <div class="panel" style="margin-top:14px;">
       <h3 style="font-size:15px;margin-bottom:8px;">DEIN INVENTAR</h3>
       ${inventoryHtml(state.inventory)}
+    </div>
+    </details>
+
+    <!-- Fuer Erwachsene, ganz unten und ruhig: Elternbereich, Abmelden,
+         Unterstuetzen. Nichts davon geht ein Kind etwas an. -->
+    <div class="erwachsene">
+      <button class="btn parent-open-btn" id="parents-btn" ${state.guest ? "disabled" : ""}>👨‍👩‍👧 ELTERNBEREICH</button>
+      ${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Im Testmodus nicht verfügbar.</p>` : ""}
+      ${state.guest ? "" : `<button class="linkbtn abmelden" id="logout-btn">🚪 Abmelden</button>`}
     </div>
 
     <a href="https://www.herzensprojekt.de" target="_blank" rel="noopener" class="school-lab-link">
@@ -7705,7 +7871,7 @@ function renderStart(){
       <img src="${HP_LOGO_DATA_URI}" alt="Herzensprojekt Manufaktur" class="hp-logo-img">
     </a>
 
-    <div class="panel center-text" style="margin-top:14px;">
+    <div class="panel center-text erwachsene" style="margin-top:14px;">
       <p class="muted center-text" style="margin-top:4px;">Du kannst uns aber supporten, wenn du möchtest:</p>
       <button class="btn secondary" id="support-btn" style="margin-top:6px;"><span class="paypal-badge-inline">Pay<span style="color:#c9e2ff;">Pal</span></span> &nbsp;Unterstützen</button>
     </div>
@@ -7826,6 +7992,10 @@ function renderStart(){
       state.screen = "grammarstats";
       render();
     });
+  }
+  const einstell = document.getElementById('einstell-block');
+  if(einstell){
+    einstell.addEventListener('toggle', ()=>{ state.einstellOffen = einstell.open; });
   }
   const catSelect = document.getElementById('cat-select');
   if(catSelect){
@@ -11545,10 +11715,13 @@ function renderLernweg(){
     ${regal("neu", "🌱", "Noch nie angefasst", "Hier hast du noch nichts gemacht. Das ist kein Vorwurf &ndash; nur eine Landkarte.", neu, true)}
     ${regal("sitzt", "✅", "Sitzt", "Das kannst du. Ab und zu kurz auffrischen reicht.", sitzt, false)}
 
+    <button class="btn secondary einzeilig" id="lw-plan">📅 LINGORAS PLAN</button>
+    <div style="height:10px;"></div>
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
 
   document.getElementById('lw-los').addEventListener('click', ()=> schritt.los());
+  document.getElementById('lw-plan').addEventListener('click', ()=> lingoraOeffnen("start"));
 
   document.querySelectorAll('.lw-chip').forEach(el=>{
     el.addEventListener('click', ()=>{
