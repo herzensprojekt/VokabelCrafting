@@ -2340,7 +2340,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "47.0 – Nordlicht";
+const APP_VERSION = "47.1 – Nordlicht";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -5513,7 +5513,11 @@ const state = {
   grammarSkills: {},      // {themenId: {r:"1101...", n:Gesamtzahl, ts:Zeitstempel}}
   grammarStatsReturnTo: "start",
   impressumReturnTo: "start",
-  grammarOpenUnit: null,   // welche Unit ist aufgeklappt (immer hoechstens eine)
+  // Welche Unit ist aufgeklappt? Drei Zustaende, nicht zwei:
+  //   null = noch nichts gewaehlt -> Lingora schlaegt eine vor
+  //   0    = das Kind hat bewusst alles zugeklappt
+  //   1..5 = diese Unit ist offen
+  grammarOpenUnit: null,
   activityLog: {},         // {"2026-08-22": {v, vc, g, gc}} - Aufgaben und Treffer pro Tag
   customRewards: [],       // von den Eltern angelegte Belohnungen {id, icon, name, price}
   parentUnlocked: false,   // nur fuer diese Sitzung: Elternbereich ist offen
@@ -8194,7 +8198,11 @@ function grammatikVorschlaege(){
    in der zuletzt gearbeitet wurde - sonst die mit dem schwaechsten
    Thema, sonst die erste. */
 function grammatikOffeneUnit(){
-  if(state.grammarOpenUnit != null) return state.grammarOpenUnit;
+  // Nur wenn noch nie eine Unit angetippt wurde, waehlt Lingora eine
+  // aus. Eine bewusst zugeklappte Liste (0) bleibt zu.
+  if(state.grammarOpenUnit !== null && state.grammarOpenUnit !== undefined){
+    return state.grammarOpenUnit;
+  }
   const v = grammatikVorschlaege();
   if(v.length) return v[0].t.unit;
   const erste = GRAMMAR_UNITS.find(u => grammarTopicsOfUnit(u.nr).length);
@@ -8574,8 +8582,8 @@ function renderStart(){
   document.querySelectorAll('.unit-bar[data-unit-toggle]').forEach(el=>{
     el.addEventListener('click', ()=>{
       const nr = parseInt(el.dataset.unitToggle, 10);
-      const oeffnen = state.grammarOpenUnit !== nr;
-      state.grammarOpenUnit = oeffnen ? nr : null;
+      const oeffnen = grammatikOffeneUnit() !== nr;
+      state.grammarOpenUnit = oeffnen ? nr : 0;   // 0 = bewusst zu
       render();
       // Die frisch geoeffnete Unit nach oben holen, damit ihre Themen
       // sofort sichtbar sind.
