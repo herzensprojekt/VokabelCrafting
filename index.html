@@ -1903,7 +1903,13 @@
   margin:0 0 7px; font-size:11px; font-weight:800;
   letter-spacing:.07em; color:#8a8073;
 }
-.lg-kette{ display:flex; align-items:center; flex-wrap:wrap; gap:3px; }
+.lg-kette{ display:flex; align-items:flex-start; flex-wrap:wrap; gap:4px; }
+.lg-glied-box{ display:flex; flex-direction:column; align-items:center; gap:3px; width:46px; }
+.lg-glied-n{
+  font-size:10px; font-weight:700; color:#8a8073;
+  line-height:1.1; text-align:center;
+}
+.lg-v-kette{ display:block; margin-top:3px; font-size:15px; letter-spacing:1px; }
 .lg-glied{
   width:34px; height:34px; border-radius:11px;
   display:flex; align-items:center; justify-content:center;
@@ -1917,7 +1923,7 @@
   box-shadow:0 0 0 3px rgba(77,181,92,0.28);
   transform:scale(1.06);
 }
-.lg-pfeil{ color:#c3bbae; font-size:15px; }
+.lg-pfeil{ color:#c3bbae; font-size:15px; margin-top:8px; }
 
 /* --- Lingora spricht: Blase mit Wortlaut ---------------------------- */
 .lg-chat-blase.spricht{
@@ -2334,7 +2340,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "46.2 – Wegstein";
+const APP_VERSION = "47.0 – Nordlicht";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2783,20 +2789,35 @@ function lingoraStaerke(topic){
    didaktische Aufbau dabei verlorengeht. */
 const LINGORA_WEG = {
   warm: [
-    {mode:"mc",      art:"vokabel_mc",    t:"Wiedererkennen", u:"Vier Antworten &ndash; zum Reinkommen", ic:"🎯"},
-    {mode:"flood",   art:"vokabel_spiel", t:"Flutungsraum",   u:"Kletter dem Wasser davon",             ic:"🌊"},
-    {mode:"faellig", art:"vokabel_mc",    t:"Fällig heute",   u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"}
+    {mode:"mc",      art:"vokabel_mc",    t:"Multiple Choice", u:"Vier Antworten – zum Reinkommen",       ic:"🎯"},
+    {mode:"flood",   art:"vokabel_spiel", t:"Flutungsraum",    u:"Kletter dem Wasser davon",              ic:"🌊"},
+    {mode:"faellig", art:"vokabel_mc",    t:"Fällig heute",    u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"}
   ],
   haupt: [
-    {mode:"mix",     art:"vokabel_mix",    t:"Gemischt",         u:"Mal Auswahl, mal Tippen",              ic:"🔀"},
-    {mode:"type",    art:"vokabel_tippen", t:"Selbst schreiben", u:"Das sitzt am besten",                  ic:"✍️"},
-    {mode:"faellig", art:"vokabel_mix",    t:"Fällig heute",     u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"}
+    {mode:"mix",     art:"vokabel_mix",    t:"Gemischt",      u:"Mal Auswahl, mal Tippen",               ic:"🔀"},
+    {mode:"type",    art:"vokabel_tippen", t:"Selbst tippen", u:"Ohne Hilfe schreiben – das sitzt am besten", ic:"✍️"},
+    {mode:"faellig", art:"vokabel_mix",    t:"Fällig heute",  u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"}
   ],
   spiel: [
     {mode:"challenge", art:"vokabel_spiel", t:"Challenge",    u:"Zehn Sekunden pro Wort",   ic:"⚔️"},
     {mode:"flood",     art:"vokabel_spiel", t:"Flutungsraum", u:"Kletter dem Wasser davon", ic:"🌊"}
   ]
 };
+
+/* Kurzname je Uebungsart - fuer die Kette oben im Plan. Ein Bildchen
+   allein sagt einem Kind nicht, was dahintersteckt; zwei Woerter
+   darunter schon. */
+const LINGORA_KURZ = {
+  mc:"Auswahl", type:"Tippen", mix:"Gemischt", faellig:"Fällig",
+  flood:"Flut", floodhard:"Flut", challenge:"Duell", aussprache:"Sprechen",
+  intro:"Regel", practice:"Üben", test:"Test"
+};
+function lingoraKurzname(schritt){
+  const m = (schritt.start || {}).mode;
+  if(m && LINGORA_KURZ[m]) return LINGORA_KURZ[m];
+  if(schritt.art && schritt.art.indexOf("test") >= 0) return "Test";
+  return "Übung";
+}
 
 /* Waehlt aus einer Liste die naechste Variante.
 
@@ -2878,7 +2899,7 @@ function lingoraTagBauen(wahl, minuten, phase, tagNr){
   if(kats.length){
     const k = kats[tagNr % kats.length];
     const m = lingoraMethodeWaehlen(LINGORA_WEG.warm, tagNr, schritte);
-    rein(lingoraSchritt(m.art, "Aufwärmen: " + k, m.t + " &ndash; " + m.u, "🌤️",
+    rein(lingoraSchritt(m.art, m.t + ": " + k, "Zum Aufwärmen · " + m.u, m.ic,
       { bereich:"vocab", mode:m.mode, category:k }));
   } else if(themen.length){
     rein(lingoraSchritt("gram_lesen", "Nachlesen: " + themen[0].name,
@@ -3228,13 +3249,17 @@ function renderLingoraFrage(){
 function lingoraAblaufHtml(tag){
   if(!tag || !tag.schritte.length) return "";
   const naechster = tag.schritte.findIndex(s => !s.fertig);
+  const gesamt = tag.schritte.reduce((a, s)=> a + s.dauer, 0);
   return `
     <div class="lg-ablauf">
-      <p class="lg-ablauf-l">DEIN WEG HEUTE</p>
+      <p class="lg-ablauf-l">DEIN WEG HEUTE &middot; ${tag.schritte.length} Schritte &middot; ca. ${gesamt} Min</p>
       <div class="lg-kette">
         ${tag.schritte.map((s, i)=>`
-          <span class="lg-glied ${s.fertig ? "fertig" : ""} ${i === naechster ? "dran" : ""}"
-                title="${escapeHtml(s.titel)}">${s.fertig ? "✓" : s.icon}</span>
+          <span class="lg-glied-box">
+            <span class="lg-glied ${s.fertig ? "fertig" : ""} ${i === naechster ? "dran" : ""}"
+                  title="${escapeHtml(s.titel)}">${s.fertig ? "✓" : s.icon}</span>
+            <span class="lg-glied-n">${escapeHtml(lingoraKurzname(s))}</span>
+          </span>
           ${i < tag.schritte.length - 1 ? '<span class="lg-pfeil">›</span>' : ""}
         `).join("")}
       </div>
@@ -3289,7 +3314,10 @@ function renderLingoraPlan(){
         ${restTage.map(t=>`
           <div class="lg-vorschau">
             <span class="lg-v-tag">${lingoraDatumKurz(t.datum)}</span>
-            <span class="lg-v-txt">${phaseName[t.phase]} &middot; ${t.schritte.length} Schritte &middot; ca. ${t.schritte.reduce((a,s)=>a+s.dauer,0)} Min</span>
+            <span class="lg-v-txt">
+              ${phaseName[t.phase]} &middot; ca. ${t.schritte.reduce((a,s)=>a+s.dauer,0)} Min
+              <span class="lg-v-kette">${t.schritte.map(s=>s.icon).join(" › ")}</span>
+            </span>
           </div>
         `).join("")}
       </div>` : ""}
