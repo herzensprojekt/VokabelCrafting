@@ -1903,6 +1903,85 @@
 }
 .mehr-block[open]{ padding-bottom:4px; }
 
+/* --- Lingora spricht: Blase mit Wortlaut ---------------------------- */
+.lg-chat-blase.spricht{
+  position:relative;
+  padding-right:64px;              /* Platz fuer die beiden Schalter */
+}
+.lg-werkzeug{
+  position:absolute; top:6px; right:8px;
+  display:flex; gap:2px;
+}
+.lg-mini{
+  border:none; background:rgba(0,0,0,0.06);
+  border-radius:8px; width:24px; height:24px;
+  padding:0; font-size:12px; line-height:1;
+  cursor:pointer; opacity:.75;
+}
+.lg-mini:hover{ opacity:1; background:rgba(0,0,0,0.12); }
+.lg-wort{ display:block; }
+
+/* Kurz auf sich aufmerksam machen, bevor etwas gesagt wird. */
+@keyframes lg-winken{
+  0%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.14) rotate(-7deg); }
+  50%{ transform:scale(1.14) rotate(6deg); }
+  75%{ transform:scale(1.1) rotate(-4deg); }
+  100%{ transform:scale(1) rotate(0deg); }
+}
+.lingora-knopf.spricht{ animation:lg-winken 1.1s ease-in-out; }
+
+/* --- Die Einstellung als Karte -------------------------------------
+   Ueberschrift ist die AUSWAHL, nicht das Wort "Einstellen". Die
+   wichtigste Information hier ist nicht, dass man etwas einstellen
+   kann, sondern was passiert, wenn das Kind jetzt auf Start tippt. */
+.einstell-knopf{
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; margin:-4px -4px 0;
+  border:2px solid #cfe3d2; border-radius:14px;
+  background:linear-gradient(180deg,#f4fbf5,#fff);
+  cursor:pointer; list-style:none; min-height:56px; box-sizing:border-box;
+}
+.einstell-knopf::-webkit-details-marker{ display:none; }
+.einstell-knopf::after{ content:none; }
+.einstell[open] .einstell-knopf{ margin-bottom:4px; }
+.ek-ic{ font-size:22px; flex:0 0 auto; }
+.ek-txt{ display:flex; flex-direction:column; min-width:0; flex:1; }
+.ek-l{
+  font-size:11px; font-weight:800; letter-spacing:.07em; color:#6f9276;
+}
+.ek-w{
+  font-family:var(--font); font-weight:800; font-size:16px;
+  color:#1e5c28; line-height:1.25; margin-top:2px;
+}
+.ek-pfeil{ flex:0 0 auto; color:#6f9276; font-size:15px; transition:transform .15s ease; }
+.einstell[open] .ek-pfeil{ transform:rotate(180deg); }
+
+/* --- "Mehr" als richtiger Knopf ------------------------------------
+   Kinder lesen Form, nicht Semantik. Ein Aufklapp-Pfeil in
+   Textgroesse liest sich wie Kleingedrucktes und wird uebersehen. */
+.mehr-block{
+  background:none; backdrop-filter:none; -webkit-backdrop-filter:none;
+  padding:0; margin-bottom:10px;
+}
+.mehr-block[open]{ padding-bottom:0; }
+summary.mehr-knopf{
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  font-family:var(--font); color:#fff;
+  background:#6b5b8e;
+  border:none; border-radius:12px;
+  box-shadow:0 2px 6px rgba(107,91,142,0.35);
+  padding:12px 18px; width:100%; box-sizing:border-box;
+  cursor:pointer; text-align:center; min-height:48px;
+  list-style:none; margin-bottom:10px;
+}
+summary.mehr-knopf::-webkit-details-marker{ display:none; }
+summary.mehr-knopf::after{ content:none; }
+.mehr-zeile{ font-size:16px; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
+.mehr-unter{ font-size:12px; font-weight:600; opacity:.85; }
+.mehr-block[open] summary.mehr-knopf .mehr-zeile::after{ content:" ▴"; }
+.mehr-block:not([open]) summary.mehr-knopf .mehr-zeile::after{ content:" ▾"; }
+
 /* --- Fuer Erwachsene: da, aber leise ------------------------------- */
 .erwachsene{ margin-top:18px; opacity:.85; }
 .linkbtn.abmelden{
@@ -2163,7 +2242,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "41.0 – Aufgeräumt, und Lingora spricht";
+const APP_VERSION = "42.0 – Lingora spricht und schreibt";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -3262,6 +3341,159 @@ const STIMME_GRUPPEN = {
   arbeit:    5, danach:  2, nebenbei:  8, schluss:   5
 };
 
+
+/* Der Wortlaut jeder Aufnahme. Ohne diese Tabelle koennte die Blase
+   nicht zeigen, was gerade gesagt wird - und genau darum geht es. */
+const STIMME_TEXTE = {
+  "hallo-01":"Da bist du ja. Schön.",
+  "hallo-02":"Gut, dass du da bist.",
+  "hallo-03":"Na? Auf geht's.",
+  "hallo-04":"Ich hab schon gewartet.",
+  "hallo-05":"Schön, dich zu sehen.",
+  "zurueck-01":"Lange nicht gesehen. Egal, wir fangen einfach an.",
+  "zurueck-02":"Da bist du wieder. Wir machen weiter, wo du warst.",
+  "zurueck-03":"Willkommen zurück. Nichts ist verloren.",
+  "start-01":"Los geht's.",
+  "start-02":"Zehn Minuten. Mehr braucht es heute nicht.",
+  "start-03":"Nimm dir Zeit. Es rennt dir nichts weg.",
+  "start-04":"Wir fangen mit dem Schwersten an. Dann ist es weg.",
+  "start-05":"Ich hab dir was rausgesucht.",
+  "gut-01":"Sitzt.",
+  "gut-02":"Genau so.",
+  "gut-03":"Das war schnell.",
+  "gut-04":"Ha! Richtig.",
+  "gut-05":"Sehr gut.",
+  "gut-06":"Das kannst du jetzt.",
+  "endlich-01":"Das ging dir letzte Woche noch daneben.",
+  "endlich-02":"Genau das hat vorher gewackelt. Jetzt nicht mehr.",
+  "endlich-03":"Siehst du. Es lohnt sich.",
+  "endlich-04":"Das hast du dir erarbeitet.",
+  "daneben-01":"Nicht ganz. Weiter.",
+  "daneben-02":"Knapp daneben.",
+  "daneben-03":"Das kommt wieder, keine Sorge.",
+  "daneben-04":"Noch nicht. Aber bald.",
+  "daneben-05":"Merk es dir. Es kommt gleich nochmal.",
+  "zaeh-01":"Zäher Tag. Kenn ich.",
+  "zaeh-02":"Schwierige Wörter heute. Nicht dein Fehler.",
+  "zaeh-03":"Kurz durchatmen. Dann weiter.",
+  "zaeh-04":"Wir nehmen was Leichteres zwischendurch.",
+  "serie-01":"Fünf am Stück. Weiter so.",
+  "serie-02":"Du bist gerade richtig drin.",
+  "serie-03":"Das läuft.",
+  "serie-04":"Nicht aufhören, das läuft gerade.",
+  "dran-01":"Du bist drangeblieben. Genau darauf kommt es an.",
+  "dran-02":"Das war die längste Runde bisher.",
+  "dran-03":"Andere hätten längst aufgehört.",
+  "dran-04":"Nicht die schnellsten kommen an. Die, die dranbleiben.",
+  "geschafft-01":"Das Thema sitzt jetzt. Wirklich.",
+  "geschafft-02":"Eins weniger auf der Liste.",
+  "geschafft-03":"Das ist jetzt deins.",
+  "geschafft-04":"Rüber ins grüne Regal damit.",
+  "arbeit-01":"Noch drei Tage. Wir schaffen das.",
+  "arbeit-02":"Morgen ist es soweit. Heute nur noch wiederholen.",
+  "arbeit-03":"Du bist besser vorbereitet, als du glaubst.",
+  "arbeit-04":"Heute nichts Neues mehr. Nur festigen.",
+  "arbeit-05":"Schlaf gut. Das hilft mehr als noch eine Stunde.",
+  "danach-01":"Und? Erzähl mal.",
+  "danach-02":"Vorbei. Egal wie, du hast dich vorbereitet.",
+  "nebenbei-01":"Zehn Minuten am Tag schlagen zwei Stunden am Sonntag.",
+  "nebenbei-02":"Vergessen gehört dazu. Deshalb kommt alles wieder.",
+  "nebenbei-03":"Wer ein Wort einmal laut gesagt hat, erkennt es später wieder.",
+  "nebenbei-04":"Fehler sind keine Pannen. Sie zeigen, wo es weitergeht.",
+  "nebenbei-05":"Das Schwere zuerst. Danach fühlt sich alles leicht an.",
+  "nebenbei-06":"Kurze Pausen sind kein Faulenzen. Dein Kopf sortiert.",
+  "nebenbei-07":"Nicht alles auf einmal. Eins nach dem anderen.",
+  "nebenbei-08":"Was du erklären kannst, kannst du wirklich.",
+  "schluss-01":"Das reicht für heute. Ehrlich.",
+  "schluss-02":"Gut gemacht. Bis morgen.",
+  "schluss-03":"Feierabend. Du hast genug getan.",
+  "schluss-04":"Morgen zehn Minuten. Mehr nicht.",
+  "schluss-05":"Schönen Abend."
+};
+
+/* Nur die STIMME aus - Lingora schreibt weiter. Das ist bewusst etwas
+   anderes als das grosse Kreuz am Knopf, das ihn ganz abschaltet. */
+function stimmeStumm(){
+  try{ return localStorage.getItem("lingoraStimmeAus") === "ja"; }catch(e){ return false; }
+}
+function stimmeStummSetzen(aus){
+  try{
+    if(aus) localStorage.setItem("lingoraStimmeAus", "ja");
+    else localStorage.removeItem("lingoraStimmeAus");
+  }catch(e){}
+}
+
+/* Die Blase zu einer Aeusserung. Bewusst OHNE Schreibmaschineneffekt:
+   der Text soll gleichzeitig mit dem Ton dastehen, nicht hinterherlaufen. */
+function stimmeBlase(kennung, stumm){
+  const text = STIMME_TEXTE[kennung];
+  if(!text) return null;
+  let box;
+  try{ box = lingoraChatBox(); }catch(e){ return null; }
+
+  const b = document.createElement('div');
+  b.className = 'lg-chat-blase spricht';
+  b.innerHTML =
+      '<span class="lg-werkzeug">'
+    +   '<button type="button" class="lg-mini lg-stumm" aria-label="'
+    +     (stumm ? 'Lingoras Stimme wieder einschalten' : 'Lingoras Stimme ausschalten')
+    +     '" title="' + (stumm ? 'Stimme wieder an' : 'Nur die Stimme aus') + '">'
+    +     (stumm ? '🔈' : '🔇') + '</button>'
+    +   '<button type="button" class="lg-mini lg-weg" aria-label="Ausblenden" title="Ausblenden">✕</button>'
+    + '</span>'
+    + '<span class="lg-wort"></span>';
+  b.querySelector('.lg-wort').textContent = text;
+  box.appendChild(b);
+
+  const weg = ()=>{
+    b.classList.add('weg');
+    setTimeout(()=>{ if(b.parentNode) b.parentNode.removeChild(b); }, 500);
+  };
+  // pointerdown muss gestoppt werden: die App raeumt bei jedem Tipp
+  // irgendwohin die Blasen weg - sonst waere der Knopf verschwunden,
+  // bevor sein Klick ankommt.
+  b.querySelectorAll('.lg-mini').forEach(el=>{
+    el.addEventListener('pointerdown', (e)=>{ e.stopPropagation(); });
+  });
+  b.querySelector('.lg-weg').addEventListener('click', (e)=>{ e.stopPropagation(); weg(); });
+  b.querySelector('.lg-stumm').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const neuAus = !stimmeStumm();
+    stimmeStummSetzen(neuAus);
+    if(neuAus){ try{ tonAllesStoppen(); }catch(err){} }
+    b.querySelector('.lg-wort').textContent = neuAus
+      ? "Alles klar - ich bin ab jetzt still und schreib nur noch."
+      : "Gut, dann rede ich wieder.";
+    b.querySelector('.lg-stumm').textContent = neuAus ? '🔈' : '🔇';
+    setTimeout(weg, 2600);
+  });
+
+  setTimeout(weg, 4200);
+  return b;
+}
+
+/* Kurz auftauchen und winken, bevor etwas kommt.
+
+   WICHTIG: Waehrend einer Uebungsrunde ist der schwebende Lingora
+   ausgeblendet (LINGORA_STILL) - er soll ja nicht beim Denken stoeren.
+   Genau dort meldet er sich aber zu Wort. Also blendet er sich fuer
+   diesen einen Moment ein und verschwindet danach wieder. */
+let stimmeKnopfTimer = null;
+function stimmeWinken(){
+  const el = document.getElementById('lingora-knopf');
+  if(!el) return;
+  const warVersteckt = (el.style.display === "none");
+  if(warVersteckt) el.style.display = "";
+  el.classList.remove('spricht');
+  void el.offsetWidth;              // Animation neu starten
+  el.classList.add('spricht');
+  if(stimmeKnopfTimer) clearTimeout(stimmeKnopfTimer);
+  stimmeKnopfTimer = setTimeout(()=>{
+    el.classList.remove('spricht');
+    if(warVersteckt) el.style.display = "none";
+  }, 5400);                          // bis die Blase wieder weg ist
+}
+
 let stimmeZuletzt = 0;
 let stimmeLetzteDatei = "";
 let stimmeFehlt = {};                  // was einmal fehlte, wird nicht wieder versucht
@@ -3299,17 +3531,29 @@ function stimmeSagen(gruppe, chance){
   if(!moeglich.length) return false;
   const datei = moeglich[Math.floor(Math.random() * moeglich.length)];
 
-  try{
-    if(typeof tonAllesStoppen === "function") tonAllesStoppen();
-    const a = new Audio(STIMME_ORDNER + datei);
-    if(typeof tonAnmelden === "function") tonAnmelden(a);
-    a.onerror = ()=>{ stimmeFehlt[datei] = true; };
-    const p = a.play();
-    if(p && p.catch) p.catch(()=>{ /* ohne Fingerdruck abgelehnt - egal */ });
-    stimmeZuletzt = Date.now();
-    stimmeLetzteDatei = datei;
-    return true;
-  }catch(e){ return false; }
+  const kennung = datei.replace(/^lingora-/, "").replace(/\.mp3$/, "");
+  const aus = stimmeStumm();
+
+  // Erst auftauchen, dann die Blase, dann der Ton. In dieser Reihenfolge,
+  // damit das Kind hinsieht, bevor etwas gesagt wird.
+  try{ stimmeWinken(); }catch(e){}
+  setTimeout(()=>{ try{ stimmeBlase(kennung, aus); }catch(e){} }, 260);
+
+  stimmeZuletzt = Date.now();
+  stimmeLetzteDatei = datei;
+  if(aus) return true;              // geschrieben ja, gesprochen nein
+
+  setTimeout(()=>{
+    try{
+      if(typeof tonAllesStoppen === "function") tonAllesStoppen();
+      const a = new Audio(STIMME_ORDNER + datei);
+      if(typeof tonAnmelden === "function") tonAnmelden(a);
+      a.onerror = ()=>{ stimmeFehlt[datei] = true; };
+      const p = a.play();
+      if(p && p.catch) p.catch(()=>{ /* ohne Fingerdruck abgelehnt - egal */ });
+    }catch(e){}
+  }, 420);
+  return true;
 }
 
 /* Begruessung beim Oeffnen. Wer laenger weg war, wird anders begruesst -
@@ -7749,11 +7993,17 @@ function renderStart(){
     ` : `
     <div class="panel">
       <details class="einstell" ${state.einstellOffen ? "open" : ""} id="einstell-block">
-      <summary><span class="einstell-t">⚙️ Einstellen</span>
-        <span class="einstell-w">${escapeHtml(state.category)} &middot; ${
-          ({faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest", mix:"Gemischt",
-            challenge:"Challenge", flood:"Flutungsraum", aussprache:"Aussprache"})[state.mode] || "Spiel"
-        }</span></summary>
+      <summary class="einstell-knopf">
+        <span class="ek-ic">⚙️</span>
+        <span class="ek-txt">
+          <span class="ek-l">DAS ÜBST DU GERADE</span>
+          <span class="ek-w">${escapeHtml(state.category === "Alle" ? "Alle Vokabeln" : state.category)}
+            &middot; ${({faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
+                         mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
+                         aussprache:"Aussprache"})[state.mode] || "Spiel"}</span>
+        </span>
+        <span class="ek-pfeil">▾</span>
+      </summary>
       <h3 style="font-size:16px;margin:12px 0 10px;">VOKABELBLOCK</h3>
       <select id="cat-select">
         ${cats.map(c=>`<option value="${c}" ${state.category===c?'selected':''}>${c}</option>`).join("")}
@@ -7844,7 +8094,10 @@ function renderStart(){
 
     <div style="height:14px;"></div>
     <details class="mehr-block">
-    <summary><span class="einstell-t">📦 Mehr</span><span class="einstell-w">Shop, Noten, Rangliste, Inventar</span></summary>
+    <summary class="mehr-knopf">
+      <span class="mehr-zeile">📦 MEHR</span>
+      <span class="mehr-unter">Shop &middot; Notenkalender &middot; Rangliste &middot; Inventar</span>
+    </summary>
     <button class="btn gold" id="shop-btn" ${state.guest ? "disabled" : ""}>🛒 SHOP ÖFFNEN</button>${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Shop, Rangliste und Notenkalender gibt es mit Konto.</p>` : ""}
     <div style="height:10px;"></div>
     <button class="btn diamond" id="grade-calendar-btn" ${state.cloudId ? "" : "disabled"}>💎 NOTENKALENDER</button>
@@ -7863,7 +8116,8 @@ function renderStart(){
     <div class="erwachsene">
       <button class="btn parent-open-btn" id="parents-btn" ${state.guest ? "disabled" : ""}>👨‍👩‍👧 ELTERNBEREICH</button>
       ${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Im Testmodus nicht verfügbar.</p>` : ""}
-      ${state.guest ? "" : `<button class="linkbtn abmelden" id="logout-btn">🚪 Abmelden</button>`}
+      ${state.guest ? "" : `<div style="height:10px;"></div>
+      <button class="btn danger einzeilig" id="logout-btn">🚪 ABMELDEN</button>`}
     </div>
 
     <a href="https://www.herzensprojekt.de" target="_blank" rel="noopener" class="school-lab-link">
