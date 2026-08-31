@@ -1757,6 +1757,58 @@
     body{ font-size:20px; }
     .avatar-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
   }
+
+/* --- Pruefliste nach dem Abfotografieren ---------------------------
+   Jedes Wortpaar bekommt zwei volle Zeilen. Zwei Felder nebeneinander
+   waren auf einem Handy so schmal, dass laengere Wendungen wie
+   "to make up your mind" nicht mehr zu lesen waren.                  */
+.scan-karte{
+  position:relative;
+  background:#fff;
+  border:2px solid #ece7de;
+  border-radius:14px;
+  padding:12px 44px 12px 12px;
+  margin-bottom:10px;
+}
+.scan-karte.unsicher{ border-color:#f0b429; background:#fffaf0; }
+.scan-mini{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.03em;
+  color:#8a8073;
+  margin:0 0 3px;
+}
+.scan-mini + .scan-feld{ margin-bottom:10px; }
+.scan-karte .scan-feld:last-of-type{ margin-bottom:0; }
+.scan-feld{
+  display:block;
+  width:100%;
+  box-sizing:border-box;
+  font-size:17px;
+  font-family:inherit;
+  padding:10px 12px;
+  border:2px solid #e0e0e0;
+  border-radius:10px;
+  background:#fafafa;
+}
+.scan-feld:focus{ outline:none; border-color:#7a4bbf; background:#fff; }
+.scan-weg{
+  position:absolute;
+  top:8px; right:8px;
+  width:32px; height:32px;
+  min-height:0; padding:0;
+  border:none; border-radius:9px;
+  background:#f3ece4; color:#9b7b5a;
+  font-size:15px; font-weight:800;
+  cursor:pointer;
+}
+.scan-weg:hover{ background:#e8ddd0; }
+.scan-warn{
+  margin:8px 0 0;
+  font-size:13px;
+  color:#8a6d1f;
+}
 </style>
 </head>
 <body>
@@ -2010,7 +2062,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "39.0 – Vokabeln abfotografieren";
+const APP_VERSION = "39.1 – Vokabeln abfotografieren";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -10720,7 +10772,24 @@ function ladeTesseract(){
 }
 
 /* Handyfotos sind riesig. Ueber 1800 px bringt kein Plus an Erkennung,
-   kostet aber viel Zeit - und auf einem aelteren Geraet auch Speicher. */
+   kostet aber viel Zeit - und auf einem aelteren Geraet auch Speicher.
+   (Gemessen: dasselbe Foto auf das 1,5-fache vergroessert lieferte Wort
+   fuer Wort dasselbe Ergebnis, nur 20 % langsamer.)
+
+   Wichtiger als die Groesse ist die BELICHTUNG. Ein Handyfoto einer
+   Buchseite hat fast immer einen Helligkeitsverlauf - Fenster auf der
+   einen, Schatten auf der anderen Seite. Eine feste Schwelle
+   ("dunkler als X ist Schrift") verliert dann die dunkle Bildhaelfte
+   komplett. Deshalb wird jeder Punkt gegen den DURCHSCHNITT SEINER
+   UMGEBUNG verglichen, nicht gegen einen festen Wert. Das Integralbild
+   macht das schnell genug fuers Handy.
+
+   An einem nachgestellten Foto gemessen (schraeg, Lichtverlauf, leicht
+   unscharf, JPEG):
+       roh          -> 5 von 8 Zeilen beschaedigt
+                       "ountryside das Land", "ardly ever", "tin teilnehmen an",
+                       "to succeed" fiel ganz aus
+       aufbereitet  -> 8 von 8 Zeilen fehlerfrei                            */
 function scanBildVerkleinern(datei){
   return new Promise((ok, fehl)=>{
     const leser = new FileReader();
@@ -10729,14 +10798,53 @@ function scanBildVerkleinern(datei){
       const bild = new Image();
       bild.onerror = ()=> fehl(new Error("Das ist kein lesbares Bild."));
       bild.onload = ()=>{
-        const max = 1800;
-        const f = Math.min(1, max / Math.max(bild.width, bild.height));
-        const c = document.createElement('canvas');
-        c.width  = Math.round(bild.width  * f);
-        c.height = Math.round(bild.height * f);
-        const x = c.getContext('2d');
-        x.drawImage(bild, 0, 0, c.width, c.height);
-        ok(c.toDataURL('image/png'));
+        try{
+          const max = 1800;
+          const f = Math.min(1, max / Math.max(bild.width, bild.height));
+          const c = document.createElement('canvas');
+          const W = c.width  = Math.round(bild.width  * f);
+          const H = c.height = Math.round(bild.height * f);
+          const x = c.getContext('2d');
+          x.drawImage(bild, 0, 0, W, H);
+
+          const d = x.getImageData(0, 0, W, H), px = d.data;
+          const grau = new Float32Array(W * H);
+          for(let i = 0, j = 0; i < px.length; i += 4, j++){
+            grau[j] = 0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2];
+          }
+          // Integralbild: Summe aller Punkte links oben von (x,y).
+          const S = new Float64Array((W+1) * (H+1));
+          for(let y = 0; y < H; y++){
+            let zeile = 0;
+            for(let xx = 0; xx < W; xx++){
+              zeile += grau[y*W + xx];
+              S[(y+1)*(W+1) + xx+1] = S[y*(W+1) + xx+1] + zeile;
+            }
+          }
+          const r = Math.max(8, Math.round(Math.min(W, H) / 40));
+          for(let y = 0; y < H; y++){
+            const y0 = Math.max(0, y-r), y1 = Math.min(H, y+r+1);
+            for(let xx = 0; xx < W; xx++){
+              const x0 = Math.max(0, xx-r), x1 = Math.min(W, xx+r+1);
+              const summe = S[y1*(W+1)+x1] - S[y0*(W+1)+x1] - S[y1*(W+1)+x0] + S[y0*(W+1)+x0];
+              const mittel = summe / ((x1-x0) * (y1-y0));
+              // 10 % unter der Umgebung: das ist Schrift, nicht Papier.
+              const v = grau[y*W + xx] < mittel * 0.90 ? 0 : 255;
+              const i = (y*W + xx) * 4;
+              px[i] = px[i+1] = px[i+2] = v; px[i+3] = 255;
+            }
+          }
+          x.putImageData(d, 0, 0);
+          ok(c.toDataURL('image/png'));
+        }catch(e){
+          // Lieber ein unaufbereitetes Bild als gar keins.
+          try{
+            const c = document.createElement('canvas');
+            c.width = bild.width; c.height = bild.height;
+            c.getContext('2d').drawImage(bild, 0, 0);
+            ok(c.toDataURL('image/png'));
+          }catch(e2){ fehl(new Error("Bild konnte nicht verarbeitet werden.")); }
+        }
       };
       bild.src = leser.result;
     };
@@ -10744,45 +10852,70 @@ function scanBildVerkleinern(datei){
   });
 }
 
-/* Aus den Wortkaesten Zeilen und zwei Spalten machen. */
-function scanSpaltenTrennen(woerter){
-  const brauchbar = (woerter || []).filter(w =>
-    w && w.text && w.text.trim() && w.bbox && w.confidence > 30);
-  if(brauchbar.length < 2) return [];
+/* Aus den erkannten Zeilen zwei Spalten machen.
 
-  const zeilen = [];
-  brauchbar.forEach(w=>{
-    const mitte = (w.bbox.y0 + w.bbox.y1) / 2;
-    const hoehe = w.bbox.y1 - w.bbox.y0;
-    let z = zeilen.find(z => Math.abs(z.y - mitte) < Math.max(10, hoehe * 0.6));
-    if(!z){ z = {y: mitte, w: []}; zeilen.push(z); }
-    z.w.push({t: w.text.trim(), x0: w.bbox.x0, x1: w.bbox.x1});
-  });
+   ZWEI FEHLER, DIE ICH HIER ERST GEMACHT UND DANN GEMESSEN HABE:
+
+   1) Ich habe die Zeilen selbst gebildet, indem ich Woerter mit
+      aehnlicher Hoehe zusammenfasste. Bei einem GERADEN Bild geht das.
+      Ein Handyfoto ist aber immer ein bisschen gekippt: schon 1,6 Grad
+      ergeben ueber 1400 px Breite 20 px Versatz - mehr als eine halbe
+      Zeilenhoehe. Gemessen an einem nachgestellten Foto zerfiel dabei
+      jede Zeile in zwei ("to succeed" bei y=116, "Erfolg haben" bei
+      y=136), und heraus kamen NULL Wortpaare. Tesseract bringt eine
+      eigene Zeilenanalyse mit, die die Kippung beruecksichtigt - die
+      schaffte alle 8 Zeilen. Wir nehmen also seine, nicht meine.
+
+   2) Danach habe ich EINE feste senkrechte Grenze fuer alle Zeilen
+      berechnet. Auch das faellt bei Kippung um: die Spaltenkante wandert
+      von oben nach unten um dieselben 20 px. Eine Zeile ging genau
+      deshalb verloren - Grenze 772 px, Wortanfang 773 px. Jetzt wird
+      JEDE ZEILE AN IHRER EIGENEN groessten Luecke geteilt; die
+      gemeinsame Mitte dient nur noch als Plausibilitaetspruefung.
+      Damit: 8 von 8.                                                   */
+function scanSpaltenTrennen(ocrZeilen){
+  const zeilen = (ocrZeilen || []).map(l=>({
+    w: ((l && l.words) || [])
+        .filter(o => o && o.text && o.text.trim() && o.bbox && o.confidence > 30)
+        .map(o => ({t: o.text.trim(), x0: o.bbox.x0, x1: o.bbox.x1, k: o.confidence}))
+  })).filter(l => l.w.length >= 2);
+  if(zeilen.length < 1) return [];
   zeilen.forEach(z => z.w.sort((a,b)=> a.x0 - b.x0));
-  zeilen.sort((a,b)=> a.y - b.y);
 
-  // Wo beginnt die rechte Spalte? Je Zeile die groesste Luecke, davon
-  // der Mittelwert - einzelne Ausreisser fallen so nicht ins Gewicht.
-  const anfaenge = [];
+  // Je Zeile die groesste waagerechte Luecke merken.
+  const kandidaten = [];
   zeilen.forEach(z=>{
-    let groesste = 0, anfang = null;
+    let groesste = 0, stelle = -1;
     for(let i = 1; i < z.w.length; i++){
       const luecke = z.w[i].x0 - z.w[i-1].x1;
-      if(luecke > groesste){ groesste = luecke; anfang = z.w[i].x0; }
+      if(luecke > groesste){ groesste = luecke; stelle = i; }
     }
-    if(anfang !== null && groesste > 25) anfaenge.push(anfang);
+    z.luecke = groesste; z.stelle = stelle;
+    if(stelle > 0 && groesste > 25) kandidaten.push((z.w[stelle].x0 + z.w[stelle-1].x1) / 2);
   });
 
-  if(anfaenge.length < 2) return scanEinspaltig(zeilen);
-  anfaenge.sort((a,b)=> a - b);
-  const grenze = anfaenge[Math.floor(anfaenge.length / 2)] - 8;
+  if(kandidaten.length < 2) return scanEinspaltig(zeilen);
+  kandidaten.sort((a,b)=> a - b);
+  const mitte = kandidaten[Math.floor(kandidaten.length / 2)];
+  const breite = Math.max.apply(null, zeilen.map(z => z.w[z.w.length-1].x1));
+  const toleranz = Math.max(60, breite * 0.12);
 
   const paare = [];
   zeilen.forEach(z=>{
-    const links  = z.w.filter(w => w.x0 <  grenze).map(w=>w.t).join(' ').trim();
-    const rechts = z.w.filter(w => w.x0 >= grenze).map(w=>w.t).join(' ').trim();
-    if(links && rechts) paare.push([links, rechts]);
+    if(z.stelle < 1 || z.luecke <= 25) return;
+    const eigene = (z.w[z.stelle].x0 + z.w[z.stelle-1].x1) / 2;
+    // Sitzt die groesste Luecke ganz woanders, ist es keine Spaltenzeile
+    // (z.B. eine Ueberschrift). Die lassen wir lieber weg.
+    if(Math.abs(eigene - mitte) > toleranz) return;
+    const links  = z.w.slice(0, z.stelle).map(w=>w.t).join(' ').trim();
+    const rechts = z.w.slice(z.stelle).map(w=>w.t).join(' ').trim();
+    // Das schwaechste Wort der Zeile entscheidet, ob wir sie als
+    // unsicher kennzeichnen. Ein einziges verlesenes Wort macht das
+    // ganze Wortpaar unbrauchbar.
+    const schwaechstes = Math.min.apply(null, z.w.map(w => w.k == null ? 100 : w.k));
+    if(links && rechts) paare.push([links, rechts, schwaechstes]);
   });
+
   // Hat die Spaltentrennung kaum etwas gebracht, war es wohl doch
   // einspaltig mit Trennzeichen.
   if(paare.length < zeilen.length / 2) return scanEinspaltig(zeilen);
@@ -10797,7 +10930,8 @@ function scanEinspaltig(zeilen){
     const teile = text.split(/\s+[-–—=:|]\s+|\t/);
     if(teile.length >= 2){
       const a = teile[0].trim(), b = teile.slice(1).join(' ').trim();
-      if(a && b) paare.push([a, b]);
+      const schwaechstes = Math.min.apply(null, z.w.map(w => w.k == null ? 100 : w.k));
+      if(a && b) paare.push([a, b, schwaechstes]);
     }
   });
   return paare;
@@ -10821,7 +10955,7 @@ function scanIstDeutscher(spalte){
 
 async function scanStarten(datei){
   const setz = (o)=>{ state.scanStand = Object.assign({}, state.scanStand || {}, o); render(); };
-  setz({laeuft: true, schritt: "Bild wird vorbereitet …", anteil: 0, fehler: null, paare: null});
+  setz({laeuft: true, schritt: "Schatten werden herausgerechnet …", anteil: 0, fehler: null, paare: null});
   try{
     const bild = await scanBildVerkleinern(datei);
     setz({vorschau: bild, schritt: "Texterkennung wird geladen …", anteil: 0.05});
@@ -10845,7 +10979,7 @@ async function scanStarten(datei){
     const erg = await arbeiter.recognize(bild);
     await arbeiter.terminate();
 
-    let paare = scanSpaltenTrennen((erg.data && erg.data.words) || []);
+    let paare = scanSpaltenTrennen((erg.data && erg.data.lines) || []);
     // Kurze Bruchstuecke und Zeilennummern raus.
     paare = paare.filter(p => p[0].length >= 2 && p[1].length >= 2 && !/^\d+$/.test(p[0]));
 
@@ -10858,7 +10992,11 @@ async function scanStarten(datei){
     const linksDeutsch  = scanIstDeutscher(paare.map(p=>p[0]));
     const rechtsDeutsch = scanIstDeutscher(paare.map(p=>p[1]));
     const tauschen = linksDeutsch > rechtsDeutsch;
-    const zeilen = paare.map(p => tauschen ? {de: p[0], en: p[1]} : {de: p[1], en: p[0]});
+    const zeilen = paare.map(p => ({
+      de: tauschen ? p[0] : p[1],
+      en: tauschen ? p[1] : p[0],
+      unsicher: (p[2] != null && p[2] < 75)
+    }));
 
     setz({laeuft: false, schritt: null, paare: zeilen, sicher: Math.abs(linksDeutsch - rechtsDeutsch) >= 3});
   }catch(e){
@@ -10883,10 +11021,17 @@ function renderScan(){
         🔒 Das Bild wird <strong>nirgendwo hochgeladen</strong>. Es bleibt auf dem Handy.
       </p>
       <div class="asp-hinweis" style="margin-bottom:12px;">
-        <strong>Damit es gut klappt:</strong>
+        <strong>Lieber halbe Seiten als ganze.</strong>
+        <p class="muted" style="margin:4px 0 8px;">
+          Fotografier eine Buchseite <strong>in zwei Schritten</strong> &ndash; erst die
+          obere Hälfte, die Wörter übernehmen, dann die untere. Je größer die
+          Schrift im Bild, desto zuverlässiger wird sie gelesen. Eine ganze
+          Seite auf einmal ergibt oft Buchstabensalat.
+        </p>
+        <strong>Außerdem:</strong>
         <p class="muted" style="margin:4px 0 0;">
-          Gerade von oben fotografieren, gutes Licht, die Liste möglichst
-          formatfüllend. <strong>Handschrift wird meist nicht erkannt</strong> &ndash;
+          Gerade von oben fotografieren, gutes Licht.
+          <strong>Handschrift wird meist nicht erkannt</strong> &ndash;
           gedruckte Listen dagegen sehr zuverlässig.
         </p>
       </div>
@@ -10928,14 +11073,18 @@ function renderScan(){
         <p class="muted" style="margin:0;">Ich bin mir nicht sicher, welche Spalte Englisch ist.
         Prüf das kurz &ndash; mit dem Knopf unten lassen sich beide tauschen.</p>
       </div>` : ""}
-      <div class="vocab-list" style="max-height:340px;">
+      <!-- Jedes Wortpaar bekommt zwei volle Zeilen. Nebeneinander waren die
+           Felder auf einem Handy so schmal, dass laengere Wendungen nicht
+           mehr zu lesen waren. -->
+      <div>
         ${p.map((z,i)=>`
-          <div class="vocab-row" style="align-items:center;gap:6px;">
-            <input type="text" data-scan-de="${i}" value="${escapeHtml(z.de)}"
-                   style="flex:1;min-width:0;font-size:15px;padding:8px;border:2px solid #e0e0e0;border-radius:8px;background:#fafafa;">
-            <input type="text" data-scan-en="${i}" value="${escapeHtml(z.en)}"
-                   style="flex:1;min-width:0;font-size:15px;padding:8px;border:2px solid #e0e0e0;border-radius:8px;background:#fafafa;">
-            <button class="btn danger small" data-scan-weg="${i}" style="width:auto;padding:6px 10px;min-height:auto;">✕</button>
+          <div class="scan-karte${z.unsicher ? " unsicher" : ""}">
+            <button class="scan-weg" data-scan-weg="${i}" aria-label="Zeile entfernen">✕</button>
+            <label class="scan-mini">🇬🇧 Englisch</label>
+            <input type="text" data-scan-en="${i}" value="${escapeHtml(z.en)}" class="scan-feld">
+            <label class="scan-mini">🇩🇪 Deutsch</label>
+            <input type="text" data-scan-de="${i}" value="${escapeHtml(z.de)}" class="scan-feld">
+            ${z.unsicher ? `<p class="scan-warn">⚠️ Hier war die Erkennung unsicher &ndash; bitte genau prüfen.</p>` : ""}
           </div>
         `).join("")}
       </div>
@@ -10973,7 +11122,7 @@ function renderScan(){
   });
 
   anKnopf('scan-tauschen', ()=>{
-    state.scanStand.paare = state.scanStand.paare.map(z=>({de: z.en, en: z.de}));
+    state.scanStand.paare = state.scanStand.paare.map(z=>({de: z.en, en: z.de, unsicher: z.unsicher}));
     state.scanStand.sicher = true;
     render();
   });
