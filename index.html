@@ -1903,6 +1903,31 @@
 }
 .mehr-block[open]{ padding-bottom:4px; }
 
+/* --- Der Weg durch den Tag ----------------------------------------- */
+.lg-ablauf{
+  background:#f7f4ee; border-radius:14px;
+  padding:10px 12px; margin:0 0 12px;
+}
+.lg-ablauf-l{
+  margin:0 0 7px; font-size:11px; font-weight:800;
+  letter-spacing:.07em; color:#8a8073;
+}
+.lg-kette{ display:flex; align-items:center; flex-wrap:wrap; gap:3px; }
+.lg-glied{
+  width:34px; height:34px; border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; background:#fff; border:2px solid #e4ded3;
+}
+.lg-glied.fertig{
+  background:#e4f2e6; border-color:#bcdfc2; color:#3d7a48; font-weight:800;
+}
+.lg-glied.dran{
+  border-color:#4db55c;
+  box-shadow:0 0 0 3px rgba(77,181,92,0.28);
+  transform:scale(1.06);
+}
+.lg-pfeil{ color:#c3bbae; font-size:15px; }
+
 /* --- Lingora spricht: Blase mit Wortlaut ---------------------------- */
 .lg-chat-blase.spricht{
   position:relative;
@@ -1945,7 +1970,23 @@
 .einstell-knopf::-webkit-details-marker{ display:none; }
 .einstell-knopf::after{ content:none; }
 .einstell[open] .einstell-knopf{ margin-bottom:4px; }
-.ek-ic{ font-size:22px; flex:0 0 auto; }
+/* Dasselbe Bildchen wie auf den Spielkacheln - kein Zahnrad. Ein
+   Zahnrad bedeutet fuer Erwachsene "Einstellungen"; ein Kind sieht
+   ein Maschinenteil. Das Symbol des Spiels sagt dagegen sofort, was
+   passiert, wenn man auf Start tippt. */
+.ek-ic{
+  flex:0 0 auto; width:44px; height:44px; border-radius:14px; font-size:23px;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(160deg,#eaf9e7,#c9ecc7);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.08);
+}
+.ek-ic[data-mode="mc"]        { background:linear-gradient(160deg,#e7f1ff,#c4d9f9); }
+.ek-ic[data-mode="type"]      { background:linear-gradient(160deg,#fff0e2,#ffd6ae); }
+.ek-ic[data-mode="mix"]       { background:linear-gradient(160deg,#f4e9ff,#dbc8fa); }
+.ek-ic[data-mode="challenge"] { background:linear-gradient(160deg,#ffe8e4,#ffc2b6); }
+.ek-ic[data-mode="flood"],
+.ek-ic[data-mode="floodhard"] { background:linear-gradient(160deg,#e1f6f9,#bce6ee); }
+.ek-ic[data-mode="aussprache"]{ background:linear-gradient(160deg,#fdf0f6,#f6cde2); }
 .ek-txt{ display:flex; flex-direction:column; min-width:0; flex:1; }
 .ek-l{
   font-size:11px; font-weight:800; letter-spacing:.07em; color:#6f9276;
@@ -2242,7 +2283,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "42.0 – Echoscherbe";
+const APP_VERSION = "44.0 – Glutkern";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -2678,6 +2719,83 @@ function lingoraStaerke(topic){
 
 /* Baut die Schritte fuer EINEN Tag. minuten = Zeitbudget,
    phase = "aufbau" | "vertiefen" | "generalprobe". */
+/* Die Uebungsarten, nach ihrer Rolle im Tagesablauf sortiert.
+
+   Die REIHENFOLGE der drei Phasen bleibt immer gleich, und das mit
+   Absicht: Wiedererkennen kommt vor Abrufen, Abrufen vor Tempo. Ein
+   Kind, das ein Wort noch nie gesehen hat, soll es nicht unter
+   Zeitdruck tippen muessen - das erzeugt Misserfolg, nicht Koennen.
+
+   Was WECHSELT, ist die Variante innerhalb einer Phase. Der Tag gibt
+   den Startpunkt vor, und zweimal dieselbe Uebungsart hintereinander
+   gibt es nie. So sieht kein Tag aus wie der davor, ohne dass der
+   didaktische Aufbau dabei verlorengeht. */
+const LINGORA_WEG = {
+  warm: [
+    {mode:"mc",      art:"vokabel_mc",    t:"Wiedererkennen", u:"Vier Antworten &ndash; zum Reinkommen", ic:"🎯"},
+    {mode:"flood",   art:"vokabel_spiel", t:"Flutungsraum",   u:"Kletter dem Wasser davon",             ic:"🌊"},
+    {mode:"faellig", art:"vokabel_mc",    t:"Fällig heute",   u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"}
+  ],
+  haupt: [
+    {mode:"mix",     art:"vokabel_mix",    t:"Gemischt",         u:"Mal Auswahl, mal Tippen",              ic:"🔀"},
+    {mode:"type",    art:"vokabel_tippen", t:"Selbst schreiben", u:"Das sitzt am besten",                  ic:"✍️"},
+    {mode:"faellig", art:"vokabel_mix",    t:"Fällig heute",     u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"}
+  ],
+  spiel: [
+    {mode:"challenge", art:"vokabel_spiel", t:"Challenge",    u:"Zehn Sekunden pro Wort",   ic:"⚔️"},
+    {mode:"flood",     art:"vokabel_spiel", t:"Flutungsraum", u:"Kletter dem Wasser davon", ic:"🌊"}
+  ]
+};
+
+/* Waehlt aus einer Liste die naechste Variante.
+
+   Erste Wahl: etwas, das an diesem Tag noch GAR NICHT vorkam. Erst
+   wenn alles schon dran war, reicht es, dass es nicht direkt davor
+   stand. Sonst stand an einem Tag zweimal der Flutungsraum - nicht
+   nebeneinander, aber fuer das Kind trotzdem derselbe Tag zweimal. */
+function lingoraMethodeWaehlen(liste, versatz, schritte){
+  const benutzt = schritte.map(s => (s.start || {}).mode).filter(Boolean);
+  const letzte = benutzt.length ? benutzt[benutzt.length - 1] : null;
+
+  for(let i = 0; i < liste.length; i++){
+    const k = liste[(versatz + i) % liste.length];
+    if(benutzt.indexOf(k.mode) < 0) return k;      // heute noch ungenutzt
+  }
+  for(let i = 0; i < liste.length; i++){
+    const k = liste[(versatz + i) % liste.length];
+    if(k.mode !== letzte) return k;                // wenigstens nicht doppelt
+  }
+  return liste[versatz % liste.length];
+}
+
+/* Letzter Durchgang ueber den fertigen Tag: Stehen zwei gleiche
+   Uebungsarten nebeneinander, bekommt die VORDERE eine andere Variante.
+   Nicht die hintere - die ist oft der benotete Abschlusstest, und der
+   gehoert ans Ende.
+
+   Ohne diesen Schritt stand "Selbst schreiben" direkt vor dem
+   "Vokabeltest": zweimal Tippen hintereinander. */
+function lingoraTagGlaetten(schritte, tagNr){
+  const alle = LINGORA_WEG.warm.concat(LINGORA_WEG.haupt, LINGORA_WEG.spiel);
+  for(let i = 1; i < schritte.length; i++){
+    const a = schritte[i-1], b = schritte[i];
+    const ma = (a.start || {}).mode, mb = (b.start || {}).mode;
+    if(!ma || ma !== mb) continue;
+    if((a.start || {}).bereich !== "vocab") continue;      // Grammatik lassen wir in Ruhe
+    const davor = (i >= 2) ? (schritte[i-2].start || {}).mode : null;
+    const benutzt = schritte.map(x => (x.start || {}).mode).filter(Boolean);
+    const ersatz = alle.filter(k => k.mode !== ma && k.mode !== davor
+                                 && benutzt.indexOf(k.mode) < 0
+                                 && LINGORA_DAUER[k.art] <= a.dauer + 1);
+    if(!ersatz.length) continue;
+    const k = ersatz[(tagNr + i) % ersatz.length];
+    const kat = (a.start || {}).category;
+    schritte[i-1] = lingoraSchritt(k.art, k.t + ": " + kat, k.u, k.ic,
+                                   { bereich:"vocab", mode:k.mode, category:kat });
+  }
+  return schritte;
+}
+
 function lingoraTagBauen(wahl, minuten, phase, tagNr){
   const schritte = [];
   const kats = wahl.vokabeln || [];
@@ -2708,9 +2826,9 @@ function lingoraTagBauen(wahl, minuten, phase, tagNr){
   // 1) Aufwaermen: etwas Leichtes zum Reinkommen.
   if(kats.length){
     const k = kats[tagNr % kats.length];
-    rein(lingoraSchritt("vokabel_mc", "Aufwärmen: " + k,
-      "Wörter wiedererkennen, zum Reinkommen", "🌤️",
-      { bereich:"vocab", mode:"mc", category:k }));
+    const m = lingoraMethodeWaehlen(LINGORA_WEG.warm, tagNr, schritte);
+    rein(lingoraSchritt(m.art, "Aufwärmen: " + k, m.t + " &ndash; " + m.u, "🌤️",
+      { bereich:"vocab", mode:m.mode, category:k }));
   } else if(themen.length){
     rein(lingoraSchritt("gram_lesen", "Nachlesen: " + themen[0].name,
       "Die Regel noch mal in Ruhe ansehen", "📖",
@@ -2739,11 +2857,9 @@ function lingoraTagBauen(wahl, minuten, phase, tagNr){
       gi++;
     } else if(vi < kats.length * 2){
       const k = kats[vi % kats.length];
-      const art = (vi < kats.length) ? "vokabel_mix" : "vokabel_tippen";
-      gesetzt = rein(lingoraSchritt(art,
-        (art === "vokabel_tippen" ? "Schreiben: " : "Gemischt: ") + k,
-        art === "vokabel_tippen" ? "Selbst tippen - das sitzt am besten" : "Auswahl und Tippen im Wechsel", "✍️",
-        { bereich:"vocab", mode:(art === "vokabel_tippen" ? "type" : "mix"), category:k }));
+      const m = lingoraMethodeWaehlen(LINGORA_WEG.haupt, tagNr + vi, schritte);
+      gesetzt = rein(lingoraSchritt(m.art, m.t + ": " + k, m.u, m.ic,
+        { bereich:"vocab", mode:m.mode, category:k }));
       vi++;
     }
     if(!gesetzt && rest >= 4) break;
@@ -2782,14 +2898,14 @@ function lingoraTagBauen(wahl, minuten, phase, tagNr){
           "Kletter dem Wasser davon", "🌊",
           { bereich:"grammar", mode:"flood", topic:themen[0].id }));
       } else if(kats.length){
-        rein(lingoraSchritt("vokabel_spiel", "Challenge: " + kats[0],
-          "Gegen den Bösewicht antreten", "⚔️",
-          { bereich:"vocab", mode:"challenge", category:kats[0] }));
+        const m = lingoraMethodeWaehlen(LINGORA_WEG.spiel, tagNr, schritte);
+        rein(lingoraSchritt(m.art, m.t + ": " + kats[0], m.u, m.ic,
+          { bereich:"vocab", mode:m.mode, category:kats[0] }));
       }
     }
   }
 
-  return schritte;
+  return lingoraTagGlaetten(schritte, tagNr);
 }
 
 /* Baut den kompletten Plan - heute und, wenn eine Arbeit ansteht, die Tage
@@ -3055,6 +3171,25 @@ function renderLingoraFrage(){
 /* ==================================================================
    DER PLAN
 ================================================================== */
+/* Der Weg durch den Tag als Kette. Ein Kind soll sehen koennen, wo es
+   gerade steht und wie viel noch kommt - eine Liste allein beantwortet
+   das nicht, weil man sie lesen muss. Eine Kette sieht man. */
+function lingoraAblaufHtml(tag){
+  if(!tag || !tag.schritte.length) return "";
+  const naechster = tag.schritte.findIndex(s => !s.fertig);
+  return `
+    <div class="lg-ablauf">
+      <p class="lg-ablauf-l">DEIN WEG HEUTE</p>
+      <div class="lg-kette">
+        ${tag.schritte.map((s, i)=>`
+          <span class="lg-glied ${s.fertig ? "fertig" : ""} ${i === naechster ? "dran" : ""}"
+                title="${escapeHtml(s.titel)}">${s.fertig ? "✓" : s.icon}</span>
+          ${i < tag.schritte.length - 1 ? '<span class="lg-pfeil">›</span>' : ""}
+        `).join("")}
+      </div>
+    </div>`;
+}
+
 function renderLingoraPlan(){
   const p = lingoraPlan();
   if(!p){ lingoraFragebogenStarten(); return; }
@@ -3083,6 +3218,7 @@ function renderLingoraPlan(){
 
     <div class="panel">
       <h3 class="abschnitt-h">📅 Heute &middot; ${phaseName[tag ? tag.phase : "aufbau"]}</h3>
+      ${lingoraAblaufHtml(tag)}
       ${tag && tag.schritte.length ? tag.schritte.map(s=>`
         <button class="lg-schritt ${s.fertig ? 'fertig' : ''}" data-lgstart="${s.id}" ${s.fertig ? "disabled" : ""}>
           <span class="lg-s-ic">${s.fertig ? "✓" : s.icon}</span>
@@ -3333,7 +3469,7 @@ function lingoraTagesWeisheit(){
 ===================================================================== */
 
 const STIMME_ORDNER = "stimme/";
-const STIMME_ABSTAND = 40000;          // ms zwischen zwei Aeusserungen
+const STIMME_ABSTAND = 25000;          // ms zwischen zwei Aeusserungen
 
 const STIMME_GRUPPEN = {
   hallo:     5, zurueck: 3, start:     5, gut:       6, endlich: 4,
@@ -3492,6 +3628,53 @@ function stimmeWinken(){
     el.classList.remove('spricht');
     if(warVersteckt) el.style.display = "none";
   }, 5400);                          // bis die Blase wieder weg ist
+}
+
+/* Wo Lingora sich zu Wort meldet - und mit welcher Haeufigkeit.
+   Ausschliesslich Uebergaenge: Bildschirme, die man BETRITT, nachdem
+   etwas fertig ist oder bevor etwas anfaengt. Nie waehrend einer
+   laufenden Aufgabe.
+
+   Die Zahl dahinter ist die Wahrscheinlichkeit. Selbst am richtigen
+   Ort gilt: lieber zu selten als zu oft. Wer jedes Mal etwas sagt,
+   sagt bald nichts mehr, weil niemand mehr hinhoert. */
+const STIMME_BEI_FENSTER = {
+  // Rundenende - hier ist Zuspruch am meisten wert
+  certificate:        {gruppe:"dran",     chance:0.75},
+  grammarcertificate: {gruppe:"dran",     chance:0.75},
+  challengeend:       {gruppe:"dran",     chance:0.75},
+  aussprachefertig:   {gruppe:"dran",     chance:0.75},
+  // "serie", nicht "geschafft": Ein Meilenstein sind Muenzen oder eine
+  // Strähne, kein gemeistertes Thema. "Rüber ins grüne Regal damit"
+  // waere an dieser Stelle schlicht falsch.
+  milestone:          {gruppe:"serie",    chance:0.8},
+  // Bevor es losgeht
+  quiz:               {gruppe:"start",    chance:0.45},
+  grammarquiz:        {gruppe:"start",    chance:0.4},
+  grammarintro:       {gruppe:"start",    chance:0.3},
+  // Beim Nachdenken ueber den eigenen Stand
+  lernweg:            {gruppe:"nebenbei", chance:0.35},
+  lingoraplan:        {gruppe:"nebenbei", chance:0.35},
+  vokabelstats:       {gruppe:"nebenbei", chance:0.3},
+  radar:              {gruppe:"arbeit",   chance:0.5}
+};
+
+let stimmeLetztesFenster = null;
+function stimmeAmUebergang(){
+  const jetzt = state.screen;
+  if(jetzt === stimmeLetztesFenster) return;      // nur beim echten Wechsel
+  const vorher = stimmeLetztesFenster;
+  stimmeLetztesFenster = jetzt;
+  if(!(state.cloudId || state.guest)) return;
+
+  // Beim Aussprache-Modus halten wir uns ganz heraus: dort wird
+  // vorgesprochen und ins Mikrofon gesprochen, da ist kein Platz.
+  if(state.mode === "aussprache" && jetzt === "quiz") return;
+
+  const k = STIMME_BEI_FENSTER[jetzt];
+  if(!k) return;
+  // Nicht gleich beim Neuzeichnen - erst, wenn der Bildschirm steht.
+  setTimeout(()=>{ try{ stimmeSagen(k.gruppe, k.chance); }catch(e){} }, 700);
 }
 
 let stimmeZuletzt = 0;
@@ -5761,12 +5944,6 @@ function faelligeWoerter(pool){
 
 /* Nach jeder Antwort. ergebnis: "correct" | "almost" | "wrong" */
 function wortGelernt(w, ergebnis){
-  // Im Aussprache-Modus schweigt Lingora: dort wird gleich das richtige
-  // Wort vorgesprochen, und zwei Stimmen uebereinander helfen niemandem.
-  if(state.mode !== "aussprache" && typeof stimmeSagen === "function"){
-    if(ergebnis === "correct") stimmeSagen("gut", 0.15);
-    else                      stimmeSagen("daneben", 0.22);
-  }
   const k = wortSchluessel(w);
   if(!k || k === "|") return;
   if(!state.wortStand) state.wortStand = {};
@@ -7166,6 +7343,9 @@ function render(){
   }
   // Damit der Zurueck-Wisch etwas zum Verbrauchen hat.
   try{ lcVerlaufAuffrischen(); }catch(e){}
+  // Lingora meldet sich nur an den Naht­stellen zwischen zwei
+  // Abschnitten - nie mitten in einer Aufgabe.
+  try{ stimmeAmUebergang(); }catch(e){}
   // Waehrend einer Runde zaehlt nur eines: Frage und Antworten muessen
   // ohne Scrollen sichtbar sein. Die Markierung schaltet das enge Layout.
   try{
@@ -7994,7 +8174,10 @@ function renderStart(){
     <div class="panel">
       <details class="einstell" ${state.einstellOffen ? "open" : ""} id="einstell-block">
       <summary class="einstell-knopf">
-        <span class="ek-ic">⚙️</span>
+        <span class="ek-ic" data-mode="${state.mode}">${
+          ({faellig:"🔁", mc:"🎯", type:"📝", mix:"🔀", challenge:"⚔️",
+            flood:"🌊", floodhard:"🌊", aussprache:"🗣️"})[state.mode] || "📖"
+        }</span>
         <span class="ek-txt">
           <span class="ek-l">DAS ÜBST DU GERADE</span>
           <span class="ek-w">${escapeHtml(state.category === "Alle" ? "Alle Vokabeln" : state.category)}
