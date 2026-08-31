@@ -1809,6 +1809,65 @@
   font-size:13px;
   color:#8a6d1f;
 }
+
+/* --- Mein Lernweg --------------------------------------------------- */
+.lw-jetzt{ border:2px solid #e8dcc8; background:linear-gradient(180deg,#fffdf8,#fff); }
+.lw-jetzt-l{
+  margin:2px 0 4px; font-size:12px; font-weight:800;
+  letter-spacing:.08em; color:#a08a63;
+}
+.lw-jetzt-t{
+  margin:0 0 6px; font-family:var(--font); font-weight:800;
+  font-size:20px; line-height:1.25;
+}
+.lw-jetzt-g{ margin:0 0 12px; color:#6b6155; font-size:15px; line-height:1.45; }
+.lw-besser{ background:#f3faf3; border:2px solid #d3ead6; }
+
+.lw-summe{ display:flex; gap:8px; margin:0 0 12px; }
+.lw-summe-teil{
+  flex:1; text-align:center; padding:10px 4px;
+  border-radius:14px; border:2px solid;
+}
+.lw-summe-teil b{ display:block; font-family:var(--font); font-size:24px; line-height:1; }
+.lw-summe-teil span{ display:block; margin-top:4px; font-size:11px; font-weight:700; }
+.lw-summe-teil.neu    { background:#fdf6ec; border-color:#f0dcc0; color:#967440; }
+.lw-summe-teil.wackelt{ background:#fff8e6; border-color:#f0d68a; color:#8a6d1f; }
+.lw-summe-teil.sitzt  { background:#eef8ef; border-color:#bcdfc2; color:#3d7a48; }
+
+.lw-regal{
+  border:2px solid #ece7de; border-radius:16px;
+  background:#fff; margin-bottom:10px; padding:0;
+}
+.lw-regal > summary{
+  display:flex; align-items:center; gap:10px;
+  padding:12px 14px; cursor:pointer; list-style:none;
+  font-family:var(--font); font-weight:800;
+}
+.lw-regal > summary::-webkit-details-marker{ display:none; }
+.lw-sym{ font-size:19px; }
+.lw-titel{ flex:1; }
+.lw-zahl{
+  min-width:26px; text-align:center;
+  padding:2px 8px; border-radius:9px;
+  background:#f1ece3; color:#7a6f60; font-size:14px;
+}
+.lw-regal.wackelt{ border-color:#f0d68a; }
+.lw-regal.wackelt .lw-zahl{ background:#fff2cf; color:#8a6d1f; }
+.lw-regal.neu .lw-zahl{ background:#fbecd8; color:#967440; }
+.lw-regal.sitzt .lw-zahl{ background:#e4f2e6; color:#3d7a48; }
+.lw-satz{ margin:0 14px 10px; color:#6b6155; font-size:14px; line-height:1.45; }
+.lw-chips{ display:flex; flex-direction:column; gap:8px; padding:0 12px 12px; }
+.lw-chip{
+  display:flex; align-items:center; gap:10px; width:100%;
+  text-align:left; padding:10px 12px; min-height:0;
+  border:2px solid #ece7de; border-radius:12px;
+  background:#fcfaf7; cursor:pointer; font-family:inherit;
+}
+.lw-chip:hover{ background:#f6f1ea; }
+.lw-chip-ic{ font-size:20px; }
+.lw-chip-txt{ display:flex; flex-direction:column; min-width:0; }
+.lw-chip-n{ font-weight:800; font-size:15px; }
+.lw-chip-z{ font-size:12px; color:#8a8073; margin-top:2px; }
 </style>
 </head>
 <body>
@@ -2062,7 +2121,7 @@
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "39.1 – Vokabeln abfotografieren";
+const APP_VERSION = "40.0 – Mein Lernweg";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -3147,6 +3206,7 @@ function lingoraStartHtml(){
         </div>
         <div class="lg-balken"><div class="lg-balken-fuell" style="width:${f.gesamt ? Math.round(f.fertig/f.gesamt*100) : 0}%;"></div></div>
         <button class="btn" id="lg-start-plan" style="margin-top:10px;">📅 ZU LINGORAS PLAN</button>
+        <button class="btn secondary" id="lg-lernweg" style="margin-top:8px;">🧭 MEIN LERNWEG &ndash; WO STEHE ICH?</button>
       </div>`;
   }
 
@@ -3156,13 +3216,16 @@ function lingoraStartHtml(){
         <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
         <div class="lg-blase">${escapeHtml(lingoraTagesWeisheit())}</div>
       </div>
-      <button class="btn secondary" id="lg-start-plan">✨ FRAG LINGORA &ndash; MACH MIR EINEN PLAN</button>
+      <button class="btn" id="lg-lernweg">🧭 MEIN LERNWEG &ndash; WO STEHE ICH?</button>
+      <button class="btn secondary" id="lg-start-plan" style="margin-top:8px;">📅 LINGORA, MACH MIR EINEN PLAN</button>
     </div>`;
 }
 
 function lingoraStartVerdrahten(){
   const el = document.getElementById('lg-start-plan');
   if(el){ el.addEventListener('click', ()=>lingoraOeffnen("start")); }
+  const lw = document.getElementById('lg-lernweg');
+  if(lw){ lw.addEventListener('click', ()=>{ state.screen = "lernweg"; render(); }); }
 }
 
 
@@ -6743,6 +6806,7 @@ function render(){
   if(state.screen==="shop") return renderShop();
   if(state.screen==="leaderboard") return renderLeaderboard();
   if(state.screen==="customvocab") return renderCustomVocab();
+  if(state.screen==="lernweg") return renderLernweg();
   if(state.screen==="scan") return renderScan();
   if(state.screen==="challengeend") return renderChallengeRoundEnd();
   if(state.screen==="gradecalendar") return renderGradeCalendar();
@@ -7535,6 +7599,7 @@ function renderStart(){
       <h3 style="font-size:16px;margin-bottom:10px;">VOKABELBLOCK</h3>
       <select id="cat-select">
         ${cats.map(c=>`<option value="${c}" ${state.category===c?'selected':''}>${c}</option>`).join("")}
+        <option value="__eigene">➕ Eigene Vokabeln hinzufügen …</option>
       </select>
       <p class="muted" style="margin-top:8px;">${(state.category==="Alle" ? getAllVocab().length : getAllVocab().filter(w=>w.cat===state.category).length)} Vokabeln in dieser Auswahl</p>
 
@@ -7764,7 +7829,19 @@ function renderStart(){
   }
   const catSelect = document.getElementById('cat-select');
   if(catSelect){
-    catSelect.addEventListener('change', (e)=>{ state.category = e.target.value; render(); });
+    catSelect.addEventListener('change', (e)=>{
+      // Der letzte Eintrag ist kein Vokabelblock, sondern ein Weg nach
+      // nebenan. Die Auswahl darf dabei nicht kaputtgehen - sonst uebt
+      // das Kind nach der Rueckkehr ploetzlich etwas anderes.
+      if(e.target.value === "__eigene"){
+        e.target.value = state.category;
+        state.screen = "customvocab";
+        render();
+        return;
+      }
+      state.category = e.target.value;
+      render();
+    });
   }
   const customVocabBtn = document.getElementById('custom-vocab-btn');
   if(customVocabBtn){
@@ -11146,6 +11223,345 @@ function renderScan(){
   });
 
   anKnopf('back-btn', ()=>{ state.scanStand = {}; state.screen = "customvocab"; render(); });
+}
+
+/* =====================================================================
+   MEIN LERNWEG - Lingoras Überblick
+
+   Das Problem, das dieser Bildschirm löst, ist nicht fehlende
+   Information. Die App weiß längst sehr viel: pro Vokabel die
+   Leitner-Box, pro Grammatikthema die Quote der letzten Versuche.
+
+   Was fehlte, war eine UNTERSCHEIDUNG: Ein Thema, das noch nie
+   angefasst wurde, sah bisher genauso aus wie eines, an dem gerade
+   gearbeitet wird. Das Unangefasste war unsichtbar - und genau das
+   lähmt ein Kind vor einer Liste aus zwölf Themen. Es kann nicht
+   sehen, was fehlt, also fängt es lieber gar nicht an oder immer
+   wieder beim Gleichen.
+
+   Deshalb genau DREI Zustände, quer über Vokabeln und Grammatik:
+
+       neu       noch nie angefasst
+       wackelt   angefangen, sitzt aber noch nicht
+       sitzt     sicher
+
+   Drei Zustände, keine zwölf Prozentzahlen. Die Chips wandern über die
+   Wochen sichtbar nach rechts - Fortschritt wird dadurch erfahrbar,
+   statt bloß behauptet zu werden.
+===================================================================== */
+
+const LERNWEG_SICHER_BOX  = 4;     // ab dieser Leitner-Box gilt ein Wort als sicher
+const LERNWEG_SITZT_ANTEIL = 0.80; // so viel muss sicher sein, damit ein Thema "sitzt"
+const LERNWEG_SITZT_QUOTE  = 0.80; // Grammatik: Trefferquote fuer "sitzt"
+
+/* --- Ein Vokabelblock als Thema ------------------------------------ */
+function lernwegVokabelThema(cat){
+  const woerter = getAllVocab().filter(w => w.cat === cat);
+  if(!woerter.length) return null;
+  let neu = 0, fest = 0;
+  woerter.forEach(w=>{
+    const st = wortStand(w);
+    if(!st){ neu++; return; }
+    if((st.b || 1) >= LERNWEG_SICHER_BOX) fest++;
+  });
+  const anteil = fest / woerter.length;
+  let zustand;
+  if(neu === woerter.length)              zustand = "neu";
+  else if(anteil >= LERNWEG_SITZT_ANTEIL) zustand = "sitzt";
+  else                                    zustand = "wackelt";
+
+  return {
+    art: "vokabel", id: cat, name: cat, icon: "📚",
+    zustand: zustand, anteil: anteil,
+    zusatz: fest + " von " + woerter.length + " sicher",
+    n: woerter.length, offen: woerter.length - fest
+  };
+}
+
+/* --- Ein Grammatikthema als Thema ---------------------------------- */
+function lernwegGrammatikThema(t){
+  const i = grammarSkillInfo(t);
+  let zustand, zusatz;
+  if(i.fenster === 0){
+    zustand = "neu";
+    zusatz = "noch nie geübt";
+  } else if(!i.genug){
+    // Zu wenige Versuche fuer ein Urteil. Das sagen wir auch so, statt
+    // eine Prozentzahl zu zeigen, die auf zwei Antworten beruht.
+    zustand = "wackelt";
+    zusatz = "erst " + i.fenster + " " + (i.fenster === 1 ? "Versuch" : "Versuche");
+  } else if(i.quote >= LERNWEG_SITZT_QUOTE){
+    zustand = "sitzt";
+    zusatz = i.prozent + " % richtig";
+  } else {
+    zustand = "wackelt";
+    zusatz = i.prozent + " % richtig";
+  }
+  return {
+    art: "grammatik", id: t.id, name: t.name, icon: t.icon || "🔤",
+    zustand: zustand, anteil: i.quote, zusatz: zusatz,
+    n: i.fenster, quote: i.quote, genug: i.genug, topic: t
+  };
+}
+
+function lernwegAlleThemen(){
+  const raus = [];
+  categories().forEach(c=>{
+    if(c === "Alle") return;
+    const th = lernwegVokabelThema(c);
+    if(th) raus.push(th);
+  });
+  GRAMMAR_TOPICS.forEach(t=>{
+    if(t.locked) return;
+    raus.push(lernwegGrammatikThema(t));
+  });
+  return raus;
+}
+
+/* Ein Thema anfassen. Der Modus richtet sich nach dem Zustand - das ist
+   kein Zierrat: Erkennen kommt vor Abrufen. Wer ein Wort noch nie
+   gesehen hat, soll es nicht sofort tippen muessen, und wer es sicher
+   kann, hat vom Ankreuzen nichts mehr. */
+function lernwegOeffnen(th){
+  if(th.art === "vokabel"){
+    state.mainMode = "vocab";
+    state.category = th.id;
+    state.mode = (th.zustand === "neu") ? "mc"
+               : (th.zustand === "sitzt") ? "type" : "mix";
+    startGame();
+    return;
+  }
+  state.mainMode = "grammar";
+  state.grammarTopicId = th.id;
+  if(th.zustand === "neu"){
+    // Erst lesen, dann ueben. Ein Kind vor eine Regel zu setzen, die es
+    // nie erklaert bekommen hat, ist kein Test, sondern Raten.
+    state.grammarStatsReturnTo = "lernweg";
+    state.screen = "grammarintro";
+    render();
+    return;
+  }
+  startGrammarPractice();
+}
+
+/* --- Der eine naechste Schritt -------------------------------------
+   Mit Begruendung. Kinder befolgen Anweisungen; sie VERSTEHEN
+   Begruendungen - und nur Verstandenes ueberlebt den Tag.           */
+function lernwegNaechsterSchritt(){
+  const themen = lernwegAlleThemen();
+
+  // 1) Ein laufender Plan geht allem vor. Er kennt den Termin.
+  const p = lingoraPlan();
+  const tag = p ? lingoraHeutigerTag() : null;
+  if(tag){
+    const offen = tag.schritte.filter(s => !s.fertig);
+    if(offen.length){
+      return {
+        titel: offen[0].titel || "Weiter im Plan",
+        grund: "Das steht heute in deinem Plan. Danach hast du frei.",
+        knopf: "▶ WEITER IM PLAN",
+        los: ()=> lingoraSchrittStarten(offen[0].id)
+      };
+    }
+  }
+
+  // 2) Faellige Woerter. Das Herzstueck des Wiederholens: Wer heute
+  //    uebt, was heute dran ist, muss es viel seltener wiederholen.
+  const faellig = getAllVocab().filter(w => wortStand(w) && wortIstFaellig(w));
+  if(faellig.length >= 3){
+    return {
+      titel: faellig.length + " Wörter sind heute dran",
+      grund: "Genau heute vergisst du sie fast. Wenn du sie jetzt übst, "
+           + "sitzen sie danach viel länger.",
+      knopf: "▶ WIEDERHOLEN",
+      los: ()=>{ state.mainMode = "vocab"; state.category = "Alle";
+                 state.mode = "faellig"; startGame(); }
+    };
+  }
+
+  // 3) Die groesste Schwaeche - aber nur, wo genug Versuche vorliegen.
+  const schwach = themen
+    .filter(t => t.art === "grammatik" && t.genug && t.quote < 0.70)
+    .sort((a,b)=> a.quote - b.quote)[0];
+  if(schwach){
+    return {
+      titel: schwach.name,
+      grund: "Da gehen dir noch " + (100 - Math.round(schwach.quote*100))
+           + " von 100 daneben. Zehn Minuten hier bringen mehr als "
+           + "irgendwo sonst.",
+      knopf: "▶ ÜBEN",
+      los: ()=> lernwegOeffnen(schwach)
+    };
+  }
+
+  // 4) Etwas, das noch nie angefasst wurde. Grammatik zuerst, weil eine
+  //    Regel viele Saetze auf einmal oeffnet.
+  const unberuehrt = themen.filter(t => t.zustand === "neu")
+    .sort((a,b)=> (a.art === "grammatik" ? 0 : 1) - (b.art === "grammatik" ? 0 : 1))[0];
+  if(unberuehrt){
+    return {
+      titel: unberuehrt.name,
+      grund: "Das hast du noch nie angefasst. Einmal anfangen ist das "
+           + "Schwerste daran.",
+      knopf: "▶ ANFANGEN",
+      los: ()=> lernwegOeffnen(unberuehrt)
+    };
+  }
+
+  // 5) Alles sitzt. Dann darf man das auch sagen.
+  const wackelt = themen.filter(t => t.zustand === "wackelt")
+    .sort((a,b)=> a.anteil - b.anteil)[0];
+  if(wackelt){
+    return {
+      titel: wackelt.name,
+      grund: "Das ist gerade dein wackeligstes Thema. Noch ein bisschen, "
+           + "dann sitzt es.",
+      knopf: "▶ ÜBEN",
+      los: ()=> lernwegOeffnen(wackelt)
+    };
+  }
+  return {
+    titel: "Alles sitzt",
+    grund: "Ehrlich: Es ist gerade nichts fällig und nichts wackelt. "
+         + "Üben darfst du trotzdem.",
+    knopf: "▶ FREI ÜBEN",
+    los: ()=>{ state.mainMode = "vocab"; state.category = "Alle";
+               state.mode = "mix"; startGame(); }
+  };
+}
+
+/* --- Was ist besser geworden? --------------------------------------
+   Kinder nehmen eigenen Fortschritt fast nie wahr. Ein Satz wie
+   "seit Montag sind sechs Woerter sicher geworden" ist konkret,
+   nachpruefbar und wirkt staerker als jedes allgemeine Lob.
+
+   Der Verlauf bleibt bewusst NUR AUF DEM GERAET. Ein zusaetzliches
+   Feld in der Cloud haette eine Aenderung der Firestore-Regeln
+   verlangt; fuer eine Zahl, die nur der Ermutigung dient, ist das
+   nicht die Muehe wert.                                             */
+function lernwegSicherZahl(){
+  let fest = 0;
+  getAllVocab().forEach(w=>{
+    const st = wortStand(w);
+    if(st && (st.b || 1) >= LERNWEG_SICHER_BOX) fest++;
+  });
+  return fest;
+}
+
+function lernwegVerlaufFuehren(){
+  const heute = lernTagHeute();
+  const sitzt = lernwegAlleThemen().filter(t => t.zustand === "sitzt").length;
+  const fest  = lernwegSicherZahl();
+  if(!Array.isArray(state.lernwegVerlauf)) state.lernwegVerlauf = [];
+  const v = state.lernwegVerlauf;
+
+  // Der letzte Eintrag von einem FRUEHEREN Tag ist unser Vergleich.
+  const frueher = v.filter(e => e && e.t < heute).sort((a,b)=> b.t - a.t)[0] || null;
+
+  const heutiger = v.find(e => e && e.t === heute);
+  if(heutiger){ heutiger.s = sitzt; heutiger.f = fest; }
+  else { v.push({t: heute, s: sitzt, f: fest}); }
+  while(v.length > 40) v.shift();
+
+  if(!frueher) return null;
+  const tage = heute - frueher.t;
+  return {
+    tage: tage,
+    themen: sitzt - (frueher.s || 0),
+    woerter: fest - (frueher.f || 0)
+  };
+}
+
+function lernwegSeit(tage){
+  if(tage <= 1) return "seit gestern";
+  if(tage <= 7) return "in den letzten " + tage + " Tagen";
+  return "seit deinem letzten Besuch";
+}
+
+/* --- Bildschirm ----------------------------------------------------- */
+function renderLernweg(){
+  const themen = lernwegAlleThemen();
+  const nach = (z)=> themen.filter(t => t.zustand === z);
+  const neu = nach("neu"), wackelt = nach("wackelt"), sitzt = nach("sitzt");
+  const schritt = lernwegNaechsterSchritt();
+  const besser = lernwegVerlaufFuehren();
+  saveProgress();
+
+  const regal = (schluessel, symbol, titel, satz, liste, offenStandard)=>{
+    if(!liste.length) return "";
+    return `
+      <details class="lw-regal ${schluessel}" ${offenStandard ? "open" : ""}>
+        <summary>
+          <span class="lw-sym">${symbol}</span>
+          <span class="lw-titel">${titel}</span>
+          <span class="lw-zahl">${liste.length}</span>
+        </summary>
+        <p class="lw-satz">${satz}</p>
+        <div class="lw-chips">
+          ${liste.map(t=>`
+            <button class="lw-chip" data-lw-art="${t.art}" data-lw-id="${escapeHtml(String(t.id))}">
+              <span class="lw-chip-ic">${t.icon}</span>
+              <span class="lw-chip-txt">
+                <span class="lw-chip-n">${escapeHtml(t.name)}</span>
+                <span class="lw-chip-z">${escapeHtml(t.zusatz)}</span>
+              </span>
+            </button>`).join("")}
+        </div>
+      </details>`;
+  };
+
+  app.innerHTML = `
+    ${renderHeader("Mein Lernweg", true)}
+    ${playerBadgeHtml(true)}
+
+    <div class="panel lw-jetzt">
+      <div class="lg-kopf klein" style="margin-bottom:10px;">
+        <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
+        <div class="lg-blase">Wo du stehst &ndash; und was jetzt dran ist.</div>
+      </div>
+      <p class="lw-jetzt-l">DAS MACHEN WIR JETZT</p>
+      <p class="lw-jetzt-t">${escapeHtml(schritt.titel)}</p>
+      <p class="lw-jetzt-g">${escapeHtml(schritt.grund)}</p>
+      <button class="btn" id="lw-los">${schritt.knopf}</button>
+    </div>
+
+    ${besser && (besser.themen > 0 || besser.woerter > 0) ? `
+    <div class="panel lw-besser">
+      <p style="margin:0;">✨ <strong>Das ist ${lernwegSeit(besser.tage)} dazugekommen:</strong></p>
+      <p class="muted" style="margin:6px 0 0;">
+        ${besser.woerter > 0 ? besser.woerter + " Wörter sitzen jetzt sicher" : ""}
+        ${besser.woerter > 0 && besser.themen > 0 ? " &middot; " : ""}
+        ${besser.themen > 0 ? besser.themen + " Thema" + (besser.themen === 1 ? "" : "-Gebiete") + " ist rüber ins Grüne gewandert" : ""}
+      </p>
+    </div>` : ""}
+
+    <div class="lw-summe">
+      <div class="lw-summe-teil neu"><b>${neu.length}</b><span>nie angefasst</span></div>
+      <div class="lw-summe-teil wackelt"><b>${wackelt.length}</b><span>wackelt</span></div>
+      <div class="lw-summe-teil sitzt"><b>${sitzt.length}</b><span>sitzt</span></div>
+    </div>
+
+    ${regal("wackelt", "🔧", "Wackelt noch", "Hier passiert das Lernen. Was hier steht, kannst du fast &ndash; es fehlt nur noch Wiederholung.", wackelt, true)}
+    ${regal("neu", "🌱", "Noch nie angefasst", "Hier hast du noch nichts gemacht. Das ist kein Vorwurf &ndash; nur eine Landkarte.", neu, true)}
+    ${regal("sitzt", "✅", "Sitzt", "Das kannst du. Ab und zu kurz auffrischen reicht.", sitzt, false)}
+
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+  `;
+
+  document.getElementById('lw-los').addEventListener('click', ()=> schritt.los());
+
+  document.querySelectorAll('.lw-chip').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const art = el.dataset.lwArt, id = el.dataset.lwId;
+      const th = lernwegAlleThemen().find(t => t.art === art && String(t.id) === id);
+      if(th) lernwegOeffnen(th);
+    });
+  });
+
+  document.getElementById('back-btn').addEventListener('click', ()=>{
+    state.screen = "start";
+    render();
+  });
 }
 
 function renderCustomVocab(){
