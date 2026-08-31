@@ -20,15 +20,42 @@
    Seite immer frisch geholt, wenn Netz da ist - und nur bei fehlendem Netz
    aus dem Speicher. Die Bilder aendern sich dagegen fast nie und duerfen
    sofort aus dem Speicher kommen.
+
+   ---------------------------------------------------------------------
+   FEHLER, DER LANGE UNBEMERKT BLIEB (behoben in v3):
+
+   "Netz zuerst" war ein Irrtum. Ein schlichtes fetch() aus dem Service
+   Worker fragt ZUERST den HTTP-Zwischenspeicher des Browsers - und
+   GitHub Pages liefert die Seite mit "Cache-Control: max-age=600".
+   Zehn Minuten lang bekam der Service Worker also die ALTE Seite, gab
+   sie aus UND schrieb sie sich erneut in seinen eigenen Speicher.
+
+   Am laufenden Browser gemessen, unmittelbar nach einem Upload:
+       fetch("./")                    -> 7ddebf02   (alte Fassung)
+       fetch("./", {cache:"reload"})  -> b516c5bb   (neue Fassung)
+
+   Genau daher kamen die Faelle "ich habe hochgeladen, aber es hat sich
+   nichts geaendert". Fuer die Seite wird der HTTP-Zwischenspeicher jetzt
+   ausdruecklich uebergangen.
 ===================================================================== */
 
-const CACHE = "lingocrafter-v2";
+const CACHE = "lingocrafter-v3";
 const MITNEHMEN = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./lingora.webp"];
+
+/* Holt etwas unter Umgehung des HTTP-Zwischenspeichers. Faellt auf den
+   gewoehnlichen Weg zurueck, falls ein Browser "reload" nicht mag -
+   lieber eine alte Seite als gar keine. */
+function frischHolen(url){
+  return fetch(url, {cache: "reload", credentials: "same-origin"})
+           .catch(()=> fetch(url));
+}
 
 self.addEventListener("install", (e)=>{
   e.waitUntil(
     caches.open(CACHE)
-      .then(c => c.addAll(MITNEHMEN).catch(()=>{}))   // eine fehlende Datei darf nichts umwerfen
+      .then(c => Promise.all(MITNEHMEN.map(u =>
+        frischHolen(u).then(a => a && a.ok ? c.put(u, a) : null).catch(()=>{})
+      )))
       .then(()=> self.skipWaiting())
   );
 });
@@ -53,10 +80,12 @@ self.addEventListener("fetch", (e)=>{
                    url.pathname.endsWith("index.html");
 
   if(istSeite){
-    // Netz zuerst - so kommt eine neue Fassung sofort an.
+    // Netz zuerst - und zwar WIRKLICH das Netz, nicht der
+    // HTTP-Zwischenspeicher des Browsers.
     e.respondWith(
-      fetch(anfrage)
+      frischHolen(anfrage.url)
         .then(antwort => {
+          if(!antwort || !antwort.ok) throw new Error("nicht ok");
           const kopie = antwort.clone();
           caches.open(CACHE).then(c => c.put(anfrage, kopie)).catch(()=>{});
           return antwort;
