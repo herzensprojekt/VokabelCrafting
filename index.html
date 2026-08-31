@@ -1957,7 +1957,7 @@
    wichtigste Information hier ist nicht, dass man etwas einstellen
    kann, sondern was passiert, wenn das Kind jetzt auf Start tippt. */
 .einstell-knopf{
-  display:flex; align-items:center; gap:12px;
+  display:flex; align-items:flex-start; gap:12px;
   /* Die negativen Raender heben den Innenabstand des Panels (18 px)
      genau auf - sonst sitzt ein Rahmen im Rahmen und ringsum bleibt
      Flaeche ungenutzt. */
@@ -1988,7 +1988,11 @@
 .ek-ic[data-mode="flood"],
 .ek-ic[data-mode="floodhard"] { background:linear-gradient(160deg,#e1f6f9,#bce6ee); }
 .ek-ic[data-mode="aussprache"]{ background:linear-gradient(160deg,#fdf0f6,#f6cde2); }
-.ek-txt{ display:flex; flex-direction:column; min-width:0; flex:1; }
+.ek-txt{ display:flex; flex-direction:column; min-width:0; flex:1; padding-top:1px; }
+.ek-hinweis{
+  display:block; margin-top:5px;
+  font-size:12px; font-weight:600; color:#7d8a7f;
+}
 .ek-l{
   font-size:11px; font-weight:800; letter-spacing:.07em; color:#6f9276;
   line-height:1.1;
@@ -1997,7 +2001,16 @@
   font-family:var(--font); font-weight:800; font-size:17px;
   color:#1e5c28; line-height:1.2; margin-top:3px;
 }
-.ek-pfeil{ flex:0 0 auto; font-size:26px; line-height:1; }
+.ek-pfeil{
+  flex:0 0 auto; font-size:26px; line-height:1;
+  align-self:center;                 /* auf Hoehe des Textes, nicht oben */
+  animation:ek-tippen 2.4s ease-in-out infinite;
+}
+@keyframes ek-tippen{
+  0%,72%,100%{ transform:translateX(0); }
+  80%{ transform:translateX(-5px); }
+  88%{ transform:translateX(0); }
+}
 
 /* --- "Mehr" als richtiger Knopf ------------------------------------
    Kinder lesen Form, nicht Semantik. Ein Aufklapp-Pfeil in
@@ -2031,6 +2044,32 @@ summary.mehr-knopf::after{ content:none; }
   font-size:13px; color:#8a7f72; text-decoration:underline;
   background:none; border:0; cursor:pointer;
 }
+
+/* --- Nebenwege unter Lingoras Vorschlag ----------------------------- */
+.lg-nebenwege{ display:flex; gap:8px; margin-top:8px; }
+.lg-nebenwege .btn{ flex:1; font-size:clamp(12px, 3.4vw, 15px); padding:12px 8px; }
+
+/* --- Grammatik ohne Unit-Ebene -------------------------------------- */
+.gt-unit{
+  display:inline-block; margin-left:6px;
+  font-size:11px; font-weight:700; opacity:.6;
+  vertical-align:middle;
+}
+
+/* --- "Mehr Spiele" --------------------------------------------------- */
+.mehr-spiele{ margin-top:10px; }
+.mehr-spiele > summary{
+  display:flex; align-items:baseline; gap:8px;
+  cursor:pointer; list-style:none;
+  font-family:var(--font); font-weight:800; font-size:15px;
+  padding:10px 12px; border-radius:12px;
+  background:#f2f6f1; border:2px solid #dfe8dc;
+}
+.mehr-spiele > summary::-webkit-details-marker{ display:none; }
+.mehr-spiele > summary::after{ content:"👇"; margin-left:auto; font-size:18px; }
+.mehr-spiele[open] > summary::after{ content:"👆"; }
+.ms-u{ font-weight:600; font-size:12px; color:#7d8a7f; }
+.mehr-spiele[open] > summary{ margin-bottom:10px; }
 </style>
 </head>
 <body>
@@ -2284,7 +2323,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "44.1 – Glutkern";
+const APP_VERSION = "46.0 – Wegstein";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -3469,6 +3508,18 @@ function lingoraTagesWeisheit(){
    vor die Begleitung.
 ===================================================================== */
 
+/* DER SCHALTER.
+
+   false = Lingora sagt und schreibt an den Uebergaengen gar nichts.
+   true  = alles wieder an.
+
+   Nichts anderes muss dafuer angefasst werden: die 64 Aufnahmen liegen
+   weiter im Ordner stimme/, ihre Texte stehen weiter in STIMME_TEXTE,
+   und die Blase samt ihren Schaltern ist unveraendert gebaut. Der
+   uebrige Lingora - die Sprechblasen beim Fensterwechsel, sein Knopf,
+   sein Plan - ist davon nicht betroffen und laeuft weiter wie vorher. */
+const STIMME_AN = false;
+
 const STIMME_ORDNER = "stimme/";
 const STIMME_ABSTAND = 25000;          // ms zwischen zwei Aeusserungen
 
@@ -3662,6 +3713,7 @@ const STIMME_BEI_FENSTER = {
 
 let stimmeLetztesFenster = null;
 function stimmeAmUebergang(){
+  if(!STIMME_AN) return;
   const jetzt = state.screen;
   if(jetzt === stimmeLetztesFenster) return;      // nur beim echten Wechsel
   const vorher = stimmeLetztesFenster;
@@ -3683,6 +3735,7 @@ let stimmeLetzteDatei = "";
 let stimmeFehlt = {};                  // was einmal fehlte, wird nicht wieder versucht
 
 function stimmeDarfReden(){
+  if(!STIMME_AN) return false;
   if(typeof lingoraIstStill === "function" && lingoraIstStill()) return false;
   // Vorfahrt fuer den Unterricht: laeuft eine Vokabelaufnahme oder die
   // Geraetestimme, sagt Lingora nichts.
@@ -3743,6 +3796,7 @@ function stimmeSagen(gruppe, chance){
 /* Begruessung beim Oeffnen. Wer laenger weg war, wird anders begruesst -
    das kostet nichts und macht aus einer Ansage eine Beziehung. */
 function stimmeBegruessen(){
+  if(!STIMME_AN) return false;
   let letzter = 0;
   try{ letzter = parseInt(localStorage.getItem("lingoraLetzterBesuch") || "0", 10) || 0; }catch(e){}
   const heute = lernTagHeute();
@@ -3776,7 +3830,11 @@ function lingoraStartHtml(){
       <p class="lw-jetzt-t">${escapeHtml(schritt.titel)}</p>
       <p class="lw-jetzt-g">${escapeHtml(schritt.grund)}</p>
       <button class="btn einzeilig" id="lg-jetzt">${schritt.knopf}</button>
-      <button class="btn secondary einzeilig" id="lg-lernweg" style="margin-top:8px;">🧭 MEIN LERNWEG</button>
+      ${zuletztHtml()}
+      <div class="lg-nebenwege">
+        <button class="btn secondary einzeilig" id="lg-start-plan">📅 PLAN MACHEN</button>
+        <button class="btn secondary einzeilig" id="lg-lernweg">🧭 MEIN LERNWEG</button>
+      </div>
     </div>`;
 }
 
@@ -3789,6 +3847,8 @@ function lingoraStartVerdrahten(){
   if(lw){ lw.addEventListener('click', ()=>{ state.screen = "lernweg"; render(); }); }
   const jetzt = document.getElementById('lg-jetzt');
   if(jetzt){ jetzt.addEventListener('click', ()=>{ if(lingoraJetzt) lingoraJetzt.los(); }); }
+  const fort = document.getElementById('lg-fortsetzen');
+  if(fort){ fort.addEventListener('click', zuletztStarten); }
   // Einmal am Tag begruesst Lingora hoerbar. Der erste Fingerdruck des
   // Kindes ist der Anlass - vorher darf ein Browser gar nichts abspielen.
   if(!stimmeBegruesstDiesenBesuch){
@@ -8133,6 +8193,26 @@ function renderStart(){
       <h3 style="font-size:16px;margin-bottom:6px;">GRAMMATIK-THEMEN</h3>
       <p class="muted" style="margin-bottom:12px;">${GRAMMAR_TOPICS.length} Themen aus dem ganzen Schuljahr &ndash; sortiert nach Units.</p>
       <button class="btn skill-open-btn" id="grammar-stats-btn">📊 MEINE GRAMMATIK-SKILLS</button>
+      ${GRAMMAR_TOPICS.length <= 6 ? `
+      <p class="muted" style="margin:0 0 10px;">👇 Tippe ein Thema an &ndash; dann geht es los.</p>
+      <div class="mode-grid">
+        ${GRAMMAR_TOPICS.filter(t=>!t.locked).map(t=>{
+          const sk = grammarSkillInfo(t);
+          const stufe = sk.level
+            ? `<span class="gt-orb ${sk.level.key}" title="${sk.level.name}">${sk.level.icon}</span>`
+            : `<span class="gt-orb leer" title="Noch nicht geübt">●</span>`;
+          return `
+          <button type="button" class="mode-btn gram-tile ${state.grammarTopicId===t.id?'active':''}" data-grammar-topic="${t.id}" data-unit="${t.unit}" aria-pressed="${state.grammarTopicId===t.id}">
+            <span class="gt-icon">${t.icon}</span>
+            <span class="gt-txt">
+              <span class="gt-name">${escapeHtml(t.name)} <span class="gt-unit">Unit ${t.unit}</span></span>
+              <small>${escapeHtml(t.subtitle)}</small>
+            </span>
+            ${stufe}
+          </button>`;
+        }).join("")}
+      </div>
+      ` : `
       <div class="unit-tipp">👇 <span>Tippe auf eine Unit, um ihre Themen aufzuklappen.</span></div>
       ${GRAMMAR_UNITS.map(u=>{
         const themen = grammarTopicsOfUnit(u.nr);
@@ -8170,7 +8250,9 @@ function renderStart(){
           </div>` : ''}
         </div>`;
       }).join("")}
+      `}
     </div>
+
     ` : `
     <div class="panel">
       <details class="einstell" ${state.einstellOffen ? "open" : ""} id="einstell-block">
@@ -8185,8 +8267,11 @@ function renderStart(){
             &middot; ${({faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
                          mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
                          aussprache:"Aussprache"})[state.mode] || "Spiel"}</span>
+          <span class="ek-hinweis">${state.einstellOffen
+            ? "Tipp hier, um wieder zuzuklappen"
+            : "Tipp hier, wenn du etwas anderes üben willst"}</span>
         </span>
-        <span class="ek-pfeil">${state.einstellOffen ? "👆" : "👇"}</span>
+        <span class="ek-pfeil">👈</span>
       </summary>
       <h3 style="font-size:16px;margin:12px 0 10px;">VOKABELBLOCK</h3>
       <select id="cat-select">
@@ -8237,6 +8322,10 @@ function renderStart(){
             <small>Mal Auswahl, mal Eintippen</small>
           </span>
         </button>
+      </div>
+      <details class="mehr-spiele" ${["challenge","flood","floodhard","aussprache"].indexOf(state.mode) >= 0 ? "open" : ""}>
+      <summary><span class="ms-t">🎮 Mehr Spiele</span><span class="ms-u">Challenge, Flutungsraum, Aussprache</span></summary>
+      <div class="game-grid">
         <button type="button" class="mode-btn game-tile ${state.mode==='challenge'?'active':''}" data-mode="challenge" aria-pressed="${state.mode==='challenge'}">
           <span class="gm-ic">⚔️</span>
           <span class="gm-txt">
@@ -8259,6 +8348,7 @@ function renderStart(){
           </span>
         </button>
       </div>
+      </details>
       </details>
     </div>
     `}
@@ -8400,10 +8490,14 @@ function renderStart(){
       state.grammarTopicId = el.dataset.grammarTopic;
       const th = grammarTopicById(state.grammarTopicId);
       if(th){ state.grammarOpenUnit = th.unit; }   // die Unit bleibt offen
-      // Direkt weiter zur Auswahl der Uebungsart. Frueher musste man dafuer
-      // erst an allen Themen vorbei nach unten scrollen.
-      state.screen = "grammarintro";
-      render();
+      // Wer das Thema noch nie geuebt hat, bekommt zuerst die Regel.
+      // Wer es kennt, will ueben und nicht nochmal lesen.
+      if(th && grammarSkillInfo(th).fenster === 0){
+        state.screen = "grammarintro";
+        render();
+        return;
+      }
+      startGrammarPractice();
       window.scrollTo(0, 0);
     });
   });
@@ -8435,8 +8529,10 @@ function renderStart(){
   if(einstell){
     einstell.addEventListener('toggle', ()=>{
       state.einstellOffen = einstell.open;
-      const f = einstell.querySelector('.ek-pfeil');
-      if(f) f.textContent = einstell.open ? "👆" : "👇";
+      const h = einstell.querySelector('.ek-hinweis');
+      if(h) h.textContent = einstell.open
+        ? "Tipp hier, um wieder zuzuklappen"
+        : "Tipp hier, wenn du etwas anderes üben willst";
     });
   }
   const catSelect = document.getElementById('cat-select');
@@ -8494,12 +8590,54 @@ function renderStart(){
   }
 }
 
+/* Was zuletzt geuebt wurde - fuer den Fortsetzen-Knopf.
+   Bleibt bewusst nur auf dem Geraet; fuer eine Bequemlichkeit lohnt
+   keine Aenderung der Firestore-Regeln. */
+function zuletztMerken(o){
+  state.zuletztGeuebt = o;
+  try{ saveProgress(); }catch(e){}
+}
+
+function zuletztHtml(){
+  const z = state.zuletztGeuebt;
+  if(!z || !z.titel) return "";
+  // Kennung bewusst NICHT "lg-weiter": so heisst schon der Weiter-Knopf
+  // im Lingora-Fragebogen. Zwei Bildschirme, dieselbe Kennung - das geht
+  // so lange gut, bis sie sich einmal begegnen.
+  return `<button class="btn secondary einzeilig" id="lg-fortsetzen" style="margin-top:8px;">
+            ▶ WEITER: ${escapeHtml(z.titel)}
+          </button>`;
+}
+
+function zuletztStarten(){
+  const z = state.zuletztGeuebt;
+  if(!z) return;
+  if(z.bereich === "grammar"){
+    if(!grammarTopicById(z.topic)) return;
+    state.mainMode = "grammar";
+    state.grammarTopicId = z.topic;
+    startGrammarPractice();
+    return;
+  }
+  state.mainMode = "vocab";
+  state.category = z.category;
+  state.mode = z.mode;
+  startGame();
+}
+
 function startGame(){
   // Der Flutungsraum teilt sich die Zaehler mit der Grammatik-Variante.
   state.grammarCorrectCount = 0;
   state.grammarWrongStreak = 0;
   resetFlood(state.mode === "floodhard");
   state.playerName = (state.playerName||"").trim() || "Spieler";
+  if(state.mainMode !== "grammar"){
+    const namen = {faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
+                   mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
+                   floodhard:"Flutungsraum", aussprache:"Aussprache"};
+    zuletztMerken({bereich:"vocab", mode:state.mode, category:state.category,
+                   titel:(namen[state.mode] || "Üben")});
+  }
   saveProgress();
   attemptCloudLogin();
   state.sessionCoins = 0;
@@ -12482,6 +12620,7 @@ function resetGrammarSession(){
 function startGrammarPractice(){
   const topic = grammarTopicById(state.grammarTopicId);
   if(!topic) return;
+  zuletztMerken({bereich:"grammar", topic:topic.id, titel:topic.name});
   resetGrammarSession();
   state.grammarMode = "practice";
   state.grammarQueue = shuffle(topic.exercises.slice()).slice(0, GRAMMAR_PRACTICE_COUNT);
