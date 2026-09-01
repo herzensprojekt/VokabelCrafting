@@ -2384,7 +2384,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "49.0 – Riegel";
+const APP_VERSION = "49.1 – Riegel";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -11645,10 +11645,12 @@ function renderLeaderboard(){
         <button class="btn danger small" id="lb-raus" style="width:auto;">🚪 Nicht mehr mitmachen</button>
       ` : `
         <h3 style="font-size:16px;margin:0 0 6px;">Willst du mitmachen?</h3>
-        <p class="muted" style="margin:0 0 10px;">Dann denk dir einen <strong>Spitznamen</strong> aus &ndash;
-        bitte nicht deinen echten Namen. Andere sehen nur den Spitznamen, deine Münzen
-        und deine Figur. Deine Noten und dein Lernstand bleiben immer privat.</p>
-        <input type="text" id="lb-name" maxlength="20" placeholder="z.B. Diamantfuchs" value="">
+        <p class="muted" style="margin:0 0 10px;">So wirst du in der Rangliste angezeigt.
+        Du kannst deinen Namen lassen oder dir einen Spitznamen ausdenken.
+        Andere sehen nur diesen Namen, deine Münzen und deine Figur &ndash;
+        deine Noten und dein Lernstand bleiben immer privat.</p>
+        <input type="text" id="lb-name" maxlength="20" placeholder="z.B. Diamantfuchs"
+               value="${escapeHtml((state.playerName || "").slice(0, 20))}">
         <button class="btn" id="lb-rein" style="margin-top:10px;">🏆 MITMACHEN</button>
       `}
       <p id="lb-status" class="muted" style="margin:8px 0 0;"></p>
@@ -11674,16 +11676,14 @@ function renderLeaderboard(){
   anLb('lb-raus', ()=>{
     showConfirmModal('Wirklich aus der Rangliste austragen? Dein Eintrag wird gelöscht.', ()=>nameSetzen(""));
   });
-  if(false) document.getElementById('lb-mode-coins').addEventListener('click', ()=>{
-    if(state.leaderboardMode !== "coins"){ openLeaderboard(state.leaderboardReturnTo, "coins"); }
-  });
-  document.getElementById('lb-mode-grades').addEventListener('click', ()=>{
-    if(state.leaderboardMode !== "grades"){ openLeaderboard(state.leaderboardReturnTo, "grades"); }
-  });
+  // Die beiden Umschalter fuer Muenzen/Noten sind mit der Noten-Rangliste
+  // verschwunden. Ihre Zuhoerer auch - nicht bloss abgeschaltet.
   document.getElementById('back-btn').addEventListener('click', ()=>{
     state.screen = state.leaderboardReturnTo || "start";
     render();
   });
+  // Auch diese Zeilen gibt es nicht mehr - die Schleife laeuft ins Leere,
+  // schadet aber nichts und bleibt als Fallnetz stehen.
   document.querySelectorAll('[data-grade-player-idx]').forEach(row=>{
     row.addEventListener('click', ()=>{
       const idx = parseInt(row.dataset.gradePlayerIdx, 10);
