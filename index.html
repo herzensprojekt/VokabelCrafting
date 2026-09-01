@@ -2162,9 +2162,20 @@ summary.mehr-knopf::after{ content:none; }
       }
 
       async function nameTaken(slug){
-        const q = query(collection(db, "players"), where("nameSlug", "==", slug), limit(1));
-        const snap = await getDocs(q);
-        return !snap.empty;
+        try{
+          const snap = await getDoc(doc(db, "namen", slug));
+          return snap.exists();
+        }catch(e){ return false; }
+      }
+
+      /* Den Namen als belegt vermerken. Laeuft bei jeder Anmeldung mit,
+         damit auch Konten aus der Zeit vor diesem Umbau nach und nach
+         einen Eintrag bekommen. Scheitert es, ist nichts verloren -
+         die Eindeutigkeit haengt an Firebase Auth, nicht hieran. */
+      async function nameVormerken(slug){
+        if(!slug) return;
+        try{ await setDoc(doc(db, "namen", slug), { da: true }); }
+        catch(e){ /* schon da oder keine Rechte - beides unkritisch */ }
       }
 
       // Profile aus der Zeit vor dem Sicherheits-Update liegen unter der
@@ -2187,6 +2198,7 @@ summary.mehr-knopf::after{ content:none; }
           updatedAt: Date.now()
         };
         await setDoc(doc(db, "players", uid), fresh);
+        nameVormerken(slug);
         return Object.assign({ id:uid }, fresh);
       }
 
@@ -2199,6 +2211,7 @@ summary.mehr-knopf::after{ content:none; }
           const uid = cred.user.uid;
           let player = await readPlayer(uid);
           if(!player){ player = await createProfile(uid, name, slug, {}); }
+          nameVormerken(slug);          // nachtragen, ohne darauf zu warten
           return { status:"ok", player };
         }catch(e){
           const code = (e && e.code) || "";
@@ -2207,6 +2220,10 @@ summary.mehr-knopf::after{ content:none; }
             // Firebase verraet aus Datenschutzgruenden nicht, ob der Name oder
             // der PIN falsch war - das ermitteln wir selbst.
             if(await nameTaken(slug)) return { status:"wrong-pin" };
+            // legacyProfileExists() liest ein FREMDES Profildokument.
+            // Genau das soll kuenftig niemand mehr duerfen; die Funktion
+            // liefert dann still false. Der Hinweis auf Alt-Konten
+            // entfaellt damit - die Umstellung liegt lange zurueck.
             return { status:"no-account", legacy: await legacyProfileExists(slug) };
           }
           if(code === "auth/too-many-requests")       return { status:"too-many" };
@@ -2247,20 +2264,31 @@ summary.mehr-knopf::after{ content:none; }
       // Alte, nicht migrierte Profile tauchen in den Ranglisten nicht mehr auf.
       function onlyCurrent(rows){ return rows.filter(r => !!r.nameSlug); }
 
-      async function getLeaderboard(topN){
-        const q = query(collection(db, "players"), orderBy("coins", "desc"), limit((topN || 20) + 10));
+      /* Die Rangliste liest NUR noch die duenne Sammlung. Sie enthaelt
+         Spitzname, Muenzen und die gewaehlte Spielfigur - sonst nichts.
+         Damit braucht niemand mehr Leserechte auf die Profile. */
+      async function getRangliste(topN){
+        const q = query(collection(db, "rangliste"), orderBy("coins", "desc"), limit(topN || 20));
         const snap = await getDocs(q);
         const rows = [];
         snap.forEach(d => rows.push(Object.assign({ id:d.id }, d.data())));
-        return onlyCurrent(rows).slice(0, topN || 20);
+        return rows;
       }
 
-      async function getGradeLeaderboard(topN){
-        const q = query(collection(db, "players"), orderBy("avgGrade", "asc"), limit((topN || 20) + 10));
-        const snap = await getDocs(q);
-        const rows = [];
-        snap.forEach(d => rows.push(Object.assign({ id:d.id }, d.data())));
-        return onlyCurrent(rows).slice(0, topN || 20);
+      /* Eintragen oder austragen. Ohne Spitznamen wird der Eintrag
+         GELOESCHT - so kann ein Kind jederzeit wieder verschwinden. */
+      async function setRangliste(uid, eintrag){
+        const ref = doc(db, "rangliste", uid);
+        if(!eintrag || !eintrag.name){
+          try{ await deleteDoc(ref); }catch(e){ /* war nie drin */ }
+          return;
+        }
+        await setDoc(ref, {
+          name: String(eintrag.name).slice(0, 20),
+          coins: Math.max(0, parseInt(eintrag.coins, 10) || 0),
+          avatarId: String(eintrag.avatarId || "steve").slice(0, 40),
+          ts: Date.now()
+        });
       }
 
       async function getPlayerById(id){
@@ -2286,6 +2314,21 @@ summary.mehr-knopf::after{ content:none; }
       // Wird von den Eltern ueber den Bestaetigungs-Link aufgerufen - also
       // ohne Anmeldung. Die Sicherheitsregeln lassen deshalb genau diesen
       // einen, eng begrenzten Schreibvorgang zu und sonst nichts.
+      /* --- Bestaetigungen ------------------------------------------
+         Eine eigene, duenne Sammlung fuer den Eltern-Link. Sie ersetzt
+         den Zugriff auf das Profil vollstaendig: lesen UND schreiben
+         passiert nur noch hier. */
+      async function bestaetigungAnlegen(token, daten){
+        await setDoc(doc(db, "bestaetigungen", token), daten);
+      }
+      async function bestaetigungLesen(token){
+        const snap = await getDoc(doc(db, "bestaetigungen", token));
+        return snap.exists() ? Object.assign({ token }, snap.data()) : null;
+      }
+      async function bestaetigungErledigen(token){
+        await updateDoc(doc(db, "bestaetigungen", token), { erledigt: true, wann: Date.now() });
+      }
+
       async function confirmRedeemEntry(id, entryId){
         const ref = doc(db, "players", id);
         const snap = await getDoc(ref);
@@ -2324,8 +2367,9 @@ summary.mehr-knopf::after{ content:none; }
       return {
         available:true, initialUid: initialUser ? initialUser.uid : null,
         currentUid, signInWithPin, registerWithPin, signOutUser,
-        savePlayer, getLeaderboard, getGradeLeaderboard, getPlayerById,
+        savePlayer, getRangliste, setRangliste, getPlayerById,
         adjustCoinsAndInventory, appendRedeemLogEntry, confirmRedeemEntry,
+        bestaetigungAnlegen, bestaetigungLesen, bestaetigungErledigen,
         deleteAccount
       };
     }catch(e){
@@ -2340,7 +2384,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "47.1 – Nordlicht";
+const APP_VERSION = "49.0 – Riegel";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -5400,6 +5444,7 @@ function loadSave(){
     if(Array.isArray(data.redeemLog)) state.redeemLog = data.redeemLog;
     if(data.parentPinHash) state.parentPinHash = data.parentPinHash;
     if(data.parentPinSalt) state.parentPinSalt = data.parentPinSalt;
+    if(typeof data.spitzname === "string") state.spitzname = data.spitzname;
     if(data.cloudId) state.cloudId = data.cloudId;
     if(data.grammarSkills && typeof data.grammarSkills === "object") state.grammarSkills = data.grammarSkills;
     if(data.activityLog && typeof data.activityLog === "object") state.activityLog = data.activityLog;
@@ -5517,6 +5562,9 @@ const state = {
   //   null = noch nichts gewaehlt -> Lingora schlaegt eine vor
   //   0    = das Kind hat bewusst alles zugeklappt
   //   1..5 = diese Unit ist offen
+  spitzname: "",           // Name in der oeffentlichen Rangliste; leer = nicht dabei
+  parentConfirmToken: null,
+  parentConfirmBest: null,
   grammarOpenUnit: null,
   activityLog: {},         // {"2026-08-22": {v, vc, g, gc}} - Aufgaben und Treffer pro Tag
   customRewards: [],       // von den Eltern angelegte Belohnungen {id, icon, name, price}
@@ -5849,9 +5897,19 @@ function syncToCloud(){
       wortStand: state.wortStand || {},
       boxTreffer: state.boxTreffer || {}
     };
+    if(state.spitzname){ payload.spitzname = state.spitzname; }
     if(state.parentPinHash){ payload.parentPinHash = state.parentPinHash; }
     if(state.parentPinSalt){ payload.parentPinSalt = state.parentPinSalt; }
     if(avgGrade !== null){ payload.avgGrade = avgGrade; }
+    // Die oeffentliche Rangliste wird getrennt beschickt: nur was
+    // wirklich hinein soll, und nur wenn ein Spitzname gesetzt ist.
+    try{
+      if(db.setRangliste){
+        await db.setRangliste(cloudId, state.spitzname
+          ? { name: state.spitzname, coins: state.coins, avatarId: state.avatarId }
+          : null);
+      }
+    }catch(e){ /* Rangliste ist Beiwerk - sie darf nie das Speichern kippen */ }
     try{
       await db.savePlayer(cloudId, payload);
     }catch(e){
@@ -5925,7 +5983,7 @@ function syncNewRedeemEntry(entry){
 
 function openLeaderboard(returnTo, mode){
   state.leaderboardReturnTo = returnTo || "start";
-  state.leaderboardMode = mode || "coins";
+  state.leaderboardMode = "coins";        // Noten stehen nicht mehr oeffentlich
   state.screen = "leaderboard";
   state.leaderboardLoading = true;
   state.leaderboardData = [];
@@ -5939,9 +5997,7 @@ function openLeaderboard(returnTo, mode){
       return;
     }
     try{
-      state.leaderboardData = state.leaderboardMode === "grades"
-        ? await db.getGradeLeaderboard(20)
-        : await db.getLeaderboard(20);
+      state.leaderboardData = await db.getRangliste(20);
     }catch(e){
       state.leaderboardError = "fetch-failed";
     }
@@ -7719,6 +7775,20 @@ function buildParentConfirmUrl(playerId, entryId){
   return `${base}?confirmRedeem=${encodeURIComponent(playerId)}:${encodeURIComponent(entryId)}`;
 }
 
+/* 32 Zeichen aus dem Zufallsgenerator des Browsers - nicht aus
+   Math.random(). Der Token ist das Einzige, was den Zugang zu einer
+   Bestaetigung schuetzt; er darf nicht erratbar sein. */
+function bestaetigungsToken(){
+  const a = new Uint8Array(16);
+  (window.crypto || window.msCrypto).getRandomValues(a);
+  return Array.from(a).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function buildBestaetigungsUrl(token){
+  const base = window.location.origin + window.location.pathname;
+  return `${base}?bestaetigen=${encodeURIComponent(token)}`;
+}
+
 function sendRedemptionToParent(entryId){
   if(!state.parentPinHash){
     showSetParentPinModal(()=>{ sendRedemptionToParent(entryId); });
@@ -7726,13 +7796,62 @@ function sendRedemptionToParent(entryId){
   }
   const entry = state.redeemLog.find(e=>e.id===entryId);
   if(!entry || !state.cloudId) return;
-  const url = buildParentConfirmUrl(state.cloudId, entryId);
-  const text = `🎁 ${state.playerName} möchte "${entry.name}" (#${shortEntryId(entry.id)}) einlösen! Bitte bestätigen: ${url}`;
-  if(navigator.share){
-    navigator.share({ title:"Belohnung bestätigen", text }).catch(()=>{});
-  } else {
-    window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
-  }
+
+  const verschicken = (url)=>{
+    const text = `🎁 ${state.playerName} möchte "${entry.name}" (#${shortEntryId(entry.id)}) einlösen! Bitte bestätigen: ${url}`;
+    if(navigator.share){
+      navigator.share({ title:"Belohnung bestätigen", text }).catch(()=>{});
+    } else {
+      window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+    }
+  };
+
+  // Neuer Weg: eine eigene Bestaetigung anlegen, damit der Link das
+  // Profil gar nicht erst braucht. Klappt das nicht (alte Regeln, kein
+  // Netz), geht der alte Weg weiter - lieber ein funktionierender Link
+  // als gar keiner.
+  if(!entry.token) entry.token = bestaetigungsToken();
+  saveProgress();
+  getVokabelDB().then(async db=>{
+    try{
+      if(!db.available || !db.bestaetigungAnlegen) throw new Error("alt");
+      await db.bestaetigungAnlegen(entry.token, {
+        kind: String(state.playerName || "").slice(0, 40),
+        belohnung: String(entry.name || "").slice(0, 80),
+        icon: String(entry.icon || "🎁").slice(0, 8),
+        datum: String(entry.date || ""),
+        zeit: String(entry.time || ""),
+        nummer: shortEntryId(entry.id),
+        pinHash: state.parentPinHash || "",
+        pinSalt: state.parentPinSalt || "",
+        erledigt: false
+      });
+      syncToCloud();                       // damit der Token im Verlauf landet
+      verschicken(buildBestaetigungsUrl(entry.token));
+    }catch(e){
+      console.warn("Bestätigung konnte nicht angelegt werden, nutze den alten Link:", e);
+      verschicken(buildParentConfirmUrl(state.cloudId, entryId));
+    }
+  });
+}
+
+/* Das Kind holt sich die Bestaetigung selbst ab. Damit muss der
+   Eltern-Link nicht mehr ins Profil schreiben. */
+function bestaetigungenAbholen(){
+  if(!state.cloudAvailable || !state.cloudId) return;
+  const offen = (state.redeemLog || []).filter(e => e.token && e.status !== "confirmed");
+  if(!offen.length) return;
+  getVokabelDB().then(async db=>{
+    if(!db.available || !db.bestaetigungLesen) return;
+    let geaendert = false;
+    for(const e of offen){
+      try{
+        const b = await db.bestaetigungLesen(e.token);
+        if(b && b.erledigt){ e.status = "confirmed"; geaendert = true; }
+      }catch(err){ /* egal - beim naechsten Start nochmal */ }
+    }
+    if(geaendert){ saveProgress(); syncToCloud(); render(); }
+  });
 }
 
 function showSetParentPinModal(onDone){
@@ -7769,6 +7888,29 @@ function showSetParentPinModal(onDone){
 
 function checkForParentConfirmLink(){
   const params = new URLSearchParams(window.location.search);
+
+  // Neuer Weg: nur ein Token, kein Profilzugriff.
+  const token = params.get("bestaetigen");
+  if(token){
+    state.screen = "parentconfirm";
+    state.parentConfirmToken = token;
+    state.parentConfirmBest = null;
+    state.parentConfirmStatus = "loading";
+    render();
+    getVokabelDB().then(async db=>{
+      if(!db.available || !db.bestaetigungLesen){
+        state.parentConfirmStatus = "no-cloud"; render(); return;
+      }
+      try{
+        const b = await db.bestaetigungLesen(token);
+        if(!b){ state.parentConfirmStatus = "not-found"; }
+        else { state.parentConfirmBest = b; state.parentConfirmStatus = "ready"; }
+      }catch(e){ state.parentConfirmStatus = "error"; }
+      render();
+    });
+    return true;
+  }
+
   const val = params.get("confirmRedeem");
   if(!val) return false;
   const [playerId, entryId] = val.split(":");
@@ -7811,6 +7953,27 @@ function renderParentConfirm(){
     body = `<p class="center-text muted">Konnte nicht geladen werden. Bitte Internetverbindung prüfen.</p>`;
   } else if(status === "not-found"){
     body = `<p class="center-text muted">Dieser Spieler wurde nicht gefunden.</p>`;
+  } else if(status === "ready" && state.parentConfirmBest){
+    // Der neue Weg: alles Noetige steht in der Bestaetigung selbst.
+    const b = state.parentConfirmBest;
+    if(b.erledigt){
+      body = `
+        <p class="center-text" style="font-weight:700;color:#1e5c28;">✅ Diese Belohnung wurde bestätigt.</p>
+        <p class="center-text muted" style="margin-top:6px;">${b.icon} ${escapeHtml(b.belohnung)} &middot; ${escapeHtml(b.datum)} &middot; #${escapeHtml(b.nummer||"")}</p>`;
+    } else if(!b.pinHash || !b.pinSalt){
+      body = `<p class="center-text muted">Für dieses Kind wurde noch kein Eltern-PIN eingerichtet. Bitte in der App unter &bdquo;Einlösen&ldquo; einmal einen PIN festlegen.</p>`;
+    } else {
+      body = `
+        <div class="panel dirt-panel center-text">
+          <div style="font-size:48px;">${b.icon}</div>
+          <p style="font-size:20px;font-weight:700;margin-top:8px;">${escapeHtml(b.belohnung)}</p>
+          <p class="muted" style="color:#fff;opacity:0.85;">${escapeHtml(b.kind||"")} &middot; ${escapeHtml(b.datum)}${b.zeit ? ' ' + escapeHtml(b.zeit) : ''} &middot; #${escapeHtml(b.nummer||"")}</p>
+        </div>
+        <label style="display:block;margin-top:14px;font-weight:600;">Eltern-PIN eingeben zum Bestätigen</label>
+        <input type="password" id="parent-confirm-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="4-stelliger PIN">
+        <button class="btn" id="parent-confirm-btn" style="margin-top:12px;">✅ BESTÄTIGEN</button>
+        <p id="parent-confirm-status" class="muted center-text" style="margin-top:8px;"></p>`;
+    }
   } else if(status === "ready"){
     const player = state.parentConfirmData;
     const entry = (player.redeemLog || []).find(e=>e.id === state.parentConfirmEntryId);
@@ -7869,6 +8032,15 @@ function renderParentConfirm(){
         const db = await getVokabelDB();
         if(!db.confirmRedeemEntry){
           if(statusEl){ statusEl.textContent = "⚠️ Update erforderlich - bitte Seite neu laden."; }
+          return;
+        }
+        if(state.parentConfirmBest){
+          // Neuer Weg: nur die Bestaetigung selbst abhaken. Das Kind
+          // holt sich das Ergebnis beim naechsten Start ab.
+          await db.bestaetigungErledigen(state.parentConfirmBest.token);
+          state.parentConfirmBest = Object.assign({}, state.parentConfirmBest, { erledigt:true });
+          if(statusEl){ statusEl.textContent = "✅ Bestätigt! Danke."; }
+          render();
           return;
         }
         const result = await db.confirmRedeemEntry(state.parentConfirmPlayerId, state.parentConfirmEntryId);
@@ -11454,24 +11626,55 @@ function renderShop(){
 }
 
 function renderLeaderboard(){
-  const isGrades = state.leaderboardMode === "grades";
+  const dabei = !!state.spitzname;
   app.innerHTML = `
-    ${renderHeader(isGrades ? "Wer hat die besten Schulnoten?" : "Wer hat die meisten Münzen?")}
+    ${renderHeader("Wer hat die meisten Münzen?")}
     ${playerBadgeHtml()}
 
-    <div class="row" style="margin-bottom:10px;">
-      <button class="btn ${!isGrades ? '' : 'secondary'}" id="lb-mode-coins" style="flex:1;">🪙 Münzen</button>
-      <button class="btn ${isGrades ? '' : 'secondary'}" id="lb-mode-grades" style="flex:1;">💎 Noten</button>
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:10px;">🏆 TOP SPIELER</h3>
+      ${renderLeaderboardBody()}
     </div>
 
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:10px;">${isGrades ? "💎 NOTEN-RANGLISTE" : "🏆 TOP SPIELER"}</h3>
-      ${renderLeaderboardBody()}
+      ${dabei ? `
+        <p style="margin:0 0 8px;">Du bist als <strong>${escapeHtml(state.spitzname)}</strong> dabei.</p>
+        <p class="muted" style="margin:0 0 10px;">Andere sehen deinen Spitznamen, deine Münzen und deine Figur.
+        Sonst nichts &ndash; deine Noten und dein Lernstand bleiben privat.</p>
+        <button class="btn secondary small" id="lb-name-aendern" style="width:auto;margin-right:8px;">✏️ Spitznamen ändern</button>
+        <button class="btn danger small" id="lb-raus" style="width:auto;">🚪 Nicht mehr mitmachen</button>
+      ` : `
+        <h3 style="font-size:16px;margin:0 0 6px;">Willst du mitmachen?</h3>
+        <p class="muted" style="margin:0 0 10px;">Dann denk dir einen <strong>Spitznamen</strong> aus &ndash;
+        bitte nicht deinen echten Namen. Andere sehen nur den Spitznamen, deine Münzen
+        und deine Figur. Deine Noten und dein Lernstand bleiben immer privat.</p>
+        <input type="text" id="lb-name" maxlength="20" placeholder="z.B. Diamantfuchs" value="">
+        <button class="btn" id="lb-rein" style="margin-top:10px;">🏆 MITMACHEN</button>
+      `}
+      <p id="lb-status" class="muted" style="margin:8px 0 0;"></p>
     </div>
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
-  document.getElementById('lb-mode-coins').addEventListener('click', ()=>{
+  const anLb = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  const nameSetzen = (wert)=>{
+    state.spitzname = (wert || "").trim().slice(0, 20);
+    saveProgress();
+    syncToCloud();
+    openLeaderboard(state.leaderboardReturnTo);
+  };
+  anLb('lb-rein', ()=>{
+    const el = document.getElementById('lb-name');
+    const wert = (el ? el.value : "").trim();
+    const st = document.getElementById('lb-status');
+    if(wert.length < 2){ if(st) st.textContent = "⚠️ Der Spitzname braucht mindestens zwei Zeichen."; return; }
+    nameSetzen(wert);
+  });
+  anLb('lb-name-aendern', ()=>{ state.spitzname = ""; saveProgress(); openLeaderboard(state.leaderboardReturnTo); });
+  anLb('lb-raus', ()=>{
+    showConfirmModal('Wirklich aus der Rangliste austragen? Dein Eintrag wird gelöscht.', ()=>nameSetzen(""));
+  });
+  if(false) document.getElementById('lb-mode-coins').addEventListener('click', ()=>{
     if(state.leaderboardMode !== "coins"){ openLeaderboard(state.leaderboardReturnTo, "coins"); }
   });
   document.getElementById('lb-mode-grades').addEventListener('click', ()=>{
@@ -11527,7 +11730,6 @@ function showGradeDetailModal(player){
 }
 
 function renderLeaderboardBody(){
-  const isGrades = state.leaderboardMode === "grades";
   if(state.leaderboardLoading){
     return `<p class="center-text muted">Lade Rangliste &hellip;</p>`;
   }
@@ -11538,18 +11740,16 @@ function renderLeaderboardBody(){
     return `<p class="center-text muted">Rangliste konnte nicht geladen werden. Bitte Internetverbindung prüfen.</p>`;
   }
   if(state.leaderboardData.length === 0){
-    return isGrades
-      ? `<p class="center-text muted">Noch keine Noten eingetragen &ndash; trag deine erste über den Notenkalender ein!</p>`
-      : `<p class="center-text muted">Noch keine Einträge &ndash; sei die/der Erste!</p>`;
+    return `<p class="center-text muted">Noch keine Einträge &ndash; sei die/der Erste!</p>`;
   }
   return `<div class="vocab-list" style="max-height:420px;">` + state.leaderboardData.map((p, i)=>{
-    const av = avatarById(p.avatarId, p.customAvatar, fremdeFigurFront(p.customSkin), true);
+    // Nur die eingebaute Spielfigur - selbst gemalte Figuren sind
+    // Werke der Kinder und gehoeren nicht in eine oeffentliche Liste.
+    const av = avatarById(p.avatarId);
     const isMe = state.cloudId && p.id === state.cloudId;
-    const valueHtml = isGrades
-      ? `💎 Ø ${(typeof p.avgGrade==="number" ? p.avgGrade.toFixed(2) : "-")}`
-      : `🪙 ${p.coins||0}`;
+    const valueHtml = `🪙 ${p.coins||0}`;
     return `
-    <div class="vocab-row" style="align-items:center;${isMe ? 'background:#fff3c4;' : ''}${isGrades ? 'cursor:pointer;' : ''}" ${isGrades ? `data-grade-player-idx="${i}"` : ""}>
+    <div class="vocab-row" style="align-items:center;${isMe ? 'background:#fff3c4;' : ''}">
       <span class="mark" style="font-family:var(--font);font-size:16px;">#${i+1}</span>
       <span class="avatar-swatch mini" style="${avatarStyle(av)}width:34px;max-width:34px;margin:0 8px;flex:0 0 auto;"></span>
       <span style="flex:1;text-align:left;">${escapeHtml(p.name||'?')}</span>
@@ -13862,6 +14062,7 @@ getVokabelDB().then(db=>{
   if(db.available && db.initialUid){
     state.cloudId = db.initialUid;
     refreshFromCloud();
+    setTimeout(()=>{ try{ bestaetigungenAbholen(); }catch(e){} }, 2500);
   } else {
     // Keine gueltige Anmeldung -> ab in den Anmeldebildschirm.
     state.cloudId = null;
