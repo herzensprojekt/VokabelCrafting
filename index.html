@@ -2119,6 +2119,29 @@ summary.mehr-knopf::after{ content:none; }
   box-shadow:0 0 0 3px rgba(77,181,92,0.28);
 }
 .pw-kachel img{ width:100%; height:auto; display:block; border-radius:10px; }
+
+/* --- Titelbild auf der Anmeldeseite ---------------------------------
+   Auf dem Handy nur das obere Band: Ueberschrift und Logo sind dort mit
+   14 und 45 px lesbar, die Stoerer mit 6,6 px nicht. Sie werden deshalb
+   gar nicht erst gezeigt - ein Kopf, der eine halbe Bildschirmhoehe
+   frisst und dabei nichts vermittelt, waere teuer erkauft.
+   Ab 760 px zeigen wir das ganze Quadrat; dort kommen die Stoerer an. */
+.login-topbar.mit-bild{ position:relative; padding:0; }
+.titelbild{
+  display:block; width:100%; height:auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center top;
+  border-radius:16px;
+  box-shadow:0 4px 16px rgba(20,30,15,0.18);
+}
+@media (min-width: 760px){
+  .titelbild{ aspect-ratio: 1 / 1; }
+  /* Ab hier steht die Ueberschrift schon gross im Bild. */
+  .hero-titel.nur-klein{ display:none; }
+}
+.login-topbar.mit-bild .info-btn,
+.login-topbar.mit-bild .zur-anmeldung{ z-index:2; }
 </style>
 </head>
 <body>
@@ -2416,7 +2439,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "50.0 – Spiegelbild";
+const APP_VERSION = "51.0 – Aushang";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -8471,8 +8494,10 @@ function renderLogin(){
   const keineVerbindung = state.cloudChecked && !state.cloudAvailable;
 
   app.innerHTML = `
-    <div class="login-topbar">
-      ${renderHeader("", false, true)}
+    <div class="login-topbar mit-bild">
+      <img class="titelbild" src="titelbild.webp"
+           alt="LingoCrafter - spielend Englisch lernen, Münzen gegen echte Belohnungen tauschen"
+           width="1000" height="1000">
       <button type="button" class="info-btn" id="info-btn" title="Was ist LingoCrafter?" aria-label="Was ist LingoCrafter?">i</button>
       <button type="button" class="zur-anmeldung" id="zur-anmeldung">Anmelden ↓</button>
     </div>
@@ -8487,9 +8512,9 @@ function renderLogin(){
       </div>
     ` : `
       <div class="hero">
-        <h2 class="hero-titel">Englisch lernen &amp;<br>Belohnungen sammeln</h2>
-        <p class="hero-text">Spielend Vokabeln &amp; Grammatik lernen, Punkte verdienen
-          und gegen echte Belohnungen eintauschen.</p>
+        <h2 class="hero-titel nur-klein">Englisch lernen &amp;<br>Belohnungen sammeln</h2>
+        <p class="hero-text">Spielend Vokabeln &amp; Grammatik lernen, Münzen verdienen
+          und gegen echte Belohnungen eintauschen, die Mama und Papa festlegen.</p>
       </div>
 
       <div class="kachel-reihe">
@@ -8558,14 +8583,14 @@ function renderLogin(){
 
       <details class="klapp">
         <summary><span class="klapp-ic">🎮</span><span>Alles, was drin ist</span></summary>
-        <div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Üben, das sich nicht so anfühlt</span><span class="sell-s">Fünf Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Wer Spaß hat, übt länger.</span></span></div><div class="sell"><span class="sell-i lg-sell-bild"><img src="${LINGORA_BILD}" alt="Lingora"></span><span class="sell-txt"><span class="sell-t">Frag Lingora, den Helfer</span><span class="sell-s">Er fragt, was ansteht &ndash; und baut daraus einen Lernplan mit klaren Schritten, bis zur Klassenarbeit. Ein aufmunterndes Wort hat er auch immer übrig.</span></span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-txt"><span class="sell-t">Vokabeln und Grammatik</span><span class="sell-s">Wortschatz trainieren und Grammatik Thema für Thema &ndash; von der Zeitform bis zur Wortstellung, mit Erklärung und Beispielen.</span></span></div><div class="sell"><span class="sell-i">&#128221;</span><span class="sell-txt"><span class="sell-t">Echte Testarbeiten</span><span class="sell-s">Tests werden benotet, genau wie in der Schule. Den Notenschlüssel stellen Sie als Eltern selbst ein &ndash; mild oder schulisch.</span></span></div><div class="sell"><span class="sell-i">&#128202;</span><span class="sell-txt"><span class="sell-t">Auswertung bis ins Detail</span><span class="sell-s">Jedes Grammatikthema einzeln: was sitzt schon, wo hakt es noch. Kindgerecht als Erz-Balken statt als Zahlenkolonne.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben und Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div><div class="sell"><span class="sell-i">&#10133;</span><span class="sell-txt"><span class="sell-t">Eure Schulvokabeln</span><span class="sell-s">Die Wörter aus dem eigenen Schulbuch eintippen oder aus Excel hochladen.</span></span></div></div>
+        <div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Üben, das sich nicht so anfühlt</span><span class="sell-s">Fünf Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Wer Spaß hat, übt länger.</span></span></div><div class="sell"><span class="sell-i lg-sell-bild"><img src="${LINGORA_BILD}" alt="Lingora"></span><span class="sell-txt"><span class="sell-t">Frag Lingora, den Helfer</span><span class="sell-s">Er fragt, was ansteht &ndash; und baut daraus einen Lernplan mit klaren Schritten, bis zur Klassenarbeit. Ein aufmunterndes Wort hat er auch immer übrig.</span></span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-txt"><span class="sell-t">Vokabeln und Grammatik</span><span class="sell-s">Wortschatz trainieren und Grammatik Thema für Thema &ndash; von der Zeitform bis zur Wortstellung, mit Erklärung und Beispielen.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben und Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div></div>
       </div>
 
       </details>
 
       <details class="klapp">
         <summary><span class="klapp-ic">🧱</span><span>Und weil es Spaß macht</span></summary>
-        <div class="sell-grid"><div class="sell"><span class="sell-i">&#129521;</span><span class="sell-txt"><span class="sell-t">Die eigene Figur</span><span class="sell-s">In der 3D-Werkstatt bauen, färben und bemalen. Zwölf Verkleidungen, Schwert oder Zauberstab in die Hand &ndash; und als Minecraft-Skin zum Mitnehmen.</span></span></div>
+        <div class="sell-grid">
       </details>
 
       <div class="panel">
