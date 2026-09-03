@@ -2087,6 +2087,38 @@ summary.mehr-knopf::after{ content:none; }
   letter-spacing:.07em; color:#6f8a72;
 }
 .gram-tile.vorschlag small{ color:#4a7a52; font-weight:700; }
+
+/* --- Portrait-Werkstatt --------------------------------------------- */
+.pw-gross{
+  width:170px; height:170px; display:block; margin:0 auto;
+  border-radius:50%; background:#f2f7f0;
+  border:3px solid #cfe3d2; box-shadow:0 3px 10px rgba(20,30,15,0.14);
+}
+.pw-reiter{
+  display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px;
+  -webkit-overflow-scrolling:touch;
+}
+.pw-reiter-k{
+  flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:8px 10px; border-radius:12px; cursor:pointer;
+  border:2px solid #e4ded3; background:#fff; font-family:inherit;
+}
+.pw-reiter-k.aktiv{ border-color:#4db55c; background:#eef9f0; }
+.pw-r-ic{ font-size:18px; line-height:1; }
+.pw-r-n{ font-size:11px; font-weight:700; color:#5f6b5a; white-space:nowrap; }
+.pw-gitter{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(66px, 1fr));
+  gap:8px; max-height:340px; overflow-y:auto;
+}
+.pw-kachel{
+  padding:2px; border-radius:12px; cursor:pointer; line-height:0;
+  border:2px solid #ece7de; background:#fafafa;
+}
+.pw-kachel.aktiv{
+  border-color:#4db55c; background:#eef9f0;
+  box-shadow:0 0 0 3px rgba(77,181,92,0.28);
+}
+.pw-kachel img{ width:100%; height:auto; display:block; border-radius:10px; }
 </style>
 </head>
 <body>
@@ -2384,7 +2416,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "49.1 – Riegel";
+const APP_VERSION = "50.0 – Spiegelbild";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -5276,7 +5308,274 @@ function fremdeFigurFront(customSkin){
 /* fremd = true bedeutet: Es geht NICHT um den angemeldeten Spieler. Dann darf
    niemals der eigene Zustand einspringen - sonst tragen ploetzlich alle
    dasselbe Gesicht. Lieber der Standard-Avatar als das falsche Bild. */
+/* =====================================================================
+   PORTRAIT-WERKSTATT
+
+   Ein zweiter Avatar-Typ neben der Blockfigur: ein gezeichnetes
+   Gesicht mit Frisur, Augen, Mund, Hautton.
+
+   WARUM DAS OHNE ZEICHENARBEIT GEHT
+   Die Bilderteile kommen aus der DiceBear-Bibliothek, Stil
+   "adventurer" von Lisa Wischofsky (CC BY 4.0 - die Namensnennung
+   steht im Impressum). Sie liefert 45 Frisuren, 26 Augenpaare, 30
+   Muender, 15 Augenbrauen, 5 Brillen und 6 Ohrringe, alle aus einer
+   Hand und aufeinander abgestimmt. Selbst zu zeichnen waeren das 120
+   Einzelteile gewesen, die zusammenpassen muessen - das ist der
+   Aufwand, den diese Bibliothek erspart.
+
+   WAS GESPEICHERT WIRD
+   Nicht das Bild, sondern die AUSWAHL: {hair:"long01", eyes:"..."}.
+   Das sind gut hundert Zeichen statt sieben Kilobyte, und es
+   ueberlebt jede spaetere Aenderung an der Bibliothek. Das fertige
+   Bild wird bei Bedarf daraus erzeugt und im Speicher gehalten.
+
+   WAS DIE BLOCKFIGUR BLEIBT
+   Sie ist weiterhin die Spielfigur: im Flutungsraum, in der
+   Skin-Werkstatt, auf dem Zertifikat. Das Portrait ist das
+   Profilbild. Jeder Typ macht das, wofuer er taugt.
+===================================================================== */
+
+const PORTRAIT_ID = "portrait";
+
+/* Die Bibliothek wird erst geholt, wenn jemand die Werkstatt oeffnet -
+   genau wie bei Excel-Import und Texterkennung. */
+let portraitLadePromise = null;
+let PORTRAIT_LIB = null;
+function portraitLaden(){
+  if(PORTRAIT_LIB) return Promise.resolve(PORTRAIT_LIB);
+  if(portraitLadePromise) return portraitLadePromise;
+  portraitLadePromise = (async ()=>{
+    const [core, col] = await Promise.all([
+      import("https://esm.sh/@dicebear/core@9"),
+      import("https://esm.sh/@dicebear/collection@9")
+    ]);
+    PORTRAIT_LIB = { core: core, stil: col.adventurer };
+    return PORTRAIT_LIB;
+  })();
+  portraitLadePromise.catch(()=>{ portraitLadePromise = null; });
+  return portraitLadePromise;
+}
+
+/* Die Auswahlmoeglichkeiten kommen aus der Bibliothek selbst, nicht aus
+   einer abgetippten Liste - sonst zeigt die Werkstatt eines Tages
+   Frisuren an, die es nicht mehr gibt. */
+function portraitOptionen(schluessel){
+  if(!PORTRAIT_LIB) return [];
+  const p = PORTRAIT_LIB.stil.schema.properties[schluessel];
+  if(!p) return [];
+  if(p.items && p.items.enum) return p.items.enum.slice().sort();
+  if(p.default) return p.default;
+  return [];
+}
+
+/* Hauttoene: die vier der Bibliothek plus zwei Zwischentoene. Vier
+   Abstufungen sind fuer eine Kinder-App zu wenig - jedes Kind soll
+   sich wiedererkennen koennen. */
+const PORTRAIT_HAUT = ["ffdbb4", "f2d3b1", "ecad80", "c68642", "9e5622", "763900"];
+
+const PORTRAIT_TEILE = [
+  {k:"hair",      name:"Frisur",    icon:"💇"},
+  {k:"hairColor", name:"Haarfarbe", icon:"🎨", farben:true},
+  {k:"eyes",      name:"Augen",     icon:"👀"},
+  {k:"eyebrows",  name:"Brauen",    icon:"😐"},
+  {k:"mouth",     name:"Mund",      icon:"😀"},
+  {k:"skinColor", name:"Hautton",   icon:"🖐️", farben:true},
+  {k:"glasses",   name:"Brille",    icon:"👓", ausAn:true},
+  {k:"earrings",  name:"Ohrringe",  icon:"💠", ausAn:true}
+];
+
+function portraitFarben(schluessel){
+  if(schluessel === "skinColor") return PORTRAIT_HAUT;
+  return portraitOptionen("hairColor");
+}
+
+/* Aus einer Auswahl ein Bild machen. */
+function portraitSvg(wahl, groesse){
+  if(!PORTRAIT_LIB) return "";
+  const w = wahl || {};
+  const args = { size: groesse || 160, radius: 50 };
+  ["hair", "eyes", "eyebrows", "mouth"].forEach(k=>{ if(w[k]) args[k] = [w[k]]; });
+  if(w.hairColor) args.hairColor = [w.hairColor];
+  if(w.skinColor) args.skinColor = [w.skinColor];
+  // Brille und Ohrringe sind Ja/Nein-Sachen. Die Bibliothek steuert das
+  // ueber eine Wahrscheinlichkeit - 0 oder 100, nichts dazwischen.
+  args.glasses  = w.glasses  ? [w.glasses]  : ["variant01"];
+  args.earrings = w.earrings ? [w.earrings] : ["variant01"];
+  args.glassesProbability  = w.glasses  ? 100 : 0;
+  args.earringsProbability = w.earrings ? 100 : 0;
+  args.featuresProbability = 0;
+  args.backgroundColor = ["transparent"];
+  try{
+    return PORTRAIT_LIB.core.createAvatar(PORTRAIT_LIB.stil, args).toString();
+  }catch(e){ return ""; }
+}
+
+function portraitDatenUri(wahl, groesse){
+  const svg = portraitSvg(wahl, groesse);
+  if(!svg) return "";
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
+/* Das fertige Profilbild. Wird einmal erzeugt und gemerkt; erst wenn
+   sich die Auswahl aendert, entsteht ein neues. */
+let portraitBildCache = { schluessel: "", uri: "" };
+function portraitBild(){
+  if(!state.portrait) return "";
+  const s = JSON.stringify(state.portrait);
+  if(portraitBildCache.schluessel === s && portraitBildCache.uri) return portraitBildCache.uri;
+  if(!PORTRAIT_LIB){
+    // Bibliothek noch nicht da - im Hintergrund holen und danach
+    // einmal neu zeichnen lassen.
+    portraitLaden().then(()=>{ try{ render(); }catch(e){} }).catch(()=>{});
+    return "";
+  }
+  const uri = portraitDatenUri(state.portrait, 200);
+  portraitBildCache = { schluessel: s, uri: uri };
+  return uri;
+}
+
+function portraitDa(){ return !!(state.portrait && state.portrait.hair); }
+
+/* Eine zufaellige Auswahl - der "Wuerfeln"-Knopf. Kinder probieren
+   lieber, als sich durch acht Menues zu arbeiten. */
+function portraitZufall(){
+  const w = (liste)=> liste.length ? liste[Math.floor(Math.random()*liste.length)] : "";
+  const auswahl = {
+    hair:      w(portraitOptionen("hair")),
+    hairColor: w(portraitOptionen("hairColor")),
+    eyes:      w(portraitOptionen("eyes")),
+    eyebrows:  w(portraitOptionen("eyebrows")),
+    mouth:     w(portraitOptionen("mouth")),
+    skinColor: w(PORTRAIT_HAUT)
+  };
+  if(Math.random() < 0.25) auswahl.glasses  = w(portraitOptionen("glasses"));
+  if(Math.random() < 0.20) auswahl.earrings = w(portraitOptionen("earrings"));
+  return auswahl;
+}
+
+/* --- Der Bildschirm ------------------------------------------------ */
+function renderPortraitWerkstatt(){
+  const teil = PORTRAIT_TEILE.find(t=>t.k === state.portraitTeil) || PORTRAIT_TEILE[0];
+  const wahl = state.portraitEntwurf || {};
+
+  if(!PORTRAIT_LIB){
+    app.innerHTML = `
+      ${renderHeader("Dein Gesicht", true)}
+      <div class="panel center-text">
+        <div style="font-size:44px;">🎨</div>
+        <p style="margin:12px 0 0;font-weight:800;font-family:var(--font);">Die Gesichter werden geladen …</p>
+        <p class="muted" style="margin:6px 0 0;">Beim ersten Mal dauert das ein paar Sekunden.
+        Danach ist es sofort da.</p>
+      </div>
+      <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
+    const zurueck = document.getElementById('back-btn');
+    if(zurueck) zurueck.addEventListener('click', ()=>{ state.screen = "start"; render(); });
+    portraitLaden().then(()=>render()).catch(()=>{
+      app.innerHTML = `
+        ${renderHeader("Dein Gesicht", true)}
+        <div class="panel center-text">
+          <p><strong>Die Gesichter konnten nicht geladen werden.</strong></p>
+          <p class="muted" style="margin-top:6px;">Dafür braucht es einmal Internet.
+          Deine Blockfigur funktioniert weiterhin.</p>
+        </div>
+        <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
+      const z = document.getElementById('back-btn');
+      if(z) z.addEventListener('click', ()=>{ state.screen = "start"; render(); });
+    });
+    return;
+  }
+
+  // Die Auswahlbildchen: jeweils das GANZE Gesicht mit genau dieser
+  // einen Aenderung. Ein Kind sieht damit sofort, was passiert -
+  // eine Frisur allein waere kaum zu erkennen.
+  const werte = teil.farben ? portraitFarben(teil.k) : portraitOptionen(teil.k);
+  const kacheln = werte.map(v=>{
+    const probe = Object.assign({}, wahl); probe[teil.k] = v;
+    const uri = portraitDatenUri(probe, 72);
+    const aktiv = (wahl[teil.k] === v);
+    return `<button class="pw-kachel ${aktiv ? "aktiv" : ""}" data-pw-wert="${escapeHtml(v)}">
+              <img src="${uri}" alt="" loading="lazy">
+            </button>`;
+  }).join("");
+
+  app.innerHTML = `
+    ${renderHeader("Dein Gesicht", true)}
+
+    <div class="panel center-text">
+      <img class="pw-gross" src="${portraitDatenUri(wahl, 200)}" alt="Dein Portrait">
+      <div class="row" style="gap:8px;margin-top:12px;">
+        <button class="btn secondary col einzeilig" id="pw-wuerfeln">🎲 WÜRFELN</button>
+        <button class="btn col einzeilig" id="pw-speichern">✅ SPEICHERN</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="pw-reiter">
+        ${PORTRAIT_TEILE.map(t=>`
+          <button class="pw-reiter-k ${t.k === teil.k ? "aktiv" : ""}" data-pw-teil="${t.k}">
+            <span class="pw-r-ic">${t.icon}</span><span class="pw-r-n">${t.name}</span>
+          </button>`).join("")}
+      </div>
+      ${teil.ausAn ? `
+        <button class="btn secondary small" id="pw-weg" style="width:auto;margin:0 0 10px;">
+          ${wahl[teil.k] ? "✕ " + teil.name + " weglassen" : "○ gerade ohne " + teil.name}
+        </button>` : ""}
+      <div class="pw-gitter">${kacheln}</div>
+    </div>
+
+    <button class="btn danger" id="back-btn">✕ ABBRECHEN</button>
+  `;
+
+  const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+
+  document.querySelectorAll('[data-pw-teil]').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.portraitTeil = el.dataset.pwTeil; render(); });
+  });
+  document.querySelectorAll('[data-pw-wert]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.portraitEntwurf = Object.assign({}, state.portraitEntwurf || {});
+      state.portraitEntwurf[teil.k] = el.dataset.pwWert;
+      render();
+    });
+  });
+  an('pw-weg', ()=>{
+    state.portraitEntwurf = Object.assign({}, state.portraitEntwurf || {});
+    delete state.portraitEntwurf[teil.k];
+    render();
+  });
+  an('pw-wuerfeln', ()=>{ state.portraitEntwurf = portraitZufall(); render(); });
+  an('pw-speichern', ()=>{
+    state.portrait = Object.assign({}, state.portraitEntwurf || {});
+    state.avatarId = PORTRAIT_ID;
+    portraitBildCache = { schluessel: "", uri: "" };
+    saveProgress();
+    syncToCloud();
+    state.screen = state.portraitReturnTo || "start";
+    render();
+  });
+  an('back-btn', ()=>{ state.screen = state.portraitReturnTo || "start"; render(); });
+}
+
+function portraitWerkstattOeffnen(zurueck){
+  state.portraitReturnTo = zurueck || "start";
+  state.portraitTeil = "hair";
+  state.portraitEntwurf = portraitDa()
+    ? Object.assign({}, state.portrait)
+    : null;                      // noch nichts gebaut -> gleich wuerfeln
+  state.screen = "portraitwerkstatt";
+  render();
+  portraitLaden().then(()=>{
+    if(!state.portraitEntwurf){ state.portraitEntwurf = portraitZufall(); }
+    render();
+  }).catch(()=>render());
+}
+
 function avatarById(id, px, front, fremd){
+  if(id === PORTRAIT_ID && !fremd){
+    const uri = portraitBild();
+    if(uri) return { id: PORTRAIT_ID, name: "Dein Gesicht", src: uri };
+    return AVATARS[0];               // solange die Bibliothek laedt
+  }
   if(id === CUSTOM_AVATAR_ID){
     // Neu: die selbst gebaute Figur aus der Skin-Werkstatt.
     const f = (typeof front === "string" && front) ? front
@@ -5445,6 +5744,7 @@ function loadSave(){
     if(data.parentPinHash) state.parentPinHash = data.parentPinHash;
     if(data.parentPinSalt) state.parentPinSalt = data.parentPinSalt;
     if(typeof data.spitzname === "string") state.spitzname = data.spitzname;
+    if(data.portrait && typeof data.portrait === "object") state.portrait = data.portrait;
     if(data.cloudId) state.cloudId = data.cloudId;
     if(data.grammarSkills && typeof data.grammarSkills === "object") state.grammarSkills = data.grammarSkills;
     if(data.activityLog && typeof data.activityLog === "object") state.activityLog = data.activityLog;
@@ -5563,6 +5863,13 @@ const state = {
   //   0    = das Kind hat bewusst alles zugeklappt
   //   1..5 = diese Unit ist offen
   spitzname: "",           // Name in der oeffentlichen Rangliste; leer = nicht dabei
+  // Das Portrait wird als AUSWAHL gespeichert, nicht als Bild:
+  // {hair:"long01", eyes:"variant03", ...}. Gut hundert Zeichen statt
+  // sieben Kilobyte - und es ueberlebt Aenderungen an der Bibliothek.
+  portrait: null,
+  portraitEntwurf: null,
+  portraitTeil: "hair",
+  portraitReturnTo: "start",
   parentConfirmToken: null,
   parentConfirmBest: null,
   grammarOpenUnit: null,
@@ -5898,6 +6205,7 @@ function syncToCloud(){
       boxTreffer: state.boxTreffer || {}
     };
     if(state.spitzname){ payload.spitzname = state.spitzname; }
+    if(state.portrait){ payload.portrait = state.portrait; }
     if(state.parentPinHash){ payload.parentPinHash = state.parentPinHash; }
     if(state.parentPinSalt){ payload.parentPinSalt = state.parentPinSalt; }
     if(avgGrade !== null){ payload.avgGrade = avgGrade; }
@@ -5919,7 +6227,13 @@ function syncToCloud(){
       // Versuch fliegen deshalb alle jungen Felder raus. Lieber die neue
       // Funktion vorerst nur lokal, als den Spielstand verlieren.
       console.error("Cloud-Sync fehlgeschlagen:", e);
-      const JUNGE_FELDER = ["wortStand", "boxTreffer", "customSkin"];
+      // Felder, die es noch nicht lange gibt. Lehnt der Server einen davon ab
+      // (weil die Regeln noch nicht ergaenzt sind), fliegen sie beim zweiten
+      // Versuch raus - damit Muenzen, Noten und Inventar trotzdem ankommen.
+      // "spitzname" und "portrait" gehoeren seit Version 48/50 dazu; ohne sie
+      // hier waere ein fehlendes Regel-Feld gleichbedeutend mit "gar nichts
+      // wird mehr gespeichert".
+      const JUNGE_FELDER = ["wortStand", "boxTreffer", "customSkin", "spitzname", "portrait"];
       const dabei = JUNGE_FELDER.filter(f => payload[f] !== undefined);
       if(dabei.length){
         try{
@@ -7533,6 +7847,7 @@ function render(){
   if(state.screen==="lingorafrage") return renderLingoraFrage();
   if(state.screen==="lingoraplan") return renderLingoraPlan();
   if(state.screen==="skinwerkstatt") return renderSkinWerkstatt();
+  if(state.screen==="portraitwerkstatt") return renderPortraitWerkstatt();
   // Alles andere ist gesperrt, solange keine gueltige Firebase-Anmeldung besteht.
   if(!state.cloudId && !state.guest) return renderLogin();
   if(state.screen==="start") return renderStart();
@@ -8409,6 +8724,17 @@ function renderStart(){
       ${state.showLoginForm ? `
         <div class="setting-label" style="margin-top:14px;">Dein Avatar</div>
         <div class="avatar-grid">
+          ${portraitDa() ? `
+            <div class="avatar-option ${state.avatarId===PORTRAIT_ID?'selected':''}" data-avatar="${PORTRAIT_ID}">
+              <span class="avatar-swatch" style="${avatarStyle(avatarById(PORTRAIT_ID))}"></span>
+              <span class="aname">Dein Gesicht</span>
+            </div>
+          ` : `
+            <div class="avatar-option leer" id="portrait-neu">
+              <span class="avatar-swatch platzhalter">🙂</span>
+              <span class="aname">Gesicht bauen</span>
+            </div>
+          `}
           ${eigeneFigurDa() ? `
             <div class="avatar-option ${state.avatarId===CUSTOM_AVATAR_ID?'selected':''}" data-avatar="${CUSTOM_AVATAR_ID}">
               <span class="avatar-swatch" style="${avatarStyle(avatarById(CUSTOM_AVATAR_ID))}"></span>
@@ -8429,6 +8755,9 @@ function renderStart(){
         </div>
         <button class="btn secondary small" id="avatar-editor-btn" style="margin-top:10px;">
           🧱 ${state.customSkinFront ? "Deine Figur weiterbauen" : "Eigene Figur bauen"}
+        </button>
+        <button class="btn secondary small" id="portrait-editor-btn" style="margin-top:8px;">
+          🙂 ${portraitDa() ? "Dein Gesicht ändern" : "Ein Gesicht bauen"}
         </button>
         <!-- Abmelden steht jetzt oben, direkt neben "Avatar aendern" -->
       ` : ""}
@@ -8686,6 +9015,11 @@ function renderStart(){
       <button class="btn secondary" id="support-btn" style="margin-top:6px;"><span class="paypal-badge-inline">Pay<span style="color:#c9e2ff;">Pal</span></span> &nbsp;Unterstützen</button>
     </div>
 
+    <p class="muted center-text" style="margin:10px auto 0;font-size:11px;max-width:34em;opacity:.75;">
+      Gesichter: <a href="https://www.figma.com/community/file/1184595184137881796" target="_blank" rel="noopener">Adventurer</a>
+      von Lisa Wischofsky, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
+      über <a href="https://www.dicebear.com/" target="_blank" rel="noopener">DiceBear</a>.
+    </p>
     <footer class="note">Herzensprojekt GmbH &middot; Version ${APP_VERSION}<br>
       <button type="button" class="linkbtn" id="info-start-link">Was ist LingoCrafter?</button>
       <span style="opacity:0.5;">&middot;</span>
@@ -8748,6 +9082,10 @@ function renderStart(){
   if(avatarNeu){ avatarNeu.addEventListener('click', ()=>skinWerkstattOeffnen('start')); }
   const avatarEditorBtn = document.getElementById('avatar-editor-btn');
   if(avatarEditorBtn){ avatarEditorBtn.addEventListener('click', ()=>skinWerkstattOeffnen('start')); }
+  const portraitNeu = document.getElementById('portrait-neu');
+  if(portraitNeu){ portraitNeu.addEventListener('click', ()=>portraitWerkstattOeffnen('start')); }
+  const portraitBtn = document.getElementById('portrait-editor-btn');
+  if(portraitBtn){ portraitBtn.addEventListener('click', ()=>portraitWerkstattOeffnen('start')); }
   document.querySelectorAll('.mode-btn[data-mainmode]').forEach(el=>{
     el.addEventListener('click', ()=>{ state.mainMode = el.dataset.mainmode; render(); });
   });
