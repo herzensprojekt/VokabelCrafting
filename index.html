@@ -2586,6 +2586,18 @@ summary.mehr-knopf::after{ content:none; }
   justify-content:center; gap:1px; font-size:17px; padding:10px 12px;
 }
 .btn.sl-start small{ font-size:11.5px; font-weight:500; opacity:.9; }
+
+/* --- Der Korb ueber den Sammlungen ----------------------------------- */
+.vw-korb{
+  display:flex; align-items:center; flex-wrap:wrap; gap:10px;
+  padding:10px 12px; margin:0 0 10px;
+  background:#e4f3d8; border:2px solid #a8ce8c; border-radius:14px;
+}
+.vw-korb-t{ flex:1; min-width:150px; font-size:13px; color:#2f6420; line-height:1.35; }
+.pk-kachel.hat-wahl{
+  border-color:#7fb35f; background:#eef6e6;
+}
+.pk-kachel.hat-wahl .pk-z{ color:#2f6420; font-weight:800; }
 </style>
 </head>
 <body>
@@ -2883,7 +2895,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "60.1 – Antippen";
+const APP_VERSION = "61.0 – Sammelkorb";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -9873,7 +9885,11 @@ function renderUebenVokabeln(){
       <button class="btn secondary einzeilig" id="vw-zurueck" style="margin-bottom:12px;">← Andere Wörter aussuchen</button>
       <div class="panel">
         <div class="vw-kopf">
-          <span class="vw-kopf-t">Tippe die Wörter an, die du üben willst.</span>
+          <span class="vw-kopf-t">Tippe die Wörter an, die du üben willst.${(()=>{
+            const hier = woerterVonQuelle(offen).map(wortSchluessel);
+            const anders = wahl.filter(k => hier.indexOf(k) < 0).length;
+            return anders ? ` <strong>+${anders}</strong> aus anderen Sammlungen sind schon dabei.` : "";
+          })()}</span>
           <span class="vw-kopf-k">
             <button type="button" class="vw-mini" id="vw-alle">Alle</button>
             <button type="button" class="vw-mini" id="vw-keins">Keins</button>
@@ -9906,7 +9922,14 @@ function renderUebenVokabeln(){
               </button>`).join("")}
           </div>`
         : `<div class="kl-schild">📚 Klasse ${klassen[0] || 5}</div>`}
-        <p class="muted" style="margin:2px 0 12px;">Tippe an, woraus du üben willst.</p>
+        ${wahl.length ? `
+          <div class="vw-korb">
+            <span class="vw-korb-t">✓ <strong>${wahl.length}</strong> ${wahl.length===1?"Wort":"Wörter"} im Korb
+              &ndash; aus so vielen Sammlungen, wie du magst.</span>
+            <button type="button" class="vw-mini" id="vw-korb-leeren">Leeren</button>
+          </div>` : ""}
+        <p class="muted" style="margin:2px 0 12px;">Tippe an, woraus du üben willst.
+        ${wahl.length ? "Deine Auswahl bleibt erhalten." : ""}</p>
         <div class="pk-gitter">
           <button type="button" class="pk-kachel dazu" id="pk-eigene">
             <span class="pk-ic">➕</span>
@@ -9919,12 +9942,19 @@ function renderUebenVokabeln(){
               <span class="pk-n">${escapeHtml(l.name)}</span>
               <span class="pk-z">${(l.woerter||[]).length}</span>
             </button>`).join("")}
-          ${paketeDerKlasse(state.klasse || klassen[0] || 5).map(p=>`
-            <button type="button" class="pk-kachel" data-vw-oeffnen="${escapeHtml(p.name)}">
+          ${paketeDerKlasse(state.klasse || klassen[0] || 5).map(p=>{
+            /* Wie viele aus DIESEM Paket liegen schon im Korb? Ohne die
+               Zahl weiss ein Kind nach dem dritten Paket nicht mehr, wo
+               es ueberall etwas ausgesucht hat. */
+            const drin = woerterVonQuelle(p.name)
+                          .filter(w => wahl.indexOf(wortSchluessel(w)) >= 0).length;
+            return `
+            <button type="button" class="pk-kachel ${drin ? "hat-wahl" : ""}" data-vw-oeffnen="${escapeHtml(p.name)}">
               <span class="pk-ic">${p.icon}</span>
               <span class="pk-n">${escapeHtml(p.name)}</span>
-              <span class="pk-z">${p.anzahl}</span>
-            </button>`).join("")}
+              <span class="pk-z">${drin ? "✓ " + drin : p.anzahl}</span>
+            </button>`;
+          }).join("")}
           <button type="button" class="pk-kachel" data-vw-oeffnen="Alle">
             <span class="pk-ic">🌍</span>
             <span class="pk-n">Alle Wörter</span>
@@ -9951,8 +9981,10 @@ function renderUebenVokabeln(){
   document.querySelectorAll('[data-vw-oeffnen]').forEach(el=>{
     el.addEventListener('click', ()=>{
       state.offenesPaket = el.dataset.vwOeffnen;
-      state.wahl = [];
-      state.category = state.offenesPaket;
+      /* Die gruenen Woerter bleiben stehen. Vorher loeschte jedes
+         Oeffnen den Korb - wer drei Tiere und zwei Farben zusammen
+         ueben wollte, hatte keine Chance. */
+      state.category = wahlListe().length ? AUSWAHL_ZEICHEN : state.offenesPaket;
       saveProgress();
       render();
     });
@@ -9972,16 +10004,29 @@ function renderUebenVokabeln(){
   const anV = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
 
   anV('vw-zurueck', ()=>{
-    state.offenesPaket = ""; state.wahl = []; state.category = "Alle";
+    /* Nur das Paket schliessen, nicht den Korb ausleeren. */
+    state.offenesPaket = "";
+    state.category = wahlListe().length ? AUSWAHL_ZEICHEN : "Alle";
     saveProgress(); render();
   });
+  anV('vw-korb-leeren', ()=>{
+    state.wahl = []; state.category = state.offenesPaket || "Alle"; render();
+  });
   anV('vw-alle', ()=>{
-    state.wahl = woerterVonQuelle(state.offenesPaket).map(wortSchluessel);
+    // Dazulegen, nicht ersetzen.
+    woerterVonQuelle(state.offenesPaket).map(wortSchluessel).forEach(k=>{
+      if(wahlListe().indexOf(k) < 0) state.wahl.push(k);
+    });
     state.category = state.wahl.length ? AUSWAHL_ZEICHEN : (state.offenesPaket || "Alle");
     render();
   });
   anV('vw-keins', ()=>{
-    state.wahl = []; state.category = state.offenesPaket || "Alle"; render();
+    /* Nur die Woerter DIESES Pakets abwaehlen - was aus anderen
+       Sammlungen im Korb liegt, bleibt drin. */
+    const hier = woerterVonQuelle(state.offenesPaket).map(wortSchluessel);
+    state.wahl = wahlListe().filter(k => hier.indexOf(k) < 0);
+    state.category = state.wahl.length ? AUSWAHL_ZEICHEN : (state.offenesPaket || "Alle");
+    render();
   });
   anV('vw-art', ()=>{ state.screen = "spielart"; render(); });
   anV('pk-eigene', ()=>{ state.screen = "customvocab"; state.evSuche = ""; render(); });
@@ -14531,20 +14576,22 @@ function paketAuswahlVerdrahten(){
 
 /* Ein kleines Eingabefenster - showConfirmModal gibt es schon, aber
    dort laesst sich nichts eintippen. */
-function showPromptModal(frage, platzhalter, fertig){
+function showPromptModal(frage, platzhalter, fertig, vorgabe){
   const hg = document.createElement('div');
   hg.className = 'modal-overlay';
   hg.innerHTML = `
     <div class="panel modal-box">
       <h3 style="font-size:17px;margin-bottom:10px;">${escapeHtml(frage)}</h3>
-      <input type="text" id="prompt-eingabe" maxlength="30" placeholder="${escapeHtml(platzhalter||"")}">
+      <input type="text" id="prompt-eingabe" maxlength="30" placeholder="${escapeHtml(platzhalter||"")}" value="${escapeHtml(vorgabe||"")}">
       <button class="btn" id="prompt-ok" style="margin-top:12px;">✅ SPEICHERN</button>
       <button class="btn secondary" id="prompt-weg" style="margin-top:8px;">Abbrechen</button>
     </div>`;
   document.body.appendChild(hg);
   const zu = ()=>{ if(hg.parentNode) hg.parentNode.removeChild(hg); };
   const feld = hg.querySelector('#prompt-eingabe');
-  setTimeout(()=>{ try{ feld.focus(); }catch(e){} }, 60);
+  /* Beim Umbenennen steht der alte Name schon da - dann soll er markiert
+     sein, damit Tippen ihn ersetzt und Antippen ihn bearbeitet. */
+  setTimeout(()=>{ try{ feld.focus(); if(feld.value) feld.select(); }catch(e){} }, 60);
   hg.querySelector('#prompt-ok').addEventListener('click', ()=>{ const v = feld.value; zu(); fertig(v); });
   hg.querySelector('#prompt-weg').addEventListener('click', zu);
   feld.addEventListener('keydown', (e)=>{ if(e.key === "Enter"){ const v = feld.value; zu(); fertig(v); } });
@@ -14672,8 +14719,7 @@ function evListenbauVerdrahten(){
         neu = (neu || "").trim().slice(0, 30);
         if(neu.length < 2 || neu === alt) return;
         if(listeFinden(neu)){
-          showConfirmModal("Es gibt schon eine Liste mit diesem Namen.",
-                           "Such dir bitte einen anderen aus.", ()=>{});
+          showConfirmModal("Es gibt schon eine Liste mit diesem Namen. Such dir bitte einen anderen aus.", ()=>{});
           return;
         }
         const l = listeFinden(alt);
@@ -14684,15 +14730,14 @@ function evListenbauVerdrahten(){
         if(state.category === LISTEN_ZEICHEN + alt) state.category = LISTEN_ZEICHEN + neu;
         if(state.offenesPaket === LISTEN_ZEICHEN + alt) state.offenesPaket = LISTEN_ZEICHEN + neu;
         saveProgress(); syncToCloud(); render();
-      });
+      }, alt);
     });
   });
 
   document.querySelectorAll('[data-liste-weg]').forEach(el=>{
     el.addEventListener('click', ()=>{
       const name = el.dataset.listeWeg;
-      showConfirmModal(`Liste "${name}" löschen?`,
-        "Die Wörter selbst bleiben natürlich erhalten - nur die Zusammenstellung geht weg.",
+      showConfirmModal(`Liste "${name}" löschen? Die Wörter selbst bleiben erhalten \u2013 nur die Zusammenstellung geht weg.`,
         ()=>{
           const i = listenAlle().findIndex(l => l.name === name);
           if(i >= 0) listenAlle().splice(i, 1);
