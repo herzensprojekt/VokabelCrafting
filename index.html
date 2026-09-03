@@ -52,6 +52,19 @@
     --danger:#c0392b;
     --ok:#3fa34d;
     --wood:#7a4a2b;
+    /* --- Buchseite ---------------------------------------------------
+       Warmes Papier statt kaltem Glas. Die Werte sind bewusst leicht
+       gelblich: reines Weiss vor dem blauen Himmel wirkt kalt und
+       technisch, Papier wirkt wie etwas, in dem man liest.          */
+    --papier:      #fdfaf3;   /* Buchseite */
+    --papier-tief: #f4ecdb;   /* vertiefte Flaeche, Seitenrand */
+    --papier-rand: #e5d8bf;   /* Linien und Kanten */
+    --tinte:       #443a2c;   /* Text */
+    --tinte-hell:  #7d7060;   /* Nebentext */
+    --salbei-a:#93b077; --salbei-b:#5c7a45;   /* Vokabeln */
+    --pflaume-a:#ad8fae; --pflaume-b:#6b4c6c;  /* Grammatik */
+    --terra-a:#d99263;  --terra-b:#a25c33;    /* Spiele */
+    --ocker-a:#ebcb7c;  --ocker-b:#bb8f2e;    /* Muenzen */
     --font:'Poppins', Arial, sans-serif;
     --serif:'LC-Serif', Georgia, 'Times New Roman', serif;
   }
@@ -133,11 +146,12 @@
 
   /* ---------- Panels ---------- */
   .panel{
-    background: rgba(255,255,255,0.72);
+    background: rgba(253,250,243,0.93);
+    border: 1px solid rgba(229,216,191,0.9);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(20,30,15,0.15);
+    box-shadow: 0 4px 16px rgba(90,70,40,0.14);
     padding:18px;
     margin-bottom:14px;
   }
@@ -1407,7 +1421,7 @@
   /* ---------- Kompakte Einstellungen ---------- */
   .setting-label{
     font-size:13px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
-    color:#4a5a3a; margin:16px 0 7px; text-align:center;
+    color:var(--tinte-hell); margin:16px 0 7px; text-align:center;
   }
   .seg-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .mode-btn.seg{
@@ -2198,10 +2212,11 @@ summary.mehr-knopf::after{ content:none; }
 .pk-suchfeld{ position:relative; margin-bottom:10px; }
 .pk-suchfeld input{
   width:100%; box-sizing:border-box; padding:11px 38px 11px 38px;
-  border:2px solid #e0e0e0; border-radius:12px; background:#fafafa;
+  border:2px solid var(--papier-rand); border-radius:12px; background:var(--papier-tief);
+  color:var(--tinte);
   font-size:16px; font-family:inherit;   /* 16px: kleiner zoomt iOS hinein */
 }
-.pk-suchfeld input:focus{ outline:none; border-color:#4db55c; background:#fff; }
+.pk-suchfeld input:focus{ outline:none; border-color:var(--salbei-b); background:var(--papier); }
 .pk-lupe{ position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:15px; opacity:.7; }
 .pk-leeren{
   position:absolute; right:8px; top:50%; transform:translateY(-50%);
@@ -2235,21 +2250,21 @@ summary.mehr-knopf::after{ content:none; }
 .pk-kachel{
   display:flex; align-items:center; gap:9px;
   padding:11px 12px; min-height:0; text-align:left;
-  border:2px solid #ece7de; border-radius:14px; background:#fcfaf7;
+  border:2px solid var(--papier-rand); border-radius:14px; background:var(--papier);
   cursor:pointer; font-family:inherit;
 }
-.pk-kachel:hover{ background:#f6f1ea; }
+.pk-kachel:hover{ background:var(--papier-tief); }
 .pk-kachel.aktiv{
-  border-color:#4db55c; background:#eef9f0;
-  box-shadow:0 0 0 3px rgba(77,181,92,0.24);
+  border-color:var(--salbei-b); background:#eef4e6;
+  box-shadow:0 0 0 3px rgba(92,122,69,0.22);
 }
 .pk-kachel.eigene{ background:#fffdf4; border-color:#ecdfae; }
 .pk-kachel.eigene.aktiv{ border-color:#4db55c; }
 .pk-kachel.dazu{ background:#f3f6fb; border-color:#dbe3ef; }
 .pk-ic{ font-size:19px; flex:0 0 auto; }
-.pk-n{ flex:1; min-width:0; font-weight:800; font-size:13.5px; color:#1e4515;
+.pk-n{ flex:1; min-width:0; font-weight:800; font-size:13.5px; color:var(--tinte);
        overflow:hidden; text-overflow:ellipsis; }
-.pk-z{ flex:0 0 auto; font-size:11.5px; font-weight:700; color:#8a8073; }
+.pk-z{ flex:0 0 auto; font-size:11.5px; font-weight:700; color:var(--tinte-hell); }
 
 /* --- Klassenschild ---------------------------------------------------
    Eine Auswahl mit genau einer Moeglichkeit ist keine Auswahl, sondern
@@ -2257,37 +2272,43 @@ summary.mehr-knopf::after{ content:none; }
    deshalb ein Schild - es sagt dasselbe, ohne etwas vorzutaeuschen. */
 .kl-schild{
   display:inline-block; padding:5px 13px; margin:0 0 10px;
-  border-radius:999px; background:#eef4ea; border:2px solid #dbe8d8;
+  border-radius:999px; background:var(--papier-tief); border:2px solid var(--papier-rand);
   font-family:var(--font); font-weight:800; font-size:12.5px;
-  letter-spacing:.02em; color:#3e6b42;
+  letter-spacing:.02em; color:var(--tinte-hell);
 }
 
 /* --- Die Kacheln unten ----------------------------------------------- */
-.werk-gitter{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:8px; }
+.werk-gitter{ display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-top:10px; }
+.werk-karte.breit{ grid-column:1 / -1; }
+/* Sieben gesaettigte Farbbloecke nebeneinander sahen aus wie eine
+   Fernbedienung. Sie bekommen jetzt genau die Machart der USP-Karten
+   von der Anmeldeseite - die gefaellt, also wird sie nicht neu
+   erfunden: weiche Karte, freistehendes Symbol mit Schlagschatten,
+   fette Ueberschrift. Nur waermer.                                  */
 .werk-karte{
-  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-  text-align:center; padding:11px 5px 10px; min-height:78px;
-  border:none; border-radius:16px; cursor:pointer;
-  font-family:var(--font); color:#fff;
-  background:linear-gradient(160deg,#8290a5,#4c586b);
-  box-shadow:0 3px 12px rgba(0,0,0,0.20);
-  transition:transform .15s ease, box-shadow .15s ease;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:2px; padding:14px 8px 12px; min-height:0;
+  border:2px solid rgba(255,253,247,0.9); border-radius:18px; cursor:pointer;
+  font-family:var(--font); color:var(--tinte);
+  background:linear-gradient(180deg, rgba(253,250,243,0.97), rgba(246,238,224,0.9));
+  box-shadow:0 3px 12px rgba(90,70,40,0.13);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  transition:transform .18s ease, box-shadow .18s ease;
 }
-.werk-karte:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.26); }
-.werk-karte:disabled{ opacity:.45; cursor:default; box-shadow:none; }
-.werk-karte.wissen{ background:linear-gradient(160deg,#5cb46c,#22602e); }
-.werk-karte.ziel{ background:linear-gradient(160deg,#5f95cc,#2b4d78); }
+.werk-karte:hover:not(:disabled){ transform:translateY(-3px); box-shadow:0 7px 18px rgba(90,70,40,0.20); }
+.werk-karte:disabled{ opacity:.45; cursor:default; box-shadow:none; transform:none; }
 /* Eine ungerade Kachel haengt sonst halbbreit und allein in der letzten
    Zeile. Sie darf die ganze Breite nehmen. */
 .werk-karte.breit{ grid-column:1 / -1; }
 .werk-karte.muenzen{ background:linear-gradient(160deg,#e8c25c,#a2740f); color:#3a2a00; }
 .wk-ic{
-  font-size:clamp(20px, 6vw, 26px); line-height:1; display:block; margin-bottom:4px;
-  filter:drop-shadow(0 2px 3px rgba(0,0,0,0.35));
+  font-size:clamp(24px, 7vw, 30px); line-height:1; display:block; margin-bottom:5px;
+  filter:drop-shadow(0 3px 4px rgba(90,70,40,0.28));
 }
+.wk-ic img{ width:46px; height:auto; display:block; }
 .wk-t{
-  font-size:clamp(10.5px, 3vw, 12.5px); font-weight:800; display:block;
-  line-height:1.15; hyphens:auto; overflow-wrap:anywhere;
+  font-size:clamp(12px, 3.5vw, 14px); font-weight:800; display:block;
+  line-height:1.2; hyphens:auto; overflow-wrap:anywhere; color:var(--tinte);
 }
 .wk-s{
   font-size:clamp(10.5px, 3vw, 12px); font-weight:400; opacity:.9;
@@ -2323,9 +2344,9 @@ summary.mehr-knopf::after{ content:none; }
 .fz-muenzen{
   flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center;
   padding:12px 14px; min-width:96px;
-  background:linear-gradient(160deg,#f6d26a,#c8940f);
-  border-radius:18px; box-shadow:0 3px 12px rgba(120,90,0,0.28);
-  color:#3a2a00;
+  background:linear-gradient(160deg,var(--ocker-a),var(--ocker-b));
+  border-radius:18px; box-shadow:0 3px 10px rgba(120,90,20,0.24);
+  color:#4a3400;
 }
 .fz-m-ic{ font-size:22px; line-height:1; filter:drop-shadow(0 2px 2px rgba(0,0,0,0.25)); }
 .fz-m-zahl{ font-family:var(--font); font-weight:800; font-size:clamp(20px,6vw,26px); line-height:1.1; margin-top:2px; }
@@ -2336,21 +2357,21 @@ summary.mehr-knopf::after{ content:none; }
   flex:1; min-width:0; position:relative;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   padding:10px 6px 12px;
-  background:rgba(255,255,255,0.86); border:2px solid rgba(255,255,255,0.9);
-  border-radius:16px; box-shadow:0 3px 10px rgba(20,30,15,0.12);
+  background:rgba(253,250,243,0.93); border:2px solid var(--papier-rand);
+  border-radius:16px; box-shadow:0 3px 10px rgba(90,70,40,0.12);
   backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
 }
-.fz-kachel.voll{ background:#eef9f0; border-color:#a8dcb2; }
+.fz-kachel.voll{ background:#eef4e6; border-color:#bcd0a4; }
 .fz-k-ic{ font-size:18px; line-height:1; }
 .fz-k-t{ font-family:var(--font); font-weight:800; font-size:clamp(16px,5vw,21px);
-         color:#1e4515; line-height:1.1; margin-top:1px; }
+         color:var(--tinte); line-height:1.1; margin-top:1px; }
 .fz-k-t small{ font-size:.6em; font-weight:700; opacity:.6; }
-.fz-k-u{ font-size:10.5px; color:#5f6b5a; line-height:1.2; text-align:center; margin-top:2px; }
+.fz-k-u{ font-size:10.5px; color:var(--tinte-hell); line-height:1.2; text-align:center; margin-top:2px; }
 .fz-balken{
   position:absolute; left:8px; right:8px; bottom:5px; height:4px;
-  background:#e3e0d8; border-radius:3px; overflow:hidden;
+  background:var(--papier-tief); border-radius:3px; overflow:hidden;
 }
-.fz-balken i{ display:block; height:100%; background:#4db55c; border-radius:3px; transition:width .4s ease; }
+.fz-balken i{ display:block; height:100%; background:var(--salbei-b); border-radius:3px; transition:width .4s ease; }
 
 /* --- Die drei Wege --------------------------------------------------- */
 .haupt-gitter{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
@@ -2358,8 +2379,8 @@ summary.mehr-knopf::after{ content:none; }
   position:relative; display:flex; flex-direction:column; align-items:center;
   text-align:center; padding:18px 10px 16px; min-height:0;
   border:none; border-radius:20px; cursor:pointer;
-  font-family:var(--font); color:#fff;
-  box-shadow:0 5px 16px rgba(0,0,0,0.24);
+  font-family:var(--font); color:#fffdf8;
+  box-shadow:0 5px 14px rgba(90,70,40,0.26);
   transition:transform .15s ease, box-shadow .15s ease;
 }
 .haupt-karte:hover{ transform:translateY(-3px); box-shadow:0 9px 22px rgba(0,0,0,0.30); }
@@ -2368,9 +2389,9 @@ summary.mehr-knopf::after{ content:none; }
                     gap:12px; padding:14px 12px; text-align:left; }
 .haupt-karte.breit .hk-ic{ margin-bottom:0; }
 .haupt-karte.breit .hk-t{ display:inline; }
-.hk-vokabeln{ background:linear-gradient(160deg,#5cc86c,#22702e); }
-.hk-grammatik{ background:linear-gradient(160deg,#9a7bd8,#4b2f86); }
-.hk-spiele{ background:linear-gradient(160deg,#f08a4b,#a8410f); }
+.hk-vokabeln{ background:linear-gradient(160deg,var(--salbei-a),var(--salbei-b)); }
+.hk-grammatik{ background:linear-gradient(160deg,var(--pflaume-a),var(--pflaume-b)); }
+.hk-spiele{ background:linear-gradient(160deg,var(--terra-a),var(--terra-b)); }
 .hk-ic{ font-size:clamp(30px,9vw,42px); line-height:1; margin-bottom:7px;
         filter:drop-shadow(0 3px 3px rgba(0,0,0,0.4)); }
 .hk-t{ font-size:clamp(15px,4.6vw,19px); font-weight:800; line-height:1.15; }
@@ -2379,7 +2400,7 @@ summary.mehr-knopf::after{ content:none; }
 .hk-punkt{
   position:absolute; top:-6px; right:-6px; min-width:26px; height:26px;
   display:flex; align-items:center; justify-content:center; padding:0 7px;
-  background:#ffd34d; color:#4a3400; border:2px solid #fff;
+  background:var(--ocker-a); color:#4a3400; border:2px solid var(--papier);
   border-radius:999px; font-weight:900; font-size:13px;
   box-shadow:0 2px 6px rgba(0,0,0,0.3);
 }
@@ -2387,22 +2408,59 @@ summary.mehr-knopf::after{ content:none; }
 /* --- Kopf der Uebungsbildschirme ------------------------------------- */
 .ueben-unter{
   margin:-4px auto 12px; padding:8px 14px; width:fit-content; max-width:92%;
-  background:rgba(255,255,255,0.75); border-radius:14px;
+  background:rgba(253,250,243,0.88); border:1px solid var(--papier-rand);
+  border-radius:14px;
   backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-  font-size:13px; color:#5f6b5a; text-align:center;
+  font-size:13px; color:var(--tinte-hell); text-align:center;
 }
 
 /* --- Die Tuer fuer Erwachsene ---------------------------------------- */
-.fuer-eltern{ margin-top:16px; }
-.fuer-eltern > summary::-webkit-details-marker{ display:none; }
 .fe-knopf{
-  display:block; width:100%; box-sizing:border-box; cursor:pointer; list-style:none;
-  padding:11px 16px; text-align:center;
-  background:rgba(255,255,255,0.6); border:2px solid rgba(255,255,255,0.75);
+  display:block; width:100%; box-sizing:border-box; cursor:pointer;
+  margin-top:16px; padding:12px 16px; text-align:center;
+  background:rgba(253,250,243,0.8); border:1.5px solid var(--papier-rand);
   border-radius:14px; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-  font-family:var(--font); font-weight:700; font-size:13.5px; color:#5f6b5a;
+  font-family:var(--font); font-weight:700; font-size:13.5px; color:var(--tinte-hell);
 }
-.fe-inhalt{ margin-top:12px; }
+.fe-knopf:hover{ background:var(--papier); }
+
+/* --- Farbe fuer die Werkzeugkacheln ---------------------------------
+   Gedaempfter als die drei grossen Kacheln darueber: bunt genug, um
+   einladend zu sein, ruhig genug, um ihnen nicht die Schau zu stehlen. */
+/* Die Farbe ist nur noch ein Hauch am unteren Rand der Karte - genug,
+   um die sieben auseinanderzuhalten, zu wenig, um zu schreien.      */
+.werk-karte.wk-rot{     border-bottom-color:#d9b7a6; }
+.werk-karte.wk-tuerkis{ border-bottom-color:#a9c8bf; }
+.werk-karte.wk-violett{ border-bottom-color:#c4aecb; }
+.werk-karte.wk-gruen{   border-bottom-color:#b3c9a1; }
+.werk-karte.wk-gold{    border-bottom-color:#dcc386; }
+.werk-karte.wk-braun{   border-bottom-color:#cbb595; }
+.werk-karte.wk-blau{    border-bottom-color:#a9bed1; }
+.werk-karte{ border-bottom-width:4px; }
+
+/* --- Gezeichnete Symbole in den Kacheln ------------------------------
+   Sie ersetzen die Emoji. Groesse und Schlagschatten sind von den
+   USP-Karten der Anmeldeseite uebernommen - dort wirken sie. */
+.hk-bild{
+  width:clamp(46px, 14vw, 66px); height:auto; display:block; margin-bottom:7px;
+  filter:drop-shadow(0 3px 5px rgba(50,35,15,0.35));
+}
+.haupt-karte.breit .hk-bild{ margin-bottom:0; width:clamp(40px, 11vw, 52px); }
+
+.wk-bild{
+  width:46px; height:auto; display:block; margin-bottom:5px;
+  filter:drop-shadow(0 2px 4px rgba(90,70,40,0.30));
+}
+.werk-karte:disabled .wk-bild{ filter:grayscale(0.7) opacity(0.7); }
+
+.fz-m-bild{
+  width:28px; height:auto; display:block;
+  filter:drop-shadow(0 2px 3px rgba(70,50,10,0.35));
+}
+
+.fe-knopf{ display:flex; align-items:center; justify-content:center; gap:8px; }
+.fe-bild{ width:22px; height:auto; flex:0 0 auto;
+          filter:drop-shadow(0 2px 3px rgba(90,70,40,0.28)); }
 </style>
 </head>
 <body>
@@ -2700,7 +2758,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "55.0 – Startklar";
+const APP_VERSION = "56.1 – Buchseite";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -8562,6 +8620,7 @@ function render(){
   if(state.screen==="uebenvokabeln") return renderUebenVokabeln();
   if(state.screen==="uebengrammatik") return renderUebenGrammatik();
   if(state.screen==="uebenspiele") return renderUebenSpiele();
+  if(state.screen==="eltern") return renderEltern();
   if(state.screen==="quiz") return renderQuiz();
   if(state.screen==="milestone") return renderMilestone();
   if(state.screen==="certificate") return renderCertificate();
@@ -9458,9 +9517,11 @@ function grammatikOffeneUnit(){
    die beiden grossen Knoepfe oben.                                     */
 function werkzeugGitterHtml(){
   const g = !!state.guest;
-  const kachel = (id, ic, titel, aus)=>`
-    <button type="button" class="werk-karte" id="${id}"${aus ? " disabled" : ""}>
-      <span class="wk-ic">${ic}</span>
+  /* "ic" ist jetzt der Dateiname eines gezeichneten Symbols, nicht mehr
+     ein Emoji. Alle liegen neben der index.html.                      */
+  const kachel = (id, ic, titel, aus, farbe)=>`
+    <button type="button" class="werk-karte ${farbe || ""}" id="${id}"${aus ? " disabled" : ""}>
+      <img class="wk-bild" src="${ic}.webp" alt="" width="200" height="200" loading="lazy">
       <span class="wk-t">${titel}</span>
     </button>`;
 
@@ -9468,13 +9529,13 @@ function werkzeugGitterHtml(){
     <div class="panel">
       <h3 style="font-size:14px;margin-bottom:2px;opacity:.75;">AUSSERDEM</h3>
       <div class="werk-gitter">
-        ${kachel("radar-btn", "🎯", "Klassenarbeits-Radar")}
-        ${kachel("vokabel-stats-btn", "📦", "Vokabel-Speicher")}
-        ${kachel("grammar-stats-btn", "🧠", "Grammatik-Skills")}
-        ${kachel("custom-vocab-btn", "➕", "Eigene Vokabeln", !state.cloudId)}
-        ${kachel("shop-btn", "🛒", "Shop", g)}
-        ${kachel("inventar-btn", "🎒", "Inventar (" + anzahlImInventar() + ")")}
-        ${kachel("leaderboard-btn", "🏆", "Rangliste", g)}
+        ${kachel("radar-btn", "ic-plan", "Klassenarbeits-Radar", false, "wk-rot")}
+        ${kachel("vokabel-stats-btn", "ic-speicher", "Vokabel-Speicher", false, "wk-tuerkis")}
+        ${kachel("grammar-stats-btn", "ic-skills", "Grammatik-Skills", false, "wk-violett")}
+        ${kachel("custom-vocab-btn", "ic-eigene", "Eigene Vokabeln", !state.cloudId, "wk-gruen")}
+        ${kachel("shop-btn", "ic-muenzen", "Shop", g, "wk-gold")}
+        ${kachel("inventar-btn", "ic-geschenk", "Inventar (" + anzahlImInventar() + ")", false, "wk-braun")}
+        ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
       </div>
     </div>
 `;
@@ -9532,7 +9593,7 @@ function fortschrittZeileHtml(){
   return `
     <div class="fort-zeile">
       <div class="fz-muenzen">
-        <span class="fz-m-ic">🪙</span>
+        <img class="fz-m-bild" src="ic-muenzen.webp" alt="" width="200" height="207" loading="lazy">
         <span class="fz-m-zahl">${state.coins}</span>
         <span class="fz-m-u">Münzen</span>
       </div>
@@ -9563,25 +9624,39 @@ function fortschrittZeileHtml(){
    der Startknopf alle auf demselben Bildschirm. Jetzt fuehrt jede Kachel
    auf einen eigenen Bildschirm - eingestellt wird dort, nicht hier.   */
 function hauptwahlHtml(){
-  let faellig = 0;
-  try{ faellig = lernUeberblick().faellig || 0; }catch(e){}
+  /* lernUeberblick().faellig enthaelt ALLE noch nie gesehenen Woerter -
+     bei 448 im Vorrat stuende hier eine 448. Das ist keine Aufgabe fuer
+     heute, sondern der ganze Wortschatz, und als Zahl auf einem Knopf
+     schreckt sie ab statt anzuziehen.
+
+     Eine echte Aufgabe fuer heute sind nur die Wiederholungen, deren
+     Termin gekommen ist: die werden mehr, wenn man Tage auslaesst, und
+     weniger, wenn man uebt. Neue Woerter sind Vorrat, keine Schuld. */
+  let wiederholung = 0, neu = 0;
+  try{
+    const u = lernUeberblick();
+    neu = u.neu || 0;
+    wiederholung = Math.max(0, (u.faellig || 0) - neu);
+  }catch(e){}
+  const punkt = wiederholung > 99 ? "99+" : String(wiederholung);
+  const unter = wiederholung > 0
+    ? wiederholung + (wiederholung === 1 ? " Wort wartet" : " Wörter warten") + " auf die Wiederholung"
+    : (neu > 0 ? "Neue Wörter entdecken" : "Alles sitzt \u2013 üben darfst du trotzdem");
   return `
     <div class="haupt-gitter">
       <button type="button" class="haupt-karte hk-vokabeln" id="hw-vokabeln">
-        ${faellig > 0 ? `<span class="hk-punkt">${faellig}</span>` : ""}
-        <span class="hk-ic">📖</span>
+        ${wiederholung > 0 ? `<span class="hk-punkt">${punkt}</span>` : ""}
+        <img class="hk-bild" src="ic-buch.webp" alt="" width="200" height="200" loading="lazy">
         <span class="hk-t">Vokabeln</span>
-        <span class="hk-u">${faellig > 0
-          ? faellig + (faellig === 1 ? " Wort ist" : " Wörter sind") + " heute dran"
-          : "Wörter lernen und abfragen"}</span>
+        <span class="hk-u">${unter}</span>
       </button>
       <button type="button" class="haupt-karte hk-grammatik" id="hw-grammatik">
-        <span class="hk-ic">🧠</span>
+        <img class="hk-bild" src="ic-grammatik.webp" alt="" width="200" height="200" loading="lazy">
         <span class="hk-t">Grammatik</span>
         <span class="hk-u">${GRAMMAR_TOPICS.length} Themen, Unit für Unit</span>
       </button>
       <button type="button" class="haupt-karte hk-spiele breit" id="hw-spiele">
-        <span class="hk-ic">🎮</span>
+        <img class="hk-bild" src="ic-spiele.webp" alt="" width="200" height="200" loading="lazy">
         <span class="hk-t">Spiele</span>
         <span class="hk-u">Challenge, Flutungsraum und Aussprache</span>
       </button>
@@ -9593,10 +9668,21 @@ function hauptwahlHtml(){
    rund 500 der 2285 px aus. Wer als Kind bis unten scrollte, landete in
    der Verwaltung. Das sagt: hier bist du nicht zu Hause.              */
 function erwachsenenTuerHtml(){
+  /* Frueher ein <details> ganz unten auf der Seite. Es funktionierte -
+     nur klappte der Inhalt unterhalb des Bildschirmrands auf, sodass
+     beim Antippen sichtbar nichts geschah. Ein Knopf, dem man nicht
+     ansieht, dass er gewirkt hat, ist ein kaputter Knopf. */
   return `
-    <details class="fuer-eltern">
-      <summary class="fe-knopf">👨‍👩‍👧 Für Eltern</summary>
-      <div class="fe-inhalt">
+    <button type="button" class="fe-knopf" id="eltern-btn">
+      <img class="fe-bild" src="ic-herz.webp" alt="" width="200" height="190" loading="lazy">
+      Für Eltern
+    </button>`;
+}
+
+function renderEltern(){
+  app.innerHTML = `
+    ${uebenKopfHtml("Für Eltern", "Einstellungen, Auswertung und Rechtliches.")}
+    <div class="panel">
         <button class="btn parent-open-btn" id="parents-btn" ${state.guest ? "disabled" : ""}>👨‍👩‍👧 ELTERNBEREICH</button>
         ${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Im Testmodus nicht verfügbar.</p>` : ""}
         ${state.guest ? "" : `<div style="height:10px;"></div>
@@ -9622,8 +9708,10 @@ function erwachsenenTuerHtml(){
           <span style="opacity:0.5;">&middot;</span>
           <button type="button" class="linkbtn" id="datenschutz-start">Datenschutz</button><br>
           <span style="font-size:12px;opacity:0.85;">Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt oder unterstützt.</span></footer>
-      </div>
-    </details>`;
+    </div>
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+  `;
+  startVerdrahten();
 }
 
 /* --- Die drei Uebungsbildschirme -------------------------------------
@@ -10045,6 +10133,7 @@ function startVerdrahten(){
   zu('hw-spiele',    ()=>{ state.screen = "uebenspiele";    render(); });
   zu('sp-wortschatz',()=>{ state.screen = "uebenvokabeln";  render(); });
   // Den Zurueck-Knopf gibt es nur auf den drei Uebungsbildschirmen.
+  zu('eltern-btn',   ()=>{ state.screen = "eltern";         render(); });
   zu('back-btn',     ()=>{ state.screen = "start";          render(); });
   const einstell = document.getElementById('einstell-block');
   if(einstell){
