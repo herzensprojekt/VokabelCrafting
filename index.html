@@ -2263,10 +2263,10 @@ summary.mehr-knopf::after{ content:none; }
 }
 
 /* --- Die Kacheln unten ----------------------------------------------- */
-.werk-gitter{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+.werk-gitter{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:8px; }
 .werk-karte{
-  display:flex; flex-direction:column; align-items:center; text-align:center;
-  padding:14px 9px 12px; min-height:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  text-align:center; padding:11px 5px 10px; min-height:78px;
   border:none; border-radius:16px; cursor:pointer;
   font-family:var(--font); color:#fff;
   background:linear-gradient(160deg,#8290a5,#4c586b);
@@ -2282,12 +2282,12 @@ summary.mehr-knopf::after{ content:none; }
 .werk-karte.breit{ grid-column:1 / -1; }
 .werk-karte.muenzen{ background:linear-gradient(160deg,#e8c25c,#a2740f); color:#3a2a00; }
 .wk-ic{
-  font-size:clamp(24px, 7vw, 32px); line-height:1; display:block; margin-bottom:5px;
+  font-size:clamp(20px, 6vw, 26px); line-height:1; display:block; margin-bottom:4px;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,0.35));
 }
 .wk-t{
-  font-size:clamp(12.5px, 3.8vw, 15px); font-weight:800; display:block;
-  line-height:1.2; hyphens:auto; overflow-wrap:anywhere;
+  font-size:clamp(10.5px, 3vw, 12.5px); font-weight:800; display:block;
+  line-height:1.15; hyphens:auto; overflow-wrap:anywhere;
 }
 .wk-s{
   font-size:clamp(10.5px, 3vw, 12px); font-weight:400; opacity:.9;
@@ -2315,6 +2315,94 @@ summary.mehr-knopf::after{ content:none; }
   border:none; background:#ece7de; color:#7a6f60; border-radius:8px;
   width:24px; height:24px; min-height:0; padding:0; cursor:pointer; font-size:12px;
 }
+
+/* --- Fortschritt ganz oben, ohne Scrollen ---------------------------- */
+.fort-zeile{
+  display:flex; align-items:stretch; gap:10px; margin:0 0 12px;
+}
+.fz-muenzen{
+  flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:12px 14px; min-width:96px;
+  background:linear-gradient(160deg,#f6d26a,#c8940f);
+  border-radius:18px; box-shadow:0 3px 12px rgba(120,90,0,0.28);
+  color:#3a2a00;
+}
+.fz-m-ic{ font-size:22px; line-height:1; filter:drop-shadow(0 2px 2px rgba(0,0,0,0.25)); }
+.fz-m-zahl{ font-family:var(--font); font-weight:800; font-size:clamp(20px,6vw,26px); line-height:1.1; margin-top:2px; }
+.fz-m-u{ font-size:11px; font-weight:700; opacity:.75; letter-spacing:.03em; }
+
+.fz-rest{ flex:1; display:flex; gap:8px; min-width:0; }
+.fz-kachel{
+  flex:1; min-width:0; position:relative;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:10px 6px 12px;
+  background:rgba(255,255,255,0.86); border:2px solid rgba(255,255,255,0.9);
+  border-radius:16px; box-shadow:0 3px 10px rgba(20,30,15,0.12);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+}
+.fz-kachel.voll{ background:#eef9f0; border-color:#a8dcb2; }
+.fz-k-ic{ font-size:18px; line-height:1; }
+.fz-k-t{ font-family:var(--font); font-weight:800; font-size:clamp(16px,5vw,21px);
+         color:#1e4515; line-height:1.1; margin-top:1px; }
+.fz-k-t small{ font-size:.6em; font-weight:700; opacity:.6; }
+.fz-k-u{ font-size:10.5px; color:#5f6b5a; line-height:1.2; text-align:center; margin-top:2px; }
+.fz-balken{
+  position:absolute; left:8px; right:8px; bottom:5px; height:4px;
+  background:#e3e0d8; border-radius:3px; overflow:hidden;
+}
+.fz-balken i{ display:block; height:100%; background:#4db55c; border-radius:3px; transition:width .4s ease; }
+
+/* --- Die drei Wege --------------------------------------------------- */
+.haupt-gitter{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.haupt-karte{
+  position:relative; display:flex; flex-direction:column; align-items:center;
+  text-align:center; padding:18px 10px 16px; min-height:0;
+  border:none; border-radius:20px; cursor:pointer;
+  font-family:var(--font); color:#fff;
+  box-shadow:0 5px 16px rgba(0,0,0,0.24);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.haupt-karte:hover{ transform:translateY(-3px); box-shadow:0 9px 22px rgba(0,0,0,0.30); }
+.haupt-karte:active{ transform:translateY(0); }
+.haupt-karte.breit{ grid-column:1 / -1; flex-direction:row; justify-content:center;
+                    gap:12px; padding:14px 12px; text-align:left; }
+.haupt-karte.breit .hk-ic{ margin-bottom:0; }
+.haupt-karte.breit .hk-t{ display:inline; }
+.hk-vokabeln{ background:linear-gradient(160deg,#5cc86c,#22702e); }
+.hk-grammatik{ background:linear-gradient(160deg,#9a7bd8,#4b2f86); }
+.hk-spiele{ background:linear-gradient(160deg,#f08a4b,#a8410f); }
+.hk-ic{ font-size:clamp(30px,9vw,42px); line-height:1; margin-bottom:7px;
+        filter:drop-shadow(0 3px 3px rgba(0,0,0,0.4)); }
+.hk-t{ font-size:clamp(15px,4.6vw,19px); font-weight:800; line-height:1.15; }
+.hk-u{ font-size:clamp(11px,3.2vw,13px); font-weight:400; opacity:.93;
+       margin-top:4px; line-height:1.3; hyphens:auto; }
+.hk-punkt{
+  position:absolute; top:-6px; right:-6px; min-width:26px; height:26px;
+  display:flex; align-items:center; justify-content:center; padding:0 7px;
+  background:#ffd34d; color:#4a3400; border:2px solid #fff;
+  border-radius:999px; font-weight:900; font-size:13px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* --- Kopf der Uebungsbildschirme ------------------------------------- */
+.ueben-unter{
+  margin:-4px auto 12px; padding:8px 14px; width:fit-content; max-width:92%;
+  background:rgba(255,255,255,0.75); border-radius:14px;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  font-size:13px; color:#5f6b5a; text-align:center;
+}
+
+/* --- Die Tuer fuer Erwachsene ---------------------------------------- */
+.fuer-eltern{ margin-top:16px; }
+.fuer-eltern > summary::-webkit-details-marker{ display:none; }
+.fe-knopf{
+  display:block; width:100%; box-sizing:border-box; cursor:pointer; list-style:none;
+  padding:11px 16px; text-align:center;
+  background:rgba(255,255,255,0.6); border:2px solid rgba(255,255,255,0.75);
+  border-radius:14px; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  font-family:var(--font); font-weight:700; font-size:13.5px; color:#5f6b5a;
+}
+.fe-inhalt{ margin-top:12px; }
 </style>
 </head>
 <body>
@@ -2612,7 +2700,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "54.1 – Ordnungssinn";
+const APP_VERSION = "55.0 – Startklar";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -8471,6 +8559,9 @@ function render(){
   // Alles andere ist gesperrt, solange keine gueltige Firebase-Anmeldung besteht.
   if(!state.cloudId && !state.guest) return renderLogin();
   if(state.screen==="start") return renderStart();
+  if(state.screen==="uebenvokabeln") return renderUebenVokabeln();
+  if(state.screen==="uebengrammatik") return renderUebenGrammatik();
+  if(state.screen==="uebenspiele") return renderUebenSpiele();
   if(state.screen==="quiz") return renderQuiz();
   if(state.screen==="milestone") return renderMilestone();
   if(state.screen==="certificate") return renderCertificate();
@@ -9367,36 +9458,23 @@ function grammatikOffeneUnit(){
    die beiden grossen Knoepfe oben.                                     */
 function werkzeugGitterHtml(){
   const g = !!state.guest;
-  const kachel = (id, klasse, ic, titel, unter, aus)=>`
-    <button type="button" class="werk-karte ${klasse}" id="${id}"${aus ? " disabled" : ""}>
+  const kachel = (id, ic, titel, aus)=>`
+    <button type="button" class="werk-karte" id="${id}"${aus ? " disabled" : ""}>
       <span class="wk-ic">${ic}</span>
       <span class="wk-t">${titel}</span>
-      <span class="wk-s">${unter}</span>
     </button>`;
 
   return `
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:2px;">DEINE WÖRTER &amp; REGELN</h3>
+      <h3 style="font-size:14px;margin-bottom:2px;opacity:.75;">AUSSERDEM</h3>
       <div class="werk-gitter">
-        ${kachel("vokabel-stats-btn", "wissen", "📦", "Mein Vokabel-Speicher", "Welche Wörter sitzen schon?")}
-        ${kachel("grammar-stats-btn", "wissen", "🧠", "Meine Grammatik-Skills", "Welche Regeln kannst du?")}
-        ${kachel("custom-vocab-btn", "wissen breit", "➕", "Eigene Vokabeln",
-                 state.cloudId ? "Suchen, eintippen, abfotografieren &ndash; und als Liste speichern"
-                               : "Melde dich an, um eigene Wörter zu speichern", !state.cloudId)}
-      </div>
-
-      <h3 style="font-size:16px;margin:18px 0 2px;">DEIN ZIEL</h3>
-      <div class="werk-gitter">
-        ${kachel("radar-btn", "ziel", "🎯", "Klassenarbeits-Radar", "Wie stehst du für die nächste Arbeit?")}
-        ${kachel("leaderboard-btn", "ziel", "🏆", "Rangliste",
-                 g ? "Gibt es mit Konto" : "Wer sammelt am meisten?", g)}
-      </div>
-
-      <h3 style="font-size:16px;margin:18px 0 2px;">MÜNZEN &amp; BELOHNUNGEN</h3>
-      <div class="werk-gitter">
-        ${kachel("shop-btn", "muenzen", "🛒", "Shop", g ? "Gibt es mit Konto" : "Münzen eintauschen", g)}
-        ${kachel("inventar-btn", "muenzen", "🎒", "Dein Inventar",
-                 anzahlImInventar() + " Sachen")}
+        ${kachel("radar-btn", "🎯", "Klassenarbeits-Radar")}
+        ${kachel("vokabel-stats-btn", "📦", "Vokabel-Speicher")}
+        ${kachel("grammar-stats-btn", "🧠", "Grammatik-Skills")}
+        ${kachel("custom-vocab-btn", "➕", "Eigene Vokabeln", !state.cloudId)}
+        ${kachel("shop-btn", "🛒", "Shop", g)}
+        ${kachel("inventar-btn", "🎒", "Inventar (" + anzahlImInventar() + ")")}
+        ${kachel("leaderboard-btn", "🏆", "Rangliste", g)}
       </div>
     </div>
 `;
@@ -9414,92 +9492,219 @@ function anzahlImInventar(){
   return z;
 }
 
-function renderStart(){
-  const cats = categories();
+/* --- Fortschritt, der ohne Scrollen zu sehen ist ---------------------
+   Ein Kind nimmt eigenen Fortschritt fast nie von selbst wahr. Der alte
+   Bildschirm zeigte Auswahl; dieser zeigt Koennen.                    */
+const TAGESZIEL = 20;          // Antworten, die einen Tag "voll" machen
 
-  app.innerHTML = `
-    <div style="position:relative;">
-      ${renderHeader("", !!(state.cloudId || state.guest), true)}
-      <button type="button" class="info-btn" id="info-start-btn" title="Was ist LingoCrafter?" aria-label="Was ist LingoCrafter?">i</button>
-    </div>
-    ${lingoraStartHtml()}
+function tagesSerie(){
+  const log = state.activityLog || {};
+  const tag = new Date();
+  /* Heute zaehlt nur mit, wenn schon etwas geschafft ist. Sonst stuende
+     morgens um acht eine 0, obwohl gestern geuebt wurde - und genau das
+     nimmt einem Kind die Lust, die Serie ueberhaupt zu halten. */
+  if(!log[dateKey(tag)]) tag.setDate(tag.getDate() - 1);
+  let z = 0;
+  while(log[dateKey(tag)] && z < 400){ z++; tag.setDate(tag.getDate() - 1); }
+  return z;
+}
 
-    ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""} ${state.guest ? `<div class="guest-bar"><span class="guest-txt">&#128064; <strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">&#127381; Konto anlegen</button></div>` : ""}
+function heuteGeschafft(){
+  const e = (state.activityLog || {})[heuteKey()] || {};
+  return { gesamt: (e.v||0) + (e.g||0), richtig: (e.vc||0) + (e.gc||0) };
+}
 
-    <div class="panel">
-      <div class="row" style="align-items:center;">
-        <span class="avatar-swatch" style="width:46px;max-width:46px;flex:0 0 auto;${avatarStyle(avatarById(state.avatarId))}"></span>
-        <div style="flex:1;padding:0 10px;min-width:0;">
-          <p style="font-weight:800;font-size:17px;margin:0;color:#1e5c28;overflow-wrap:anywhere;">${state.guest ? "Gast" : escapeHtml(state.playerName)}</p>
-          <p class="muted" style="margin:1px 0 0;font-size:13px;">${state.guest ? "Testmodus &middot; nichts wird gespeichert" : "Angemeldet &middot; Fortschritt wird gesichert"}</p>
-        </div>
-        <span class="coin-chip">🪙 ${state.coins}</span>
+function tageBisArbeit(){
+  try{
+    const p = lingoraPlan();
+    return p ? radarTageBis(p) : 0;
+  }catch(e){ return 0; }
+}
+
+function fortschrittZeileHtml(){
+  if(!(state.cloudId || state.guest)) return "";
+  const heute  = heuteGeschafft();
+  const serie  = tagesSerie();
+  const tage   = tageBisArbeit();
+  const anteil = Math.min(100, Math.round(heute.gesamt / TAGESZIEL * 100));
+  const voll   = heute.gesamt >= TAGESZIEL;
+
+  return `
+    <div class="fort-zeile">
+      <div class="fz-muenzen">
+        <span class="fz-m-ic">🪙</span>
+        <span class="fz-m-zahl">${state.coins}</span>
+        <span class="fz-m-u">Münzen</span>
       </div>
-      ${state.guest ? `<button class="btn gold small" id="signup-btn" style="margin-top:10px;width:auto;margin-right:8px;">🆕 Konto anlegen</button>` : ``}<button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
-        ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
+      <div class="fz-rest">
+        <div class="fz-kachel">
+          <span class="fz-k-ic">${serie > 0 ? "🔥" : "💤"}</span>
+          <span class="fz-k-t">${serie}</span>
+          <span class="fz-k-u">${serie === 1 ? "Tag" : "Tage"} am Stück</span>
+        </div>
+        <div class="fz-kachel ${voll ? "voll" : ""}">
+          <span class="fz-k-ic">${voll ? "🏆" : "✅"}</span>
+          <span class="fz-k-t">${heute.gesamt}<small>/${TAGESZIEL}</small></span>
+          <span class="fz-k-u">heute geschafft</span>
+          <span class="fz-balken"><i style="width:${anteil}%;"></i></span>
+        </div>
+        ${tage > 0 ? `
+        <div class="fz-kachel">
+          <span class="fz-k-ic">📅</span>
+          <span class="fz-k-t">${tage}</span>
+          <span class="fz-k-u">${tage === 1 ? "Tag" : "Tage"} bis zur Arbeit</span>
+        </div>` : ""}
+      </div>
+    </div>`;
+}
+
+/* --- Die drei Wege ---------------------------------------------------
+   Vorher standen Fach-Auswahl, Wortschatz-Auswahl, Richtung, Spielart und
+   der Startknopf alle auf demselben Bildschirm. Jetzt fuehrt jede Kachel
+   auf einen eigenen Bildschirm - eingestellt wird dort, nicht hier.   */
+function hauptwahlHtml(){
+  let faellig = 0;
+  try{ faellig = lernUeberblick().faellig || 0; }catch(e){}
+  return `
+    <div class="haupt-gitter">
+      <button type="button" class="haupt-karte hk-vokabeln" id="hw-vokabeln">
+        ${faellig > 0 ? `<span class="hk-punkt">${faellig}</span>` : ""}
+        <span class="hk-ic">📖</span>
+        <span class="hk-t">Vokabeln</span>
+        <span class="hk-u">${faellig > 0
+          ? faellig + (faellig === 1 ? " Wort ist" : " Wörter sind") + " heute dran"
+          : "Wörter lernen und abfragen"}</span>
       </button>
+      <button type="button" class="haupt-karte hk-grammatik" id="hw-grammatik">
+        <span class="hk-ic">🧠</span>
+        <span class="hk-t">Grammatik</span>
+        <span class="hk-u">${GRAMMAR_TOPICS.length} Themen, Unit für Unit</span>
+      </button>
+      <button type="button" class="haupt-karte hk-spiele breit" id="hw-spiele">
+        <span class="hk-ic">🎮</span>
+        <span class="hk-t">Spiele</span>
+        <span class="hk-u">Challenge, Flutungsraum und Aussprache</span>
+      </button>
+    </div>`;
+}
 
-      ${state.showLoginForm ? `
-        <div class="setting-label" style="margin-top:14px;">Dein Avatar</div>
-        <div class="avatar-grid">
-          ${portraitDa() ? `
-            <div class="avatar-option ${state.avatarId===PORTRAIT_ID?'selected':''}" data-avatar="${PORTRAIT_ID}">
-              <span class="avatar-swatch" style="${avatarStyle(avatarById(PORTRAIT_ID))}"></span>
-              <span class="aname">Dein Gesicht</span>
-            </div>
-          ` : `
-            <div class="avatar-option leer" id="portrait-neu">
-              <span class="avatar-swatch platzhalter">🙂</span>
-              <span class="aname">Gesicht bauen</span>
-            </div>
-          `}
-          ${eigeneFigurDa() ? `
-            <div class="avatar-option ${state.avatarId===CUSTOM_AVATAR_ID?'selected':''}" data-avatar="${CUSTOM_AVATAR_ID}">
-              <span class="avatar-swatch" style="${avatarStyle(avatarById(CUSTOM_AVATAR_ID))}"></span>
-              <span class="aname">Deine Figur</span>
-            </div>
-          ` : `
-            <div class="avatar-option leer" id="avatar-neu">
-              <span class="avatar-swatch platzhalter">🧱</span>
-              <span class="aname">Selbst bauen</span>
-            </div>
-          `}
-          ${AVATARS.map(av=>`
-            <div class="avatar-option ${state.avatarId===av.id?'selected':''}" data-avatar="${av.id}">
-              <span class="avatar-swatch" style="${avatarStyle(av)}"></span>
-              <span class="aname">${av.name}</span>
-            </div>
-          `).join("")}
-        </div>
-        <button class="btn secondary small" id="avatar-editor-btn" style="margin-top:10px;">
-          🧱 ${state.customSkinFront ? "Deine Figur weiterbauen" : "Eigene Figur bauen"}
-        </button>
-        <button class="btn secondary small" id="portrait-editor-btn" style="margin-top:8px;">
-          🙂 ${portraitDa() ? "Dein Gesicht ändern" : "Ein Gesicht bauen"}
-        </button>
-        <!-- Abmelden steht jetzt oben, direkt neben "Avatar aendern" -->
-      ` : ""}
-    </div>
+/* --- Eine Tuer fuer die Erwachsenen ---------------------------------
+   Elternbereich, Abmelden, Spenden, Impressum und Datenschutz machten
+   rund 500 der 2285 px aus. Wer als Kind bis unten scrollte, landete in
+   der Verwaltung. Das sagt: hier bist du nicht zu Hause.              */
+function erwachsenenTuerHtml(){
+  return `
+    <details class="fuer-eltern">
+      <summary class="fe-knopf">👨‍👩‍👧 Für Eltern</summary>
+      <div class="fe-inhalt">
+        <button class="btn parent-open-btn" id="parents-btn" ${state.guest ? "disabled" : ""}>👨‍👩‍👧 ELTERNBEREICH</button>
+        ${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Im Testmodus nicht verfügbar.</p>` : ""}
+        ${state.guest ? "" : `<div style="height:10px;"></div>
+        <button class="btn danger einzeilig" id="logout-btn">🚪 ABMELDEN</button>`}
 
+        <a href="https://www.herzensprojekt.de" target="_blank" rel="noopener" class="school-lab-link">
+          <span class="school-lab-caption">Designed with ❤️ by</span>
+          <img src="${HP_LOGO_DATA_URI}" alt="Herzensprojekt Manufaktur" class="hp-logo-img">
+        </a>
+
+        <p class="muted center-text" style="margin-top:10px;">Du kannst uns unterstützen, wenn du möchtest:</p>
+        <button class="btn secondary" id="support-btn" style="margin-top:6px;"><span class="paypal-badge-inline">Pay<span style="color:#c9e2ff;">Pal</span></span> &nbsp;Unterstützen</button>
+
+        <p class="muted center-text" style="margin:12px auto 0;font-size:11px;max-width:34em;opacity:.75;">
+          Gesichter: <a href="https://www.figma.com/community/file/1184595184137881796" target="_blank" rel="noopener">Adventurer</a>
+          von Lisa Wischofsky, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
+          über <a href="https://www.dicebear.com/" target="_blank" rel="noopener">DiceBear</a>.
+        </p>
+        <footer class="note">Herzensprojekt GmbH &middot; Version ${APP_VERSION}<br>
+          <button type="button" class="linkbtn" id="info-start-link">Was ist LingoCrafter?</button>
+          <span style="opacity:0.5;">&middot;</span>
+          <button type="button" class="linkbtn" id="impressum-start">Impressum</button>
+          <span style="opacity:0.5;">&middot;</span>
+          <button type="button" class="linkbtn" id="datenschutz-start">Datenschutz</button><br>
+          <span style="font-size:12px;opacity:0.85;">Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt oder unterstützt.</span></footer>
+      </div>
+    </details>`;
+}
+
+/* --- Die drei Uebungsbildschirme -------------------------------------
+   Sie benutzen dieselbe Verdrahtung wie die Startseite. Das geht, weil
+   jeder Zuhoerer dort ueber querySelectorAll oder ein if(el) angemeldet
+   wird: Was es auf einem Bildschirm nicht gibt, bekommt einfach keinen
+   Zuhoerer.                                                           */
+function uebenKopfHtml(titel, unter){
+  return `
+    ${renderHeader(titel, true)}
+    <p class="ueben-unter">${unter}</p>`;
+}
+
+function renderUebenVokabeln(){
+  state.mainMode = "vocab";
+  app.innerHTML = `
+    ${uebenKopfHtml("Vokabeln üben", "Erst aussuchen, dann losspielen.")}
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:10px;">WAS MÖCHTEST DU ÜBEN?</h3>
-      <div class="main-mode-grid">
-        <button type="button" class="mode-btn main-mode-card ${state.mainMode==='vocab'?'active':''}" data-mainmode="vocab" aria-pressed="${state.mainMode==='vocab'}">
-          <span class="mm-check">✓</span>
-          <span class="mm-icon">📖</span>
-          <span class="mm-title">Vokabeln</span>
-          <span class="mm-sub">Vokabeln lernen &amp; abfragen</span>
+      <h3 style="font-size:16px;margin:12px 0 10px;">WORTSCHATZ</h3>
+      ${paketAuswahlHtml()}
+
+      <div class="setting-label">Richtung</div>
+      <div class="seg-row">
+        <button type="button" class="mode-btn seg ${state.direction==='de-en'?'active':''}" data-direction="de-en" aria-pressed="${state.direction==='de-en'}">
+          Deutsch &rarr; Englisch
         </button>
-        <button type="button" class="mode-btn main-mode-card ${state.mainMode==='grammar'?'active':''}" data-mainmode="grammar" aria-pressed="${state.mainMode==='grammar'}">
-          <span class="mm-check">✓</span>
-          <span class="mm-icon">🧠</span>
-          <span class="mm-title">Grammatik</span>
-          <span class="mm-sub">Regeln üben &ndash; ruhig oder als Spiel</span>
+        <button type="button" class="mode-btn seg ${state.direction==='en-de'?'active':''}" data-direction="en-de" aria-pressed="${state.direction==='en-de'}">
+          Englisch &rarr; Deutsch
         </button>
       </div>
-    </div>
 
-    ${state.mainMode === 'grammar' ? `
+      <div class="setting-label">Spiel</div>
+      <div class="game-grid">
+        <button type="button" class="mode-btn game-tile ${state.mode==='faellig'?'active':''}" data-mode="faellig" aria-pressed="${state.mode==='faellig'}">
+          <span class="gm-ic">${lernUeberblick().faellig > 0 ? "🔁" : "🌟"}</span>
+          <span class="gm-txt">
+            <span class="gm-name">Fällig heute${lernUeberblick().faellig > 0 ? ` <span class="gm-zahl">${lernUeberblick().faellig}</span>` : ""}</span>
+            <small>${lernUeberblick().faellig > 0
+              ? "Genau die Wörter, die jetzt dran sind"
+              : "Alles wiederholt &ndash; hier ist heute nichts offen"}</small>
+          </span>
+        </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc" aria-pressed="${state.mode==='mc'}">
+          <span class="gm-ic">🎯</span>
+          <span class="gm-txt">
+            <span class="gm-name">Multiple Choice</span>
+            <small>4 Antworten zur Auswahl</small>
+          </span>
+        </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='type'?'active':''}" data-mode="type" aria-pressed="${state.mode==='type'}">
+          <span class="gm-ic">📝</span>
+          <span class="gm-txt">
+            <span class="gm-name">Vokabeltest</span>
+            <small>Selbst schreiben, mit Schulnote</small>
+          </span>
+        </button>
+        <button type="button" class="mode-btn game-tile ${state.mode==='mix'?'active':''}" data-mode="mix" aria-pressed="${state.mode==='mix'}">
+          <span class="gm-ic">🔀</span>
+          <span class="gm-txt">
+            <span class="gm-name">Gemischt</span>
+            <small>Mal Auswahl, mal Eintippen</small>
+          </span>
+        </button>
+      </div>
+      
+    </div>
+    <button class="btn" id="start-btn" style="font-size:19px;padding:18px;">▶ SPIEL STARTEN</button>
+    <p class="muted center-text" style="margin:10px auto 0;padding:10px 14px;background:rgba(255,255,255,0.72);border-radius:14px;font-size:13px;">
+      Für jede richtige Antwort gibt's Münzen. Bei falschen oder leeren Antworten werden 10 abgezogen &ndash;
+      unter 0 geht dein Kontostand nie.</p>
+    <div style="height:12px;"></div>
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+  `;
+  startVerdrahten();
+}
+
+function renderUebenGrammatik(){
+  state.mainMode = "grammar";
+  app.innerHTML = `
+    ${uebenKopfHtml("Grammatik üben", "Tippe ein Thema an &ndash; dann geht es los.")}
+    
     <div class="panel">
       <h3 style="font-size:16px;margin-bottom:6px;">GRAMMATIK-THEMEN</h3>
       <p class="muted" style="margin-bottom:10px;">${GRAMMAR_TOPICS.length} Themen &ndash; sortiert nach Klasse und Unit.</p>
@@ -9582,74 +9787,27 @@ function renderStart(){
       `}
     </div>
 
-    ` : `
+    <div style="height:12px;"></div>
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+  `;
+  startVerdrahten();
+}
+
+function renderUebenSpiele(){
+  state.mainMode = "vocab";
+  /* Die Spiele hier arbeiten alle mit Vokabeln. Steht gerade eine
+     Grammatik-Spielart eingestellt, waere der Startknopf sonst wirkungslos. */
+  if(["challenge","flood","floodhard","aussprache"].indexOf(state.mode) < 0){
+    state.mode = "challenge";
+  }
+  app.innerHTML = `
+    ${uebenKopfHtml("Spiele", "Dieselben Wörter &ndash; nur mit mehr Nervenkitzel.")}
     <div class="panel">
-      <details class="einstell" ${state.einstellOffen ? "open" : ""} id="einstell-block">
-      <summary class="einstell-knopf">
-        <span class="ek-ic" data-mode="${state.mode}">${
-          ({faellig:"🔁", mc:"🎯", type:"📝", mix:"🔀", challenge:"⚔️",
-            flood:"🌊", floodhard:"🌊", aussprache:"🗣️"})[state.mode] || "📖"
-        }</span>
-        <span class="ek-txt">
-          <span class="ek-l">DAS ÜBST DU GERADE</span>
-          <span class="ek-w">${escapeHtml(state.category === "Alle" ? "Alle Vokabeln" : state.category)}
-            &middot; ${({faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
-                         mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
-                         aussprache:"Aussprache"})[state.mode] || "Spiel"}</span>
-          <span class="ek-hinweis">${state.einstellOffen
-            ? "Tipp hier, um wieder zuzuklappen"
-            : "Tipp hier, wenn du etwas anderes üben willst"}</span>
-        </span>
-        <span class="ek-pfeil">👈</span>
-      </summary>
-      <h3 style="font-size:16px;margin:12px 0 10px;">WORTSCHATZ</h3>
-      ${paketAuswahlHtml()}
-
-      <div class="setting-label">Richtung</div>
-      <div class="seg-row">
-        <button type="button" class="mode-btn seg ${state.direction==='de-en'?'active':''}" data-direction="de-en" aria-pressed="${state.direction==='de-en'}">
-          Deutsch &rarr; Englisch
-        </button>
-        <button type="button" class="mode-btn seg ${state.direction==='en-de'?'active':''}" data-direction="en-de" aria-pressed="${state.direction==='en-de'}">
-          Englisch &rarr; Deutsch
-        </button>
-      </div>
-
+      <div class="setting-label">Womit spielst du?</div>
+      <p class="muted" style="margin:0 0 8px;">${escapeHtml(state.category === "Alle" ? "Alle Wörter" : state.category)}
+        &middot; <button type="button" class="linkbtn" id="sp-wortschatz">ändern</button></p>
       <div class="setting-label">Spiel</div>
-      <div class="game-grid">
-        <button type="button" class="mode-btn game-tile ${state.mode==='faellig'?'active':''}" data-mode="faellig" aria-pressed="${state.mode==='faellig'}">
-          <span class="gm-ic">${lernUeberblick().faellig > 0 ? "🔁" : "🌟"}</span>
-          <span class="gm-txt">
-            <span class="gm-name">Fällig heute${lernUeberblick().faellig > 0 ? ` <span class="gm-zahl">${lernUeberblick().faellig}</span>` : ""}</span>
-            <small>${lernUeberblick().faellig > 0
-              ? "Genau die Wörter, die jetzt dran sind"
-              : "Alles wiederholt &ndash; hier ist heute nichts offen"}</small>
-          </span>
-        </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc" aria-pressed="${state.mode==='mc'}">
-          <span class="gm-ic">🎯</span>
-          <span class="gm-txt">
-            <span class="gm-name">Multiple Choice</span>
-            <small>4 Antworten zur Auswahl</small>
-          </span>
-        </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='type'?'active':''}" data-mode="type" aria-pressed="${state.mode==='type'}">
-          <span class="gm-ic">📝</span>
-          <span class="gm-txt">
-            <span class="gm-name">Vokabeltest</span>
-            <small>Selbst schreiben, mit Schulnote</small>
-          </span>
-        </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='mix'?'active':''}" data-mode="mix" aria-pressed="${state.mode==='mix'}">
-          <span class="gm-ic">🔀</span>
-          <span class="gm-txt">
-            <span class="gm-name">Gemischt</span>
-            <small>Mal Auswahl, mal Eintippen</small>
-          </span>
-        </button>
-      </div>
-      <details class="mehr-spiele" ${["challenge","flood","floodhard","aussprache"].indexOf(state.mode) >= 0 ? "open" : ""}>
-      <summary><span class="ms-t">🎮 Mehr Spiele</span><span class="ms-u">Challenge, Flutungsraum, Aussprache</span></summary>
+      
       <div class="game-grid">
         <button type="button" class="mode-btn game-tile ${state.mode==='challenge'?'active':''}" data-mode="challenge" aria-pressed="${state.mode==='challenge'}">
           <span class="gm-ic">⚔️</span>
@@ -9673,52 +9831,97 @@ function renderStart(){
           </span>
         </button>
       </div>
-      </details>
-      </details>
-    </div>
-    `}
+      
 
-    ${state.mainMode === 'grammar'
-      ? `<p class="muted center-text" style="margin:4px auto 0;padding:12px 16px;background:rgba(255,255,255,0.7);border-radius:14px;font-size:13.5px;">
-           👆 Tippe ein Thema an &ndash; danach wählst du, wie du üben möchtest.
-         </p>`
-      : `<button class="btn" id="start-btn" style="font-size:19px;padding:18px;">▶ SPIEL STARTEN</button>`}
-    <p class="muted center-text" style="margin:10px auto 0;padding:12px 16px;background:rgba(255,255,255,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:14px;">${state.mainMode==='grammar' ? 'Auch bei Grammatik gibt\'s für jede richtige Antwort Münzen &ndash; genau wie beim Vokabeln lernen.' : 'Für jede richtige Antwort gibt\'s Münzen. Bei falschen oder leeren Antworten werden 10 Münzen abgezogen (dein Kontostand geht dabei nie unter 0). Am Ende jeder Übung wartet dein Zertifikat &ndash; die verdienten Münzen kannst du danach im Shop eintauschen.'}</p>
+    </div>
+    <button class="btn" id="start-btn" style="font-size:19px;padding:18px;">▶ SPIEL STARTEN</button>
+    <div style="height:12px;"></div>
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+  `;
+  startVerdrahten();
+}
+
+function renderStart(){
+  app.innerHTML = `
+    <div style="position:relative;">
+      ${renderHeader("", !!(state.cloudId || state.guest), true)}
+      <button type="button" class="info-btn" id="info-start-btn" title="Was ist LingoCrafter?" aria-label="Was ist LingoCrafter?">i</button>
+    </div>
+
+    ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""}${state.guest ? `<div class="guest-bar"><span class="guest-txt">&#128064; <strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">&#127381; Konto anlegen</button></div>` : ""}
+
+    ${lingoraStartHtml()}
+
+    ${fortschrittZeileHtml()}
+
+    ${hauptwahlHtml()}
 
     ${werkzeugGitterHtml()}
 
-    <!-- Fuer Erwachsene, ganz unten und ruhig: Elternbereich, Abmelden,
-         Unterstuetzen. Nichts davon geht ein Kind etwas an. -->
-    <div class="erwachsene">
-      <button class="btn parent-open-btn" id="parents-btn" ${state.guest ? "disabled" : ""}>👨‍👩‍👧 ELTERNBEREICH</button>
-      ${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Im Testmodus nicht verfügbar.</p>` : ""}
-      ${state.guest ? "" : `<div style="height:10px;"></div>
-      <button class="btn danger einzeilig" id="logout-btn">🚪 ABMELDEN</button>`}
+    <div class="panel">
+      <div class="row" style="align-items:center;">
+        <span class="avatar-swatch" style="width:46px;max-width:46px;flex:0 0 auto;${avatarStyle(avatarById(state.avatarId))}"></span>
+        <div style="flex:1;padding:0 10px;min-width:0;">
+          <p style="font-weight:800;font-size:17px;margin:0;color:#1e5c28;overflow-wrap:anywhere;">${state.guest ? "Gast" : escapeHtml(state.playerName)}</p>
+          <p class="muted" style="margin:1px 0 0;font-size:13px;">${state.guest ? "Testmodus &middot; nichts wird gespeichert" : "Angemeldet &middot; Fortschritt wird gesichert"}</p>
+        </div>
+      </div>
+      ${state.guest ? `<button class="btn gold small" id="signup-btn" style="margin-top:10px;width:auto;margin-right:8px;">🆕 Konto anlegen</button>` : ``}<button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
+        ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
+      </button>
+
+      ${state.showLoginForm ? `
+        <div class="setting-label" style="margin-top:14px;">Dein Avatar</div>
+        <div class="avatar-grid">
+          ${portraitDa() ? `
+            <div class="avatar-option ${state.avatarId===PORTRAIT_ID?'selected':''}" data-avatar="${PORTRAIT_ID}">
+              <span class="avatar-swatch" style="${avatarStyle(avatarById(PORTRAIT_ID))}"></span>
+              <span class="aname">Dein Gesicht</span>
+            </div>
+          ` : `
+            <div class="avatar-option leer" id="portrait-neu">
+              <span class="avatar-swatch platzhalter">🙂</span>
+              <span class="aname">Gesicht bauen</span>
+            </div>
+          `}
+          ${eigeneFigurDa() ? `
+            <div class="avatar-option ${state.avatarId===CUSTOM_AVATAR_ID?'selected':''}" data-avatar="${CUSTOM_AVATAR_ID}">
+              <span class="avatar-swatch" style="${avatarStyle(avatarById(CUSTOM_AVATAR_ID))}"></span>
+              <span class="aname">Deine Figur</span>
+            </div>
+          ` : `
+            <div class="avatar-option leer" id="avatar-neu">
+              <span class="avatar-swatch platzhalter">🧱</span>
+              <span class="aname">Selbst bauen</span>
+            </div>
+          `}
+          ${AVATARS.map(av=>`
+            <div class="avatar-option ${state.avatarId===av.id?'selected':''}" data-avatar="${av.id}">
+              <span class="avatar-swatch" style="${avatarStyle(av)}"></span>
+              <span class="aname">${av.name}</span>
+            </div>
+          `).join("")}
+        </div>
+        <button class="btn secondary small" id="avatar-editor-btn" style="margin-top:10px;">
+          🧱 ${state.customSkinFront ? "Deine Figur weiterbauen" : "Eigene Figur bauen"}
+        </button>
+        <button class="btn secondary small" id="portrait-editor-btn" style="margin-top:8px;">
+          🙂 ${portraitDa() ? "Dein Gesicht ändern" : "Ein Gesicht bauen"}
+        </button>
+        <!-- Abmelden steht jetzt oben, direkt neben "Avatar aendern" -->
+      ` : ""}
     </div>
 
-    <a href="https://www.herzensprojekt.de" target="_blank" rel="noopener" class="school-lab-link">
-      <span class="school-lab-caption">Designed with ❤️ by</span>
-      <img src="${HP_LOGO_DATA_URI}" alt="Herzensprojekt Manufaktur" class="hp-logo-img">
-    </a>
-
-    <div class="panel center-text erwachsene" style="margin-top:14px;">
-      <p class="muted center-text" style="margin-top:4px;">Du kannst uns aber supporten, wenn du möchtest:</p>
-      <button class="btn secondary" id="support-btn" style="margin-top:6px;"><span class="paypal-badge-inline">Pay<span style="color:#c9e2ff;">Pal</span></span> &nbsp;Unterstützen</button>
-    </div>
-
-    <p class="muted center-text" style="margin:10px auto 0;font-size:11px;max-width:34em;opacity:.75;">
-      Gesichter: <a href="https://www.figma.com/community/file/1184595184137881796" target="_blank" rel="noopener">Adventurer</a>
-      von Lisa Wischofsky, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
-      über <a href="https://www.dicebear.com/" target="_blank" rel="noopener">DiceBear</a>.
-    </p>
-    <footer class="note">Herzensprojekt GmbH &middot; Version ${APP_VERSION}<br>
-      <button type="button" class="linkbtn" id="info-start-link">Was ist LingoCrafter?</button>
-      <span style="opacity:0.5;">&middot;</span>
-      <button type="button" class="linkbtn" id="impressum-start">Impressum</button>
-      <span style="opacity:0.5;">&middot;</span>
-      <button type="button" class="linkbtn" id="datenschutz-start">Datenschutz</button><br>
-      <span style="font-size:12px;opacity:0.85;">Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt oder unterstützt.</span></footer>
+    ${erwachsenenTuerHtml()}
   `;
+
+  startVerdrahten();
+}
+
+/* Eine Verdrahtung fuer die Startseite UND die drei Uebungsbildschirme.
+   Jeder Zuhoerer haengt sich ueber querySelectorAll oder ein if(el) an -
+   was auf einem Bildschirm fehlt, bekommt einfach keinen.             */
+function startVerdrahten(){
 
   document.querySelectorAll('.avatar-option').forEach(el=>{
     el.addEventListener('click', ()=>{
@@ -9836,6 +10039,13 @@ function renderStart(){
       render();
     });
   }
+  const zu = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  zu('hw-vokabeln',  ()=>{ state.screen = "uebenvokabeln";  render(); });
+  zu('hw-grammatik', ()=>{ state.screen = "uebengrammatik"; render(); });
+  zu('hw-spiele',    ()=>{ state.screen = "uebenspiele";    render(); });
+  zu('sp-wortschatz',()=>{ state.screen = "uebenvokabeln";  render(); });
+  // Den Zurueck-Knopf gibt es nur auf den drei Uebungsbildschirmen.
+  zu('back-btn',     ()=>{ state.screen = "start";          render(); });
   const einstell = document.getElementById('einstell-block');
   if(einstell){
     einstell.addEventListener('toggle', ()=>{
