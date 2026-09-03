@@ -2250,6 +2250,71 @@ summary.mehr-knopf::after{ content:none; }
 .pk-n{ flex:1; min-width:0; font-weight:800; font-size:13.5px; color:#1e4515;
        overflow:hidden; text-overflow:ellipsis; }
 .pk-z{ flex:0 0 auto; font-size:11.5px; font-weight:700; color:#8a8073; }
+
+/* --- Klassenschild ---------------------------------------------------
+   Eine Auswahl mit genau einer Moeglichkeit ist keine Auswahl, sondern
+   ein Knopf, der nichts tut. Solange es nur Klasse 5 gibt, steht hier
+   deshalb ein Schild - es sagt dasselbe, ohne etwas vorzutaeuschen. */
+.kl-schild{
+  display:inline-block; padding:5px 13px; margin:0 0 10px;
+  border-radius:999px; background:#eef4ea; border:2px solid #dbe8d8;
+  font-family:var(--font); font-weight:800; font-size:12.5px;
+  letter-spacing:.02em; color:#3e6b42;
+}
+
+/* --- Die Kacheln unten ----------------------------------------------- */
+.werk-gitter{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+.werk-karte{
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  padding:14px 9px 12px; min-height:0;
+  border:none; border-radius:16px; cursor:pointer;
+  font-family:var(--font); color:#fff;
+  background:linear-gradient(160deg,#8290a5,#4c586b);
+  box-shadow:0 3px 12px rgba(0,0,0,0.20);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.werk-karte:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.26); }
+.werk-karte:disabled{ opacity:.45; cursor:default; box-shadow:none; }
+.werk-karte.wissen{ background:linear-gradient(160deg,#5cb46c,#22602e); }
+.werk-karte.ziel{ background:linear-gradient(160deg,#5f95cc,#2b4d78); }
+/* Eine ungerade Kachel haengt sonst halbbreit und allein in der letzten
+   Zeile. Sie darf die ganze Breite nehmen. */
+.werk-karte.breit{ grid-column:1 / -1; }
+.werk-karte.muenzen{ background:linear-gradient(160deg,#e8c25c,#a2740f); color:#3a2a00; }
+.wk-ic{
+  font-size:clamp(24px, 7vw, 32px); line-height:1; display:block; margin-bottom:5px;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,0.35));
+}
+.wk-t{
+  font-size:clamp(12.5px, 3.8vw, 15px); font-weight:800; display:block;
+  line-height:1.2; hyphens:auto; overflow-wrap:anywhere;
+}
+.wk-s{
+  font-size:clamp(10.5px, 3vw, 12px); font-weight:400; opacity:.9;
+  display:block; margin-top:3px; line-height:1.3; hyphens:auto;
+}
+
+/* --- Der Korb beim Listenbau ----------------------------------------- */
+.ev-korb{
+  display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+  margin-top:12px; padding:10px 12px;
+  background:#f7fbf7; border:2px solid #dbe8d8; border-radius:14px;
+}
+.ev-korb-z{ font-weight:800; font-size:13.5px; color:#1e4515; flex:1; min-width:100px; }
+
+/* --- Die gespeicherten Listen ---------------------------------------- */
+.ev-listen{ display:flex; flex-wrap:wrap; gap:8px; }
+.ev-liste{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 9px 7px 12px; font-size:13px;
+  background:#fffdf4; border:2px solid #ecdfae; border-radius:12px;
+}
+.ev-liste b{ color:#1e4515; font-size:13.5px; }
+.ev-liste .muted{ font-size:12px; }
+.ev-liste button{
+  border:none; background:#ece7de; color:#7a6f60; border-radius:8px;
+  width:24px; height:24px; min-height:0; padding:0; cursor:pointer; font-size:12px;
+}
 </style>
 </head>
 <body>
@@ -2547,7 +2612,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "53.1 – Wortspeicher";
+const APP_VERSION = "54.1 – Ordnungssinn";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4885,11 +4950,6 @@ function lingoraNachrichtenFuer(screen){
               { text: gut ? "Jede Runde macht dich ein Stück sicherer, " + n + "."
                           : "Nicht ärgern. Fehler zeigen dir nur, wo du noch hinschauen musst.", wichtig: true }];
     }
-    case "gradecalendar":
-      return ["Deine Noten, " + n + ".",
-              "Kurz was Wichtiges dazu:",
-              { text: "Eine Note ist eine Rückmeldung, kein Urteil über dich. Schau, was du daraus mitnimmst.", wichtig: true }];
-
     case "lingoraplan":
       return offen ? ["Dein Plan, " + n + ".",
                       { text: "Fang oben an. Die Reihenfolge ist nicht zufällig.", wichtig: true }]
@@ -6386,7 +6446,7 @@ const state = {
   inventory: {},      // persistentes, gekauftes Inventar {itemId: anzahl}
   lifetimeBestStreak: 0,
   customVocab: [],    // eigene, selbst hinzugefügte Vokabeln (nur wenn angemeldet dauerhaft in der Cloud)
-  gradeEntries: [],   // echte Schulnoten, die im Notenkalender eingetragen wurden {date, grade, label}
+  gradeEntries: [],   // erspielte Noten aus Vokabeltest und Grammatikrunde {date, grade, label}
   redeemLog: [],      // eingelöste Belohnungen {id, itemId, name, icon, date, status}
   parentPinHash: null, // PBKDF2-Hash des Eltern-PINs (für die Bestätigung eingelöster Belohnungen)
   parentPinSalt: null, // zugehöriges Zufalls-Salt
@@ -6416,7 +6476,8 @@ const state = {
   //   1..5 = diese Unit ist offen
   spitzname: "",           // Name in der oeffentlichen Rangliste; leer = nicht dabei
   klasse: 5,               // welche Klassenstufe ist gewaehlt
-  paketSuche: "",          // was gerade im Suchfeld steht
+  paketSuche: "",          // was gerade im Suchfeld der Paketauswahl steht
+  evSuche: "",             // was im Suchfeld bei "Eigene Vokabeln" steht
   listeBau: [],            // Woerter, die man gerade zu einer Liste sammelt
   listen: [],              // eigene Wortlisten [{name, woerter:[schluessel]}]
   // Das Portrait wird als AUSWAHL gespeichert, nicht als Bild:
@@ -8419,7 +8480,7 @@ function render(){
   if(state.screen==="lernweg") return renderLernweg();
   if(state.screen==="scan") return renderScan();
   if(state.screen==="challengeend") return renderChallengeRoundEnd();
-  if(state.screen==="gradecalendar") return renderGradeCalendar();
+  if(state.screen==="inventar") return renderInventar();
   if(state.screen==="grammarintro") return renderGrammarIntro();
   if(state.screen==="grammarquiz") return renderGrammarQuiz();
   if(state.screen==="grammarcertificate") return renderGrammarCertificate();
@@ -9298,6 +9359,61 @@ function grammatikOffeneUnit(){
   return erste ? erste.nr : null;
 }
 
+/* --- Alles Uebrige, in Gruppen ---------------------------------------
+   Bisher: eine Knopfliste im Vokabelmodus, ein zweiter Knopf im
+   Grammatikmodus und ein Aufklappblock "MEHR" mit vier weiteren Dingen.
+   Wer den Klassenarbeits-Radar suchte, musste erst den richtigen Modus
+   erwischen. Jetzt liegt alles an einer Stelle, im selben Kachelbild wie
+   die beiden grossen Knoepfe oben.                                     */
+function werkzeugGitterHtml(){
+  const g = !!state.guest;
+  const kachel = (id, klasse, ic, titel, unter, aus)=>`
+    <button type="button" class="werk-karte ${klasse}" id="${id}"${aus ? " disabled" : ""}>
+      <span class="wk-ic">${ic}</span>
+      <span class="wk-t">${titel}</span>
+      <span class="wk-s">${unter}</span>
+    </button>`;
+
+  return `
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:2px;">DEINE WÖRTER &amp; REGELN</h3>
+      <div class="werk-gitter">
+        ${kachel("vokabel-stats-btn", "wissen", "📦", "Mein Vokabel-Speicher", "Welche Wörter sitzen schon?")}
+        ${kachel("grammar-stats-btn", "wissen", "🧠", "Meine Grammatik-Skills", "Welche Regeln kannst du?")}
+        ${kachel("custom-vocab-btn", "wissen breit", "➕", "Eigene Vokabeln",
+                 state.cloudId ? "Suchen, eintippen, abfotografieren &ndash; und als Liste speichern"
+                               : "Melde dich an, um eigene Wörter zu speichern", !state.cloudId)}
+      </div>
+
+      <h3 style="font-size:16px;margin:18px 0 2px;">DEIN ZIEL</h3>
+      <div class="werk-gitter">
+        ${kachel("radar-btn", "ziel", "🎯", "Klassenarbeits-Radar", "Wie stehst du für die nächste Arbeit?")}
+        ${kachel("leaderboard-btn", "ziel", "🏆", "Rangliste",
+                 g ? "Gibt es mit Konto" : "Wer sammelt am meisten?", g)}
+      </div>
+
+      <h3 style="font-size:16px;margin:18px 0 2px;">MÜNZEN &amp; BELOHNUNGEN</h3>
+      <div class="werk-gitter">
+        ${kachel("shop-btn", "muenzen", "🛒", "Shop", g ? "Gibt es mit Konto" : "Münzen eintauschen", g)}
+        ${kachel("inventar-btn", "muenzen", "🎒", "Dein Inventar",
+                 anzahlImInventar() + " Sachen")}
+      </div>
+    </div>
+`;
+}
+
+/* Wie viele Dinge liegen im Inventar? Die Karte soll eine Zahl zeigen
+   duerfen, ohne dass dafuer das ganze Inventar gezeichnet wird. */
+function anzahlImInventar(){
+  const inv = state.inventory || {};
+  let z = 0;
+  Object.keys(inv).forEach(k=>{
+    const v = inv[k];
+    z += (typeof v === "number") ? v : (v ? 1 : 0);
+  });
+  return z;
+}
+
 function renderStart(){
   const cats = categories();
 
@@ -9386,8 +9502,8 @@ function renderStart(){
     ${state.mainMode === 'grammar' ? `
     <div class="panel">
       <h3 style="font-size:16px;margin-bottom:6px;">GRAMMATIK-THEMEN</h3>
-      <p class="muted" style="margin-bottom:12px;">${GRAMMAR_TOPICS.length} Themen aus dem ganzen Schuljahr &ndash; sortiert nach Units.</p>
-      <button class="btn skill-open-btn" id="grammar-stats-btn">📊 MEINE GRAMMATIK-SKILLS</button>
+      <p class="muted" style="margin-bottom:10px;">${GRAMMAR_TOPICS.length} Themen &ndash; sortiert nach Klasse und Unit.</p>
+      ${klassenAuswahlHtml(grammatikKlassen())}
       ${GRAMMAR_TOPICS.length <= 6 ? `
       <p class="muted" style="margin:0 0 10px;">👇 Tippe ein Thema an &ndash; dann geht es los.</p>
       <div class="mode-grid">
@@ -9427,7 +9543,7 @@ function renderStart(){
         </div>`;
       })()}
       <div class="unit-tipp">👇 <span>Alle Themen nach Units &ndash; tippe eine an.</span></div>
-      ${GRAMMAR_UNITS.map(u=>{
+      ${grammatikUnitsDerKlasse().map(u=>{
         const themen = grammarTopicsOfUnit(u.nr);
         if(themen.length === 0) return "";
         const offen = grammatikOffeneUnit() === u.nr;
@@ -9566,33 +9682,10 @@ function renderStart(){
       ? `<p class="muted center-text" style="margin:4px auto 0;padding:12px 16px;background:rgba(255,255,255,0.7);border-radius:14px;font-size:13.5px;">
            👆 Tippe ein Thema an &ndash; danach wählst du, wie du üben möchtest.
          </p>`
-      : `<button class="btn" id="start-btn" style="font-size:19px;padding:18px;">▶ SPIEL STARTEN</button>
-         <div class="werkzeug-leiste">
-           <button class="btn skill-open-btn" id="radar-btn">🎯 KLASSENARBEITS-RADAR</button>
-           <button class="btn skill-open-btn" id="vokabel-stats-btn">📦 MEIN VOKABEL-SPEICHER</button>
-           <button class="btn secondary small" id="custom-vocab-btn" ${state.cloudId ? "" : "disabled"}>➕ Eigene Vokabeln hinzufügen</button>
-           ${!state.cloudId ? `<p class="muted" style="margin:2px 0 0;">Melde dich zuerst an, um eigene Vokabeln zu speichern.</p>` : ""}
-         </div>`}
+      : `<button class="btn" id="start-btn" style="font-size:19px;padding:18px;">▶ SPIEL STARTEN</button>`}
     <p class="muted center-text" style="margin:10px auto 0;padding:12px 16px;background:rgba(255,255,255,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:14px;">${state.mainMode==='grammar' ? 'Auch bei Grammatik gibt\'s für jede richtige Antwort Münzen &ndash; genau wie beim Vokabeln lernen.' : 'Für jede richtige Antwort gibt\'s Münzen. Bei falschen oder leeren Antworten werden 10 Münzen abgezogen (dein Kontostand geht dabei nie unter 0). Am Ende jeder Übung wartet dein Zertifikat &ndash; die verdienten Münzen kannst du danach im Shop eintauschen.'}</p>
 
-    <div style="height:14px;"></div>
-    <details class="mehr-block">
-    <summary class="mehr-knopf">
-      <span class="mehr-zeile">📦 MEHR</span>
-      <span class="mehr-unter">Shop &middot; Notenkalender &middot; Rangliste &middot; Inventar</span>
-    </summary>
-    <button class="btn gold" id="shop-btn" ${state.guest ? "disabled" : ""}>🛒 SHOP ÖFFNEN</button>${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Shop, Rangliste und Notenkalender gibt es mit Konto.</p>` : ""}
-    <div style="height:10px;"></div>
-    <button class="btn diamond" id="grade-calendar-btn" ${state.cloudId ? "" : "disabled"}>💎 NOTENKALENDER</button>
-    ${!state.cloudId ? `<p class="muted center-text" style="margin-top:4px;">Melde dich an, um echte Schulnoten einzutragen.</p>` : ""}
-    <div style="height:10px;"></div>
-    <button class="btn secondary" id="leaderboard-btn" ${state.guest ? "disabled" : ""}>🏆 RANGLISTE ANSEHEN</button>
-    <div style="height:10px;"></div>
-    <div class="panel" style="margin-top:14px;">
-      <h3 style="font-size:15px;margin-bottom:8px;">DEIN INVENTAR</h3>
-      ${inventoryHtml(state.inventory)}
-    </div>
-    </details>
+    ${werkzeugGitterHtml()}
 
     <!-- Fuer Erwachsene, ganz unten und ruhig: Elternbereich, Abmelden,
          Unterstuetzen. Nichts davon geht ein Kind etwas an. -->
@@ -9780,8 +9873,19 @@ function renderStart(){
   }
   const startBtn = document.getElementById('start-btn');
   if(startBtn){ startBtn.addEventListener('click', startGame); }
-  document.getElementById('shop-btn').addEventListener('click', ()=>{ state.screen="shop"; state.shopReturnTo="start"; render(); attemptCloudLogin(true); });
-  document.getElementById('leaderboard-btn').addEventListener('click', ()=>{ openLeaderboard("start"); });
+  // Die Klassenauswahl gibt es in beiden Modi - paketAuswahlVerdrahten()
+  // laeuft aber nur im Vokabelmodus. Doppeltes Anmelden schadet nicht:
+  // im Vokabelmodus haengt der Zuhoerer dann zweimal am selben Knopf und
+  // setzt zweimal denselben Wert.
+  document.querySelectorAll('[data-klasse]').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.klasse = parseInt(el.dataset.klasse, 10); saveProgress(); render(); });
+  });
+  const shopBtn = document.getElementById('shop-btn');
+  if(shopBtn) shopBtn.addEventListener('click', ()=>{ state.screen="shop"; state.shopReturnTo="start"; render(); attemptCloudLogin(true); });
+  const lbBtn = document.getElementById('leaderboard-btn');
+  if(lbBtn) lbBtn.addEventListener('click', ()=>{ openLeaderboard("start"); });
+  const invBtn = document.getElementById('inventar-btn');
+  if(invBtn) invBtn.addEventListener('click', ()=>{ state.screen = "inventar"; render(); });
   const infoStart = document.getElementById('info-start-btn');
   if(infoStart){ infoStart.addEventListener('click', oeffneInfo); }
   const infoStartLink = document.getElementById('info-start-link');
@@ -9796,14 +9900,6 @@ function renderStart(){
       state.parentPinError = null;
       state.parentTab = "uebersicht";
       state.screen = "parents";
-      render();
-    });
-  }
-  const gradeCalBtn = document.getElementById('grade-calendar-btn');
-  if(gradeCalBtn){
-    gradeCalBtn.addEventListener('click', ()=>{
-      if(!state.cloudId) return;
-      state.screen = "gradecalendar";
       render();
     });
   }
@@ -11123,13 +11219,45 @@ function grammarTopicsOfUnit(nr){
     .sort((a,b)=>parseInt((a.code||"G0").slice(1),10) - parseInt((b.code||"G0").slice(1),10));
 }
 
+/* "klasse" ist vorbereitet wie beim Wortschatz: Alles Bisherige ist
+   Klasse 5. Sobald Units fuer Klasse 6 dazukommen, erscheint die
+   Klassenauswahl von selbst - vorher waere sie eine Auswahl mit genau
+   einer Moeglichkeit, und die hilft niemandem. */
 const GRAMMAR_UNITS = [
-  { nr:1, name:"Wer bin ich, wer bist du?", hint:"be, Plural, Besitz und die ersten Fragen" },
-  { nr:2, name:"Was ich habe, was du tun sollst", hint:"have got, Imperativ, this und that" },
-  { nr:3, name:"Mein Alltag", hint:"Wie oft, in welcher Reihenfolge, Simple Present" },
-  { nr:4, name:"Fragen und Verneinen", hint:"do und does, Objektformen" },
-  { nr:5, name:"Mengen und Pläne", hint:"Verlaufsform, some und any, going to" }
+  { nr:1, klasse:5, name:"Wer bin ich, wer bist du?", hint:"be, Plural, Besitz und die ersten Fragen" },
+  { nr:2, klasse:5, name:"Was ich habe, was du tun sollst", hint:"have got, Imperativ, this und that" },
+  { nr:3, klasse:5, name:"Mein Alltag", hint:"Wie oft, in welcher Reihenfolge, Simple Present" },
+  { nr:4, klasse:5, name:"Fragen und Verneinen", hint:"do und does, Objektformen" },
+  { nr:5, klasse:5, name:"Mengen und Pläne", hint:"Verlaufsform, some und any, going to" }
 ];
+
+/* Welche Klassenstufen hat die Grammatik? */
+function grammatikKlassen(){
+  const k = {};
+  GRAMMAR_UNITS.forEach(u=>{ k[u.klasse || 5] = true; });
+  return Object.keys(k).map(Number).sort();
+}
+function grammatikUnitsDerKlasse(){
+  const kl = grammatikKlassen();
+  if(kl.length < 2) return GRAMMAR_UNITS;
+  const gewaehlt = state.klasse || kl[0];
+  return GRAMMAR_UNITS.filter(u => (u.klasse || 5) === gewaehlt);
+}
+/* Genau dieselbe Anzeige wie beim Wortschatz - eine Klasse, ein Schild;
+   mehrere Klassen, eine Auswahl. Und beide schalten dasselbe Feld, damit
+   ein Kind nicht an zwei Stellen dasselbe einstellen muss. */
+function klassenAuswahlHtml(klassen){
+  const aktuell = state.klasse || klassen[0] || 5;
+  if(klassen.length < 2) return `<div class="kl-schild">📚 Klasse ${klassen[0] || 5}</div>`;
+  return `
+    <div class="setting-label">Klasse</div>
+    <div class="kl-reihe">
+      ${klassen.map(k=>`
+        <button type="button" class="kl-chip ${aktuell===k?'aktiv':''}" data-klasse="${k}">
+          Klasse ${k}
+        </button>`).join("")}
+    </div>`;
+}
 
 /* ---------------------------------------------------
    SKILL-ERFASSUNG PRO GRAMMATIK-THEMA
@@ -12297,7 +12425,7 @@ function renderDatenschutz(){
       <h3 style="font-size:15px;margin-bottom:8px;">9. WIE LANGE?</h3>
       <div class="impressum">
         <p>Kontodaten und Spielstand bleiben gespeichert, solange das Konto besteht.
-        Die Tagesstatistik wird nach 120 Tagen automatisch gelöscht, der Notenkalender
+        Die Tagesstatistik wird nach 120 Tagen automatisch gelöscht, der Notenverlauf
         umfasst die letzten 60 Einträge, der Einlöse-Verlauf die letzten 200. Auf Wunsch
         löschen wir das gesamte Konto.</p>
       </div>
@@ -13689,61 +13817,52 @@ function woerterSuchen(text, grenze){
 /* --- Der Auswahlbereich in der Einstell-Karte ----------------------- */
 function paketAuswahlHtml(){
   const klassen = klassenVorhanden();
-  const suche = state.paketSuche || "";
-  const treffer = suche ? woerterSuchen(suche) : [];
-  const pakete = paketeDerKlasse(state.klasse || klassen[0] || 5)
-    .filter(p => !suche || suchNormal(p.name).indexOf(suchNormal(suche)) >= 0);
-  const listen = listenAlle();
-  const gesamt = getAllVocab().length;
+  const aktuell = state.klasse || klassen[0] || 5;
+  const suche   = state.paketSuche || "";
+  const q       = suchNormal(suche);
+
+  /* Die eigenen Woerter tragen cat = "Eigene Vokabeln" und tauchen
+     deshalb als Paket auf. Sie bekommen unten eine eigene Kachel mit
+     klarem Namen - zwei Kacheln, die beide "Eigene Vokabeln" heissen,
+     waeren genau die Unuebersichtlichkeit, die hier weg soll. */
+  const alle    = paketeDerKlasse(aktuell);
+  const eigenes = alle.find(p => p.name === CUSTOM_CATEGORY_NAME) || null;
+  const pakete  = alle.filter(p => p.name !== CUSTOM_CATEGORY_NAME)
+                      .filter(p => !q || suchNormal(p.name).indexOf(q) >= 0);
+  const listen  = listenAlle().filter(l => !q || suchNormal(l.name).indexOf(q) >= 0);
+  const gesamt  = getAllVocab().length;
 
   return `
     ${klassen.length > 1 ? `
     <div class="setting-label">Klasse</div>
     <div class="kl-reihe">
       ${klassen.map(k=>`
-        <button type="button" class="kl-chip ${(state.klasse||klassen[0])===k?'aktiv':''}" data-klasse="${k}">
+        <button type="button" class="kl-chip ${aktuell===k?'aktiv':''}" data-klasse="${k}">
           Klasse ${k}
         </button>`).join("")}
-    </div>` : ""}
+    </div>`
+    : `<div class="kl-schild">📚 Klasse ${klassen[0] || 5}</div>`}
 
     <div class="setting-label">Womit üben?</div>
     <div class="pk-suchfeld">
       <span class="pk-lupe">🔎</span>
-      <input type="search" id="pk-suche" placeholder="Wort oder Thema suchen …"
+      <input type="search" id="pk-suche" placeholder="Paket oder Liste suchen …"
              value="${escapeHtml(suche)}" autocomplete="off">
       ${suche ? `<button type="button" class="pk-leeren" id="pk-leeren" aria-label="Suche löschen">✕</button>` : ""}
     </div>
 
-    ${suche && treffer.length ? `
-      <div class="pk-treffer">
-        <p class="pk-treffer-k">${treffer.length} Wort${treffer.length===1?"":"e"} gefunden
-          ${state.listeBau && state.listeBau.length ? `&middot; ${state.listeBau.length} ausgewählt` : ""}</p>
-        ${treffer.map(w=>{
-          const k = wortSchluessel(w);
-          const drin = (state.listeBau || []).indexOf(k) >= 0;
-          return `<button type="button" class="pk-wort ${drin?'drin':''}" data-wort="${escapeHtml(k)}">
-                    <span class="pk-w-en">${escapeHtml(w.en)}</span>
-                    <span class="pk-w-de">${escapeHtml(w.de)}</span>
-                    <span class="pk-w-plus">${drin ? "✓" : "+"}</span>
-                  </button>`;
-        }).join("")}
-        ${(state.listeBau && state.listeBau.length) ? `
-          <button class="btn small" id="pk-liste-speichern" style="margin-top:10px;">
-            ⭐ ${state.listeBau.length} Wörter als Liste speichern
-          </button>` : `
-          <p class="muted" style="margin:8px 0 0;font-size:12.5px;">
-            Tippe Wörter an, um dir eine eigene Liste zusammenzustellen.
-          </p>`}
-      </div>` : ""}
-    ${suche && !treffer.length && !pakete.length ? `
-      <p class="muted" style="margin:8px 0;">Dazu habe ich nichts gefunden.</p>` : ""}
-
     <div class="pk-gitter">
-      ${!suche ? `
-        <button type="button" class="pk-kachel ${state.category==="Alle"?'aktiv':''}" data-paket="Alle">
-          <span class="pk-ic">🌍</span>
-          <span class="pk-n">Alle Wörter</span>
-          <span class="pk-z">${gesamt}</span>
+      <button type="button" class="pk-kachel dazu" id="pk-eigene">
+        <span class="pk-ic">➕</span>
+        <span class="pk-n">Eigene Vokabeln</span>
+        <span class="pk-z">Listen bauen</span>
+      </button>
+      ${eigenes && (!q || suchNormal(eigenes.name).indexOf(q) >= 0) ? `
+        <button type="button" class="pk-kachel eigene ${state.category===eigenes.name?'aktiv':''}"
+                data-paket="${escapeHtml(eigenes.name)}">
+          <span class="pk-ic">✏️</span>
+          <span class="pk-n">Meine eigenen Wörter</span>
+          <span class="pk-z">${eigenes.anzahl}</span>
         </button>` : ""}
       ${listen.map(l=>`
         <button type="button" class="pk-kachel eigene ${state.category===LISTEN_ZEICHEN+l.name?'aktiv':''}"
@@ -13752,18 +13871,22 @@ function paketAuswahlHtml(){
           <span class="pk-n">${escapeHtml(l.name)}</span>
           <span class="pk-z">${(l.woerter||[]).length}</span>
         </button>`).join("")}
+      ${!q ? `
+        <button type="button" class="pk-kachel ${state.category==="Alle"?'aktiv':''}" data-paket="Alle">
+          <span class="pk-ic">🌍</span>
+          <span class="pk-n">Alle Wörter</span>
+          <span class="pk-z">${gesamt}</span>
+        </button>` : ""}
       ${pakete.map(p=>`
         <button type="button" class="pk-kachel ${state.category===p.name?'aktiv':''}" data-paket="${escapeHtml(p.name)}">
           <span class="pk-ic">${p.icon}</span>
           <span class="pk-n">${escapeHtml(p.name)}</span>
           <span class="pk-z">${p.anzahl}</span>
         </button>`).join("")}
-      <button type="button" class="pk-kachel dazu" id="pk-eigene">
-        <span class="pk-ic">➕</span>
-        <span class="pk-n">Eigene Vokabeln</span>
-        <span class="pk-z">hinzufügen</span>
-      </button>
-    </div>`;
+    </div>
+    ${q && !pakete.length && !listen.length ? `
+      <p class="muted" style="margin:10px 0 0;">Dazu habe ich kein Paket gefunden.
+      Einzelne Wörter suchst du oben unter <strong>➕ Eigene Vokabeln</strong>.</p>` : ""}`;
 }
 
 function paketAuswahlVerdrahten(){
@@ -13780,32 +13903,8 @@ function paketAuswahlVerdrahten(){
       render();
     });
   });
-  document.querySelectorAll('[data-wort]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const k = el.dataset.wort;
-      if(!Array.isArray(state.listeBau)) state.listeBau = [];
-      const i = state.listeBau.indexOf(k);
-      if(i >= 0) state.listeBau.splice(i, 1); else state.listeBau.push(k);
-      render();
-    });
-  });
   an('pk-leeren', ()=>{ state.paketSuche = ""; render(); });
-  an('pk-eigene', ()=>{ state.screen = "customvocab"; render(); });
-  an('pk-liste-speichern', ()=>{
-    showPromptModal("Wie soll deine Liste heißen?", "z.B. Vokabeltest Freitag", (name)=>{
-      name = (name || "").trim().slice(0, 30);
-      if(name.length < 2) return;
-      const vorhanden = listeFinden(name);
-      if(vorhanden) vorhanden.woerter = state.listeBau.slice();
-      else listenAlle().push({ name: name, woerter: state.listeBau.slice() });
-      state.category = LISTEN_ZEICHEN + name;
-      state.listeBau = [];
-      state.paketSuche = "";
-      saveProgress();
-      syncToCloud();
-      render();
-    });
-  });
+  an('pk-eigene', ()=>{ state.screen = "customvocab"; state.evSuche = ""; render(); });
 
   // Das Suchfeld darf NICHT bei jedem Zeichen neu zeichnen - sonst
   // verliert das Feld den Fokus und die Tastatur klappt weg. Erst nach
@@ -13847,20 +13946,143 @@ function showPromptModal(frage, platzhalter, fertig){
   hg.addEventListener('click', (e)=>{ if(e.target === hg) zu(); });
 }
 
+/* --- Eigene Listen aus dem Wortschatz der App ------------------------
+   Frueher stand das mitten in der Paketauswahl. Dort war es an der
+   falschen Stelle: Wer uebt, will auswaehlen - wer eine Liste baut,
+   will suchen. Zwei Absichten, jetzt zwei Orte.                      */
+function evListenbauHtml(){
+  const suche   = state.evSuche || "";
+  const treffer = suche ? woerterSuchen(suche, 40) : [];
+  const bau     = Array.isArray(state.listeBau) ? state.listeBau : (state.listeBau = []);
+  const listen  = listenAlle();
+
+  return `
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:6px;">⭐ 1. AUS DEM WORTSCHATZ ZUSAMMENSTELLEN</h3>
+      <p class="muted" style="margin:0 0 10px;">Such ein Wort, tipp auf <strong>+</strong> &ndash;
+      und speicher deine Auswahl als eigene Liste. Die übst du danach wie ein Paket.</p>
+
+      <div class="pk-suchfeld">
+        <span class="pk-lupe">🔎</span>
+        <input type="search" id="ev-suche" placeholder="Deutsch oder Englisch tippen …"
+               value="${escapeHtml(suche)}" autocomplete="off">
+        ${suche ? `<button type="button" class="pk-leeren" id="ev-leeren" aria-label="Suche löschen">✕</button>` : ""}
+      </div>
+
+      ${suche && treffer.length ? `
+        <div class="pk-treffer">
+          <p class="pk-treffer-k">${treffer.length} Wort${treffer.length===1?"":"e"} gefunden</p>
+          ${treffer.map(w=>{
+            const k = wortSchluessel(w);
+            const drin = bau.indexOf(k) >= 0;
+            return `<button type="button" class="pk-wort ${drin?'drin':''}" data-ev-wort="${escapeHtml(k)}">
+                      <span class="pk-w-en">${escapeHtml(w.en)}</span>
+                      <span class="pk-w-de">${escapeHtml(w.de)}</span>
+                      <span class="pk-w-plus">${drin ? "✓" : "+"}</span>
+                    </button>`;
+          }).join("")}
+        </div>` : ""}
+      ${suche && suche.length >= 2 && !treffer.length ? `
+        <p class="muted" style="margin:8px 0 0;">Dieses Wort kennt die App noch nicht.
+        Trag es weiter unten selbst ein.</p>` : ""}
+
+      ${bau.length ? `
+        <div class="ev-korb">
+          <span class="ev-korb-z">${bau.length} ausgewählt</span>
+          <button class="btn small" id="ev-speichern" style="width:auto;margin:0;">⭐ Als Liste speichern</button>
+          <button class="btn secondary small" id="ev-korb-leeren" style="width:auto;margin:0;">Verwerfen</button>
+        </div>` : `
+        <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
+          Noch nichts ausgewählt. Tippe gefundene Wörter an.</p>`}
+
+      ${listen.length ? `
+        <div class="setting-label" style="margin-top:16px;">Deine Listen</div>
+        <div class="ev-listen">
+          ${listen.map(l=>`
+            <span class="ev-liste">
+              <b>${escapeHtml(l.name)}</b>
+              <span class="muted">${(l.woerter||[]).length} Wörter</span>
+              <button type="button" data-liste-weg="${escapeHtml(l.name)}" aria-label="Liste löschen">✕</button>
+            </span>`).join("")}
+        </div>` : ""}
+    </div>`;
+}
+
+function evListenbauVerdrahten(){
+  const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+
+  document.querySelectorAll('[data-ev-wort]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const k = el.dataset.evWort;
+      if(!Array.isArray(state.listeBau)) state.listeBau = [];
+      const i = state.listeBau.indexOf(k);
+      if(i >= 0) state.listeBau.splice(i, 1); else state.listeBau.push(k);
+      render();
+    });
+  });
+
+  an('ev-leeren', ()=>{ state.evSuche = ""; render(); });
+  an('ev-korb-leeren', ()=>{ state.listeBau = []; render(); });
+
+  an('ev-speichern', ()=>{
+    showPromptModal("Wie soll deine Liste heißen?", "z.B. Vokabeltest Freitag", (name)=>{
+      name = (name || "").trim().slice(0, 30);
+      if(name.length < 2) return;
+      const vorhanden = listeFinden(name);
+      if(vorhanden) vorhanden.woerter = state.listeBau.slice();
+      else listenAlle().push({ name: name, woerter: state.listeBau.slice() });
+      state.category = LISTEN_ZEICHEN + name;
+      state.listeBau = [];
+      state.evSuche  = "";
+      saveProgress();
+      syncToCloud();
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-liste-weg]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const name = el.dataset.listeWeg;
+      showConfirmModal(`Liste "${name}" löschen?`,
+        "Die Wörter selbst bleiben natürlich erhalten - nur die Zusammenstellung geht weg.",
+        ()=>{
+          const i = listenAlle().findIndex(l => l.name === name);
+          if(i >= 0) listenAlle().splice(i, 1);
+          // Wer gerade diese Liste uebt, wuerde sonst ins Leere greifen.
+          if(state.category === LISTEN_ZEICHEN + name) state.category = "Alle";
+          saveProgress();
+          syncToCloud();
+          render();
+        });
+    });
+  });
+
+  // Nicht bei jedem Zeichen neu zeichnen - sonst verliert das Feld den
+  // Fokus und die Tastatur klappt weg.
+  const feld = document.getElementById('ev-suche');
+  if(feld){
+    let timer = null;
+    feld.addEventListener('input', ()=>{
+      clearTimeout(timer);
+      timer = setTimeout(()=>{
+        state.evSuche = feld.value;
+        render();
+        const neu = document.getElementById('ev-suche');
+        if(neu){ neu.focus(); neu.setSelectionRange(neu.value.length, neu.value.length); }
+      }, 320);
+    });
+  }
+}
+
 function renderCustomVocab(){
   app.innerHTML = `
     ${renderHeader("Eigene Vokabeln", true)}
     ${playerBadgeHtml(true)}
 
-    <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:6px;">📷 LISTE ABFOTOGRAFIEREN</h3>
-      <p class="muted" style="margin:0 0 10px;">Gedruckte Vokabelliste aus Buch oder Arbeitsblatt.
-      Die Wörter werden auf deinem Gerät gelesen &ndash; das Bild wird nirgendwo hochgeladen.</p>
-      <button class="btn" id="scan-start-btn">📷 FOTO AUFNEHMEN</button>
-    </div>
+    ${evListenbauHtml()}
 
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:10px;">MANUELL HINZUFÜGEN</h3>
+      <h3 style="font-size:16px;margin-bottom:10px;">✍️ 2. SELBST EINTIPPEN</h3>
       <p class="muted" style="margin-bottom:10px;">Trag ein Wortpaar ein und klick auf Hinzufügen &ndash; danach direkt das nächste.</p>
       <div class="row" style="gap:10px;">
         <div class="col">
@@ -13884,7 +14106,14 @@ function renderCustomVocab(){
     </div>
 
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:10px;">PER EXCEL HOCHLADEN</h3>
+      <h3 style="font-size:16px;margin-bottom:6px;">📷 3. LISTE ABFOTOGRAFIEREN</h3>
+      <p class="muted" style="margin:0 0 10px;">Gedruckte Vokabelliste aus Buch oder Arbeitsblatt.
+      Die Wörter werden auf deinem Gerät gelesen &ndash; das Bild wird nirgendwo hochgeladen.</p>
+      <button class="btn" id="scan-start-btn">📷 FOTO AUFNEHMEN</button>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:10px;">📄 4. PER EXCEL HOCHLADEN</h3>
       <p class="muted">Spalte A = Deutsch, Spalte B = Englisch. CSV wird direkt gelesen, für .xlsx wird einmalig eine Hilfsbibliothek geladen.</p>
       <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="margin-top:10px;width:100%;">
       <p id="excel-status" class="muted" style="margin-top:8px;"></p>
@@ -13913,6 +14142,8 @@ function renderCustomVocab(){
     state.screen = "scan";
     render();
   });
+
+  try{ evListenbauVerdrahten(); }catch(e){ console.error("Listenbau:", e); }
 
   document.getElementById('single-add-btn').addEventListener('click', ()=>{
     const deInput = document.getElementById('new-vocab-de');
@@ -13977,7 +14208,7 @@ function renderCustomVocab(){
 }
 
 /* ---------------------------------------------------
-   NOTENKALENDER (echte Schulnoten von Vokabeltests)
+   NOTEN (erspielt in Vokabeltest und Grammatikrunde)
 --------------------------------------------------- */
 // Noten entstehen ausschliesslich im Spiel: am Ende eines Vokabeltests und
 // am Ende einer Grammatik-Uebungsrunde. Von Hand eintragen kann man nichts
@@ -13995,45 +14226,24 @@ function recordGameGrade(grade, art){
   if(state.gradeEntries.length > 60){ state.gradeEntries.length = 60; }
 }
 
-function renderGradeCalendar(){
-  const eintraege = state.gradeEntries || [];
-  const schnitt = computeAvgGrade();
-
+/* Das Inventar hatte bisher keinen eigenen Bildschirm - es stand
+   aufgeklappt am Fuss der Startseite. Als Kachel im Gitter braucht es
+   ein Ziel. */
+function renderInventar(){
   app.innerHTML = `
-    ${renderHeader("Notenkalender", true)}
+    ${renderHeader("Dein Inventar", true)}
     ${playerBadgeHtml(true)}
-
-    <div class="panel center-text">
-      <h3 style="font-size:17px;margin-bottom:8px;">💎 Deine erspielten Noten</h3>
-      <p class="muted">Noten bekommst du im <strong>Vokabeltest</strong> und in der
-      <strong>Grammatik-Übungsrunde</strong>. Von Hand eintragen kann sie niemand &ndash;
-      deshalb zählt der Schnitt in der Rangliste auch wirklich.</p>
-      ${schnitt ? `
-        <div class="grade-badge" style="margin-top:16px;">
-          <span class="grade-number">${schnitt}</span>
-          <span class="grade-label">Schnitt<br><small>letzte ${Math.min(eintraege.length, GRADE_WINDOW)} Tests</small></span>
-        </div>` : `<p class="muted" style="margin-top:12px;">Noch keine Note &ndash; schreib deinen ersten Test!</p>`}
-    </div>
-
-    ${eintraege.length ? `
     <div class="panel">
-      <h3 style="font-size:15px;margin-bottom:8px;">VERLAUF (${eintraege.length})</h3>
-      <div class="vocab-list">
-        ${eintraege.map(e=>`
-          <div class="vocab-row" style="align-items:center;">
-            <span class="grade-pill grade-${e.grade}">${e.grade}</span>
-            <span style="flex:1;text-align:left;padding-left:10px;">
-              ${escapeHtml(e.art || "Test")}<br>
-              <span class="muted" style="font-size:13px;">${escapeHtml(e.date)}${e.time ? " · " + escapeHtml(e.time) : ""} &middot; ${escapeHtml(e.label || "")}</span>
-            </span>
-          </div>
-        `).join("")}
-      </div>
-    </div>` : ""}
-
+      <h3 style="font-size:15px;margin-bottom:8px;">DAS GEHÖRT DIR</h3>
+      ${inventoryHtml(state.inventory)}
+    </div>
+    <button class="btn gold" id="inv-shop-btn">🛒 IM SHOP STÖBERN</button>
+    <div style="height:10px;"></div>
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
-
+  document.getElementById('inv-shop-btn').addEventListener('click', ()=>{
+    state.screen = "shop"; state.shopReturnTo = "start"; render();
+  });
   document.getElementById('back-btn').addEventListener('click', ()=>{
     state.screen = "start";
     render();
