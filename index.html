@@ -70,6 +70,14 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;overflow-x:hidden;}
+  /* Auf dem Handy meint height:100% die GROSSE Viewport-Hoehe - also
+     samt dem Streifen hinter der Browserleiste. Der Kasten #app reichte
+     dadurch unter den sichtbaren Rand, und die klebende Spielleiste
+     klebte an einer Kante, die niemand sieht. 100dvh misst das, was
+     wirklich da ist, und faengt das Ein- und Ausfahren der Leiste mit. */
+  @supports (height: 100dvh){
+    html,body{ height:100dvh; }
+  }
   body{
     font-family:var(--font);
     font-size:17px;
@@ -83,6 +91,10 @@
     display:flex;
     justify-content:center;
     padding:14px;
+    /* Auf Geraeten mit Gestensteuerung liegt unten ein Streifen, den das
+       System fuer sich behaelt. Ohne diese Zeile sitzt die Spielleiste
+       darunter. */
+    padding-bottom:max(14px, env(safe-area-inset-bottom, 14px));
   }
   #app{ width:100%; max-width:480px; overflow-x:hidden; }
   h1,h2,h3{font-family:var(--font); margin:0; line-height:1.4; text-align:center;}
@@ -2334,8 +2346,11 @@ summary.mehr-knopf::after{ content:none; }
 .ev-liste .muted{ font-size:12px; }
 .ev-liste button{
   border:none; background:#ece7de; color:#7a6f60; border-radius:8px;
-  width:24px; height:24px; min-height:0; padding:0; cursor:pointer; font-size:12px;
+  width:28px; height:28px; min-height:0; padding:0; cursor:pointer; font-size:13px;
+  flex:0 0 auto;
 }
+.ev-liste button:hover{ background:#ddd4c6; }
+.ev-liste{ flex-wrap:nowrap; }
 
 /* --- Fortschritt ganz oben, ohne Scrollen ---------------------------- */
 .fort-zeile{
@@ -2868,7 +2883,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "60.0 – Antippen";
+const APP_VERSION = "60.1 – Antippen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6735,6 +6750,7 @@ const state = {
   paketSuche: "",          // was gerade im Suchfeld der Paketauswahl steht
   evSuche: "",             // was im Suchfeld bei "Meine Vokabeln" steht
   evWeg: "",               // welcher der vier Wege gerade aufgeklappt ist
+  evPaket: "",             // welches Paket beim Listenbauen offen ist
   frischDazu: [],          // gerade hinzugefuegte Woerter (nur auf dem Geraet)
   offenesPaket: "",        // welches Paket im Vokabelbildschirm offen ist
   wahl: [],                // angetippte Woerter (gruen), nur auf dem Geraet
@@ -14543,51 +14559,61 @@ function evSucheHtml(){
   const suche   = state.evSuche || "";
   const treffer = suche ? woerterSuchen(suche, 40) : [];
   const bau     = Array.isArray(state.listeBau) ? state.listeBau : (state.listeBau = []);
+  const paket   = state.evPaket || "";
+
+  /* Eine Zeile je Wort - dieselbe Machart, egal ob sie aus der Suche
+     oder aus einem geoeffneten Paket kommt. */
+  const wortZeile = (w)=>{
+    const k = wortSchluessel(w);
+    const drin = bau.indexOf(k) >= 0;
+    return `<button type="button" class="pk-wort ${drin?'drin':''}" data-ev-wort="${escapeHtml(k)}">
+              <span class="pk-w-en">${escapeHtml(w.en)}</span>
+              <span class="pk-w-de">${escapeHtml(w.de)}</span>
+              <span class="pk-w-plus">${drin ? "✓" : "+"}</span>
+            </button>`;
+  };
 
   return `
     <div class="ev-inhalt">
-      <p class="muted" style="margin:0 0 10px;">Such ein Wort, tipp auf <strong>+</strong> &ndash;
-      und speicher deine Auswahl als eigene Liste. Die übst du danach wie ein Paket.</p>
+      ${paket ? `
+        <button type="button" class="btn secondary small einzeilig" id="ev-paket-zu"
+                style="width:auto;margin:0 0 10px;">← Andere Pakete</button>
+        <p class="muted" style="margin:0 0 8px;">Tippe die Wörter an, die in deine Liste sollen.</p>
+        <div class="pk-treffer" style="max-height:420px;">
+          <p class="pk-treffer-k">${escapeHtml(paket)}</p>
+          ${woerterVonQuelle(paket).map(wortZeile).join("")}
+        </div>
+      ` : `
+        <p class="muted" style="margin:0 0 10px;">Such ein Wort oder öffne ein Paket &ndash;
+        und tipp auf <strong>+</strong>. Deine Auswahl kannst du als Liste speichern.</p>
 
-      <div class="pk-suchfeld">
-        <span class="pk-lupe">🔎</span>
-        <input type="search" id="ev-suche" placeholder="Deutsch oder Englisch tippen …"
-               value="${escapeHtml(suche)}" autocomplete="off">
-        ${suche ? `<button type="button" class="pk-leeren" id="ev-leeren" aria-label="Suche löschen">✕</button>` : ""}
-      </div>
+        <div class="pk-suchfeld">
+          <span class="pk-lupe">🔎</span>
+          <input type="search" id="ev-suche" placeholder="Deutsch oder Englisch tippen …"
+                 value="${escapeHtml(suche)}" autocomplete="off">
+          ${suche ? `<button type="button" class="pk-leeren" id="ev-leeren" aria-label="Suche löschen">✕</button>` : ""}
+        </div>
 
-      ${suche && treffer.length ? `
-        <div class="pk-treffer">
-          <p class="pk-treffer-k">${treffer.length} Wort${treffer.length===1?"":"e"} gefunden</p>
-          ${treffer.map(w=>{
-            const k = wortSchluessel(w);
-            const drin = bau.indexOf(k) >= 0;
-            return `<button type="button" class="pk-wort ${drin?'drin':''}" data-ev-wort="${escapeHtml(k)}">
-                      <span class="pk-w-en">${escapeHtml(w.en)}</span>
-                      <span class="pk-w-de">${escapeHtml(w.de)}</span>
-                      <span class="pk-w-plus">${drin ? "✓" : "+"}</span>
-                    </button>`;
-          }).join("")}
-        </div>` : ""}
-      ${suche && suche.length >= 2 && !treffer.length ? `
-        <p class="muted" style="margin:8px 0 0;">Dieses Wort kennt die App noch nicht.
-        Trag es weiter unten selbst ein.</p>` : ""}
+        ${suche && treffer.length ? `
+          <div class="pk-treffer">
+            <p class="pk-treffer-k">${treffer.length} Wort${treffer.length===1?"":"e"} gefunden</p>
+            ${treffer.map(wortZeile).join("")}
+          </div>` : ""}
+        ${suche && suche.length >= 2 && !treffer.length ? `
+          <p class="muted" style="margin:8px 0 0;">Dieses Wort kennt die App noch nicht.
+          Trag es weiter unten selbst ein.</p>` : ""}
 
-      ${!suche ? `
-        <div class="setting-label" style="margin-top:14px;">Oder ein ganzes Paket dazunehmen</div>
-        <div class="pk-gitter">
-          ${paketeAlle().map(p=>{
-            const woerter = getAllVocab().filter(w => w.cat === p.name);
-            const offen = woerter.filter(w => bau.indexOf(wortSchluessel(w)) < 0).length;
-            return `
-            <button type="button" class="pk-kachel ${offen === 0 ? 'aktiv' : ''}"
-                    data-ev-paket="${escapeHtml(p.name)}">
-              <span class="pk-ic">${p.icon}</span>
-              <span class="pk-n">${escapeHtml(p.name)}</span>
-              <span class="pk-z">${offen === 0 ? "✓ drin" : "+" + offen}</span>
-            </button>`;
-          }).join("")}
-        </div>` : ""}
+        ${!suche ? `
+          <div class="setting-label" style="margin-top:14px;">Oder ein Paket öffnen</div>
+          <div class="pk-gitter">
+            ${paketeAlle().map(p=>`
+              <button type="button" class="pk-kachel" data-ev-paket="${escapeHtml(p.name)}">
+                <span class="pk-ic">${p.icon}</span>
+                <span class="pk-n">${escapeHtml(p.name)}</span>
+                <span class="pk-z">${p.anzahl}</span>
+              </button>`).join("")}
+          </div>` : ""}
+      `}
 
       ${bau.length ? `
         <div class="ev-korb">
@@ -14596,8 +14622,7 @@ function evSucheHtml(){
           <button class="btn secondary small" id="ev-korb-leeren" style="width:auto;margin:0;">Verwerfen</button>
         </div>` : `
         <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
-          Noch nichts ausgewählt. Tippe gefundene Wörter an.</p>`}
-
+          Noch nichts ausgewählt. Tippe Wörter an.</p>`}
     </div>`;
 }
 
@@ -14615,22 +14640,9 @@ function evListenbauVerdrahten(){
   });
 
   document.querySelectorAll('[data-ev-paket]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const paket = el.dataset.evPaket;
-      if(!Array.isArray(state.listeBau)) state.listeBau = [];
-      const woerter = getAllVocab().filter(w => w.cat === paket).map(wortSchluessel);
-      const fehlen  = woerter.filter(k => state.listeBau.indexOf(k) < 0);
-      /* Nochmal antippen nimmt das Paket wieder heraus - sonst kaeme man
-         aus einem Fehlgriff nur ueber "Verwerfen" wieder heraus, und das
-         wirft auch alles andere weg. */
-      if(fehlen.length === 0){
-        state.listeBau = state.listeBau.filter(k => woerter.indexOf(k) < 0);
-      } else {
-        fehlen.forEach(k => state.listeBau.push(k));
-      }
-      render();
-    });
+    el.addEventListener('click', ()=>{ state.evPaket = el.dataset.evPaket; render(); });
   });
+  an('ev-paket-zu', ()=>{ state.evPaket = ""; render(); });
 
   an('ev-leeren', ()=>{ state.evSuche = ""; render(); });
   an('ev-korb-leeren', ()=>{ state.listeBau = []; render(); });
@@ -14646,9 +14658,33 @@ function evListenbauVerdrahten(){
       state.listeBau = [];
       state.evSuche  = "";
       state.evWeg    = "";
+      state.evPaket  = "";
       saveProgress();
       syncToCloud();
       render();
+    });
+  });
+
+  document.querySelectorAll('[data-liste-um]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const alt = el.dataset.listeUm;
+      showPromptModal("Neuer Name für \"" + alt + "\"", alt, (neu)=>{
+        neu = (neu || "").trim().slice(0, 30);
+        if(neu.length < 2 || neu === alt) return;
+        if(listeFinden(neu)){
+          showConfirmModal("Es gibt schon eine Liste mit diesem Namen.",
+                           "Such dir bitte einen anderen aus.", ()=>{});
+          return;
+        }
+        const l = listeFinden(alt);
+        if(!l) return;
+        l.name = neu;
+        /* Wer gerade diese Liste uebt, wuerde sonst ins Leere greifen -
+           die Auswahl haengt am Namen, nicht an einer Nummer. */
+        if(state.category === LISTEN_ZEICHEN + alt) state.category = LISTEN_ZEICHEN + neu;
+        if(state.offenesPaket === LISTEN_ZEICHEN + alt) state.offenesPaket = LISTEN_ZEICHEN + neu;
+        saveProgress(); syncToCloud(); render();
+      });
     });
   });
 
@@ -14733,11 +14769,14 @@ function renderCustomVocab(){
         </div>
         <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Tippe eine Liste an, um sie zu üben.</p>
         ${listen.length ? `
-          <div class="ev-listen" style="margin-top:10px;">
+          <div class="setting-label" style="margin-top:16px;">Listen verwalten</div>
+          <div class="ev-listen">
             ${listen.map(l => `
               <span class="ev-liste">
                 <b>${escapeHtml(l.name)}</b>
-                <button type="button" data-liste-weg="${escapeHtml(l.name)}" aria-label="Liste löschen">✕</button>
+                <span class="muted">${(l.woerter||[]).length}</span>
+                <button type="button" data-liste-um="${escapeHtml(l.name)}" aria-label="Liste umbenennen" title="Umbenennen">✏️</button>
+                <button type="button" data-liste-weg="${escapeHtml(l.name)}" aria-label="Liste löschen" title="Löschen">✕</button>
               </span>`).join("")}
           </div>` : ""}
       ` : `<p class="muted center-text" style="margin:6px 0;">Noch keine eigene Liste.
