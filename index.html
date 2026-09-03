@@ -99,7 +99,10 @@
     /* Auf Geraeten mit Gestensteuerung liegt unten ein Streifen, den das
        System fuer sich behaelt. Ohne diese Zeile sitzt die Spielleiste
        darunter. */
-    padding-bottom:max(14px, env(safe-area-inset-bottom, 14px));
+    /* 22 statt 14: Geraete mit Gestensteuerung legen unten einen
+       Streifen, den env(safe-area-inset-bottom) nicht zuverlaessig
+       meldet - dann sitzt die Spielleiste darunter. */
+    padding-bottom:max(22px, env(safe-area-inset-bottom, 22px));
   }
   #app{ width:100%; max-width:480px; overflow-x:hidden; }
   h1,h2,h3{font-family:var(--font); margin:0; line-height:1.4; text-align:center;}
@@ -2921,7 +2924,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "63.0 – Heimweg";
+const APP_VERSION = "63.1 – Heimweg";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -8767,7 +8770,7 @@ function render(){
       || (state.screen === "quiz" && (state.mode === "flood" || state.mode === "floodhard")));
   }catch(e){}
   // Lingoras Knopf lebt ausserhalb von #app und ueberlebt das Neuzeichnen.
-  setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); floodBuehneAnpassen(); }catch(e){} }, 0);
+  setTimeout(()=>{ try{ fensterHoeheSetzen(); lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); floodBuehneAnpassen(); }catch(e){} }, 0);
 
   // Der Elternbereich sperrt sich selbst, sobald man ihn verlaesst - egal
   // ueber welchen Knopf. Damit kommt niemand ohne PIN zurueck hinein.
@@ -10873,13 +10876,16 @@ function showFeedbackWithConfirm(type, message, revealAnswer, extraNoteHtml){
   const wortJetzt = state.queue && state.queue[state.currentIndex];
   const hoerZusatz = (wortJetzt && state.direction !== "en-de")
     ? hoerKnopfHtml(wortJetzt.en) : "";
-  if(hoerZusatz && revealAnswer){ revealAnswer = revealAnswer + " " + hoerZusatz; }
+  /* Frueher stand hier: revealAnswer = revealAnswer + " " + hoerZusatz.
+     Danach lief alles durch escapeHtml - und der Knopf erschien als
+     sichtbarer Quelltext mitten in der Loesung. Der Knopf muss nach
+     dem Entschaerfen dazukommen, nicht davor. */
   const fb = document.getElementById('feedback');
   fb.className = `feedback show ${type}`;
   rueckmeldungInsBild(fb);
   let html = `<div>${message}</div>`;
   if(revealAnswer){
-    html += `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(revealAnswer)}</strong></div>`;
+    html += `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(revealAnswer)}</strong>${hoerZusatz}</div>`;
   }
   if(extraNoteHtml){ html += extraNoteHtml; }
   html += `<button class="btn" id="confirm-continue-btn" style="margin-top:12px;">✓ VERSTANDEN &ndash; WEITER</button>`;
@@ -16499,6 +16505,20 @@ function fensterHoeheSetzen(){
 }
 fensterHoeheSetzen();
 window.addEventListener("resize", ()=>{ fensterHoeheSetzen(); try{ floodBuehneAnpassen(); }catch(e){} });
+/* Auch beim Rollen nachziehen: Auf Android faehrt die Adressleiste
+   waehrend der Bedienung ein und aus, und nicht jedes Mal kommt ein
+   resize an. Ein rAF-Riegel sorgt dafuer, dass hoechstens einmal pro
+   Bild gerechnet wird - das ist billiger als ein einziger falscher
+   Wert, der den Startknopf unter den Rand schiebt.
+   capture:true, weil scroll nicht aufsteigt: Der Rollbalken haengt an
+   #app, nicht am Fenster. */
+let hoeheGeplant = false;
+function hoeheNachziehen(){
+  if(hoeheGeplant) return;
+  hoeheGeplant = true;
+  requestAnimationFrame(()=>{ hoeheGeplant = false; fensterHoeheSetzen(); });
+}
+document.addEventListener("scroll", hoeheNachziehen, true);
 window.addEventListener("orientationchange", ()=> setTimeout(fensterHoeheSetzen, 250));
 if(window.visualViewport){
   window.visualViewport.addEventListener("resize", fensterHoeheSetzen);
