@@ -2184,6 +2184,72 @@ summary.mehr-knopf::after{ content:none; }
   display:block; width:min(46%, 168px); height:auto; margin:6px auto -6px;
   filter: drop-shadow(0 6px 12px rgba(20,30,15,0.22));
 }
+
+/* --- Klassenstufe --------------------------------------------------- */
+.kl-reihe{ display:flex; gap:8px; margin-bottom:4px; }
+.kl-chip{
+  flex:1; padding:10px 8px; border-radius:12px; cursor:pointer;
+  border:2px solid #e0e0e0; background:#fafafa;
+  font-family:var(--font); font-weight:800; font-size:14px; color:#5f6b5a;
+}
+.kl-chip.aktiv{ border-color:#4db55c; background:#eef9f0; color:#1e5c28; }
+
+/* --- Suchfeld -------------------------------------------------------- */
+.pk-suchfeld{ position:relative; margin-bottom:10px; }
+.pk-suchfeld input{
+  width:100%; box-sizing:border-box; padding:11px 38px 11px 38px;
+  border:2px solid #e0e0e0; border-radius:12px; background:#fafafa;
+  font-size:16px; font-family:inherit;   /* 16px: kleiner zoomt iOS hinein */
+}
+.pk-suchfeld input:focus{ outline:none; border-color:#4db55c; background:#fff; }
+.pk-lupe{ position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:15px; opacity:.7; }
+.pk-leeren{
+  position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  width:26px; height:26px; border:none; border-radius:8px;
+  background:#ece7de; color:#7a6f60; cursor:pointer; font-size:13px;
+}
+
+/* --- Treffer der Wortsuche ------------------------------------------- */
+.pk-treffer{
+  background:#f7fbf7; border:2px solid #dbe8d8; border-radius:14px;
+  padding:10px 12px; margin-bottom:12px; max-height:300px; overflow-y:auto;
+}
+.pk-treffer-k{ margin:0 0 8px; font-size:11px; font-weight:800; letter-spacing:.06em; color:#6f8a72; }
+.pk-wort{
+  display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+  padding:8px 10px; margin-bottom:5px; min-height:0;
+  border:2px solid #e6e0d6; border-radius:10px; background:#fff;
+  cursor:pointer; font-family:inherit;
+}
+.pk-wort.drin{ border-color:#4db55c; background:#eef9f0; }
+.pk-w-en{ font-weight:800; font-size:14.5px; color:#1e4515; flex:0 0 auto; }
+.pk-w-de{ font-size:13px; color:#5f6b5a; flex:1; min-width:0;
+          overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pk-w-plus{ font-weight:800; color:#4db55c; font-size:16px; flex:0 0 auto; }
+
+/* --- Die Paketkacheln ------------------------------------------------ */
+.pk-gitter{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(148px, 1fr));
+  gap:8px;
+}
+.pk-kachel{
+  display:flex; align-items:center; gap:9px;
+  padding:11px 12px; min-height:0; text-align:left;
+  border:2px solid #ece7de; border-radius:14px; background:#fcfaf7;
+  cursor:pointer; font-family:inherit;
+}
+.pk-kachel:hover{ background:#f6f1ea; }
+.pk-kachel.aktiv{
+  border-color:#4db55c; background:#eef9f0;
+  box-shadow:0 0 0 3px rgba(77,181,92,0.24);
+}
+.pk-kachel.eigene{ background:#fffdf4; border-color:#ecdfae; }
+.pk-kachel.eigene.aktiv{ border-color:#4db55c; }
+.pk-kachel.dazu{ background:#f3f6fb; border-color:#dbe3ef; }
+.pk-ic{ font-size:19px; flex:0 0 auto; }
+.pk-n{ flex:1; min-width:0; font-weight:800; font-size:13.5px; color:#1e4515;
+       overflow:hidden; text-overflow:ellipsis; }
+.pk-z{ flex:0 0 auto; font-size:11.5px; font-weight:700; color:#8a8073; }
 </style>
 </head>
 <body>
@@ -2481,9 +2547,429 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "52.0 – Schaukasten";
+const APP_VERSION = "53.1 – Wortspeicher";
 
+/* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
+   Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
+   Woerter fuer Klasse 6 dazukommen, erscheint die Klassenauswahl von
+   selbst - vorher waere sie eine Auswahl mit genau einer Moeglichkeit. */
+const VOKABEL_PAKETE = [
+  {name:"Begrüßung & erste Sätze", icon:"👋", klasse:5},
+  {name:"Ich und meine Familie", icon:"👨‍👩‍👧", klasse:5},
+  {name:"Zahlen", icon:"🔢", klasse:5},
+  {name:"Farben", icon:"🎨", klasse:5},
+  {name:"Wochentage & Zeit", icon:"📅", klasse:5},
+  {name:"Schule", icon:"🎒", klasse:5},
+  {name:"Zuhause", icon:"🏠", klasse:5},
+  {name:"Tiere", icon:"🐾", klasse:5},
+  {name:"Essen & Trinken", icon:"🍎", klasse:5},
+  {name:"Körper & Kleidung", icon:"👕", klasse:5},
+  {name:"Stadt & unterwegs", icon:"🚌", klasse:5},
+  {name:"Freizeit & Sport", icon:"⚽", klasse:5},
+  {name:"Wichtige Verben", icon:"⚡", klasse:5},
+  {name:"Beschreiben", icon:"✨", klasse:5},
+  {name:"Kleine Wörter", icon:"🔗", klasse:5},
+  {name:"Beispiel Vokabeln", icon:"📗", klasse:5},
+  {name:"Eigene Vokabeln", icon:"➕", klasse:0},
+];
+
+/* --- Grundwortschatz Klasse 5 ---------------------------------------
+   Selbst zusammengestellt, jede Uebersetzung von Hand geprueft.
+
+   NICHT aus dem eingescannten Schulbuch: Die Texterkennung lieferte
+   dort bei den nachpruefbaren Woertern eine Fehlerquote von rund einem
+   Sechstel - "Tuesday" wurde zu "Freitag" - und bei einem Viertel aller
+   Eintraege sichtbaren Muell. In einer Lern-App ist eine falsche
+   Uebersetzung schlimmer als eine fehlende: Das Wiederholungssystem
+   uebt sie ein, bis das Kind sie sicher falsch kann.
+
+   Buchspezifische Woerter kommen ueber "Vokabeln abfotografieren"
+   dazu - dort sieht ein Mensch jedes Paar an, bevor es gespeichert
+   wird.                                                              */
 const VOCAB = [
+  // 👋 Begrüßung & erste Sätze (20)
+  {en:"hello", de:"hallo", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"hi", de:"hi, hallo", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"good morning", de:"guten Morgen", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"good evening", de:"guten Abend", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"good night", de:"gute Nacht", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"goodbye", de:"auf Wiedersehen", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"bye", de:"tschüss", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"please", de:"bitte", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"thank you", de:"danke", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"sorry", de:"entschuldigung, tut mir leid", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"yes", de:"ja", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"no", de:"nein", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"my name is", de:"ich heiße", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"what is your name", de:"wie heißt du", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"how are you", de:"wie geht es dir", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"nice to meet you", de:"schön dich kennenzulernen", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"see you later", de:"bis später", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"excuse me", de:"entschuldigung", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"welcome", de:"willkommen", cat:"Begrüßung & erste Sätze", klasse:5},
+  {en:"here you are", de:"bitte schön", cat:"Begrüßung & erste Sätze", klasse:5},
+  // 👨‍👩‍👧 Ich und meine Familie (22)
+  {en:"family", de:"die Familie", cat:"Ich und meine Familie", klasse:5},
+  {en:"mother", de:"die Mutter", cat:"Ich und meine Familie", klasse:5},
+  {en:"mum", de:"die Mama", cat:"Ich und meine Familie", klasse:5},
+  {en:"father", de:"der Vater", cat:"Ich und meine Familie", klasse:5},
+  {en:"dad", de:"der Papa", cat:"Ich und meine Familie", klasse:5},
+  {en:"parents", de:"die Eltern", cat:"Ich und meine Familie", klasse:5},
+  {en:"sister", de:"die Schwester", cat:"Ich und meine Familie", klasse:5},
+  {en:"brother", de:"der Bruder", cat:"Ich und meine Familie", klasse:5},
+  {en:"grandmother", de:"die Großmutter", cat:"Ich und meine Familie", klasse:5},
+  {en:"grandfather", de:"der Großvater", cat:"Ich und meine Familie", klasse:5},
+  {en:"grandparents", de:"die Großeltern", cat:"Ich und meine Familie", klasse:5},
+  {en:"aunt", de:"die Tante", cat:"Ich und meine Familie", klasse:5},
+  {en:"uncle", de:"der Onkel", cat:"Ich und meine Familie", klasse:5},
+  {en:"cousin", de:"der Cousin, die Cousine", cat:"Ich und meine Familie", klasse:5},
+  {en:"baby", de:"das Baby", cat:"Ich und meine Familie", klasse:5},
+  {en:"child", de:"das Kind", cat:"Ich und meine Familie", klasse:5},
+  {en:"children", de:"die Kinder", cat:"Ich und meine Familie", klasse:5},
+  {en:"boy", de:"der Junge", cat:"Ich und meine Familie", klasse:5},
+  {en:"girl", de:"das Mädchen", cat:"Ich und meine Familie", klasse:5},
+  {en:"friend", de:"der Freund, die Freundin", cat:"Ich und meine Familie", klasse:5},
+  {en:"name", de:"der Name", cat:"Ich und meine Familie", klasse:5},
+  {en:"age", de:"das Alter", cat:"Ich und meine Familie", klasse:5},
+  // 🔢 Zahlen (23)
+  {en:"one", de:"eins", cat:"Zahlen", klasse:5},
+  {en:"two", de:"zwei", cat:"Zahlen", klasse:5},
+  {en:"three", de:"drei", cat:"Zahlen", klasse:5},
+  {en:"four", de:"vier", cat:"Zahlen", klasse:5},
+  {en:"five", de:"fünf", cat:"Zahlen", klasse:5},
+  {en:"six", de:"sechs", cat:"Zahlen", klasse:5},
+  {en:"seven", de:"sieben", cat:"Zahlen", klasse:5},
+  {en:"eight", de:"acht", cat:"Zahlen", klasse:5},
+  {en:"nine", de:"neun", cat:"Zahlen", klasse:5},
+  {en:"ten", de:"zehn", cat:"Zahlen", klasse:5},
+  {en:"eleven", de:"elf", cat:"Zahlen", klasse:5},
+  {en:"twelve", de:"zwölf", cat:"Zahlen", klasse:5},
+  {en:"thirteen", de:"dreizehn", cat:"Zahlen", klasse:5},
+  {en:"fifteen", de:"fünfzehn", cat:"Zahlen", klasse:5},
+  {en:"twenty", de:"zwanzig", cat:"Zahlen", klasse:5},
+  {en:"thirty", de:"dreißig", cat:"Zahlen", klasse:5},
+  {en:"fifty", de:"fünfzig", cat:"Zahlen", klasse:5},
+  {en:"hundred", de:"hundert", cat:"Zahlen", klasse:5},
+  {en:"thousand", de:"tausend", cat:"Zahlen", klasse:5},
+  {en:"first", de:"erste", cat:"Zahlen", klasse:5},
+  {en:"second", de:"zweite", cat:"Zahlen", klasse:5},
+  {en:"third", de:"dritte", cat:"Zahlen", klasse:5},
+  {en:"number", de:"die Zahl, die Nummer", cat:"Zahlen", klasse:5},
+  // 🎨 Farben (14)
+  {en:"red", de:"rot", cat:"Farben", klasse:5},
+  {en:"blue", de:"blau", cat:"Farben", klasse:5},
+  {en:"green", de:"grün", cat:"Farben", klasse:5},
+  {en:"yellow", de:"gelb", cat:"Farben", klasse:5},
+  {en:"black", de:"schwarz", cat:"Farben", klasse:5},
+  {en:"white", de:"weiß", cat:"Farben", klasse:5},
+  {en:"orange", de:"orange", cat:"Farben", klasse:5},
+  {en:"purple", de:"lila", cat:"Farben", klasse:5},
+  {en:"pink", de:"rosa", cat:"Farben", klasse:5},
+  {en:"brown", de:"braun", cat:"Farben", klasse:5},
+  {en:"grey", de:"grau", cat:"Farben", klasse:5},
+  {en:"colour", de:"die Farbe", cat:"Farben", klasse:5},
+  {en:"light", de:"hell", cat:"Farben", klasse:5},
+  {en:"dark", de:"dunkel", cat:"Farben", klasse:5},
+  // 📅 Wochentage & Zeit (30)
+  {en:"Monday", de:"Montag", cat:"Wochentage & Zeit", klasse:5},
+  {en:"Tuesday", de:"Dienstag", cat:"Wochentage & Zeit", klasse:5},
+  {en:"Wednesday", de:"Mittwoch", cat:"Wochentage & Zeit", klasse:5},
+  {en:"Thursday", de:"Donnerstag", cat:"Wochentage & Zeit", klasse:5},
+  {en:"Friday", de:"Freitag", cat:"Wochentage & Zeit", klasse:5},
+  {en:"Saturday", de:"Samstag", cat:"Wochentage & Zeit", klasse:5},
+  {en:"Sunday", de:"Sonntag", cat:"Wochentage & Zeit", klasse:5},
+  {en:"day", de:"der Tag", cat:"Wochentage & Zeit", klasse:5},
+  {en:"week", de:"die Woche", cat:"Wochentage & Zeit", klasse:5},
+  {en:"weekend", de:"das Wochenende", cat:"Wochentage & Zeit", klasse:5},
+  {en:"month", de:"der Monat", cat:"Wochentage & Zeit", klasse:5},
+  {en:"year", de:"das Jahr", cat:"Wochentage & Zeit", klasse:5},
+  {en:"today", de:"heute", cat:"Wochentage & Zeit", klasse:5},
+  {en:"tomorrow", de:"morgen", cat:"Wochentage & Zeit", klasse:5},
+  {en:"yesterday", de:"gestern", cat:"Wochentage & Zeit", klasse:5},
+  {en:"morning", de:"der Morgen", cat:"Wochentage & Zeit", klasse:5},
+  {en:"afternoon", de:"der Nachmittag", cat:"Wochentage & Zeit", klasse:5},
+  {en:"evening", de:"der Abend", cat:"Wochentage & Zeit", klasse:5},
+  {en:"night", de:"die Nacht", cat:"Wochentage & Zeit", klasse:5},
+  {en:"time", de:"die Zeit", cat:"Wochentage & Zeit", klasse:5},
+  {en:"hour", de:"die Stunde", cat:"Wochentage & Zeit", klasse:5},
+  {en:"minute", de:"die Minute", cat:"Wochentage & Zeit", klasse:5},
+  {en:"clock", de:"die Uhr", cat:"Wochentage & Zeit", klasse:5},
+  {en:"early", de:"früh", cat:"Wochentage & Zeit", klasse:5},
+  {en:"late", de:"spät", cat:"Wochentage & Zeit", klasse:5},
+  {en:"now", de:"jetzt", cat:"Wochentage & Zeit", klasse:5},
+  {en:"always", de:"immer", cat:"Wochentage & Zeit", klasse:5},
+  {en:"never", de:"nie", cat:"Wochentage & Zeit", klasse:5},
+  {en:"often", de:"oft", cat:"Wochentage & Zeit", klasse:5},
+  {en:"sometimes", de:"manchmal", cat:"Wochentage & Zeit", klasse:5},
+  // 🎒 Schule (27)
+  {en:"school", de:"die Schule", cat:"Schule", klasse:5},
+  {en:"classroom", de:"das Klassenzimmer", cat:"Schule", klasse:5},
+  {en:"class", de:"die Klasse", cat:"Schule", klasse:5},
+  {en:"teacher", de:"der Lehrer, die Lehrerin", cat:"Schule", klasse:5},
+  {en:"student", de:"der Schüler, die Schülerin", cat:"Schule", klasse:5},
+  {en:"lesson", de:"die Stunde, der Unterricht", cat:"Schule", klasse:5},
+  {en:"homework", de:"die Hausaufgaben", cat:"Schule", klasse:5},
+  {en:"test", de:"der Test, die Klassenarbeit", cat:"Schule", klasse:5},
+  {en:"book", de:"das Buch", cat:"Schule", klasse:5},
+  {en:"exercise book", de:"das Heft", cat:"Schule", klasse:5},
+  {en:"pen", de:"der Stift", cat:"Schule", klasse:5},
+  {en:"pencil", de:"der Bleistift", cat:"Schule", klasse:5},
+  {en:"rubber", de:"der Radiergummi", cat:"Schule", klasse:5},
+  {en:"ruler", de:"das Lineal", cat:"Schule", klasse:5},
+  {en:"bag", de:"die Tasche", cat:"Schule", klasse:5},
+  {en:"desk", de:"der Schreibtisch", cat:"Schule", klasse:5},
+  {en:"chair", de:"der Stuhl", cat:"Schule", klasse:5},
+  {en:"board", de:"die Tafel", cat:"Schule", klasse:5},
+  {en:"question", de:"die Frage", cat:"Schule", klasse:5},
+  {en:"answer", de:"die Antwort", cat:"Schule", klasse:5},
+  {en:"word", de:"das Wort", cat:"Schule", klasse:5},
+  {en:"English", de:"Englisch", cat:"Schule", klasse:5},
+  {en:"German", de:"Deutsch", cat:"Schule", klasse:5},
+  {en:"maths", de:"Mathe", cat:"Schule", klasse:5},
+  {en:"break", de:"die Pause", cat:"Schule", klasse:5},
+  {en:"timetable", de:"der Stundenplan", cat:"Schule", klasse:5},
+  {en:"subject", de:"das Fach", cat:"Schule", klasse:5},
+  // 🏠 Zuhause (21)
+  {en:"house", de:"das Haus", cat:"Zuhause", klasse:5},
+  {en:"home", de:"das Zuhause", cat:"Zuhause", klasse:5},
+  {en:"flat", de:"die Wohnung", cat:"Zuhause", klasse:5},
+  {en:"room", de:"das Zimmer", cat:"Zuhause", klasse:5},
+  {en:"kitchen", de:"die Küche", cat:"Zuhause", klasse:5},
+  {en:"bedroom", de:"das Schlafzimmer", cat:"Zuhause", klasse:5},
+  {en:"bathroom", de:"das Badezimmer", cat:"Zuhause", klasse:5},
+  {en:"living room", de:"das Wohnzimmer", cat:"Zuhause", klasse:5},
+  {en:"garden", de:"der Garten", cat:"Zuhause", klasse:5},
+  {en:"door", de:"die Tür", cat:"Zuhause", klasse:5},
+  {en:"window", de:"das Fenster", cat:"Zuhause", klasse:5},
+  {en:"wall", de:"die Wand, die Mauer", cat:"Zuhause", klasse:5},
+  {en:"floor", de:"der Boden", cat:"Zuhause", klasse:5},
+  {en:"table", de:"der Tisch", cat:"Zuhause", klasse:5},
+  {en:"bed", de:"das Bett", cat:"Zuhause", klasse:5},
+  {en:"lamp", de:"die Lampe", cat:"Zuhause", klasse:5},
+  {en:"key", de:"der Schlüssel", cat:"Zuhause", klasse:5},
+  {en:"garage", de:"die Garage", cat:"Zuhause", klasse:5},
+  {en:"stairs", de:"die Treppe", cat:"Zuhause", klasse:5},
+  {en:"upstairs", de:"oben", cat:"Zuhause", klasse:5},
+  {en:"downstairs", de:"unten", cat:"Zuhause", klasse:5},
+  // 🐾 Tiere (21)
+  {en:"animal", de:"das Tier", cat:"Tiere", klasse:5},
+  {en:"cat", de:"die Katze", cat:"Tiere", klasse:5},
+  {en:"dog", de:"der Hund", cat:"Tiere", klasse:5},
+  {en:"horse", de:"das Pferd", cat:"Tiere", klasse:5},
+  {en:"bird", de:"der Vogel", cat:"Tiere", klasse:5},
+  {en:"fish", de:"der Fisch", cat:"Tiere", klasse:5},
+  {en:"mouse", de:"die Maus", cat:"Tiere", klasse:5},
+  {en:"rabbit", de:"das Kaninchen", cat:"Tiere", klasse:5},
+  {en:"rat", de:"die Ratte", cat:"Tiere", klasse:5},
+  {en:"bee", de:"die Biene", cat:"Tiere", klasse:5},
+  {en:"cow", de:"die Kuh", cat:"Tiere", klasse:5},
+  {en:"sheep", de:"das Schaf", cat:"Tiere", klasse:5},
+  {en:"pig", de:"das Schwein", cat:"Tiere", klasse:5},
+  {en:"chicken", de:"das Huhn", cat:"Tiere", klasse:5},
+  {en:"duck", de:"die Ente", cat:"Tiere", klasse:5},
+  {en:"spider", de:"die Spinne", cat:"Tiere", klasse:5},
+  {en:"snake", de:"die Schlange", cat:"Tiere", klasse:5},
+  {en:"bear", de:"der Bär", cat:"Tiere", klasse:5},
+  {en:"elephant", de:"der Elefant", cat:"Tiere", klasse:5},
+  {en:"monkey", de:"der Affe", cat:"Tiere", klasse:5},
+  {en:"pet", de:"das Haustier", cat:"Tiere", klasse:5},
+  // 🍎 Essen & Trinken (26)
+  {en:"food", de:"das Essen", cat:"Essen & Trinken", klasse:5},
+  {en:"breakfast", de:"das Frühstück", cat:"Essen & Trinken", klasse:5},
+  {en:"lunch", de:"das Mittagessen", cat:"Essen & Trinken", klasse:5},
+  {en:"dinner", de:"das Abendessen", cat:"Essen & Trinken", klasse:5},
+  {en:"bread", de:"das Brot", cat:"Essen & Trinken", klasse:5},
+  {en:"butter", de:"die Butter", cat:"Essen & Trinken", klasse:5},
+  {en:"cheese", de:"der Käse", cat:"Essen & Trinken", klasse:5},
+  {en:"milk", de:"die Milch", cat:"Essen & Trinken", klasse:5},
+  {en:"water", de:"das Wasser", cat:"Essen & Trinken", klasse:5},
+  {en:"juice", de:"der Saft", cat:"Essen & Trinken", klasse:5},
+  {en:"tea", de:"der Tee", cat:"Essen & Trinken", klasse:5},
+  {en:"apple", de:"der Apfel", cat:"Essen & Trinken", klasse:5},
+  {en:"banana", de:"die Banane", cat:"Essen & Trinken", klasse:5},
+  {en:"an orange", de:"die Orange", cat:"Essen & Trinken", klasse:5},
+  {en:"egg", de:"das Ei", cat:"Essen & Trinken", klasse:5},
+  {en:"meat", de:"das Fleisch", cat:"Essen & Trinken", klasse:5},
+  {en:"fruit", de:"das Obst", cat:"Essen & Trinken", klasse:5},
+  {en:"vegetables", de:"das Gemüse", cat:"Essen & Trinken", klasse:5},
+  {en:"cake", de:"der Kuchen", cat:"Essen & Trinken", klasse:5},
+  {en:"chocolate", de:"die Schokolade", cat:"Essen & Trinken", klasse:5},
+  {en:"sweets", de:"die Süßigkeiten", cat:"Essen & Trinken", klasse:5},
+  {en:"ice cream", de:"das Eis", cat:"Essen & Trinken", klasse:5},
+  {en:"hungry", de:"hungrig", cat:"Essen & Trinken", klasse:5},
+  {en:"thirsty", de:"durstig", cat:"Essen & Trinken", klasse:5},
+  {en:"to eat", de:"essen", cat:"Essen & Trinken", klasse:5},
+  {en:"to drink", de:"trinken", cat:"Essen & Trinken", klasse:5},
+  // 👕 Körper & Kleidung (22)
+  {en:"head", de:"der Kopf", cat:"Körper & Kleidung", klasse:5},
+  {en:"hair", de:"die Haare", cat:"Körper & Kleidung", klasse:5},
+  {en:"eye", de:"das Auge", cat:"Körper & Kleidung", klasse:5},
+  {en:"ear", de:"das Ohr", cat:"Körper & Kleidung", klasse:5},
+  {en:"nose", de:"die Nase", cat:"Körper & Kleidung", klasse:5},
+  {en:"mouth", de:"der Mund", cat:"Körper & Kleidung", klasse:5},
+  {en:"hand", de:"die Hand", cat:"Körper & Kleidung", klasse:5},
+  {en:"arm", de:"der Arm", cat:"Körper & Kleidung", klasse:5},
+  {en:"leg", de:"das Bein", cat:"Körper & Kleidung", klasse:5},
+  {en:"foot", de:"der Fuß", cat:"Körper & Kleidung", klasse:5},
+  {en:"face", de:"das Gesicht", cat:"Körper & Kleidung", klasse:5},
+  {en:"tooth", de:"der Zahn", cat:"Körper & Kleidung", klasse:5},
+  {en:"clothes", de:"die Kleidung", cat:"Körper & Kleidung", klasse:5},
+  {en:"shirt", de:"das Hemd", cat:"Körper & Kleidung", klasse:5},
+  {en:"T-shirt", de:"das T-Shirt", cat:"Körper & Kleidung", klasse:5},
+  {en:"trousers", de:"die Hose", cat:"Körper & Kleidung", klasse:5},
+  {en:"dress", de:"das Kleid", cat:"Körper & Kleidung", klasse:5},
+  {en:"shoe", de:"der Schuh", cat:"Körper & Kleidung", klasse:5},
+  {en:"jacket", de:"die Jacke", cat:"Körper & Kleidung", klasse:5},
+  {en:"hat", de:"der Hut, die Mütze", cat:"Körper & Kleidung", klasse:5},
+  {en:"cap", de:"die Kappe", cat:"Körper & Kleidung", klasse:5},
+  {en:"to wear", de:"tragen, anhaben", cat:"Körper & Kleidung", klasse:5},
+  // 🚌 Stadt & unterwegs (23)
+  {en:"town", de:"die Stadt", cat:"Stadt & unterwegs", klasse:5},
+  {en:"city", de:"die Großstadt", cat:"Stadt & unterwegs", klasse:5},
+  {en:"street", de:"die Straße", cat:"Stadt & unterwegs", klasse:5},
+  {en:"shop", de:"der Laden, das Geschäft", cat:"Stadt & unterwegs", klasse:5},
+  {en:"market", de:"der Markt", cat:"Stadt & unterwegs", klasse:5},
+  {en:"park", de:"der Park", cat:"Stadt & unterwegs", klasse:5},
+  {en:"station", de:"der Bahnhof", cat:"Stadt & unterwegs", klasse:5},
+  {en:"bus stop", de:"die Bushaltestelle", cat:"Stadt & unterwegs", klasse:5},
+  {en:"bus", de:"der Bus", cat:"Stadt & unterwegs", klasse:5},
+  {en:"train", de:"der Zug", cat:"Stadt & unterwegs", klasse:5},
+  {en:"car", de:"das Auto", cat:"Stadt & unterwegs", klasse:5},
+  {en:"bike", de:"das Fahrrad", cat:"Stadt & unterwegs", klasse:5},
+  {en:"plane", de:"das Flugzeug", cat:"Stadt & unterwegs", klasse:5},
+  {en:"ship", de:"das Schiff", cat:"Stadt & unterwegs", klasse:5},
+  {en:"way", de:"der Weg", cat:"Stadt & unterwegs", klasse:5},
+  {en:"map", de:"die Karte", cat:"Stadt & unterwegs", klasse:5},
+  {en:"left", de:"links", cat:"Stadt & unterwegs", klasse:5},
+  {en:"right", de:"rechts", cat:"Stadt & unterwegs", klasse:5},
+  {en:"near", de:"nah, in der Nähe", cat:"Stadt & unterwegs", klasse:5},
+  {en:"far", de:"weit", cat:"Stadt & unterwegs", klasse:5},
+  {en:"to go", de:"gehen, fahren", cat:"Stadt & unterwegs", klasse:5},
+  {en:"to come", de:"kommen", cat:"Stadt & unterwegs", klasse:5},
+  {en:"to walk", de:"zu Fuß gehen", cat:"Stadt & unterwegs", klasse:5},
+  // ⚽ Freizeit & Sport (25)
+  {en:"sport", de:"der Sport", cat:"Freizeit & Sport", klasse:5},
+  {en:"football", de:"der Fußball", cat:"Freizeit & Sport", klasse:5},
+  {en:"basketball", de:"der Basketball", cat:"Freizeit & Sport", klasse:5},
+  {en:"swimming", de:"das Schwimmen", cat:"Freizeit & Sport", klasse:5},
+  {en:"cycling", de:"das Radfahren", cat:"Freizeit & Sport", klasse:5},
+  {en:"game", de:"das Spiel", cat:"Freizeit & Sport", klasse:5},
+  {en:"ball", de:"der Ball", cat:"Freizeit & Sport", klasse:5},
+  {en:"team", de:"die Mannschaft", cat:"Freizeit & Sport", klasse:5},
+  {en:"music", de:"die Musik", cat:"Freizeit & Sport", klasse:5},
+  {en:"song", de:"das Lied", cat:"Freizeit & Sport", klasse:5},
+  {en:"guitar", de:"die Gitarre", cat:"Freizeit & Sport", klasse:5},
+  {en:"film", de:"der Film", cat:"Freizeit & Sport", klasse:5},
+  {en:"holiday", de:"die Ferien, der Urlaub", cat:"Freizeit & Sport", klasse:5},
+  {en:"birthday", de:"der Geburtstag", cat:"Freizeit & Sport", klasse:5},
+  {en:"party", de:"die Party, die Feier", cat:"Freizeit & Sport", klasse:5},
+  {en:"present", de:"das Geschenk", cat:"Freizeit & Sport", klasse:5},
+  {en:"hobby", de:"das Hobby", cat:"Freizeit & Sport", klasse:5},
+  {en:"to play", de:"spielen", cat:"Freizeit & Sport", klasse:5},
+  {en:"to swim", de:"schwimmen", cat:"Freizeit & Sport", klasse:5},
+  {en:"to run", de:"rennen, laufen", cat:"Freizeit & Sport", klasse:5},
+  {en:"to read", de:"lesen", cat:"Freizeit & Sport", klasse:5},
+  {en:"to sing", de:"singen", cat:"Freizeit & Sport", klasse:5},
+  {en:"to dance", de:"tanzen", cat:"Freizeit & Sport", klasse:5},
+  {en:"to win", de:"gewinnen", cat:"Freizeit & Sport", klasse:5},
+  {en:"to lose", de:"verlieren", cat:"Freizeit & Sport", klasse:5},
+  // ⚡ Wichtige Verben (30)
+  {en:"to be", de:"sein", cat:"Wichtige Verben", klasse:5},
+  {en:"to have", de:"haben", cat:"Wichtige Verben", klasse:5},
+  {en:"to do", de:"tun, machen", cat:"Wichtige Verben", klasse:5},
+  {en:"to make", de:"machen, herstellen", cat:"Wichtige Verben", klasse:5},
+  {en:"to see", de:"sehen", cat:"Wichtige Verben", klasse:5},
+  {en:"to look", de:"schauen", cat:"Wichtige Verben", klasse:5},
+  {en:"to say", de:"sagen", cat:"Wichtige Verben", klasse:5},
+  {en:"to tell", de:"erzählen", cat:"Wichtige Verben", klasse:5},
+  {en:"to ask", de:"fragen", cat:"Wichtige Verben", klasse:5},
+  {en:"to help", de:"helfen", cat:"Wichtige Verben", klasse:5},
+  {en:"to like", de:"mögen", cat:"Wichtige Verben", klasse:5},
+  {en:"to love", de:"lieben", cat:"Wichtige Verben", klasse:5},
+  {en:"to want", de:"wollen", cat:"Wichtige Verben", klasse:5},
+  {en:"to need", de:"brauchen", cat:"Wichtige Verben", klasse:5},
+  {en:"to know", de:"wissen, kennen", cat:"Wichtige Verben", klasse:5},
+  {en:"to think", de:"denken", cat:"Wichtige Verben", klasse:5},
+  {en:"to live", de:"leben, wohnen", cat:"Wichtige Verben", klasse:5},
+  {en:"to work", de:"arbeiten", cat:"Wichtige Verben", klasse:5},
+  {en:"to learn", de:"lernen", cat:"Wichtige Verben", klasse:5},
+  {en:"to write", de:"schreiben", cat:"Wichtige Verben", klasse:5},
+  {en:"to give", de:"geben", cat:"Wichtige Verben", klasse:5},
+  {en:"to take", de:"nehmen", cat:"Wichtige Verben", klasse:5},
+  {en:"to find", de:"finden", cat:"Wichtige Verben", klasse:5},
+  {en:"to open", de:"öffnen", cat:"Wichtige Verben", klasse:5},
+  {en:"to close", de:"schließen", cat:"Wichtige Verben", klasse:5},
+  {en:"to sleep", de:"schlafen", cat:"Wichtige Verben", klasse:5},
+  {en:"to buy", de:"kaufen", cat:"Wichtige Verben", klasse:5},
+  {en:"to sit", de:"sitzen", cat:"Wichtige Verben", klasse:5},
+  {en:"to stand", de:"stehen", cat:"Wichtige Verben", klasse:5},
+  {en:"to listen", de:"zuhören", cat:"Wichtige Verben", klasse:5},
+  // ✨ Beschreiben (30)
+  {en:"big", de:"groß", cat:"Beschreiben", klasse:5},
+  {en:"small", de:"klein", cat:"Beschreiben", klasse:5},
+  {en:"old", de:"alt", cat:"Beschreiben", klasse:5},
+  {en:"new", de:"neu", cat:"Beschreiben", klasse:5},
+  {en:"young", de:"jung", cat:"Beschreiben", klasse:5},
+  {en:"good", de:"gut", cat:"Beschreiben", klasse:5},
+  {en:"bad", de:"schlecht", cat:"Beschreiben", klasse:5},
+  {en:"nice", de:"nett, schön", cat:"Beschreiben", klasse:5},
+  {en:"happy", de:"glücklich", cat:"Beschreiben", klasse:5},
+  {en:"sad", de:"traurig", cat:"Beschreiben", klasse:5},
+  {en:"angry", de:"wütend", cat:"Beschreiben", klasse:5},
+  {en:"tired", de:"müde", cat:"Beschreiben", klasse:5},
+  {en:"funny", de:"lustig", cat:"Beschreiben", klasse:5},
+  {en:"boring", de:"langweilig", cat:"Beschreiben", klasse:5},
+  {en:"easy", de:"einfach", cat:"Beschreiben", klasse:5},
+  {en:"difficult", de:"schwierig", cat:"Beschreiben", klasse:5},
+  {en:"fast", de:"schnell", cat:"Beschreiben", klasse:5},
+  {en:"slow", de:"langsam", cat:"Beschreiben", klasse:5},
+  {en:"hot", de:"heiß", cat:"Beschreiben", klasse:5},
+  {en:"cold", de:"kalt", cat:"Beschreiben", klasse:5},
+  {en:"warm", de:"warm", cat:"Beschreiben", klasse:5},
+  {en:"long", de:"lang", cat:"Beschreiben", klasse:5},
+  {en:"short", de:"kurz", cat:"Beschreiben", klasse:5},
+  {en:"cheap", de:"billig", cat:"Beschreiben", klasse:5},
+  {en:"expensive", de:"teuer", cat:"Beschreiben", klasse:5},
+  {en:"beautiful", de:"schön", cat:"Beschreiben", klasse:5},
+  {en:"strong", de:"stark", cat:"Beschreiben", klasse:5},
+  {en:"clean", de:"sauber", cat:"Beschreiben", klasse:5},
+  {en:"dirty", de:"schmutzig", cat:"Beschreiben", klasse:5},
+  {en:"favourite", de:"Lieblings-", cat:"Beschreiben", klasse:5},
+  // 🔗 Kleine Wörter (33)
+  {en:"and", de:"und", cat:"Kleine Wörter", klasse:5},
+  {en:"but", de:"aber", cat:"Kleine Wörter", klasse:5},
+  {en:"or", de:"oder", cat:"Kleine Wörter", klasse:5},
+  {en:"because", de:"weil", cat:"Kleine Wörter", klasse:5},
+  {en:"with", de:"mit", cat:"Kleine Wörter", klasse:5},
+  {en:"without", de:"ohne", cat:"Kleine Wörter", klasse:5},
+  {en:"for", de:"für", cat:"Kleine Wörter", klasse:5},
+  {en:"from", de:"von, aus", cat:"Kleine Wörter", klasse:5},
+  {en:"to", de:"zu, nach", cat:"Kleine Wörter", klasse:5},
+  {en:"in", de:"in", cat:"Kleine Wörter", klasse:5},
+  {en:"on", de:"auf", cat:"Kleine Wörter", klasse:5},
+  {en:"under", de:"unter", cat:"Kleine Wörter", klasse:5},
+  {en:"over", de:"über", cat:"Kleine Wörter", klasse:5},
+  {en:"behind", de:"hinter", cat:"Kleine Wörter", klasse:5},
+  {en:"next to", de:"neben", cat:"Kleine Wörter", klasse:5},
+  {en:"between", de:"zwischen", cat:"Kleine Wörter", klasse:5},
+  {en:"here", de:"hier", cat:"Kleine Wörter", klasse:5},
+  {en:"there", de:"dort", cat:"Kleine Wörter", klasse:5},
+  {en:"where", de:"wo", cat:"Kleine Wörter", klasse:5},
+  {en:"when", de:"wann", cat:"Kleine Wörter", klasse:5},
+  {en:"who", de:"wer", cat:"Kleine Wörter", klasse:5},
+  {en:"what", de:"was", cat:"Kleine Wörter", klasse:5},
+  {en:"why", de:"warum", cat:"Kleine Wörter", klasse:5},
+  {en:"how", de:"wie", cat:"Kleine Wörter", klasse:5},
+  {en:"very", de:"sehr", cat:"Kleine Wörter", klasse:5},
+  {en:"too", de:"zu, auch", cat:"Kleine Wörter", klasse:5},
+  {en:"also", de:"auch", cat:"Kleine Wörter", klasse:5},
+  {en:"again", de:"wieder", cat:"Kleine Wörter", klasse:5},
+  {en:"only", de:"nur", cat:"Kleine Wörter", klasse:5},
+  {en:"not", de:"nicht", cat:"Kleine Wörter", klasse:5},
+  {en:"all", de:"alle, alles", cat:"Kleine Wörter", klasse:5},
+  {en:"many", de:"viele", cat:"Kleine Wörter", klasse:5},
+  {en:"some", de:"einige", cat:"Kleine Wörter", klasse:5},
+
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
   {en:"orange", de:"Orange", cat:CATEGORY_NAME},
   {en:"juice", de:"Saft", cat:CATEGORY_NAME},
@@ -5810,6 +6296,7 @@ function loadSave(){
     if(data.parentPinSalt) state.parentPinSalt = data.parentPinSalt;
     if(typeof data.spitzname === "string") state.spitzname = data.spitzname;
     if(data.portrait && typeof data.portrait === "object") state.portrait = data.portrait;
+    if(Array.isArray(data.listen)) state.listen = data.listen;
     if(data.cloudId) state.cloudId = data.cloudId;
     if(data.grammarSkills && typeof data.grammarSkills === "object") state.grammarSkills = data.grammarSkills;
     if(data.activityLog && typeof data.activityLog === "object") state.activityLog = data.activityLog;
@@ -5928,6 +6415,10 @@ const state = {
   //   0    = das Kind hat bewusst alles zugeklappt
   //   1..5 = diese Unit ist offen
   spitzname: "",           // Name in der oeffentlichen Rangliste; leer = nicht dabei
+  klasse: 5,               // welche Klassenstufe ist gewaehlt
+  paketSuche: "",          // was gerade im Suchfeld steht
+  listeBau: [],            // Woerter, die man gerade zu einer Liste sammelt
+  listen: [],              // eigene Wortlisten [{name, woerter:[schluessel]}]
   // Das Portrait wird als AUSWAHL gespeichert, nicht als Bild:
   // {hair:"long01", eyes:"variant03", ...}. Gut hundert Zeichen statt
   // sieben Kilobyte - und es ueberlebt Aenderungen an der Bibliothek.
@@ -6271,6 +6762,7 @@ function syncToCloud(){
     };
     if(state.spitzname){ payload.spitzname = state.spitzname; }
     if(state.portrait){ payload.portrait = state.portrait; }
+    if(state.listen && state.listen.length){ payload.listen = state.listen; }
     if(state.parentPinHash){ payload.parentPinHash = state.parentPinHash; }
     if(state.parentPinSalt){ payload.parentPinSalt = state.parentPinSalt; }
     if(avgGrade !== null){ payload.avgGrade = avgGrade; }
@@ -6298,7 +6790,7 @@ function syncToCloud(){
       // "spitzname" und "portrait" gehoeren seit Version 48/50 dazu; ohne sie
       // hier waere ein fehlendes Regel-Feld gleichbedeutend mit "gar nichts
       // wird mehr gespeichert".
-      const JUNGE_FELDER = ["wortStand", "boxTreffer", "customSkin", "spitzname", "portrait"];
+      const JUNGE_FELDER = ["wortStand", "boxTreffer", "customSkin", "spitzname", "portrait", "listen"];
       const dabei = JUNGE_FELDER.filter(f => payload[f] !== undefined);
       if(dabei.length){
         try{
@@ -6545,7 +7037,8 @@ function shuffle(arr){
 }
 function buildQueue(){
   const all = getAllVocab();
-  let pool = state.category === "Alle" ? all : all.filter(w=>w.cat===state.category);
+  // Pakete, eigene Listen und "Alle" laufen durch dieselbe Tuer.
+  let pool = woerterFuerAuswahl();
 
   // Der Modus "faellig" uebt gezielt nur das, was heute dran ist.
   if(state.mode === "faellig"){
@@ -6568,7 +7061,8 @@ const CHALLENGE_ROUND_SIZE = 15;
 
 function buildChallengeQueue(){
   const all = getAllVocab();
-  let pool = state.category === "Alle" ? all : all.filter(w=>w.cat===state.category);
+  // Pakete, eigene Listen und "Alle" laufen durch dieselbe Tuer.
+  let pool = woerterFuerAuswahl();
   // Auch das Duell nimmt die dringendsten 15 statt 15 zufaelliger -
   // so raeumt das Kind seine faellige Liste im Spiel ab, nicht daneben.
   state.queue = shuffle(pool).sort((a, b)=> wortDringlichkeit(a) - wortDringlichkeit(b))
@@ -8992,12 +9486,8 @@ function renderStart(){
         </span>
         <span class="ek-pfeil">👈</span>
       </summary>
-      <h3 style="font-size:16px;margin:12px 0 10px;">VOKABELBLOCK</h3>
-      <select id="cat-select">
-        ${cats.map(c=>`<option value="${c}" ${state.category===c?'selected':''}>${c}</option>`).join("")}
-        <option value="__eigene">➕ Eigene Vokabeln hinzufügen …</option>
-      </select>
-      <p class="muted" style="margin-top:8px;">${(state.category==="Alle" ? getAllVocab().length : getAllVocab().filter(w=>w.cat===state.category).length)} Vokabeln in dieser Auswahl</p>
+      <h3 style="font-size:16px;margin:12px 0 10px;">WORTSCHATZ</h3>
+      ${paketAuswahlHtml()}
 
       <div class="setting-label">Richtung</div>
       <div class="seg-row">
@@ -9263,6 +9753,7 @@ function renderStart(){
         : "Tipp hier, wenn du etwas anderes üben willst";
     });
   }
+  try{ paketAuswahlVerdrahten(); }catch(e){ console.error("Paketauswahl:", e); }
   const catSelect = document.getElementById('cat-select');
   if(catSelect){
     catSelect.addEventListener('change', (e)=>{
@@ -13071,6 +13562,289 @@ function renderLernweg(){
     state.screen = "start";
     render();
   });
+}
+
+/* =====================================================================
+   VOKABELN NACH KLASSE UND PAKET - und eigene Listen
+
+   BISHER war die Auswahl ein Aufklappmenue mit ein paar Eintraegen. Das
+   traegt, solange es eine Handvoll gibt. Mit 15 Paketen und spaeter
+   einem zweiten Schuljahr traegt es nicht mehr.
+
+   DREI ENTSCHEIDUNGEN
+
+   1. Die Klassenstufe erscheint erst, wenn es mehr als eine gibt.
+      Ein Auswahlfeld mit genau einer Moeglichkeit ist kein Angebot,
+      sondern eine Stufe zum Stolpern. Der Code kann Klasse 6 schon
+      heute - er zeigt sie, sobald Woerter dafuer da sind. Dieselbe
+      Regel wie bei den Grammatik-Units.
+
+   2. Die Suche sucht in BEIDEN Sprachen und findet auch einzelne
+      Woerter, nicht nur Pakete. Ein Kind, das "Hund" eintippt, will
+      "dog" finden - nicht das Paket "Tiere" suchen muessen.
+
+   3. Eigene Listen sind Pakete wie alle anderen. Wer sich zehn Woerter
+      zusammenstellt, uebt sie mit denselben Spielen, demselben
+      Lernstand, derselben Statistik. Kein Sonderweg, keine zweite
+      Mechanik.
+===================================================================== */
+
+/* Ein Paket ist eine Sammlung, die man am Stueck ueben kann. */
+function paketeAlle(){
+  const raus = [];
+  const gesehen = {};
+  getAllVocab().forEach(w=>{
+    const k = w.cat || "Ohne Paket";
+    if(!gesehen[k]){
+      const def = VOKABEL_PAKETE.find(p=>p.name === k);
+      gesehen[k] = { name: k, icon: (def && def.icon) || "📦",
+                     klasse: (def && def.klasse) || 0, anzahl: 0 };
+      raus.push(gesehen[k]);
+    }
+    gesehen[k].anzahl++;
+  });
+  // Reihenfolge wie in VOKABEL_PAKETE, Unbekanntes hinten dran
+  raus.sort((a,b)=>{
+    const ia = VOKABEL_PAKETE.findIndex(p=>p.name===a.name);
+    const ib = VOKABEL_PAKETE.findIndex(p=>p.name===b.name);
+    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+  });
+  return raus;
+}
+
+/* Welche Klassenstufen gibt es ueberhaupt? Nur wenn es mehr als eine
+   ist, lohnt eine Auswahl. */
+function klassenVorhanden(){
+  const k = {};
+  paketeAlle().forEach(p=>{ if(p.klasse) k[p.klasse] = true; });
+  return Object.keys(k).map(Number).sort();
+}
+
+function paketeDerKlasse(klasse){
+  const alle = paketeAlle();
+  if(klassenVorhanden().length < 2) return alle;      // nur eine Stufe: alles zeigen
+  return alle.filter(p => !p.klasse || p.klasse === klasse);
+}
+
+/* --- Eigene Listen -------------------------------------------------- */
+const LISTEN_ZEICHEN = "★ ";
+
+function listenAlle(){
+  return Array.isArray(state.listen) ? state.listen : (state.listen = []);
+}
+function listeFinden(name){
+  return listenAlle().find(l => l.name === name) || null;
+}
+
+/* Der Wortvorrat fuer die aktuelle Auswahl. EINE Stelle, an der
+   entschieden wird, was geuebt wird - Pakete, eigene Listen und "Alle"
+   laufen durch dieselbe Tuer. */
+function woerterFuerAuswahl(){
+  const alle = getAllVocab();
+  const w = state.category;
+  if(!w || w === "Alle") return alle;
+  if(w.indexOf(LISTEN_ZEICHEN) === 0){
+    const liste = listeFinden(w.slice(LISTEN_ZEICHEN.length));
+    if(!liste) return alle;
+    const drin = {};
+    (liste.woerter || []).forEach(k => drin[k] = true);
+    const treffer = alle.filter(v => drin[wortSchluessel(v)]);
+    return treffer.length ? treffer : alle;
+  }
+  return alle.filter(v => v.cat === w);
+}
+
+/* --- Suche ---------------------------------------------------------- */
+function suchNormal(t){
+  return String(t || "").toLowerCase()
+    .replace(/ä/g,"a").replace(/ö/g,"o").replace(/ü/g,"u").replace(/ß/g,"ss")
+    .replace(/[^a-z0-9 ]/g,"");
+}
+function woerterSuchen(text, grenze){
+  const q = suchNormal(text);
+  if(q.length < 2) return [];
+  /* Ohne Rangfolge liefert die Suche nach "Hund" zuerst "hundred" -
+     weil "hundert" die Buchstaben enthaelt - und "schul" zuerst
+     "entschuldigung". Beides ist als Teilstring richtig und als
+     Antwort unbrauchbar. Deshalb: genaue Treffer zuerst, dann
+     Wortanfaenge, dann alles Uebrige. */
+  const rang = (feld)=>{
+    const f = suchNormal(feld);
+    if(f === q) return 0;                       // das ganze Feld
+    const teile = f.split(" ");
+    if(teile.indexOf(q) >= 0) return 1;         // ein ganzes Wort darin
+    if(teile.some(t => t.indexOf(q) === 0)) return 2;   // Anfang eines Wortes
+    if(f.indexOf(q) >= 0) return 3;             // irgendwo drin
+    return 9;
+  };
+  const treffer = [];
+  getAllVocab().forEach(w=>{
+    const r = Math.min(rang(w.en), rang(w.de));
+    if(r < 9) treffer.push({w: w, r: r});
+  });
+  treffer.sort((a, b)=> a.r - b.r);
+  return treffer.slice(0, grenze || 40).map(x => x.w);
+}
+
+/* --- Der Auswahlbereich in der Einstell-Karte ----------------------- */
+function paketAuswahlHtml(){
+  const klassen = klassenVorhanden();
+  const suche = state.paketSuche || "";
+  const treffer = suche ? woerterSuchen(suche) : [];
+  const pakete = paketeDerKlasse(state.klasse || klassen[0] || 5)
+    .filter(p => !suche || suchNormal(p.name).indexOf(suchNormal(suche)) >= 0);
+  const listen = listenAlle();
+  const gesamt = getAllVocab().length;
+
+  return `
+    ${klassen.length > 1 ? `
+    <div class="setting-label">Klasse</div>
+    <div class="kl-reihe">
+      ${klassen.map(k=>`
+        <button type="button" class="kl-chip ${(state.klasse||klassen[0])===k?'aktiv':''}" data-klasse="${k}">
+          Klasse ${k}
+        </button>`).join("")}
+    </div>` : ""}
+
+    <div class="setting-label">Womit üben?</div>
+    <div class="pk-suchfeld">
+      <span class="pk-lupe">🔎</span>
+      <input type="search" id="pk-suche" placeholder="Wort oder Thema suchen …"
+             value="${escapeHtml(suche)}" autocomplete="off">
+      ${suche ? `<button type="button" class="pk-leeren" id="pk-leeren" aria-label="Suche löschen">✕</button>` : ""}
+    </div>
+
+    ${suche && treffer.length ? `
+      <div class="pk-treffer">
+        <p class="pk-treffer-k">${treffer.length} Wort${treffer.length===1?"":"e"} gefunden
+          ${state.listeBau && state.listeBau.length ? `&middot; ${state.listeBau.length} ausgewählt` : ""}</p>
+        ${treffer.map(w=>{
+          const k = wortSchluessel(w);
+          const drin = (state.listeBau || []).indexOf(k) >= 0;
+          return `<button type="button" class="pk-wort ${drin?'drin':''}" data-wort="${escapeHtml(k)}">
+                    <span class="pk-w-en">${escapeHtml(w.en)}</span>
+                    <span class="pk-w-de">${escapeHtml(w.de)}</span>
+                    <span class="pk-w-plus">${drin ? "✓" : "+"}</span>
+                  </button>`;
+        }).join("")}
+        ${(state.listeBau && state.listeBau.length) ? `
+          <button class="btn small" id="pk-liste-speichern" style="margin-top:10px;">
+            ⭐ ${state.listeBau.length} Wörter als Liste speichern
+          </button>` : `
+          <p class="muted" style="margin:8px 0 0;font-size:12.5px;">
+            Tippe Wörter an, um dir eine eigene Liste zusammenzustellen.
+          </p>`}
+      </div>` : ""}
+    ${suche && !treffer.length && !pakete.length ? `
+      <p class="muted" style="margin:8px 0;">Dazu habe ich nichts gefunden.</p>` : ""}
+
+    <div class="pk-gitter">
+      ${!suche ? `
+        <button type="button" class="pk-kachel ${state.category==="Alle"?'aktiv':''}" data-paket="Alle">
+          <span class="pk-ic">🌍</span>
+          <span class="pk-n">Alle Wörter</span>
+          <span class="pk-z">${gesamt}</span>
+        </button>` : ""}
+      ${listen.map(l=>`
+        <button type="button" class="pk-kachel eigene ${state.category===LISTEN_ZEICHEN+l.name?'aktiv':''}"
+                data-paket="${escapeHtml(LISTEN_ZEICHEN + l.name)}">
+          <span class="pk-ic">⭐</span>
+          <span class="pk-n">${escapeHtml(l.name)}</span>
+          <span class="pk-z">${(l.woerter||[]).length}</span>
+        </button>`).join("")}
+      ${pakete.map(p=>`
+        <button type="button" class="pk-kachel ${state.category===p.name?'aktiv':''}" data-paket="${escapeHtml(p.name)}">
+          <span class="pk-ic">${p.icon}</span>
+          <span class="pk-n">${escapeHtml(p.name)}</span>
+          <span class="pk-z">${p.anzahl}</span>
+        </button>`).join("")}
+      <button type="button" class="pk-kachel dazu" id="pk-eigene">
+        <span class="pk-ic">➕</span>
+        <span class="pk-n">Eigene Vokabeln</span>
+        <span class="pk-z">hinzufügen</span>
+      </button>
+    </div>`;
+}
+
+function paketAuswahlVerdrahten(){
+  const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+
+  document.querySelectorAll('[data-klasse]').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.klasse = parseInt(el.dataset.klasse, 10); render(); });
+  });
+  document.querySelectorAll('[data-paket]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.category = el.dataset.paket;
+      state.paketSuche = "";
+      saveProgress();
+      render();
+    });
+  });
+  document.querySelectorAll('[data-wort]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const k = el.dataset.wort;
+      if(!Array.isArray(state.listeBau)) state.listeBau = [];
+      const i = state.listeBau.indexOf(k);
+      if(i >= 0) state.listeBau.splice(i, 1); else state.listeBau.push(k);
+      render();
+    });
+  });
+  an('pk-leeren', ()=>{ state.paketSuche = ""; render(); });
+  an('pk-eigene', ()=>{ state.screen = "customvocab"; render(); });
+  an('pk-liste-speichern', ()=>{
+    showPromptModal("Wie soll deine Liste heißen?", "z.B. Vokabeltest Freitag", (name)=>{
+      name = (name || "").trim().slice(0, 30);
+      if(name.length < 2) return;
+      const vorhanden = listeFinden(name);
+      if(vorhanden) vorhanden.woerter = state.listeBau.slice();
+      else listenAlle().push({ name: name, woerter: state.listeBau.slice() });
+      state.category = LISTEN_ZEICHEN + name;
+      state.listeBau = [];
+      state.paketSuche = "";
+      saveProgress();
+      syncToCloud();
+      render();
+    });
+  });
+
+  // Das Suchfeld darf NICHT bei jedem Zeichen neu zeichnen - sonst
+  // verliert das Feld den Fokus und die Tastatur klappt weg. Erst nach
+  // einer kurzen Pause, und danach den Cursor zurueck ans Ende.
+  const feld = document.getElementById('pk-suche');
+  if(feld){
+    let timer = null;
+    feld.addEventListener('input', ()=>{
+      clearTimeout(timer);
+      timer = setTimeout(()=>{
+        state.paketSuche = feld.value;
+        render();
+        const neu = document.getElementById('pk-suche');
+        if(neu){ neu.focus(); neu.setSelectionRange(neu.value.length, neu.value.length); }
+      }, 320);
+    });
+  }
+}
+
+/* Ein kleines Eingabefenster - showConfirmModal gibt es schon, aber
+   dort laesst sich nichts eintippen. */
+function showPromptModal(frage, platzhalter, fertig){
+  const hg = document.createElement('div');
+  hg.className = 'modal-overlay';
+  hg.innerHTML = `
+    <div class="panel modal-box">
+      <h3 style="font-size:17px;margin-bottom:10px;">${escapeHtml(frage)}</h3>
+      <input type="text" id="prompt-eingabe" maxlength="30" placeholder="${escapeHtml(platzhalter||"")}">
+      <button class="btn" id="prompt-ok" style="margin-top:12px;">✅ SPEICHERN</button>
+      <button class="btn secondary" id="prompt-weg" style="margin-top:8px;">Abbrechen</button>
+    </div>`;
+  document.body.appendChild(hg);
+  const zu = ()=>{ if(hg.parentNode) hg.parentNode.removeChild(hg); };
+  const feld = hg.querySelector('#prompt-eingabe');
+  setTimeout(()=>{ try{ feld.focus(); }catch(e){} }, 60);
+  hg.querySelector('#prompt-ok').addEventListener('click', ()=>{ const v = feld.value; zu(); fertig(v); });
+  hg.querySelector('#prompt-weg').addEventListener('click', zu);
+  feld.addEventListener('keydown', (e)=>{ if(e.key === "Enter"){ const v = feld.value; zu(); fertig(v); } });
+  hg.addEventListener('click', (e)=>{ if(e.target === hg) zu(); });
 }
 
 function renderCustomVocab(){
