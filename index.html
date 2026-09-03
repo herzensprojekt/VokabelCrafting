@@ -2378,24 +2378,27 @@ summary.mehr-knopf::after{ content:none; }
 .haupt-karte{
   position:relative; display:flex; flex-direction:column; align-items:center;
   text-align:center; padding:18px 10px 16px; min-height:0;
-  border:none; border-radius:20px; cursor:pointer;
-  font-family:var(--font); color:#fffdf8;
-  box-shadow:0 5px 14px rgba(90,70,40,0.26);
+  border:2px solid var(--papier-rand); border-radius:20px; cursor:pointer;
+  font-family:var(--font); color:var(--tinte);
+  box-shadow:0 4px 12px rgba(90,70,40,0.16);
   transition:transform .15s ease, box-shadow .15s ease;
 }
-.haupt-karte:hover{ transform:translateY(-3px); box-shadow:0 9px 22px rgba(0,0,0,0.30); }
+.haupt-karte:hover{ transform:translateY(-3px); box-shadow:0 8px 18px rgba(90,70,40,0.22); }
 .haupt-karte:active{ transform:translateY(0); }
 .haupt-karte.breit{ grid-column:1 / -1; flex-direction:row; justify-content:center;
                     gap:12px; padding:14px 12px; text-align:left; }
 .haupt-karte.breit .hk-ic{ margin-bottom:0; }
 .haupt-karte.breit .hk-t{ display:inline; }
-.hk-vokabeln{ background:linear-gradient(160deg,var(--salbei-a),var(--salbei-b)); }
-.hk-grammatik{ background:linear-gradient(160deg,var(--pflaume-a),var(--pflaume-b)); }
-.hk-spiele{ background:linear-gradient(160deg,var(--terra-a),var(--terra-b)); }
+/* Hell und warm statt satt und dunkel - dieselbe Familie wie die
+   Papierflaechen, nur einen Hauch farbiger. Die Schrift ist dadurch
+   dunkelbraun wie ueberall sonst, nicht weiss. */
+.hk-vokabeln{ background:linear-gradient(180deg,#f2f7e6,#dfebc9); border-color:#c8dcaa; }
+.hk-grammatik{ background:linear-gradient(180deg,#f7f0f6,#e9dcec); border-color:#d6c3da; }
+.hk-spiele{ background:linear-gradient(180deg,#fdf0e4,#f6ddc4); border-color:#e8c9a5; }
 .hk-ic{ font-size:clamp(30px,9vw,42px); line-height:1; margin-bottom:7px;
         filter:drop-shadow(0 3px 3px rgba(0,0,0,0.4)); }
 .hk-t{ font-size:clamp(15px,4.6vw,19px); font-weight:800; line-height:1.15; }
-.hk-u{ font-size:clamp(11px,3.2vw,13px); font-weight:400; opacity:.93;
+.hk-u{ font-size:clamp(11px,3.2vw,13px); font-weight:400; color:var(--tinte-hell);
        margin-top:4px; line-height:1.3; hyphens:auto; }
 .hk-punkt{
   position:absolute; top:-6px; right:-6px; min-width:26px; height:26px;
@@ -2503,6 +2506,71 @@ summary.mehr-knopf::after{ content:none; }
 }
 .ev-frisch-t{ flex:1; min-width:150px; font-size:13.5px; color:var(--tinte); line-height:1.35; }
 .ev-frisch-k{ display:flex; gap:8px; flex-wrap:wrap; }
+
+/* --- Wortkarten zum Antippen ----------------------------------------- */
+.vw-kopf{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+.vw-kopf-t{ flex:1; min-width:140px; font-size:13px; color:var(--tinte-hell); }
+.vw-kopf-k{ display:flex; gap:6px; }
+.vw-mini{
+  padding:6px 12px; border-radius:999px; cursor:pointer;
+  border:2px solid var(--papier-rand); background:var(--papier);
+  font-family:var(--font); font-weight:700; font-size:12px; color:var(--tinte-hell);
+}
+.vw-mini:hover{ background:var(--papier-tief); }
+
+.vw-gitter{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; }
+.vw-wort{
+  position:relative; display:flex; flex-direction:column; align-items:flex-start;
+  text-align:left; gap:1px; padding:10px 30px 10px 12px; min-height:0;
+  border:2px solid var(--papier-rand); border-radius:13px; cursor:pointer;
+  background:var(--papier); font-family:inherit;
+  transition:background .12s ease, border-color .12s ease, transform .12s ease;
+}
+.vw-wort:hover{ background:var(--papier-tief); }
+.vw-wort.gewaehlt{
+  background:#e4f3d8; border-color:#7fb35f;
+  box-shadow:0 0 0 3px rgba(127,179,95,0.25);
+}
+.vw-wort.gewaehlt .vw-w-en{ color:#2f6420; }
+.vw-w-en{ font-weight:800; font-size:14.5px; color:var(--tinte); line-height:1.2;
+          overflow-wrap:anywhere; }
+.vw-w-de{ font-size:12.5px; color:var(--tinte-hell); line-height:1.25;
+          overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.vw-w-haken{
+  position:absolute; top:8px; right:9px; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:900; color:#fff;
+  background:#7fb35f;
+}
+.vw-wort:not(.gewaehlt) .vw-w-haken{ background:transparent; box-shadow:inset 0 0 0 2px var(--papier-rand); }
+
+/* --- Die Leiste, die unten klebt --------------------------------------
+   Vorher lag der Startknopf hinter Richtung und sieben Spielarten - man
+   musste an allem vorbeiscrollen, um zu spielen. Jetzt ist er immer da. */
+.spiel-leiste{
+  position:sticky; bottom:0; z-index:5;
+  display:flex; align-items:stretch; gap:10px;
+  margin:14px 0 0; padding:10px;
+  background:rgba(253,250,243,0.97); border:2px solid var(--papier-rand);
+  border-radius:18px; box-shadow:0 -3px 14px rgba(90,70,40,0.16);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+}
+.sl-art{
+  flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-start;
+  justify-content:center; gap:1px; max-width:42%;
+  padding:8px 12px; cursor:pointer;
+  border:2px solid var(--papier-rand); border-radius:13px;
+  background:var(--papier-tief); font-family:var(--font);
+}
+.sl-art-l{ font-size:10px; font-weight:700; letter-spacing:.06em;
+           text-transform:uppercase; color:var(--tinte-hell); }
+.sl-art-w{ font-size:13px; font-weight:800; color:var(--tinte); line-height:1.15;
+           overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.btn.sl-start{
+  flex:1; margin:0; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:1px; font-size:17px; padding:10px 12px;
+}
+.btn.sl-start small{ font-size:11.5px; font-weight:500; opacity:.9; }
 </style>
 </head>
 <body>
@@ -2800,7 +2868,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "59.0 – Handvoll";
+const APP_VERSION = "60.0 – Antippen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6668,6 +6736,8 @@ const state = {
   evSuche: "",             // was im Suchfeld bei "Meine Vokabeln" steht
   evWeg: "",               // welcher der vier Wege gerade aufgeklappt ist
   frischDazu: [],          // gerade hinzugefuegte Woerter (nur auf dem Geraet)
+  offenesPaket: "",        // welches Paket im Vokabelbildschirm offen ist
+  wahl: [],                // angetippte Woerter (gruen), nur auf dem Geraet
   listeBau: [],            // Woerter, die man gerade zu einer Liste sammelt
   listen: [],              // eigene Wortlisten [{name, woerter:[schluessel]}]
   // Das Portrait wird als AUSWAHL gespeichert, nicht als Bild:
@@ -8663,6 +8733,7 @@ function render(){
   if(state.screen==="start") return renderStart();
   if(state.screen==="uebenvokabeln") return renderUebenVokabeln();
   if(state.screen==="uebengrammatik") return renderUebenGrammatik();
+  if(state.screen==="spielart") return renderSpielart();
   if(state.screen==="eltern") return renderEltern();
   if(state.screen==="quiz") return renderQuiz();
   if(state.screen==="milestone") return renderMilestone();
@@ -9765,93 +9836,203 @@ function uebenKopfHtml(titel, unter){
 
 function renderUebenVokabeln(){
   state.mainMode = "vocab";
-  app.innerHTML = `
-    ${uebenKopfHtml("Vokabeln üben", "Erst aussuchen, dann losspielen.")}
-    <div class="panel">
-      <h3 style="font-size:16px;margin:12px 0 10px;">WORTSCHATZ</h3>
-      ${paketAuswahlHtml()}
+  const offen  = state.offenesPaket || "";
+  const wahl   = wahlListe();
+  const klassen = klassenVorhanden();
 
+  const spielNamen = {faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
+                      mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
+                      floodhard:"Flutungsraum", aussprache:"Aussprache"};
+
+  /* Was steht im Startknopf? Immer die Zahl, die auch wirklich geuebt
+     wird - sonst verspricht der Knopf etwas anderes, als er tut. */
+  const woher = wahl.length ? (wahl.length + (wahl.length === 1 ? " Wort" : " Wörter"))
+              : offen ? kurzName(offen)
+              : "Alle Wörter";
+
+  app.innerHTML = `
+    ${renderHeader(offen ? kurzName(offen) : "Vokabeln üben", true)}
+
+    ${offen ? `
+      <button class="btn secondary einzeilig" id="vw-zurueck" style="margin-bottom:12px;">← Andere Wörter aussuchen</button>
+      <div class="panel">
+        <div class="vw-kopf">
+          <span class="vw-kopf-t">Tippe die Wörter an, die du üben willst.</span>
+          <span class="vw-kopf-k">
+            <button type="button" class="vw-mini" id="vw-alle">Alle</button>
+            <button type="button" class="vw-mini" id="vw-keins">Keins</button>
+          </span>
+        </div>
+        <div class="vw-gitter">
+          ${woerterVonQuelle(offen).map(w=>{
+            const k = wortSchluessel(w);
+            const drin = wahl.indexOf(k) >= 0;
+            return `
+            <button type="button" class="vw-wort ${drin ? "gewaehlt" : ""}" data-vw-wort="${escapeHtml(k)}">
+              <span class="vw-w-en">${escapeHtml(w.en)}</span>
+              <span class="vw-w-de">${escapeHtml(w.de)}</span>
+              <span class="vw-w-haken">${drin ? "✓" : ""}</span>
+            </button>`;
+          }).join("")}
+        </div>
+        ${wahl.length ? `
+          <button class="btn secondary small" id="vw-merken" style="margin-top:12px;">
+            ⭐ Diese ${wahl.length} als Liste merken
+          </button>` : ""}
+      </div>
+    ` : `
+      <div class="panel">
+        ${klassen.length > 1 ? `
+          <div class="kl-reihe">
+            ${klassen.map(k=>`
+              <button type="button" class="kl-chip ${(state.klasse||klassen[0])===k?'aktiv':''}" data-klasse="${k}">
+                Klasse ${k}
+              </button>`).join("")}
+          </div>`
+        : `<div class="kl-schild">📚 Klasse ${klassen[0] || 5}</div>`}
+        <p class="muted" style="margin:2px 0 12px;">Tippe an, woraus du üben willst.</p>
+        <div class="pk-gitter">
+          <button type="button" class="pk-kachel dazu" id="pk-eigene">
+            <span class="pk-ic">➕</span>
+            <span class="pk-n">Eigene Vokabeln</span>
+            <span class="pk-z">Listen bauen</span>
+          </button>
+          ${listenAlle().map(l=>`
+            <button type="button" class="pk-kachel eigene" data-vw-oeffnen="${escapeHtml(LISTEN_ZEICHEN + l.name)}">
+              <span class="pk-ic">⭐</span>
+              <span class="pk-n">${escapeHtml(l.name)}</span>
+              <span class="pk-z">${(l.woerter||[]).length}</span>
+            </button>`).join("")}
+          ${paketeDerKlasse(state.klasse || klassen[0] || 5).map(p=>`
+            <button type="button" class="pk-kachel" data-vw-oeffnen="${escapeHtml(p.name)}">
+              <span class="pk-ic">${p.icon}</span>
+              <span class="pk-n">${escapeHtml(p.name)}</span>
+              <span class="pk-z">${p.anzahl}</span>
+            </button>`).join("")}
+          <button type="button" class="pk-kachel" data-vw-oeffnen="Alle">
+            <span class="pk-ic">🌍</span>
+            <span class="pk-n">Alle Wörter</span>
+            <span class="pk-z">${getAllVocab().length}</span>
+          </button>
+        </div>
+      </div>
+    `}
+
+    <div class="spiel-leiste">
+      <button type="button" class="sl-art" id="vw-art">
+        <span class="sl-art-l">Spiel</span>
+        <span class="sl-art-w">${spielNamen[state.mode] || "Multiple Choice"}</span>
+      </button>
+      <button type="button" class="btn sl-start" id="start-btn">
+        ▶ SPIELEN
+        <small>${escapeHtml(woher)}</small>
+      </button>
+    </div>
+
+    <button class="btn danger" id="back-btn" style="margin-top:14px;">✕ ZURÜCK</button>
+  `;
+
+  document.querySelectorAll('[data-vw-oeffnen]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.offenesPaket = el.dataset.vwOeffnen;
+      state.wahl = [];
+      state.category = state.offenesPaket;
+      saveProgress();
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-vw-wort]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const k = wahlListe().indexOf(el.dataset.vwWort);
+      if(k >= 0) state.wahl.splice(k, 1); else state.wahl.push(el.dataset.vwWort);
+      /* Keine Auswahl mehr? Dann gilt wieder das ganze Paket - sonst
+         staende im Knopf "0 Wörter" und nichts ginge mehr. */
+      state.category = state.wahl.length ? AUSWAHL_ZEICHEN : (state.offenesPaket || "Alle");
+      render();
+    });
+  });
+
+  const anV = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+
+  anV('vw-zurueck', ()=>{
+    state.offenesPaket = ""; state.wahl = []; state.category = "Alle";
+    saveProgress(); render();
+  });
+  anV('vw-alle', ()=>{
+    state.wahl = woerterVonQuelle(state.offenesPaket).map(wortSchluessel);
+    state.category = state.wahl.length ? AUSWAHL_ZEICHEN : (state.offenesPaket || "Alle");
+    render();
+  });
+  anV('vw-keins', ()=>{
+    state.wahl = []; state.category = state.offenesPaket || "Alle"; render();
+  });
+  anV('vw-art', ()=>{ state.screen = "spielart"; render(); });
+  anV('pk-eigene', ()=>{ state.screen = "customvocab"; state.evSuche = ""; render(); });
+  anV('vw-merken', ()=>{
+    const woerter = wahlListe().slice();
+    if(!woerter.length) return;
+    showPromptModal("Wie soll deine Liste heißen?", "z.B. Vokabeltest Freitag", (name)=>{
+      name = (name || "").trim().slice(0, 30);
+      if(name.length < 2) return;
+      const vorhanden = listeFinden(name);
+      if(vorhanden) vorhanden.woerter = woerter;
+      else listenAlle().push({ name: name, woerter: woerter });
+      saveProgress(); syncToCloud(); render();
+    });
+  });
+
+  startVerdrahten();
+}
+
+/* Lange Namen wie "★ Vokabeltest Freitag" kuerzen fuer den Kopf. */
+function kurzName(name){
+  const n = (name || "").replace(LISTEN_ZEICHEN, "");
+  return n.length > 24 ? n.slice(0, 23) + "…" : n;
+}
+
+/* Spielart und Richtung liegen jetzt auf einem eigenen Bildschirm.
+   Auf dem Vokabelbildschirm standen sie zwischen der Wortauswahl und
+   dem Startknopf - man musste an ihnen vorbei, um zu spielen. */
+function renderSpielart(){
+  app.innerHTML = `
+    ${renderHeader("Wie willst du üben?", true)}
+
+    <div class="panel">
       <div class="setting-label">Richtung</div>
       <div class="seg-row">
-        <button type="button" class="mode-btn seg ${state.direction==='de-en'?'active':''}" data-direction="de-en" aria-pressed="${state.direction==='de-en'}">
+        <button type="button" class="mode-btn seg ${state.direction==='de-en'?'active':''}" data-direction="de-en">
           Deutsch &rarr; Englisch
         </button>
-        <button type="button" class="mode-btn seg ${state.direction==='en-de'?'active':''}" data-direction="en-de" aria-pressed="${state.direction==='en-de'}">
+        <button type="button" class="mode-btn seg ${state.direction==='en-de'?'active':''}" data-direction="en-de">
           Englisch &rarr; Deutsch
         </button>
       </div>
 
       <div class="setting-label">Spiel</div>
       <div class="game-grid">
-        <button type="button" class="mode-btn game-tile ${state.mode==='faellig'?'active':''}" data-mode="faellig" aria-pressed="${state.mode==='faellig'}">
-          <span class="gm-ic">${lernUeberblick().faellig > 0 ? "🔁" : "🌟"}</span>
-          <span class="gm-txt">
-            <span class="gm-name">Fällig heute${lernUeberblick().faellig > 0 ? ` <span class="gm-zahl">${lernUeberblick().faellig}</span>` : ""}</span>
-            <small>${lernUeberblick().faellig > 0
-              ? "Genau die Wörter, die jetzt dran sind"
-              : "Alles wiederholt &ndash; hier ist heute nichts offen"}</small>
-          </span>
-        </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='mc'?'active':''}" data-mode="mc" aria-pressed="${state.mode==='mc'}">
-          <span class="gm-ic">🎯</span>
-          <span class="gm-txt">
-            <span class="gm-name">Multiple Choice</span>
-            <small>4 Antworten zur Auswahl</small>
-          </span>
-        </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='type'?'active':''}" data-mode="type" aria-pressed="${state.mode==='type'}">
-          <span class="gm-ic">📝</span>
-          <span class="gm-txt">
-            <span class="gm-name">Vokabeltest</span>
-            <small>Selbst schreiben, mit Schulnote</small>
-          </span>
-        </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='mix'?'active':''}" data-mode="mix" aria-pressed="${state.mode==='mix'}">
-          <span class="gm-ic">🔀</span>
-          <span class="gm-txt">
-            <span class="gm-name">Gemischt</span>
-            <small>Mal Auswahl, mal Eintippen</small>
-          </span>
-        </button>
+        ${[["faellig", lernUeberblick().faellig > 0 ? "🔁" : "🌟", "Fällig heute", "Genau die Wörter, die jetzt dran sind"],
+           ["mc","🎯","Multiple Choice","4 Antworten zur Auswahl"],
+           ["type","📝","Vokabeltest","Selbst schreiben, mit Schulnote"],
+           ["mix","🔀","Gemischt","Mal Auswahl, mal Eintippen"],
+           ["challenge","⚔️","Die Challenge","10 Sekunden gegen den Bösewicht"],
+           ["flood","🌊","Der Flutungsraum","Klettere dem Wasser davon"],
+           ["aussprache","🗣️","Aussprache","Echte Stimmen zum Nachsprechen"]
+          ].map(([m, ic, name, unter])=>`
+          <button type="button" class="mode-btn game-tile ${state.mode===m?'active':''}" data-mode="${m}">
+            <span class="gm-ic">${ic}</span>
+            <span class="gm-txt">
+              <span class="gm-name">${name}</span>
+              <small>${unter}</small>
+            </span>
+          </button>`).join("")}
       </div>
-
-      <div class="setting-label">Und wenn du Lust auf mehr hast</div>
-      <div class="game-grid">
-        <button type="button" class="mode-btn game-tile ${state.mode==='challenge'?'active':''}" data-mode="challenge" aria-pressed="${state.mode==='challenge'}">
-          <span class="gm-ic">⚔️</span>
-          <span class="gm-txt">
-            <span class="gm-name">Die Challenge</span>
-            <small>10 Sekunden gegen den Bösewicht</small>
-          </span>
-        </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='flood'?'active':''}" data-mode="flood" aria-pressed="${state.mode==='flood'}">
-          <span class="gm-ic">🌊</span>
-          <span class="gm-txt">
-            <span class="gm-name">Der Flutungsraum</span>
-            <small>Klettere dem Wasser davon &ndash; ruhig oder schwer</small>
-          </span>
-        </button>
-        <button type="button" class="mode-btn game-tile ${state.mode==='aussprache'?'active':''}" data-mode="aussprache" aria-pressed="${state.mode==='aussprache'}">
-          <span class="gm-ic">🗣️</span>
-          <span class="gm-txt">
-            <span class="gm-name">Aussprache &ndash; die Zugabe</span>
-            <small>Echte Stimmen zum Nachsprechen &ndash; für einen Teil der Wörter</small>
-          </span>
-        </button>
-      </div>
-      
-
     </div>
-    <button class="btn" id="start-btn" style="font-size:19px;padding:18px;">▶ SPIEL STARTEN</button>
-    <div style="height:12px;">
-    </div>
-    <button class="btn" id="start-btn" style="font-size:19px;padding:18px;">▶ SPIEL STARTEN</button>
-    <p class="muted center-text" style="margin:10px auto 0;padding:10px 14px;background:rgba(255,255,255,0.72);border-radius:14px;font-size:13px;">
-      Für jede richtige Antwort gibt's Münzen. Bei falschen oder leeren Antworten werden 10 abgezogen &ndash;
-      unter 0 geht dein Kontostand nie.</p>
-    <div style="height:12px;"></div>
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+
+    <button class="btn" id="sa-fertig" style="font-size:18px;padding:16px;">✓ FERTIG</button>
   `;
+  const f = document.getElementById('sa-fertig');
+  if(f) f.addEventListener('click', ()=>{ state.screen = "uebenvokabeln"; saveProgress(); render(); });
   startVerdrahten();
 }
 
@@ -10147,7 +10328,12 @@ function startVerdrahten(){
     });
   }
   const zu = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
-  zu('hw-vokabeln',  ()=>{ state.screen = "uebenvokabeln";  render(); });
+  zu('hw-vokabeln',  ()=>{
+    /* Frisch anfangen: eine Auswahl von vorgestern waere hier nur
+       verwirrend, und der Knopf verspraeche eine falsche Zahl. */
+    state.offenesPaket = ""; state.wahl = []; state.category = "Alle";
+    state.screen = "uebenvokabeln"; render();
+  });
   zu('hw-grammatik', ()=>{ state.screen = "uebengrammatik"; render(); });
   // Den Zurueck-Knopf gibt es nur auf den drei Uebungsbildschirmen.
   zu('eltern-btn',   ()=>{ state.screen = "eltern";         render(); });
@@ -14144,22 +14330,45 @@ function listeFinden(name){
   return listenAlle().find(l => l.name === name) || null;
 }
 
-/* Der Wortvorrat fuer die aktuelle Auswahl. EINE Stelle, an der
-   entschieden wird, was geuebt wird - Pakete, eigene Listen und "Alle"
-   laufen durch dieselbe Tuer. */
-function woerterFuerAuswahl(){
+/* Die Woerter einer Quelle: ein Paket, eine eigene Liste oder alles. */
+function woerterVonQuelle(name){
   const alle = getAllVocab();
-  const w = state.category;
-  if(!w || w === "Alle") return alle;
-  if(w.indexOf(LISTEN_ZEICHEN) === 0){
-    const liste = listeFinden(w.slice(LISTEN_ZEICHEN.length));
-    if(!liste) return alle;
+  if(!name || name === "Alle") return alle;
+  if(name.indexOf(LISTEN_ZEICHEN) === 0){
+    const liste = listeFinden(name.slice(LISTEN_ZEICHEN.length));
+    if(!liste) return [];
     const drin = {};
     (liste.woerter || []).forEach(k => drin[k] = true);
-    const treffer = alle.filter(v => drin[wortSchluessel(v)]);
-    return treffer.length ? treffer : alle;
+    return alle.filter(v => drin[wortSchluessel(v)]);
   }
-  return alle.filter(v => v.cat === w);
+  return alle.filter(v => v.cat === name);
+}
+
+/* Die Marke fuer "das Kind hat einzelne Woerter angetippt". Sie steht in
+   state.category - dadurch gilt die Auswahl automatisch nicht mehr,
+   sobald Lingora oder der Lernweg etwas anderes einstellen. Kein
+   Aufraeumen an fuenf Stellen noetig. */
+const AUSWAHL_ZEICHEN = "✓ Meine Auswahl";
+
+function wahlListe(){
+  if(!Array.isArray(state.wahl)) state.wahl = [];
+  return state.wahl;
+}
+
+/* Der Wortvorrat fuer die aktuelle Auswahl. EINE Stelle, an der
+   entschieden wird, was geuebt wird - angetippte Woerter, Pakete,
+   eigene Listen und "Alle" laufen durch dieselbe Tuer. */
+function woerterFuerAuswahl(){
+  const alle = getAllVocab();
+  if(state.category === AUSWAHL_ZEICHEN){
+    const drin = {};
+    wahlListe().forEach(k => drin[k] = true);
+    const treffer = alle.filter(v => drin[wortSchluessel(v)]);
+    if(treffer.length) return treffer;
+    return alle;                       // lieber alles als eine leere Runde
+  }
+  const treffer = woerterVonQuelle(state.category);
+  return treffer.length ? treffer : alle;
 }
 
 /* --- Suche ---------------------------------------------------------- */
@@ -14635,7 +14844,9 @@ function renderCustomVocab(){
 
   document.querySelectorAll('[data-ev-ueben]').forEach(el=>{
     el.addEventListener('click', ()=>{
-      state.category = el.dataset.evUeben;
+      state.category      = el.dataset.evUeben;
+      state.offenesPaket  = el.dataset.evUeben;
+      state.wahl          = [];
       state.screen = "uebenvokabeln";
       saveProgress();
       render();
