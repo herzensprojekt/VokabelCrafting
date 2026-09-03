@@ -75,8 +75,13 @@
      dadurch unter den sichtbaren Rand, und die klebende Spielleiste
      klebte an einer Kante, die niemand sieht. 100dvh misst das, was
      wirklich da ist, und faengt das Ein- und Ausfahren der Leiste mit. */
-  @supports (height: 100dvh){
-    html,body{ height:100dvh; }
+  /* svh statt dvh: die KLEINSTE Fensterhoehe, also die mit sichtbarer
+     Browserleiste. dvh waechst und schrumpft, waehrend die Leiste ein-
+     und ausfaehrt - je nachdem, wann das Layout misst, sass die
+     Spielleiste mal richtig und mal darunter. Mit svh ist nie etwas
+     verdeckt; hoechstens bleibt Platz frei, wenn die Leiste einfaehrt. */
+  @supports (height: 100svh){
+    html,body{ height:100svh; }
   }
   body{
     font-family:var(--font);
@@ -1326,6 +1331,9 @@
   /* ---------- "Grammatikcrafting" - Flutungsraum (Minecraft-Pixellook) ---------- */
   /* Die drei Texturen (Stein, Bretter, Wasser) sind 16x16-Pixel-Kacheln und
      werden weiter unten per JS als Hintergrundbild gesetzt. */
+  /* Traegt die Verkleinerung des Raums auf kleinen Bildschirmen. */
+  .flood-buehne{ display:block; overflow:hidden; }
+  .flood-buehne > .flood-room{ transform-origin: top center; }
   .flood-room{
     position:relative; overflow:hidden;
     border:5px solid #232323; border-radius:4px;
@@ -1574,6 +1582,16 @@
     body.runde-laeuft .title-block .logo-img{
       max-width:132px; animation:none;   /* 250 -> 132: spart rund 90 Punkte */
     }
+    /* Im Flutungsraum ist der Platz am knappsten: Raum, Frage und vier
+       Antworten wollen alle aufs Bild. AM LEBENDEN BILDSCHIRM GEMESSEN
+       (390x780): Inhalt 839 Punkte in einem 752 hohen Kasten, die
+       unterste Antwort endete bei 828 - also 48 unter dem Rand.
+       Das Logo allein kostet 119 davon. Ohne Logo und mit passgenau
+       verkleinertem Raum (Faktor 0,736): Ueberhang 0, unterste Antwort
+       bei 668. Der Untertitel mit der Sammlung bleibt stehen. */
+    body.flut-laeuft .title-block .logo-img{ display:none; }
+    body.flut-laeuft .title-block{ margin-bottom:0; }
+    body.flut-laeuft .game-topbar{ margin-bottom:4px; }
     body.runde-laeuft .title-block p{ margin:2px 0 0; font-size:13px; }
     body.runde-laeuft .hud{ margin-bottom:2px; }
     body.runde-laeuft .progress-outer{ margin:4px 0; }
@@ -2570,15 +2588,23 @@ summary.mehr-knopf::after{ content:none; }
   border-radius:18px; box-shadow:0 -3px 14px rgba(90,70,40,0.16);
   backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
 }
+/* Vorher: blasse Papierflaeche, kleine Schrift, kein Hinweis, dass man
+   darauf tippen kann. Ein Kind hat schlicht nicht gesehen, dass es die
+   Spielart wechseln kann. Jetzt Symbol, Pfeil und warmer Rand. */
 .sl-art{
-  flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-start;
-  justify-content:center; gap:1px; max-width:42%;
-  padding:8px 12px; cursor:pointer;
-  border:2px solid var(--papier-rand); border-radius:13px;
-  background:var(--papier-tief); font-family:var(--font);
+  flex:0 0 auto; display:flex; align-items:center; gap:8px;
+  max-width:47%; padding:8px 11px; cursor:pointer;
+  border:2px solid #d8b768; border-radius:13px;
+  background:linear-gradient(180deg,#fdf3d9,#f6e6bd);
+  box-shadow:0 2px 0 rgba(150,115,30,0.22);
+  font-family:var(--font);
 }
-.sl-art-l{ font-size:10px; font-weight:700; letter-spacing:.06em;
-           text-transform:uppercase; color:var(--tinte-hell); }
+.sl-art:active{ transform:translateY(1px); box-shadow:0 1px 0 rgba(150,115,30,0.22); }
+.sl-art-ic{ font-size:21px; line-height:1; flex:0 0 auto; }
+.sl-art-txt{ display:flex; flex-direction:column; align-items:flex-start;
+             gap:1px; min-width:0; }
+.sl-art-l{ font-size:9.5px; font-weight:800; letter-spacing:.05em;
+           text-transform:uppercase; color:#8a6a1c; white-space:nowrap; }
 .sl-art-w{ font-size:13px; font-weight:800; color:var(--tinte); line-height:1.15;
            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
 .btn.sl-start{
@@ -2895,7 +2921,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "61.0 – Sammelkorb";
+const APP_VERSION = "63.0 – Heimweg";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4242,6 +4268,7 @@ function lingoraAblaufHtml(tag){
 }
 
 function renderLingoraPlan(){
+  state.spielZurueck = "lingoraplan";
   const p = lingoraPlan();
   if(!p){ lingoraFragebogenStarten(); return; }
   const tag = lingoraHeutigerTag();
@@ -6765,6 +6792,7 @@ const state = {
   evPaket: "",             // welches Paket beim Listenbauen offen ist
   frischDazu: [],          // gerade hinzugefuegte Woerter (nur auf dem Geraet)
   offenesPaket: "",        // welches Paket im Vokabelbildschirm offen ist
+  spielZurueck: "",        // wohin nach einer Runde zurueckgekehrt wird
   wahl: [],                // angetippte Woerter (gruen), nur auf dem Geraet
   listeBau: [],            // Woerter, die man gerade zu einer Liste sammelt
   listen: [],              // eigene Wortlisten [{name, woerter:[schluessel]}]
@@ -8455,7 +8483,7 @@ function renderFlutWahl(){
   const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
   anKnopf('flut-leicht', ()=>{ state.mode = "flood";     flutStarten(); });
   anKnopf('flut-schwer', ()=>{ state.mode = "floodhard"; flutStarten(); });
-  anKnopf('back-btn',    ()=>{ state.screen = "start"; render(); });
+  anKnopf('back-btn',    zurueckZurSektion);
 }
 
 /* Startet die Runde wirklich - ohne noch einmal hierher zu schicken. */
@@ -8581,7 +8609,7 @@ function renderAussprache(){
 
   const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
 
-  anKnopf('cancel-btn', ()=>{ state.screen = "start"; render(); });
+  anKnopf('cancel-btn', zurueckZurSektion);
 
   anKnopf('asp-hoeren', ()=>{
     sprachVorlesen(ziel, (ok)=>{
@@ -8700,7 +8728,7 @@ function renderAusspracheFertig(){
   `;
   const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
   anKnopf('asp-nochmal', ()=>{ state.mode = "aussprache"; startGame(); });
-  anKnopf('back-btn', ()=>{ state.screen = "start"; render(); });
+  anKnopf('back-btn', zurueckZurSektion);
 }
 
 /* ---------------------------------------------------
@@ -8734,9 +8762,12 @@ function render(){
     document.body.classList.toggle('runde-laeuft',
       state.screen === "quiz" || state.screen === "grammarquiz"
       || state.screen === "aussprache");
+    document.body.classList.toggle('flut-laeuft',
+      state.screen === "grammarquiz"
+      || (state.screen === "quiz" && (state.mode === "flood" || state.mode === "floodhard")));
   }catch(e){}
   // Lingoras Knopf lebt ausserhalb von #app und ueberlebt das Neuzeichnen.
-  setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); }catch(e){} }, 0);
+  setTimeout(()=>{ try{ lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); floodBuehneAnpassen(); }catch(e){} }, 0);
 
   // Der Elternbereich sperrt sich selbst, sobald man ihn verlaesst - egal
   // ueber welchen Knopf. Damit kommt niemand ohne PIN zurueck hinein.
@@ -9864,6 +9895,7 @@ function uebenKopfHtml(titel, unter){
 
 function renderUebenVokabeln(){
   state.mainMode = "vocab";
+  state.spielZurueck = "uebenvokabeln";
   const offen  = state.offenesPaket || "";
   const wahl   = wahlListe();
   const klassen = klassenVorhanden();
@@ -9871,6 +9903,8 @@ function renderUebenVokabeln(){
   const spielNamen = {faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
                       mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
                       floodhard:"Flutungsraum", aussprache:"Aussprache"};
+  const spielIcons = {faellig:"⏰", mc:"🎯", type:"✍️", mix:"🎲", challenge:"⚡",
+                      flood:"🌊", floodhard:"🌊", aussprache:"🎤"};
 
   /* Was steht im Startknopf? Immer die Zahl, die auch wirklich geuebt
      wird - sonst verspricht der Knopf etwas anderes, als er tut. */
@@ -9966,8 +10000,11 @@ function renderUebenVokabeln(){
 
     <div class="spiel-leiste">
       <button type="button" class="sl-art" id="vw-art">
-        <span class="sl-art-l">Spiel</span>
-        <span class="sl-art-w">${spielNamen[state.mode] || "Multiple Choice"}</span>
+        <span class="sl-art-ic">${spielIcons[state.mode] || "🎯"}</span>
+        <span class="sl-art-txt">
+          <span class="sl-art-l">Spiel ändern ▾</span>
+          <span class="sl-art-w">${spielNamen[state.mode] || "Multiple Choice"}</span>
+        </span>
       </button>
       <button type="button" class="btn sl-start" id="start-btn">
         ▶ SPIELEN
@@ -10099,6 +10136,7 @@ function renderSpielart(){
 
 function renderUebenGrammatik(){
   state.mainMode = "grammar";
+  state.spielZurueck = "uebengrammatik";
   app.innerHTML = `
     ${uebenKopfHtml("Grammatik üben", "Tippe ein Thema an &ndash; dann geht es los.")}
     
@@ -10850,6 +10888,19 @@ function showFeedbackWithConfirm(type, message, revealAnswer, extraNoteHtml){
   scrollFeedbackIntoView(fb);
 }
 
+/* Wohin nach einer Runde? Dorthin, wo sie angefangen hat.
+   Bisher sprang alles auf die Startseite - wer zweimal hintereinander
+   ueben wollte, musste sich jedes Mal neu durchklicken. */
+const SPIEL_HEIMAT = ["uebenvokabeln", "uebengrammatik", "lingoraplan", "lernweg"];
+
+function zurueckZurSektion(){
+  const z = state.spielZurueck;
+  state.screen = (z && SPIEL_HEIMAT.indexOf(z) >= 0)
+    ? z
+    : (state.mainMode === "grammar" ? "uebengrammatik" : "uebenvokabeln");
+  render();
+}
+
 function cancelGame(){
   showConfirmModal('Runde abbrechen und zum Menü zurückkehren?', ()=>{
     clearInterval(challengeTimerId);
@@ -10858,8 +10909,7 @@ function cancelGame(){
     protokolliereRunde("vocab", state.sessionLog);   // auch Abgebrochenes zaehlt
     saveProgress(); syncToCloud();
     state.answered = true;
-    state.screen = "start";
-    render();
+    zurueckZurSektion();
   });
 }
 
@@ -12021,7 +12071,7 @@ function renderCertificate(){
   document.getElementById('shop-btn').addEventListener('click', ()=>{ state.screen="shop"; state.shopReturnTo="certificate"; render(); attemptCloudLogin(true); });
   document.getElementById('leaderboard-btn').addEventListener('click', ()=>{ openLeaderboard("certificate"); });
   document.getElementById('retry-btn').addEventListener('click', startGame);
-  document.getElementById('menu-btn').addEventListener('click', ()=>{ state.screen="start"; render(); });
+  document.getElementById('menu-btn').addEventListener('click', zurueckZurSektion);
 }
 
 /* ---------------------------------------------------
@@ -13352,7 +13402,13 @@ function renderLeaderboard(){
     if(wert.length < 2){ if(st) st.textContent = "⚠️ Der Spitzname braucht mindestens zwei Zeichen."; return; }
     nameSetzen(wert);
   });
-  anLb('lb-name-aendern', ()=>{ state.spitzname = ""; saveProgress(); openLeaderboard(state.leaderboardReturnTo); });
+  anLb('lb-name-aendern', ()=>{
+    /* Frueher nur lokal geleert. Der oeffentliche Eintrag blieb damit
+       stehen, und die App bot gleichzeitig "MITMACHEN" an - ein Kind
+       glaubte, ausgetragen zu sein, stand aber weiter in der Liste.
+       nameSetzen("") geht ueber syncToCloud und loescht ihn wirklich. */
+    nameSetzen("");
+  });
   anLb('lb-raus', ()=>{
     showConfirmModal('Wirklich aus der Rangliste austragen? Dein Eintrag wird gelöscht.', ()=>nameSetzen(""));
   });
@@ -14232,6 +14288,7 @@ function lernwegSeit(tage){
 
 /* --- Bildschirm ----------------------------------------------------- */
 function renderLernweg(){
+  state.spielZurueck = "lernweg";
   const themen = lernwegAlleThemen();
   const nach = (z)=> themen.filter(t => t.zustand === z);
   const neu = nach("neu"), wackelt = nach("wackelt"), sitzt = nach("sitzt");
@@ -15034,19 +15091,81 @@ function recordGameGrade(grade, art){
    aufgeklappt am Fuss der Startseite. Als Kachel im Gitter braucht es
    ein Ziel. */
 function renderInventar(){
+  /* Dieselben drei Bereiche wie im Shop - und dieselben Funktionen.
+     Kein zweiter Satz Logik, der auseinanderlaufen koennte. */
+  const offen  = (state.redeemLog || []).filter(e => e.status !== "confirmed").length;
+  const fertig = (state.redeemLog || []).filter(e => e.status === "confirmed").length;
+  const besitz = Object.keys(state.inventory || {})
+                   .filter(id => shopItemById(id) && state.inventory[id] > 0).length;
+
   app.innerHTML = `
-    ${renderHeader("Dein Inventar", true)}
-    ${playerBadgeHtml(true)}
-    <div class="panel">
-      <h3 style="font-size:15px;margin-bottom:8px;">DAS GEHÖRT DIR</h3>
-      ${inventoryHtml(state.inventory)}
+    ${renderHeader("Deine Belohnungen", true)}
+
+    <div class="fort-zeile" style="margin-bottom:14px;">
+      <div class="fz-muenzen">
+        <img class="fz-m-bild" src="ic-muenzen.webp" alt="" width="200" height="207" loading="lazy">
+        <span class="fz-m-zahl">${state.coins}</span>
+        <span class="fz-m-u">Münzen</span>
+      </div>
+      <div class="fz-rest">
+        <div class="fz-kachel">
+          <span class="fz-k-ic">🎁</span>
+          <span class="fz-k-t">${besitz}</span>
+          <span class="fz-k-u">zum Einlösen</span>
+        </div>
+        <div class="fz-kachel">
+          <span class="fz-k-ic">${offen ? "⏳" : "✅"}</span>
+          <span class="fz-k-t">${offen}</span>
+          <span class="fz-k-u">wartet</span>
+        </div>
+        <div class="fz-kachel">
+          <span class="fz-k-ic">🗄️</span>
+          <span class="fz-k-t">${fertig}</span>
+          <span class="fz-k-u">bekommen</span>
+        </div>
+      </div>
     </div>
-    <button class="btn gold" id="inv-shop-btn">🛒 IM SHOP STÖBERN</button>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">DAS KANNST DU EINLÖSEN</h3>
+      <p class="muted" style="margin-bottom:8px;">Schick deine Belohnung an Mama oder Papa zur
+      Bestätigung &ndash; dann vergisst sie keiner.</p>
+      ${renderRedeemableInventory()}
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">⏳ WARTET AUF BESTÄTIGUNG</h3>
+      ${redeemHistoryHtml("offen")}
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:15px;margin-bottom:8px;">🗄️ SCHON BEKOMMEN</h3>
+      ${redeemHistoryHtml("archiv")}
+    </div>
+
+    <button class="btn gold" id="inv-shop-btn">🛒 NEUE BELOHNUNGEN IM SHOP</button>
     <div style="height:10px;"></div>
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
+
+  /* Genau dieselben vier Zuhoerer wie im Shop. Fehlt einer, sieht man
+     die Knoepfe und nichts passiert - der Fehler, den der Elternknopf
+     schon einmal hatte. */
+  document.querySelectorAll('[data-redeem-id]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ redeemInventoryItem(btn.dataset.redeemId); });
+  });
+  document.querySelectorAll('[data-request-confirm]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ sendRedemptionToParent(btn.dataset.requestConfirm); });
+  });
+  document.querySelectorAll('[data-confirm-here]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ oeffneBestaetigung(btn.dataset.confirmHere); });
+  });
+  document.querySelectorAll('[data-reward-img]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ teileBelohnungsbild(btn.dataset.rewardImg); });
+  });
+
   document.getElementById('inv-shop-btn').addEventListener('click', ()=>{
-    state.screen = "shop"; state.shopReturnTo = "start"; render();
+    state.screen = "shop"; state.shopReturnTo = "inventar"; render();
   });
   document.getElementById('back-btn').addEventListener('click', ()=>{
     state.screen = "start";
@@ -15319,7 +15438,11 @@ function renderFloodRoom(){
     `<span class="flood-bubble" style="left:${x}%;bottom:${4 + i*7}px;animation-delay:${(i*0.8).toFixed(1)}s;"></span>`
   ).join("");
 
+  /* Die Buehne traegt die Verkleinerung. Der Raum selbst behaelt seine
+     exakte Pixelgeometrie - Plattformen, Wasserstand und Sprungweiten
+     rechnen unveraendert weiter, sie werden nur kleiner gezeichnet. */
   return `
+    <div class="flood-buehne" id="flood-buehne">
     <div class="flood-room" id="flood-room" style="height:${FLOOD_ROOM_HEIGHT}px;">
       <div class="flood-goal">🚁 Rettung auf Stufe ${GRAMMAR_GOAL_CORRECT} &middot; du stehst auf Stufe ${level}</div>
       ${platforms}
@@ -15334,7 +15457,44 @@ function renderFloodRoom(){
         : `<div class="flood-danger-row">
             ${Array.from({length: GRAMMAR_MAX_WRONG_STREAK}, (_,i)=>`<span class="flood-danger-drop ${i < state.grammarWrongStreak ? 'active':''}">💧</span>`).join("")}
           </div>`}
+    </div>
     </div>`;
+}
+
+/* Misst, wieviel Platz neben dem Raum schon belegt ist, und verkleinert
+   ihn genau so weit, dass die unterste Antwort noch aufs Bild passt.
+
+   Warum messen statt raten: Die Hoehe haengt an Geraet, Schriftgroesse,
+   Adressleiste und daran, ob gerade eine Rueckmeldung eingeblendet ist.
+   Eine feste Zahl waere auf einem Geraet richtig und auf drei falsch. */
+let floodSkalaFuer = -1;
+function floodBuehneAnpassen(erzwingen){
+  const b = document.getElementById('flood-buehne');
+  if(!b) return;
+  const raum = b.firstElementChild;
+  if(!raum) return;
+  const sicht = Math.round((window.visualViewport && window.visualViewport.height) || window.innerHeight || 0);
+  if(sicht < 200) return;
+  if(!erzwingen && sicht === floodSkalaFuer && b.style.height) return;
+
+  raum.style.transform = "";
+  b.style.height = "";
+  const roomH = b.offsetHeight;
+  const letzte = app && app.lastElementChild;
+  if(!roomH || !letzte) return;
+  /* Die Unterkante des letzten Bausteins - gemessen, nicht geschaetzt.
+     app.scrollHeight taugt dafuer NICHT: er ist auf die Kastenhoehe
+     gedeckelt und meldete 752, wo der Inhalt in Wahrheit 999 Punkte
+     hoch war. Das haette die Rechnung still falsch gemacht. */
+  const unten  = letzte.getBoundingClientRect().bottom + app.scrollTop;
+  const zuviel = Math.max(0, unten - (sicht - 14));
+  let k = (roomH - zuviel) / roomH;
+  /* Nicht kleiner als 0,45 - darunter erkennt niemand mehr die Figur.
+     Was dann noch fehlt, holt scrollIntoView ins Bild. */
+  k = Math.max(0.45, Math.min(1, k));
+  raum.style.transform = "scale(" + k.toFixed(3) + ")";
+  b.style.height = Math.round(roomH * k) + "px";
+  floodSkalaFuer = erzwingen ? -1 : sicht;
 }
 
 function renderGrammarQuiz(){
@@ -15396,8 +15556,7 @@ function cancelGrammarGame(){
     stopFloodRise();
     protokolliereRunde("grammar", state.grammarSessionLog);
     saveProgress(); syncToCloud();
-    state.screen = "start";
-    render();
+    zurueckZurSektion();
   });
 }
 
@@ -15411,6 +15570,11 @@ function grammarWeiterKnopf(fb, weiter){
   b.textContent = '✓ VERSTANDEN – WEITER';
   b.addEventListener('click', weiter, { once:true });
   fb.appendChild(b);
+  /* Erst den Raum so weit verkleinern, wie es geht, dann den Knopf ins
+     Bild holen. Beides zusammen - Verkleinern allein reicht nicht, der
+     Raum gibt hoechstens 142 der fehlenden 233 Punkte her. */
+  try{ floodBuehneAnpassen(true); }catch(e){}
+  setTimeout(()=>{ try{ b.scrollIntoView({block:"end", behavior:"smooth"}); }catch(e){} }, 70);
   scrollFeedbackIntoView(fb);
 }
 
@@ -16257,10 +16421,7 @@ function renderGrammarCertificate(){
     else if(practice){ startGrammarTest(); }
     else { startGrammarPractice(); }
   });
-  document.getElementById('grammar-home-btn').addEventListener('click', ()=>{
-    state.screen = "start";
-    render();
-  });
+  document.getElementById('grammar-home-btn').addEventListener('click', zurueckZurSektion);
 }
 
 // Die drei Pixel-Kacheln als Hintergrund setzen (liegen als JS-Konstanten vor)
@@ -16326,7 +16487,28 @@ document.addEventListener("visibilitychange", ()=>{
     if(state.screen === "parents"){ render(); }
   }
 });
-window.addEventListener("pageshow", ()=>{ holeWeiterNach(); refreshIfStale(); });
+/* --- Die Fensterhoehe in Pixeln festhalten ---------------------------
+   Auch svh ist nur eine Rechengroesse des Browsers. Der visualViewport
+   sagt, was WIRKLICH zu sehen ist - inklusive eingeblendeter Tastatur.
+   Ohne das sass der Spielen-Knopf mal richtig und mal unter dem
+   Bildschirmrand, und mehrfaches Neuladen "half" scheinbar.          */
+function fensterHoeheSetzen(){
+  const vv = window.visualViewport;
+  const h  = Math.round((vv && vv.height) || window.innerHeight || 0);
+  if(h > 200){ document.body.style.height = h + "px"; }
+}
+fensterHoeheSetzen();
+window.addEventListener("resize", ()=>{ fensterHoeheSetzen(); try{ floodBuehneAnpassen(); }catch(e){} });
+window.addEventListener("orientationchange", ()=> setTimeout(fensterHoeheSetzen, 250));
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize", fensterHoeheSetzen);
+}
+/* Nach dem ersten Zeichnen noch einmal - beim allerersten Aufbau steht
+   die Adressleiste oft noch anders als eine Sekunde spaeter. */
+setTimeout(fensterHoeheSetzen, 300);
+setTimeout(fensterHoeheSetzen, 1200);
+
+window.addEventListener("pageshow", ()=>{ fensterHoeheSetzen(); holeWeiterNach(); refreshIfStale(); });
 window.addEventListener("focus", holeWeiterNach);
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState === "visible"){ holeWeiterNach(); refreshIfStale(); }
