@@ -2120,28 +2120,70 @@ summary.mehr-knopf::after{ content:none; }
 }
 .pw-kachel img{ width:100%; height:auto; display:block; border-radius:10px; }
 
-/* --- Titelbild auf der Anmeldeseite ---------------------------------
-   Auf dem Handy nur das obere Band: Ueberschrift und Logo sind dort mit
-   14 und 45 px lesbar, die Stoerer mit 6,6 px nicht. Sie werden deshalb
-   gar nicht erst gezeigt - ein Kopf, der eine halbe Bildschirmhoehe
-   frisst und dabei nichts vermittelt, waere teuer erkauft.
-   Ab 760 px zeigen wir das ganze Quadrat; dort kommen die Stoerer an. */
+/* --- Kopf der Anmeldeseite ------------------------------------------
+   Das Logo ist freigestellt und bringt seinen eigenen Schatten mit -
+   deshalb kein Kasten, kein Rahmen, keine zweite Schlagschattenschicht
+   darunter. Es steht einfach da. */
 .login-topbar.mit-bild{ position:relative; padding:0; }
 .titelbild{
-  display:block; width:100%; height:auto;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  object-position: center top;
-  border-radius:16px;
-  box-shadow:0 4px 16px rgba(20,30,15,0.18);
+  display:block; width:min(100%, 460px); height:auto; margin:0 auto;
+  filter: drop-shadow(0 6px 14px rgba(20,30,15,0.22));
 }
-@media (min-width: 760px){
-  .titelbild{ aspect-ratio: 1 / 1; }
-  /* Ab hier steht die Ueberschrift schon gross im Bild. */
-  .hero-titel.nur-klein{ display:none; }
-}
+@media (min-width: 760px){ .titelbild{ width:min(100%, 560px); } }
 .login-topbar.mit-bild .info-btn,
 .login-topbar.mit-bild .zur-anmeldung{ z-index:2; }
+
+/* --- Die USP-Karten --------------------------------------------------
+   Zwei Spalten auf dem Handy, drei ab Tablet. Jede Karte traegt genau
+   eine Aussage: Symbol, Ueberschrift, ein kurzer Satz. Mehr wuerde
+   niemand lesen - und die Symbole sollen wirken duerfen.               */
+.usp-gitter{
+  display:grid; grid-template-columns:repeat(2, 1fr);
+  gap:10px; margin:14px 0 12px;
+}
+@media (min-width: 620px){ .usp-gitter{ grid-template-columns:repeat(3, 1fr); } }
+.usp{
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  gap:2px; padding:14px 10px 12px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.86));
+  border:2px solid rgba(255,255,255,0.9);
+  border-radius:18px;
+  box-shadow:0 3px 12px rgba(20,30,15,0.12);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.usp:hover{ transform:translateY(-3px); box-shadow:0 7px 18px rgba(20,30,15,0.18); }
+.usp-ic{
+  width:64px; height:auto; margin-bottom:6px;
+  filter: drop-shadow(0 3px 5px rgba(20,30,15,0.22));
+}
+.usp-t{
+  font-family:var(--font); font-weight:800; font-size:14.5px;
+  color:#1e4515; line-height:1.2;
+}
+.usp-s{ font-size:12.5px; color:#5f6b5a; line-height:1.35; }
+
+/* --- Die Zeile mit dem Herz ----------------------------------------- */
+.usp-herz{
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; margin:0 0 14px;
+  background:rgba(255,255,255,0.82);
+  border:2px solid rgba(255,255,255,0.9);
+  border-radius:16px;
+  box-shadow:0 3px 12px rgba(20,30,15,0.10);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  font-size:13.5px; color:#4a5545; line-height:1.45; text-align:left;
+}
+.usp-herz img{
+  width:46px; height:auto; flex:0 0 auto;
+  filter: drop-shadow(0 3px 5px rgba(20,30,15,0.20));
+}
+
+/* --- Lingora ueber seinem Knopf ------------------------------------- */
+.lingora-gross{
+  display:block; width:min(46%, 168px); height:auto; margin:6px auto -6px;
+  filter: drop-shadow(0 6px 12px rgba(20,30,15,0.22));
+}
 </style>
 </head>
 <body>
@@ -2439,7 +2481,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "51.0 – Aushang";
+const APP_VERSION = "52.0 – Schaukasten";
 
 const VOCAB = [
   {en:"glass", de:"Glas", cat:CATEGORY_NAME},
@@ -8495,9 +8537,9 @@ function renderLogin(){
 
   app.innerHTML = `
     <div class="login-topbar mit-bild">
-      <img class="titelbild" src="titelbild.webp"
-           alt="LingoCrafter - spielend Englisch lernen, Münzen gegen echte Belohnungen tauschen"
-           width="1000" height="1000">
+      <img class="titelbild" src="logo-neu.webp"
+           alt="LingoCrafter - Deine Lern-App. Lernen. Spielen. Wachsen."
+           width="900" height="901">
       <button type="button" class="info-btn" id="info-btn" title="Was ist LingoCrafter?" aria-label="Was ist LingoCrafter?">i</button>
       <button type="button" class="zur-anmeldung" id="zur-anmeldung">Anmelden ↓</button>
     </div>
@@ -8512,9 +8554,48 @@ function renderLogin(){
       </div>
     ` : `
       <div class="hero">
-        <h2 class="hero-titel nur-klein">Englisch lernen &amp;<br>Belohnungen sammeln</h2>
-        <p class="hero-text">Spielend Vokabeln &amp; Grammatik lernen, Münzen verdienen
-          und gegen echte Belohnungen eintauschen, die Mama und Papa festlegen.</p>
+        <p class="hero-text">Englisch üben, Münzen verdienen &ndash; und sie gegen
+          echte Belohnungen eintauschen, die Mama und Papa festlegen.</p>
+      </div>
+
+      <div class="usp-gitter">
+        <div class="usp">
+          <img class="usp-ic" src="ic-muenzen.webp" alt="" width="200" height="207" loading="lazy">
+          <span class="usp-t">Münzen verdienen</span>
+          <span class="usp-s">Für jede richtige Antwort.</span>
+        </div>
+        <div class="usp">
+          <img class="usp-ic" src="ic-geschenk.webp" alt="" width="200" height="201" loading="lazy">
+          <span class="usp-t">Echte Belohnungen</span>
+          <span class="usp-s">Mama und Papa legen fest, wofür.</span>
+        </div>
+        <div class="usp">
+          <img class="usp-ic" src="ic-buch.webp" alt="" width="200" height="200" loading="lazy">
+          <span class="usp-t">Vokabeln &amp; Grammatik</span>
+          <span class="usp-s">Wortschatz und Regeln, Thema für Thema.</span>
+        </div>
+        <div class="usp">
+          <img class="usp-ic" src="ic-spiele.webp" alt="" width="200" height="197" loading="lazy">
+          <span class="usp-t">Lernspiele</span>
+          <span class="usp-s">Auswahl, Tippen, Flutungsraum, Challenge.</span>
+        </div>
+        <div class="usp">
+          <img class="usp-ic" src="ic-plan.webp" alt="" width="200" height="186" loading="lazy">
+          <span class="usp-t">Plan bis zur Arbeit</span>
+          <span class="usp-s">Lingora teilt die Tage bis zur Klassenarbeit ein.</span>
+        </div>
+        <div class="usp">
+          <img class="usp-ic" src="ic-avatar.webp" alt="" width="200" height="206" loading="lazy">
+          <span class="usp-t">Eigener Avatar</span>
+          <span class="usp-s">Gesicht bauen oder Blockfigur &ndash; wie du magst.</span>
+        </div>
+      </div>
+
+      <div class="usp-herz">
+        <img src="ic-herz.webp" alt="" width="200" height="190" loading="lazy">
+        <span><strong>Kostenlos und ohne Werbung.</strong>
+        Ein Familienprojekt &ndash; entstanden für einen Fünftklässler,
+        der Englisch nicht mochte.</span>
       </div>
 
       <div class="kachel-reihe">
@@ -8543,6 +8624,8 @@ function renderLogin(){
 
       </div>
 
+      <img class="lingora-gross" src="lingora-gross.webp" alt="Lingora, dein Lernbegleiter"
+           width="420" height="566" loading="lazy">
       <button class="btn wood lingora-vorstellen" id="lingora-mehr-btn">
         🧭 Wie Lingora bis zur Klassenarbeit plant
       </button>
