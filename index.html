@@ -2924,7 +2924,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "63.3 – Zwei Geräte";
+const APP_VERSION = "64.0 – Pixelgesicht";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6239,13 +6239,18 @@ function fremdeFigurFront(customSkin){
    Gesicht mit Frisur, Augen, Mund, Hautton.
 
    WARUM DAS OHNE ZEICHENARBEIT GEHT
-   Die Bilderteile kommen aus der DiceBear-Bibliothek, Stil
-   "adventurer" von Lisa Wischofsky (CC BY 4.0 - die Namensnennung
-   steht im Impressum). Sie liefert 45 Frisuren, 26 Augenpaare, 30
-   Muender, 15 Augenbrauen, 5 Brillen und 6 Ohrringe, alle aus einer
-   Hand und aufeinander abgestimmt. Selbst zu zeichnen waeren das 120
-   Einzelteile gewesen, die zusammenpassen muessen - das ist der
-   Aufwand, den diese Bibliothek erspart.
+   Die Bilderteile kommen aus der DiceBear-Bibliothek, Stil "pixelArt"
+   (CC0 - gemeinfrei, eine Namensnennung waere nicht einmal noetig).
+   Sie liefert 45 Frisuren, 12 Augenpaare, 23 Muender, 8 Hauttoene,
+   23 Kleidungsstuecke, 10 Huete und 14 Brillen - alle aus einer Hand
+   und aufeinander abgestimmt.
+
+   WARUM PIXEL UND NICHT GEZEICHNET
+   Vorher stand hier "adventurer": weiche, gezeichnete Gesichter. Die
+   waren gut gemacht, sassen aber mitten in einer App, die sonst
+   durchgehend aus Bloecken und Pixeln besteht. Zwei Bildsprachen
+   nebeneinander wirken unruhig, ohne dass man sagen kann warum.
+   pixelArt spricht dieselbe Sprache wie die Blockfigur daneben.
 
    WAS GESPEICHERT WIRD
    Nicht das Bild, sondern die AUSWAHL: {hair:"long01", eyes:"..."}.
@@ -6273,7 +6278,30 @@ function portraitLaden(){
       import("https://esm.sh/@dicebear/core@9"),
       import("https://esm.sh/@dicebear/collection@9")
     ]);
-    PORTRAIT_LIB = { core: core, stil: col.adventurer };
+    PORTRAIT_LIB = { core: core, stil: col.pixelArt };
+    /* Ein gespeichertes Gesicht kann noch aus dem frueheren Stil
+       stammen. Dessen Werte kennt pixelArt teilweise nicht - ungeprueft
+       uebernommen bliebe das Gesicht halb oder ganz leer. Einmal
+       aufraeumen, auffuellen, sichern. */
+    try{
+      if(state.portrait && Object.keys(state.portrait).length){
+        const sauber = portraitBereinigen(state.portrait);
+        /* NICHT "wenn die Frisur passt, ist alles gut": Frisur- und
+           Augenwerte des alten Stils sind zufaellig auch hier gueltig,
+           Mund, Hautton und Kleidung aber nicht. Ohne das Auffuellen
+           bliebe ein halbes Gesicht mit Standardwerten stehen.
+           Also immer auffuellen - Erhaltenes gewinnt. */
+        const grund = portraitZufall();
+        delete grund.hat; delete grund.glasses;   // keine ungefragten Zugaben
+        const voll = Object.assign(grund, sauber);
+        if(JSON.stringify(voll) !== JSON.stringify(state.portrait)){
+          state.portrait = voll;
+          portraitBildCache = { schluessel: "", uri: "" };
+          saveProgress();
+          syncToCloud();
+        }
+      }
+    }catch(e){ /* lieber das alte Bild als gar keines */ }
     return PORTRAIT_LIB;
   })();
   portraitLadePromise.catch(()=>{ portraitLadePromise = null; });
@@ -6295,22 +6323,41 @@ function portraitOptionen(schluessel){
 /* Hauttoene: die vier der Bibliothek plus zwei Zwischentoene. Vier
    Abstufungen sind fuer eine Kinder-App zu wenig - jedes Kind soll
    sich wiedererkennen koennen. */
-const PORTRAIT_HAUT = ["ffdbb4", "f2d3b1", "ecad80", "c68642", "9e5622", "763900"];
-
+/* Die Bauteile, die pixelArt kennt. Brauen und Ohrringe gibt es hier
+   nicht - dafuer Kleidung und Hut, was zu einer Minecraft-App ohnehin
+   besser passt. Die Reihenfolge ist die, in der ein Kind entscheidet:
+   erst wer bin ich, dann was trage ich. */
 const PORTRAIT_TEILE = [
-  {k:"hair",      name:"Frisur",    icon:"💇"},
-  {k:"hairColor", name:"Haarfarbe", icon:"🎨", farben:true},
-  {k:"eyes",      name:"Augen",     icon:"👀"},
-  {k:"eyebrows",  name:"Brauen",    icon:"😐"},
-  {k:"mouth",     name:"Mund",      icon:"😀"},
-  {k:"skinColor", name:"Hautton",   icon:"🖐️", farben:true},
-  {k:"glasses",   name:"Brille",    icon:"👓", ausAn:true},
-  {k:"earrings",  name:"Ohrringe",  icon:"💠", ausAn:true}
+  {k:"hair",          name:"Frisur",     icon:"💇"},
+  {k:"hairColor",     name:"Haarfarbe",  icon:"🎨", farben:true},
+  {k:"eyes",          name:"Augen",      icon:"👀"},
+  {k:"mouth",         name:"Mund",       icon:"😀"},
+  {k:"skinColor",     name:"Hautton",    icon:"🖐️", farben:true},
+  {k:"clothing",      name:"Kleidung",   icon:"👕"},
+  {k:"clothingColor", name:"Stofffarbe", icon:"🎽", farben:true},
+  {k:"hat",           name:"Hut",        icon:"🎩", ausAn:true},
+  {k:"glasses",       name:"Brille",     icon:"👓", ausAn:true}
 ];
 
+/* Frueher stand hier eine handgeschriebene Hautton-Liste, weil der alte
+   Stil nur vier Abstufungen hatte. pixelArt bringt acht eigene mit, die
+   zur Pixelpalette passen - eine eigene Liste waere hier schlechter,
+   nicht besser. */
 function portraitFarben(schluessel){
-  if(schluessel === "skinColor") return PORTRAIT_HAUT;
-  return portraitOptionen("hairColor");
+  return portraitOptionen(schluessel);
+}
+
+/* Prueft eine gespeicherte Auswahl gegen das Schema des aktuellen Stils.
+   Alles, was er nicht kennt, fliegt raus. Ohne diesen Filter wuerde eine
+   Auswahl aus einem frueheren Stil stillschweigend halb wirken. */
+function portraitBereinigen(wahl){
+  if(!wahl || !PORTRAIT_LIB) return wahl || {};
+  const raus = {};
+  Object.keys(wahl).forEach(k=>{
+    const erlaubt = portraitOptionen(k);
+    if(erlaubt.length && erlaubt.indexOf(wahl[k]) >= 0) raus[k] = wahl[k];
+  });
+  return raus;
 }
 
 /* Aus einer Auswahl ein Bild machen. */
@@ -6318,16 +6365,18 @@ function portraitSvg(wahl, groesse){
   if(!PORTRAIT_LIB) return "";
   const w = wahl || {};
   const args = { size: groesse || 160, radius: 50 };
-  ["hair", "eyes", "eyebrows", "mouth"].forEach(k=>{ if(w[k]) args[k] = [w[k]]; });
-  if(w.hairColor) args.hairColor = [w.hairColor];
-  if(w.skinColor) args.skinColor = [w.skinColor];
-  // Brille und Ohrringe sind Ja/Nein-Sachen. Die Bibliothek steuert das
-  // ueber eine Wahrscheinlichkeit - 0 oder 100, nichts dazwischen.
-  args.glasses  = w.glasses  ? [w.glasses]  : ["variant01"];
-  args.earrings = w.earrings ? [w.earrings] : ["variant01"];
-  args.glassesProbability  = w.glasses  ? 100 : 0;
-  args.earringsProbability = w.earrings ? 100 : 0;
-  args.featuresProbability = 0;
+  ["hair", "eyes", "mouth", "clothing"].forEach(k=>{ if(w[k]) args[k] = [w[k]]; });
+  ["hairColor", "skinColor", "clothingColor"].forEach(k=>{ if(w[k]) args[k] = [w[k]]; });
+  // Hut und Brille sind Ja/Nein-Sachen. Die Bibliothek steuert das ueber
+  // eine Wahrscheinlichkeit - 0 oder 100, nichts dazwischen.
+  args.hat     = w.hat     ? [w.hat]     : ["variant01"];
+  args.glasses = w.glasses ? [w.glasses] : ["light01"];
+  args.hatProbability     = w.hat     ? 100 : 0;
+  args.glassesProbability = w.glasses ? 100 : 0;
+  /* Bart und Zubehoer bleiben aus: Ein Elfjaehriger braucht keinen
+     Vollbart, und jede zusaetzliche Reihe macht die Werkstatt laenger. */
+  args.beardProbability       = 0;
+  args.accessoriesProbability = 0;
   args.backgroundColor = ["transparent"];
   try{
     return PORTRAIT_LIB.core.createAvatar(PORTRAIT_LIB.stil, args).toString();
@@ -6365,15 +6414,16 @@ function portraitDa(){ return !!(state.portrait && state.portrait.hair); }
 function portraitZufall(){
   const w = (liste)=> liste.length ? liste[Math.floor(Math.random()*liste.length)] : "";
   const auswahl = {
-    hair:      w(portraitOptionen("hair")),
-    hairColor: w(portraitOptionen("hairColor")),
-    eyes:      w(portraitOptionen("eyes")),
-    eyebrows:  w(portraitOptionen("eyebrows")),
-    mouth:     w(portraitOptionen("mouth")),
-    skinColor: w(PORTRAIT_HAUT)
+    hair:          w(portraitOptionen("hair")),
+    hairColor:     w(portraitOptionen("hairColor")),
+    eyes:          w(portraitOptionen("eyes")),
+    mouth:         w(portraitOptionen("mouth")),
+    skinColor:     w(portraitOptionen("skinColor")),
+    clothing:      w(portraitOptionen("clothing")),
+    clothingColor: w(portraitOptionen("clothingColor"))
   };
-  if(Math.random() < 0.25) auswahl.glasses  = w(portraitOptionen("glasses"));
-  if(Math.random() < 0.20) auswahl.earrings = w(portraitOptionen("earrings"));
+  if(Math.random() < 0.30) auswahl.hat     = w(portraitOptionen("hat"));
+  if(Math.random() < 0.25) auswahl.glasses = w(portraitOptionen("glasses"));
   return auswahl;
 }
 
@@ -9950,9 +10000,9 @@ function renderEltern(){
         <button class="btn secondary" id="support-btn" style="margin-top:6px;"><span class="paypal-badge-inline">Pay<span style="color:#c9e2ff;">Pal</span></span> &nbsp;Unterstützen</button>
 
         <p class="muted center-text" style="margin:12px auto 0;font-size:11px;max-width:34em;opacity:.75;">
-          Gesichter: <a href="https://www.figma.com/community/file/1184595184137881796" target="_blank" rel="noopener">Adventurer</a>
-          von Lisa Wischofsky, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
-          über <a href="https://www.dicebear.com/" target="_blank" rel="noopener">DiceBear</a>.
+          Gesichter: Stil <a href="https://www.dicebear.com/styles/pixel-art/" target="_blank" rel="noopener">Pixel Art</a>
+          von <a href="https://www.dicebear.com/" target="_blank" rel="noopener">DiceBear</a>,
+          <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 1.0</a> (gemeinfrei).
         </p>
         <footer class="note">Herzensprojekt GmbH &middot; Version ${APP_VERSION}<br>
           <button type="button" class="linkbtn" id="info-start-link">Was ist LingoCrafter?</button>
