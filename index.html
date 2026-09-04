@@ -2924,7 +2924,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "63.1 – Heimweg";
+const APP_VERSION = "63.3 – Zwei Geräte";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6700,6 +6700,10 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       parentPinHash: state.parentPinHash,
       parentPinSalt: state.parentPinSalt,
       cloudId: state.cloudId,
+      /* Ohne diese Zeile war der Spitzname nach jedem Neuladen leer, bis
+         das Cloud-Profil nachgeladen hatte - und in genau diesem Fenster
+         hat das Speichern den Ranglisten-Eintrag geloescht. */
+      spitzname: state.spitzname,
       grammarSkills: state.grammarSkills,
       activityLog: state.activityLog,
       customRewards: state.customRewards,
@@ -6926,6 +6930,49 @@ const LOGIN_MESSAGES = {
 // Übernimmt ein geladenes Cloud-Profil vollständig in den lokalen Zustand.
 // Wichtig: JEDES Feld wird bewusst neu gesetzt, damit beim Profilwechsel auf
 // demselben Gerät keine Reste des vorherigen Profils stehen bleiben.
+/* --- Zusammenfuehren statt ueberschreiben --------------------------
+   Der Lernstand ist das Wertvollste in dieser App: Monate an Uebung.
+   Er darf durch einen Geraetewechsel nie verlorengehen - und auch
+   nicht dadurch, dass die Cloud einen Moment aelter ist als das
+   Geraet. Deshalb wird verglichen, nicht ersetzt. */
+function wortStandVereinen(lokal, cloud){
+  const raus = Object.assign({}, lokal || {});
+  Object.keys(cloud || {}).forEach(k=>{
+    const b = cloud[k];
+    if(!b) return;
+    const a = raus[k];
+    if(!a){ raus[k] = b; return; }
+    /* z = zuletzt geuebt (Tagesnummer). Der juengere Eintrag gewinnt,
+       bei Gleichstand der mit mehr Antworten - der ist vollstaendiger. */
+    const za = a.z || 0, zb = b.z || 0;
+    if(zb > za) raus[k] = b;
+    else if(zb === za && ((b.r||0)+(b.f||0)) > ((a.r||0)+(a.f||0))) raus[k] = b;
+  });
+  return raus;
+}
+
+function boxTrefferVereinen(lokal, cloud){
+  const raus = Object.assign({}, lokal || {});
+  Object.keys(cloud || {}).forEach(k=>{
+    const a = raus[k] || {r:0, f:0};
+    const b = cloud[k] || {r:0, f:0};
+    /* Zaehler, die nur steigen koennen - der hoehere Stand ist der
+       vollstaendigere. */
+    raus[k] = { r: Math.max(a.r||0, b.r||0), f: Math.max(a.f||0, b.f||0) };
+  });
+  return raus;
+}
+
+function listenVereinen(lokal, cloud){
+  const raus = Array.isArray(lokal) ? lokal.slice() : [];
+  const da = {};
+  raus.forEach(l => { if(l && l.name) da[l.name] = true; });
+  (Array.isArray(cloud) ? cloud : []).forEach(l=>{
+    if(l && l.name && !da[l.name]){ raus.push(l); da[l.name] = true; }
+  });
+  return raus;
+}
+
 function applyPlayerToState(player){
   state.cloudId = player.id;
   state.playerName = player.name || state.playerName;
@@ -6942,6 +6989,17 @@ function applyPlayerToState(player){
   state.hiddenRewards = Array.isArray(player.hiddenRewards) ? player.hiddenRewards : [];
   state.customAvatar = (typeof player.customAvatar === "string") ? player.customAvatar : "";
   state.customSkin = (typeof player.customSkin === "string") ? player.customSkin : "";
+  /* Der Spitzname stand im Cloud-Profil, wurde hier aber nie
+     zurueckgelesen. Nur setzen, wenn die Cloud ihn wirklich hat -
+     sonst wuerde ein aelteres Profil einen frisch gesetzten Namen
+     ueberschreiben. */
+  if(typeof player.spitzname === "string") state.spitzname = player.spitzname;
+  if(player.portrait && typeof player.portrait === "object") state.portrait = player.portrait;
+  /* Diese drei standen in der Cloud, wurden hier aber nie gelesen.
+     Zusammenfuehren, nicht ersetzen - siehe die Helfer oben. */
+  state.listen     = listenVereinen(state.listen, player.listen);
+  state.wortStand  = wortStandVereinen(state.wortStand, player.wortStand);
+  state.boxTreffer = boxTrefferVereinen(state.boxTreffer, player.boxTreffer);
   skinFrontAuffrischen();
   state.parentUnlocked = false;   // beim Profilwechsel wieder zusperren
   state.parentPinHash = player.parentPinHash || null;
@@ -7109,6 +7167,21 @@ function computeAvgGrade(){
 
 let syncQueue = Promise.resolve();
 
+/* Aus der Rangliste austragen. Bewusst eine eigene Funktion: Das ist
+   eine Handlung, die ein Mensch auswaehlt - keine Nebenwirkung eines
+   Speichervorgangs. */
+function ranglisteAustragen(){
+  if(!state.cloudAvailable || !state.cloudId) return;
+  const cloudId = state.cloudId;
+  syncQueue = syncQueue.then(async ()=>{
+    try{
+      const db = await getVokabelDB();
+      if(db.available && db.setRangliste){ await db.setRangliste(cloudId, null); }
+    }catch(e){ /* kein Grund, irgendetwas anderes scheitern zu lassen */ }
+  });
+  return syncQueue;
+}
+
 function syncToCloud(){
   if(!state.cloudAvailable || !state.cloudId) return;
   // WICHTIG: Jeder Speichervorgang wird strikt HINTER dem vorherigen
@@ -7146,13 +7219,17 @@ function syncToCloud(){
     if(state.parentPinHash){ payload.parentPinHash = state.parentPinHash; }
     if(state.parentPinSalt){ payload.parentPinSalt = state.parentPinSalt; }
     if(avgGrade !== null){ payload.avgGrade = avgGrade; }
-    // Die oeffentliche Rangliste wird getrennt beschickt: nur was
-    // wirklich hinein soll, und nur wenn ein Spitzname gesetzt ist.
+    /* Die oeffentliche Rangliste wird getrennt beschickt - und NUR
+       geschrieben, nie geloescht. Frueher stand hier ein ":null", das
+       den Eintrag entfernte, sobald state.spitzname gerade leer war.
+       Leer ist er aber auch nach jedem Neuladen, bis das Cloud-Profil
+       da ist. Ergebnis: Der Eintrag verschwand immer wieder von selbst.
+       Austragen macht jetzt ausschliesslich ranglisteAustragen(). */
     try{
-      if(db.setRangliste){
-        await db.setRangliste(cloudId, state.spitzname
-          ? { name: state.spitzname, coins: state.coins, avatarId: state.avatarId }
-          : null);
+      if(db.setRangliste && state.spitzname){
+        await db.setRangliste(cloudId, {
+          name: state.spitzname, coins: state.coins, avatarId: state.avatarId
+        });
       }
     }catch(e){ /* Rangliste ist Beiwerk - sie darf nie das Speichern kippen */ }
     try{
@@ -9555,6 +9632,11 @@ function renderLogin(){
       <details class="klapp">
         <summary><span class="klapp-ic">🧱</span><span>Und weil es Spaß macht</span></summary>
         <div class="sell-grid">
+          <div class="sell"><span class="sell-i">&#129529;</span><span class="sell-txt"><span class="sell-t">Die eigene Figur bauen</span><span class="sell-s">In der Werkstatt entsteht eine eigene Spielfigur &ndash; Baustein für Baustein, mit Verkleidungen und einem Gegenstand in der Hand. Sie läuft in jedem Spiel mit.</span></span></div>
+          <div class="sell"><span class="sell-i">&#127873;</span><span class="sell-txt"><span class="sell-t">Münzen gegen echte Belohnungen</span><span class="sell-s">Jede richtige Antwort bringt Münzen. Was es dafür gibt, legen die Eltern selbst fest &ndash; vom Eis bis zum Kinobesuch. Eingelöst wird mit einer Bestätigung.</span></span></div>
+          <div class="sell"><span class="sell-i">&#127942;</span><span class="sell-txt"><span class="sell-t">Rangliste und Urkunden</span><span class="sell-s">Wer mag, trägt sich mit einem Spitznamen in die Rangliste ein &ndash; freiwillig und jederzeit widerrufbar. Für geschaffte Runden gibt es Urkunden zum Zeigen.</span></span></div>
+          <div class="sell"><span class="sell-i">&#128266;</span><span class="sell-txt"><span class="sell-t">Hören und selbst sprechen</span><span class="sell-s">Jedes englische Wort lässt sich anhören. In der Aussprache-Übung spricht das Kind selbst &ndash; die Stimme bleibt dabei auf dem Gerät.</span></span></div>
+        </div>
       </details>
 
       <div class="panel">
@@ -13396,8 +13478,11 @@ function renderLeaderboard(){
   `;
   const anLb = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
   const nameSetzen = (wert)=>{
-    state.spitzname = (wert || "").trim().slice(0, 20);
+    const neu = (wert || "").trim().slice(0, 20);
+    state.spitzname = neu;
     saveProgress();
+    /* Nur wenn hier wirklich ausgetragen werden soll, wird geloescht. */
+    if(!neu){ ranglisteAustragen(); }
     syncToCloud();
     openLeaderboard(state.leaderboardReturnTo);
   };
