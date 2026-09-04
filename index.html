@@ -2930,7 +2930,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "64.1 – Pixelgesicht";
+const APP_VERSION = "64.2 – Doch nicht";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6839,7 +6839,8 @@ const state = {
   leaderboardError: null,
   leaderboardReturnTo: "start",
   leaderboardMode: "coins",
-  showLoginForm: false, // true = Login-Formular ausgeklappt (nur relevant, wenn schon eingeloggt)
+  showLoginForm: false,
+  avatarEntwurf: "",       // angesehener, aber noch nicht uebernommener Avatar // true = Login-Formular ausgeklappt (nur relevant, wenn schon eingeloggt)
   mainMode: "vocab", // "vocab" oder "grammar" - Auswahl auf dem Startbildschirm
   grammarTopicId: null,
   grammarSkills: {},      // {themenId: {r:"1101...", n:Gesamtzahl, ts:Zeitstempel}}
@@ -10390,7 +10391,7 @@ function renderStart(){
 
     <div class="panel">
       <div class="row" style="align-items:center;">
-        <span class="avatar-swatch" style="width:46px;max-width:46px;flex:0 0 auto;${avatarStyle(avatarById(state.avatarId))}"></span>
+        <span class="avatar-swatch" style="width:46px;max-width:46px;flex:0 0 auto;${avatarStyle(avatarById(avatarWahl()))}"></span>
         <div style="flex:1;padding:0 10px;min-width:0;">
           <p style="font-weight:800;font-size:17px;margin:0;color:#1e5c28;overflow-wrap:anywhere;">${state.guest ? "Gast" : escapeHtml(state.playerName)}</p>
           <p class="muted" style="margin:1px 0 0;font-size:13px;">${state.guest ? "Testmodus &middot; nichts wird gespeichert" : "Angemeldet &middot; Fortschritt wird gesichert"}</p>
@@ -10404,7 +10405,7 @@ function renderStart(){
         <div class="setting-label" style="margin-top:14px;">Dein Avatar</div>
         <div class="avatar-grid">
           ${portraitDa() ? `
-            <div class="avatar-option ${state.avatarId===PORTRAIT_ID?'selected':''}" data-avatar="${PORTRAIT_ID}">
+            <div class="avatar-option ${avatarWahl()===PORTRAIT_ID?'selected':''}" data-avatar="${PORTRAIT_ID}">
               <span class="avatar-swatch" style="${avatarStyle(avatarById(PORTRAIT_ID))}"></span>
               <span class="aname">Dein Gesicht</span>
             </div>
@@ -10415,7 +10416,7 @@ function renderStart(){
             </div>
           `}
           ${eigeneFigurDa() ? `
-            <div class="avatar-option ${state.avatarId===CUSTOM_AVATAR_ID?'selected':''}" data-avatar="${CUSTOM_AVATAR_ID}">
+            <div class="avatar-option ${avatarWahl()===CUSTOM_AVATAR_ID?'selected':''}" data-avatar="${CUSTOM_AVATAR_ID}">
               <span class="avatar-swatch" style="${avatarStyle(avatarById(CUSTOM_AVATAR_ID))}"></span>
               <span class="aname">Deine Figur</span>
             </div>
@@ -10426,12 +10427,18 @@ function renderStart(){
             </div>
           `}
           ${AVATARS.map(av=>`
-            <div class="avatar-option ${state.avatarId===av.id?'selected':''}" data-avatar="${av.id}">
+            <div class="avatar-option ${avatarWahl()===av.id?'selected':''}" data-avatar="${av.id}">
               <span class="avatar-swatch" style="${avatarStyle(av)}"></span>
               <span class="aname">${av.name}</span>
             </div>
           `).join("")}
         </div>
+        ${avatarWahl() !== state.avatarId ? `
+          <div class="row" style="gap:8px;margin-top:12px;">
+            <button class="btn col einzeilig" id="avatar-uebernehmen">✅ ÜBERNEHMEN</button>
+            <button class="btn secondary col einzeilig" id="avatar-verwerfen">✕ DOCH NICHT</button>
+          </div>
+        ` : ""}
         <button class="btn secondary small" id="avatar-editor-btn" style="margin-top:10px;">
           🧱 ${state.customSkinFront ? "Deine Figur weiterbauen" : "Eigene Figur bauen"}
         </button>
@@ -10451,16 +10458,40 @@ function renderStart(){
 /* Eine Verdrahtung fuer die Startseite UND die drei Uebungsbildschirme.
    Jeder Zuhoerer haengt sich ueber querySelectorAll oder ein if(el) an -
    was auf einem Bildschirm fehlt, bekommt einfach keinen.             */
+/* Welcher Avatar wird gerade GEZEIGT? Der Entwurf, solange einer
+   offen ist - sonst der echte. Eine Stelle, damit Gitter, Vorschau
+   und Knopfleiste nie auseinanderlaufen koennen. */
+function avatarWahl(){
+  return state.avatarEntwurf || state.avatarId;
+}
+
 function startVerdrahten(){
 
   document.querySelectorAll('.avatar-option').forEach(el=>{
     el.addEventListener('click', ()=>{
-      state.avatarId = el.dataset.avatar;
-      saveProgress();
-      syncToCloud();
+      /* Frueher wurde hier sofort gespeichert UND in die Cloud
+         geschickt - ohne jede Moeglichkeit, das zurueckzunehmen.
+         Jetzt wandert der Tipp in den Entwurf; scharf wird er erst
+         mit "Übernehmen". */
+      state.avatarEntwurf = el.dataset.avatar;
       render();
     });
   });
+  const anAv = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  anAv('avatar-uebernehmen', ()=>{
+    state.avatarId = avatarWahl();
+    state.avatarEntwurf = "";
+    state.showLoginForm = false;
+    saveProgress();
+    syncToCloud();
+    render();
+  });
+  anAv('avatar-verwerfen', ()=>{
+    /* Nur den Entwurf wegwerfen. state.avatarId wurde nie angefasst. */
+    state.avatarEntwurf = "";
+    render();
+  });
+
   const zurAnmeldung = ()=>{ state.guest=false; state.playerName=""; state.playerPin=""; state.coins=0; state.inventory={}; state.sessionLog=[]; state.loginError=null; state.loginNotice=null; state.screen="start"; render(); }; const suBtn = document.getElementById('signup-btn'); if(suBtn){ suBtn.addEventListener('click', zurAnmeldung); } const suBar = document.getElementById('guest-signup-bar'); if(suBar){ suBar.addEventListener('click', zurAnmeldung); }  const logoutBtn = document.getElementById('logout-btn');
   if(logoutBtn){
     logoutBtn.addEventListener('click', ()=>{
@@ -10493,6 +10524,10 @@ function startVerdrahten(){
   if(toggleLoginFormBtn){
     toggleLoginFormBtn.addEventListener('click', ()=>{
       state.showLoginForm = !state.showLoginForm;
+      /* Aufklappen: der aktuelle Avatar ist der Ausgangspunkt.
+         Zuklappen: der Entwurf ist damit hinfaellig - nichts wurde
+         uebernommen, also darf auch nichts haengenbleiben. */
+      state.avatarEntwurf = state.showLoginForm ? state.avatarId : "";
       render();
     });
   }
