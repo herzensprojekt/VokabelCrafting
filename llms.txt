@@ -1,0 +1,46 @@
+# LingoCrafter
+
+> Kostenloser Vokabeltrainer für Englisch: Vokabeln und Grammatik für die
+> Klassen 5 und 6 üben, passend zu Green Line 1 und 2. Im Minecraft-Look,
+> ohne Werbung, ohne Kosten, ohne E-Mail-Adresse.
+
+LingoCrafter ist eine Web-App unter https://lingocrafter.de/. Sie läuft im
+Browser, ist offline nutzbar und lässt sich auf dem Startbildschirm
+installieren. Für ein Konto genügen ein frei gewählter Spielername und eine
+vierstellige PIN — keine E-Mail-Adresse, kein echter Name.
+
+## Für wen
+
+Schülerinnen und Schüler der 5. und 6. Klasse an deutschen Schulen, die
+englische Vokabeln und Grammatik üben. Und Eltern, die eine werbefreie und
+datensparsame Lern-App ohne Abo suchen.
+
+## Was die App kann
+
+- Vokabeltrainer mit fünf Spielarten: Multiple Choice, Vokabeltest,
+  Gemischt, Challenge und Flutungsraum
+- Karteikasten-Prinzip (Leitner): Jedes Wort wandert je nach Erfolg in eine
+  andere Box; Wörter, die wackeln, kommen häufiger dran
+- Englische Grammatik nach Units sortiert, passend zu Green Line 1 und 2 —
+  Zeitformen, Fragen und Verneinung, Wortstellung, mit Erklärung und Beispielen
+- Eigene Vokabellisten: einzeln antippen, selbst eintippen, aus Excel
+  einlesen oder das Vokabelheft abfotografieren (Texterkennung auf dem Gerät)
+- Aussprache: jedes englische Wort anhören; eigene Aussprache üben, wobei die
+  Stimme das Gerät nicht verlässt
+- Klassenarbeits-Radar: zeigt vor der Arbeit, welche Themen noch wackeln
+- Elternbereich mit PIN: Lernzeit und Trefferquote über 30 Tage, Notenverlauf
+- Belohnungssystem: Münzen fürs Üben, Belohnungen legen die Eltern selbst fest
+
+## Kosten
+
+Kostenlos. Keine Werbung, kein Abo, keine In-App-Käufe, kein Datenverkauf.
+
+## Datenschutz
+
+Keine E-Mail-Adresse, kein Klarname, keine Telefonnummer. Es werden keine
+Fotos von Kindern hochgeladen. Spracherkennung und Texterkennung laufen im
+Browser auf dem Gerät.
+
+## Kontakt
+
+Herzensprojekt Manufaktur, https://www.herzensprojekt.de
