@@ -2136,10 +2136,15 @@ summary.mehr-knopf::after{ content:none; }
 .gram-tile.vorschlag small{ color:#4a7a52; font-weight:700; }
 
 /* --- Portrait-Werkstatt --------------------------------------------- */
+/* Frueher border-radius:50%. Der Kreis schnitt genau die untersten
+   Bildzeilen ab - und dort sitzt die Kleidung. Ergebnis: In der
+   Kleidungsreihe sahen alle Kacheln gleich aus. Eckig zeigt das Shirt,
+   und zu einer App aus lauter Bloecken passt es ohnehin besser. */
 .pw-gross{
   width:170px; height:170px; display:block; margin:0 auto;
-  border-radius:50%; background:#f2f7f0;
+  border-radius:12px; background:#f2f7f0;
   border:3px solid #cfe3d2; box-shadow:0 3px 10px rgba(20,30,15,0.14);
+  image-rendering:pixelated;
 }
 .pw-reiter{
   display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px;
@@ -2165,7 +2170,8 @@ summary.mehr-knopf::after{ content:none; }
   border-color:#4db55c; background:#eef9f0;
   box-shadow:0 0 0 3px rgba(77,181,92,0.28);
 }
-.pw-kachel img{ width:100%; height:auto; display:block; border-radius:10px; }
+.pw-kachel img{ width:100%; height:auto; display:block; border-radius:6px;
+                image-rendering:pixelated; }
 
 /* --- Kopf der Anmeldeseite ------------------------------------------
    Das Logo ist freigestellt und bringt seinen eigenen Schatten mit -
@@ -2924,7 +2930,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "64.0 – Pixelgesicht";
+const APP_VERSION = "64.1 – Pixelgesicht";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6364,7 +6370,9 @@ function portraitBereinigen(wahl){
 function portraitSvg(wahl, groesse){
   if(!PORTRAIT_LIB) return "";
   const w = wahl || {};
-  const args = { size: groesse || 160, radius: 50 };
+  /* Kein "radius": Bei pixelArt hatte er messbar keine Wirkung, und
+     rund gewollt ist hier ohnehin nichts mehr. */
+  const args = { size: groesse || 160 };
   ["hair", "eyes", "mouth", "clothing"].forEach(k=>{ if(w[k]) args[k] = [w[k]]; });
   ["hairColor", "skinColor", "clothingColor"].forEach(k=>{ if(w[k]) args[k] = [w[k]]; });
   // Hut und Brille sind Ja/Nein-Sachen. Die Bibliothek steuert das ueber
