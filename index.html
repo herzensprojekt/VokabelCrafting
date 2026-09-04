@@ -3026,7 +3026,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "65.0 – Leuchtturm";
+const APP_VERSION = "65.1 – Türöffner";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -9134,6 +9134,62 @@ function shareAppWithFriends(){
   }
 }
 
+/* Ein Fenster, das nur etwas sagt. showConfirmModal fragt mit JA/NEIN -
+   für eine reine Auskunft wäre das die falsche Geste. */
+function zeigeHinweis(titel, html){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="panel modal-box">
+      <h3 style="font-size:18px;margin-bottom:8px;">${titel}</h3>
+      <p style="margin-bottom:14px;line-height:1.5;">${html}</p>
+      <button class="btn" id="hinweis-ok">ALLES KLAR</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  const zu = ()=>{ if(overlay.parentNode) overlay.parentNode.removeChild(overlay); };
+  overlay.querySelector('#hinweis-ok').addEventListener('click', zu);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) zu(); });
+}
+
+/* Die Installation von Hand anstossen. Vier Faelle - siehe Kopf des
+   Patches. Der haeufigste Fehler waere, nur den Chrome-Fall zu bauen
+   und auf dem iPhone einen Knopf zu zeigen, der nichts tut. */
+async function installAnstupsen(){
+  if(istInstalliert()){
+    zeigeHinweis("Schon da 🎉",
+      "LingoCrafter ist auf diesem Gerät bereits installiert &ndash; du findest es auf dem Startbildschirm.");
+    return;
+  }
+  /* Wer ausdruecklich installieren will, soll nicht an seinem eigenen
+     frueheren "Spaeter" scheitern. */
+  try{ localStorage.removeItem("lc-install"); }catch(e){}
+
+  if(installEreignis){
+    const e = installEreignis;
+    installEreignis = null;
+    try{
+      e.prompt();
+      const wahl = await e.userChoice;
+      /* Abgelehnt? Dann das Ereignis zurueckgeben - Chrome liefert es
+         kein zweites Mal, und der Knopf soll weiter funktionieren. */
+      if(!wahl || wahl.outcome !== "accepted"){ installEreignis = e; }
+    }catch(err){ installEreignis = e; }
+    installBannerAuffrischen();
+    return;
+  }
+  if(istIOS()){
+    zeigeHinweis("Aufs iPhone holen",
+      "Safari kann das nicht selbst starten. Tippe unten in der Leiste auf <strong>Teilen</strong> "
+      + "<span style=\"font-size:17px;\">&#8679;</span> und dann auf <strong>Zum Home-Bildschirm</strong>. "
+      + "Danach startet LingoCrafter wie eine richtige App &ndash; ohne Browserleiste und auch offline.");
+    return;
+  }
+  zeigeHinweis("Installieren",
+    "Dein Browser bietet die Installation gerade nicht an. In Chrome findest du sie im Menü "
+    + "(drei Punkte) unter <strong>App installieren</strong> oder als kleines Symbol rechts in der Adresszeile. "
+    + "Auf dem Handy klappt es am zuverlässigsten in Chrome (Android) oder Safari (iPhone).");
+}
+
 function showSupportModal(){
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -9707,9 +9763,15 @@ function renderLogin(){
       <div class="usp-herz">
         <img src="ic-herz.webp" alt="" width="200" height="190" loading="lazy">
         <span><strong>Kostenlos und ohne Werbung.</strong>
-        Ein Familienprojekt &ndash; entstanden für einen Fünftklässler,
-        der Englisch nicht mochte.</span>
+        Ein Familienprojekt &ndash; mit Unterstützung meiner Kinder.</span>
       </div>
+
+      <button class="btn secondary" id="install-anstupsen" style="margin-top:12px;">
+        📲 LINGOCRAFTER INSTALLIEREN
+      </button>
+      <p class="muted center-text" style="margin:6px 0 0;font-size:12px;">
+        Dann startet die App vom Startbildschirm &ndash; ohne Browserleiste und auch ohne Internet.
+      </p>
 
       <div class="kachel-reihe">
         <div class="kachel">
@@ -9833,6 +9895,8 @@ function renderLogin(){
   if(dsLogin){ dsLogin.addEventListener('click', ()=>oeffneDatenschutz("start")); }
   const infoLogin = document.getElementById('info-login');
   if(infoLogin){ infoLogin.addEventListener('click', oeffneInfo); }
+  const instBtn = document.getElementById('install-anstupsen');
+  if(instBtn){ instBtn.addEventListener('click', installAnstupsen); }
   const nameInput = document.getElementById('player-name-input');
   const pinInput = document.getElementById('player-pin-input');
 
