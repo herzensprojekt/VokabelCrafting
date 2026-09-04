@@ -3026,7 +3026,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "65.1 – Türöffner";
+const APP_VERSION = "65.2 – Einzug";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -9766,12 +9766,6 @@ function renderLogin(){
         Ein Familienprojekt &ndash; mit Unterstützung meiner Kinder.</span>
       </div>
 
-      <button class="btn secondary" id="install-anstupsen" style="margin-top:12px;">
-        📲 LINGOCRAFTER INSTALLIEREN
-      </button>
-      <p class="muted center-text" style="margin:6px 0 0;font-size:12px;">
-        Dann startet die App vom Startbildschirm &ndash; ohne Browserleiste und auch ohne Internet.
-      </p>
 
       <div class="kachel-reihe">
         <div class="kachel">
@@ -9804,6 +9798,17 @@ function renderLogin(){
       <button class="btn wood lingora-vorstellen" id="lingora-mehr-btn">
         🧭 Wie Lingora bis zur Klassenarbeit plant
       </button>
+
+      <!-- Auf .panel statt auf dem Himmel: Der graue Hinweistext darunter
+           war ueber dem Hintergrundbild kaum zu lesen. -->
+      <div class="panel" style="margin-top:14px;">
+        <button class="btn secondary" id="install-anstupsen">
+          📲 LINGOCRAFTER INSTALLIEREN
+        </button>
+        <p class="muted center-text" style="margin:9px 0 0;font-size:12.5px;line-height:1.45;">
+          Dann startet die App vom Startbildschirm &ndash; ohne Browserleiste und auch ohne Internet.
+        </p>
+      </div>
 
       <div class="panel">
         <input type="text" id="player-name-input" maxlength="16" placeholder="Dein Spielername"
