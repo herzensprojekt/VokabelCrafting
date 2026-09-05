@@ -1315,6 +1315,14 @@
   }
   .lg-schritt:active{ transform:translateY(1px); }
   .lg-schritt.fertig{ background:#eef6ef; border-color:#bfe0c4; opacity:0.75; pointer-events:none; }
+  /* Geuebt, aber noch nicht sitzend: bernstein statt gruen. Der
+     Unterschied muss auf einen Blick erkennbar sein - sonst haelt das
+     Kind "schon gemacht" wieder fuer "geschafft". */
+  .lg-schritt.geuebt{ background:#fdf6e6; border-color:#e6cf94; }
+  .lg-s-stand{
+    display:block; margin-top:3px; font-size:11.5px; font-weight:700;
+    color:#9a7a25;
+  }
   .lg-s-ic{ font-size:22px; text-align:center; }
   .lg-schritt.fertig .lg-s-ic{ color:var(--ok); font-weight:800; }
   .lg-s-txt{ min-width:0; }
@@ -2678,6 +2686,31 @@ summary.mehr-knopf::after{ content:none; }
   border-color:#7fb35f; background:#eef6e6;
 }
 .pk-kachel.hat-wahl .pk-z{ color:#2f6420; font-weight:800; }
+
+/* Kette oben: geuebt, aber noch nicht geschafft */
+.lg-glied.geuebt{ background:#fdf6e6; border-color:#e6cf94; color:#9a7a25; }
+
+/* --- Lingoras Planvorschlaege ---------------------------------------- */
+.lg-plaene{ display:flex; flex-direction:column; gap:9px; margin-top:8px; }
+.lg-plan{
+  display:flex; flex-direction:column; gap:7px; width:100%;
+  padding:12px 13px; text-align:left; cursor:pointer;
+  background:var(--papier); border:2px solid var(--papier-rand);
+  border-radius:15px; font-family:var(--font); color:var(--tinte);
+}
+.lg-plan.aktiv{ border-color:#7fb35f; background:#f2f8ec;
+                box-shadow:0 0 0 3px rgba(127,179,95,0.22); }
+.lg-plan:active{ transform:translateY(1px); }
+.lg-plan-kopf{ display:flex; align-items:center; gap:10px; }
+.lg-plan-ic{ font-size:24px; line-height:1; flex:0 0 auto; }
+.lg-plan-txt{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+.lg-plan-t{ font-weight:800; font-size:15px; }
+.lg-plan-u{ font-size:12px; color:var(--tinte-hell); line-height:1.35; }
+.lg-plan-liste{ display:flex; flex-direction:column; gap:3px;
+                padding-left:34px; }
+.lg-plan-thema{ display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; }
+.lg-pt-n{ font-size:12.5px; font-weight:700; }
+.lg-pt-s{ font-size:11px; color:var(--tinte-hell); }
 </style>
 </head>
 <body>
@@ -3026,7 +3059,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "65.3 – Gleichschritt";
+const APP_VERSION = "67.0 – Wegweiser";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4179,8 +4212,85 @@ function lingoraOeffnen(zurueckZu){
   lingoraFragebogenStarten();
 }
 
+/* Wie viele Themen ein vorgeschlagener Plan hoechstens umfasst. Drei
+   sind genug: Bei 15-20 Minuten am Tag kommt sonst nichts davon
+   wirklich zum Sitzen, und genau darum geht es ja. */
+const LINGORA_VORSCHLAG_MAX = 3;
+
+/* Wie lange ein Thema "frisch" bleibt, bevor Lingora es auffrischen
+   will. Vierzehn Tage - danach ist bei einem Kind erfahrungsgemaess
+   einiges wieder weg. */
+const LINGORA_FRISCH_TAGE = 14;
+
+/* Lingoras Blick auf den Grammatikstand. Alles kommt aus Daten, die
+   schon da sind - grammarSkills wird bei jeder Antwort mitgeschrieben. */
+function lingoraGrammatikLage(){
+  const jetzt = Date.now();
+  const alt = LINGORA_FRISCH_TAGE * 24 * 60 * 60 * 1000;
+  const wackelt = [], neu = [], auffrischen = [];
+
+  grammatikThemenDerKlasse().forEach(t=>{
+    const i = grammarSkillInfo(t);
+    const eintrag = { topic: t, info: i };
+    if(i.fenster === 0){ neu.push(eintrag); return; }
+    if(i.schwach){ wackelt.push(eintrag); return; }
+    if(i.zuletzt && (jetzt - i.zuletzt) > alt){ auffrischen.push(eintrag); }
+  });
+
+  wackelt.sort((a,b)=> a.info.quote - b.info.quote);          // schwaechstes zuerst
+  auffrischen.sort((a,b)=> a.info.zuletzt - b.info.zuletzt);  // laengste Pause zuerst
+  return { wackelt: wackelt, neu: neu, auffrischen: auffrischen };
+}
+
+/* Bis zu vier fertige Plaene. Leere Vorschlaege fallen weg - wer noch
+   nie Grammatik geuebt hat, bekommt eben nur "Neu entdecken", und das
+   faengt sinnvollerweise bei Unit 1 an. */
+function lingoraVorschlaege(){
+  const l = lingoraGrammatikLage();
+  const kurz = (e)=> e.topic;
+  const raus = [];
+
+  if(l.wackelt.length){
+    raus.push({ key:"wackelt", icon:"🩹", titel:"Da wackelt es noch",
+      unter:"Die Themen, bei denen du zuletzt am meisten danebenlagst",
+      themen: l.wackelt.slice(0, LINGORA_VORSCHLAG_MAX).map(kurz),
+      lage: l.wackelt.slice(0, LINGORA_VORSCHLAG_MAX) });
+  }
+  if(l.neu.length){
+    raus.push({ key:"neu", icon:"🌱", titel:"Neu entdecken",
+      unter:"Themen, die du noch nie geübt hast",
+      themen: l.neu.slice(0, LINGORA_VORSCHLAG_MAX).map(kurz),
+      lage: l.neu.slice(0, LINGORA_VORSCHLAG_MAX) });
+  }
+  if(l.auffrischen.length){
+    raus.push({ key:"auffrischen", icon:"🔄", titel:"Auffrischen",
+      unter:"Saß schon mal – ist aber länger her",
+      themen: l.auffrischen.slice(0, LINGORA_VORSCHLAG_MAX).map(kurz),
+      lage: l.auffrischen.slice(0, LINGORA_VORSCHLAG_MAX) });
+  }
+  /* Der gemischte Plan lohnt nur, wenn es wirklich aus mehreren Toepfen
+     etwas zu holen gibt. */
+  const misch = [];
+  [l.wackelt, l.neu, l.auffrischen].forEach(topf=>{ if(topf.length) misch.push(topf[0]); });
+  if(misch.length >= 2){
+    raus.push({ key:"misch", icon:"🎲", titel:"Bunt gemischt",
+      unter:"Von jedem etwas – wird nicht langweilig",
+      themen: misch.map(kurz), lage: misch });
+  }
+  return raus;
+}
+
+/* Wie ein Thema in der Vorschlagskarte beschrieben wird. Die Zahl
+   gehoert dazu: Das Kind soll sehen, WARUM Lingora das vorschlaegt. */
+function lingoraThemaStand(info){
+  if(info.fenster === 0) return "noch nie geübt";
+  if(!info.genug) return "erst " + info.fenster + " Antworten";
+  if(info.schwach) return info.prozent + " % – wackelt";
+  return info.prozent + " % – sitzt";
+}
+
 function lingoraFragebogenStarten(){
-  state.lgWahl = { art:"", vokabeln:[], grammatik:[], minuten:20, tageBis:0 };
+  state.lgWahl = { art:"", vokabeln:[], grammatik:[], minuten:20, tageBis:0, vorschlag:"" };
   state.lgSchritt = 0;
   state.lgSpruch = lingoraSpruch(LINGORA_START);
   state.screen = "lingorafrage";
@@ -4192,6 +4302,45 @@ function lingoraKopfHtml(text, klein){
     <div class="lg-kopf ${klein ? 'klein' : ''}">
       <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
       <div class="lg-blase">${text}</div>
+    </div>`;
+}
+
+/* Die Vorschlagskarten. Bewusst wenige, bewusst mit Begruendung:
+   Ein Kind soll nicht raten muessen, warum Lingora gerade das vorschlaegt. */
+function lingoraVorschlagHtml(w){
+  const v = lingoraVorschlaege();
+  if(!v.length){
+    /* Kein Vorschlag heisst hier NICHT "nichts da", sondern meistens:
+       alles sitzt und ist frisch geuebt. Das muss man auch so sagen -
+       sonst liest ein Kind einen Mangel, wo ein Erfolg steht. */
+    const hatThemen = grammatikThemenDerKlasse().length > 0;
+    return `<p class="muted lg-hinweis" style="margin-top:10px;">${hatThemen
+      ? "🎉 Deine Grammatik sitzt gerade richtig gut &ndash; da gibt es nichts zu reparieren. "
+        + "Übe Vokabeln, oder such dir unter Grammatik selbst ein Thema aus."
+      : "Für deine Klasse habe ich noch keine Grammatik. Wähl einfach Vokabeln aus."}</p>`;
+  }
+  return `
+    <p class="lg-gruppe">🧠 Grammatik &ndash; ich hab dir was zusammengestellt</p>
+    <p class="muted lg-hinweis">Tipp einen Plan an. Ich schaue mir an, was bei dir schon sitzt
+    und was nicht &ndash; du musst dich nicht durch alle Themen wühlen.</p>
+    <div class="lg-plaene">
+      ${v.map(p=>`
+        <button class="lg-plan ${w.vorschlag === p.key ? "aktiv" : ""}" data-lgplan="${p.key}">
+          <span class="lg-plan-kopf">
+            <span class="lg-plan-ic">${p.icon}</span>
+            <span class="lg-plan-txt">
+              <span class="lg-plan-t">${escapeHtml(p.titel)}</span>
+              <span class="lg-plan-u">${escapeHtml(p.unter)}</span>
+            </span>
+          </span>
+          <span class="lg-plan-liste">
+            ${p.lage.map(e=>`
+              <span class="lg-plan-thema">
+                <span class="lg-pt-n">${e.topic.icon} ${escapeHtml(e.topic.name)}</span>
+                <span class="lg-pt-s">${lingoraThemaStand(e.info)}</span>
+              </span>`).join("")}
+          </span>
+        </button>`).join("")}
     </div>`;
 }
 
@@ -4246,7 +4395,8 @@ function renderLingoraFrage(){
             <button class="lg-chip ${w.vokabeln.indexOf(k)>=0?'active':''}" data-lgvok="${escapeHtml(k)}">${escapeHtml(k)}</button>
           `).join("")}
         </div>` : ""}
-      ${w.art === "vokabeltest" ? "" : grammatikUnitsDerKlasse().map(u=>{
+      ${w.art === "ueben" ? lingoraVorschlagHtml(w) : ""}
+      ${(w.art === "vokabeltest" || w.art === "ueben") ? "" : grammatikUnitsDerKlasse().map(u=>{
         const themen = grammarTopicsOfUnit(u.nr);
         if(!themen.length) return "";
         return `
@@ -4262,7 +4412,7 @@ function renderLingoraFrage(){
       ${w.art === "vokabeltest" ? `
         <p class="muted lg-hinweis" style="margin-top:10px;">
           Beim Vokabeltest geht es nur um Wörter &ndash; Grammatik lasse ich diesmal weg.
-        </p>` : `
+        </p>` : w.art === "ueben" ? "" : `
         <p class="muted lg-hinweis" style="margin-top:10px;">
           ⚠️ heißt: Da hakt es noch. ✓ heißt: Das sitzt schon gut.
           Ich fange mit dem an, was am wackeligsten ist.
@@ -4311,6 +4461,21 @@ function renderLingoraFrage(){
   document.querySelectorAll('[data-lgvok]').forEach(el=>el.addEventListener('click', ()=>{
     const k = el.dataset.lgvok, a = state.lgWahl.vokabeln, i = a.indexOf(k);
     if(i >= 0) a.splice(i, 1); else a.push(k);
+    render();
+  }));
+  document.querySelectorAll('[data-lgplan]').forEach(el=>el.addEventListener('click', ()=>{
+    const key = el.dataset.lgplan;
+    const v = lingoraVorschlaege().find(p => p.key === key);
+    if(!v) return;
+    /* Nochmal antippen waehlt ab - sonst kaeme man aus einem Fehlgriff
+       nur ueber "Abbrechen" wieder heraus. */
+    if(state.lgWahl.vorschlag === key){
+      state.lgWahl.vorschlag = "";
+      state.lgWahl.grammatik = [];
+    } else {
+      state.lgWahl.vorschlag = key;
+      state.lgWahl.grammatik = v.themen.map(t => t.id);
+    }
     render();
   }));
   document.querySelectorAll('[data-lggram]').forEach(el=>el.addEventListener('click', ()=>{
@@ -4362,7 +4527,7 @@ function lingoraAblaufHtml(tag){
       <div class="lg-kette">
         ${tag.schritte.map((s, i)=>`
           <span class="lg-glied-box">
-            <span class="lg-glied ${s.fertig ? "fertig" : ""} ${i === naechster ? "dran" : ""}"
+            <span class="lg-glied ${s.fertig ? "fertig" : ""} ${!s.fertig && s.versuche ? "geuebt" : ""} ${i === naechster ? "dran" : ""}"
                   title="${escapeHtml(s.titel)}">${s.fertig ? "✓" : s.icon}</span>
             <span class="lg-glied-n">${escapeHtml(lingoraKurzname(s))}</span>
           </span>
@@ -4403,11 +4568,15 @@ function renderLingoraPlan(){
       <h3 class="abschnitt-h">📅 Heute &middot; ${phaseName[tag ? tag.phase : "aufbau"]}</h3>
       ${lingoraAblaufHtml(tag)}
       ${tag && tag.schritte.length ? tag.schritte.map(s=>`
-        <button class="lg-schritt ${s.fertig ? 'fertig' : ''}" data-lgstart="${s.id}" ${s.fertig ? "disabled" : ""}>
+        <button class="lg-schritt ${s.fertig ? 'fertig' : ''} ${!s.fertig && s.versuche ? 'geuebt' : ''}" data-lgstart="${s.id}" ${s.fertig ? "disabled" : ""}>
           <span class="lg-s-ic">${s.fertig ? "✓" : s.icon}</span>
           <span class="lg-s-txt">
             <span class="lg-s-t">${escapeHtml(s.titel)}</span>
             <span class="lg-s-u">${escapeHtml(s.unter)}</span>
+            ${!s.fertig && s.versuche ? `
+              <span class="lg-s-stand">Beste Runde: ${Math.round((s.besteQuote||0)*100)} %
+                &middot; Ziel ${Math.round(LINGORA_ZIEL_QUOTE*100)} %
+                &middot; ${s.versuche === 1 ? "1 Versuch" : s.versuche + " Versuche"}</span>` : ""}
           </span>
           <span class="lg-s-min">${s.dauer}′</span>
         </button>
@@ -4512,11 +4681,77 @@ function lingoraSchrittAbhaken(id){
 
 /* Wird am Ende jeder Uebung aufgerufen. Gehoerte sie zu einem Planschritt,
    wird der abgehakt und der Rueckweg zum Plan freigeschaltet. */
-function lingoraRundeBeendet(){
+/* Das Lernziel: Ab hier gilt ein Schritt als sitzend. "Fast richtig"
+   zaehlt halb - genau wie bei der Notenberechnung, damit sich Note und
+   Abhaken nicht widersprechen koennen. */
+const LINGORA_ZIEL_QUOTE = 0.80;
+
+/* Aus einer Runde wird eine Quote. Eine Stelle, damit Vokabeln und
+   Grammatik nie unterschiedlich gerechnet werden. */
+function lingoraQuoteAus(log){
+  const e = Array.isArray(log) ? log : [];
+  if(!e.length) return null;
+  const richtig = e.filter(x => x.result === "correct").length;
+  const fast    = e.filter(x => x.result === "almost").length;
+  return { gesamt: e.length, richtig: richtig, fast: fast,
+           quote: (richtig + fast * 0.5) / e.length };
+}
+
+/* Was Lingora sagt, wenn das Ziel NICHT erreicht wurde. Die Zahl gehoert
+   dazu: "noch nicht geschafft" allein waere entmutigend und obendrein
+   nutzlos - das Kind wuesste nicht, wie weit es fehlt. */
+function lingoraNochNichtSpruch(schritt, prozent, note, vorherProzent){
+  const ziel = Math.round(LINGORA_ZIEL_QUOTE * 100);
+  const notenTeil = note ? " – das ist Note " + note.grade : "";
+  if(vorherProzent !== null && prozent > vorherProzent){
+    return "Diesmal " + prozent + " %, vorher " + vorherProzent + " %" + notenTeil
+         + ". Du wirst besser! Ab " + ziel + " % hake ich den Schritt ab.";
+  }
+  if((schritt.versuche || 0) >= 3){
+    return prozent + " %" + notenTeil + ". Schau dir das Thema noch einmal in Ruhe an – "
+         + "danach klappt es meist auf Anhieb. Ziel sind " + ziel + " %.";
+  }
+  /* Den fehlenden ABSTAND nennen, nicht nur das Ziel. Sonst liest sich
+     "das ist Note 2, das kannst du besser" widerspruechlich - mit dem
+     milden Notenschluessel ist eine 2 schon ab 68 % erreicht, das
+     Lernziel liegt aber bei 80 %. */
+  return prozent + " %" + notenTeil + ". Es fehlen noch " + (ziel - prozent)
+       + " Prozentpunkte – probier den Schritt gleich noch einmal.";
+}
+
+/* Frueher hakte diese Funktion bedingungslos ab. Jetzt entscheidet das
+   Ergebnis der Runde. */
+function lingoraRundeBeendet(log){
   if(!state.lingoraAktiv) return;
-  lingoraSchrittAbhaken(state.lingoraAktiv);
+  const id = state.lingoraAktiv;
   state.lingoraAktiv = null;
   state.lingoraZurueck = true;
+
+  const schritt = lingoraSchrittFinden(id);
+  if(!schritt) return;
+
+  const erg = lingoraQuoteAus(log);
+  /* Keine einzige Aufgabe beantwortet - z.B. sofort abgebrochen. Dann
+     ist nichts passiert, was man bewerten koennte: Schritt bleibt offen,
+     aber es zaehlt auch kein Versuch. */
+  if(!erg) return;
+
+  const vorherProzent = (typeof schritt.letzteQuote === "number")
+    ? Math.round(schritt.letzteQuote * 100) : null;
+  const prozent = Math.round(erg.quote * 100);
+
+  schritt.versuche    = (schritt.versuche || 0) + 1;
+  schritt.letzteQuote = erg.quote;
+  schritt.besteQuote  = Math.max(schritt.besteQuote || 0, erg.quote);
+
+  if(erg.quote >= LINGORA_ZIEL_QUOTE){
+    lingoraSchrittAbhaken(id);       // setzt auch den Lob-Spruch
+    return;
+  }
+  const note = calculateSchoolGrade(erg.richtig, erg.fast, erg.gesamt);
+  state.lgLetzterSpruch = lingoraNochNichtSpruch(schritt, prozent, note, vorherProzent);
+  saveProgress();
+  syncToCloud();
 }
 
 /* Der Knopf, der auf den Zeugnisseiten erscheint, wenn ein Planschritt
@@ -11794,7 +12029,7 @@ function rueckmeldungInsBild(fb){
 
 function endSession(reason){
   bricheWeiterAb();
-  lingoraRundeBeendet();
+  lingoraRundeBeendet(state.sessionLog);
   stopFloodRise();
   protokolliereRunde("vocab", state.sessionLog);
   state.coins = Math.max(0, state.coins + state.sessionCoins);
@@ -16055,7 +16290,7 @@ function handleGrammarAnswer(btn, choice, exercise){
 }
 
 function finishGrammarSession(result){
-  lingoraRundeBeendet();
+  lingoraRundeBeendet(state.grammarSessionLog);
   stopFloodRise();
   protokolliereRunde("grammar", state.grammarSessionLog);
   state.coins = Math.max(0, state.coins + state.grammarSessionCoins);
