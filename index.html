@@ -2711,6 +2711,31 @@ summary.mehr-knopf::after{ content:none; }
 .lg-plan-thema{ display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; }
 .lg-pt-n{ font-size:12.5px; font-weight:700; }
 .lg-pt-s{ font-size:11px; color:var(--tinte-hell); }
+
+/* --- Planliste im Lernweg -------------------------------------------- */
+.lw-plaene{ display:flex; flex-direction:column; gap:8px; }
+.lw-plan{
+  display:flex; flex-direction:column; gap:7px; width:100%;
+  padding:11px 12px; text-align:left; cursor:pointer;
+  border:2px solid var(--papier-rand); border-radius:14px;
+  background:var(--papier); font-family:var(--font); color:var(--tinte);
+}
+.lw-plan.laeuft{ background:#fdf6e6; border-color:#e6cf94; }
+.lw-plan.sitzt { background:#eef6ef; border-color:#bfe0c4; }
+.lw-plan.offen { box-shadow:0 0 0 3px rgba(127,179,95,0.25); }
+.lw-plan:active{ transform:translateY(1px); }
+.lw-plan-kopf{ display:flex; align-items:center; gap:9px; }
+.lw-plan-ic{ font-size:20px; line-height:1; flex:0 0 auto; }
+.lw-plan-txt{ display:flex; flex-direction:column; gap:1px; flex:1; min-width:0; }
+.lw-plan-t{ font-weight:800; font-size:14px; }
+.lw-plan-u{ font-size:11.5px; color:var(--tinte-hell); line-height:1.3;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lw-plan-z{ font-size:12px; font-weight:800; color:var(--tinte-hell); flex:0 0 auto; }
+.lw-plan-balken{ display:block; height:6px; border-radius:4px;
+                 background:rgba(0,0,0,0.08); overflow:hidden; }
+.lw-plan-balken > span{ display:block; height:100%; border-radius:4px;
+                        background:linear-gradient(90deg,#93b077,#5c7a45); }
+.lw-plan.sitzt .lw-plan-balken > span{ background:#5c7a45; }
 </style>
 </head>
 <body>
@@ -3059,7 +3084,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "67.0 – Wegweiser";
+const APP_VERSION = "68.2 – Nebeneinander";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4157,7 +4182,78 @@ function lingoraPlanBauen(wahl){
 }
 
 /* --------------------------------------------------------- Hilfsfragen */
-function lingoraPlan(){ return state.lingoraPlan || null; }
+/* Alle Plaene. Ein alter Einzelplan wandert beim ersten Zugriff in die
+   Liste - niemand verliert einen laufenden Plan. */
+function lingoraPlaene(){
+  if(!Array.isArray(state.lingoraPlaene)) state.lingoraPlaene = [];
+  if(state.lingoraPlan && typeof state.lingoraPlan === "object"){
+    const alt = state.lingoraPlan;
+    state.lingoraPlan = null;
+    if(!alt.id) alt.id = "p" + Date.now().toString(36);
+    state.lingoraPlaene.push(alt);
+    state.lingoraPlanAktiv = alt.id;
+    try{ saveProgress(); }catch(e){}
+  }
+  return state.lingoraPlaene;
+}
+
+/* Der gerade offene Plan. Absichtlich derselbe Name wie frueher: So
+   arbeiten die vierzehn Stellen, die ihn lesen, unveraendert weiter. */
+function lingoraPlan(){
+  const alle = lingoraPlaene();
+  if(!alle.length) return null;
+  const treffer = alle.find(p => p.id === state.lingoraPlanAktiv);
+  return treffer || alle[alle.length - 1];
+}
+
+/* Wie weit ist ein Plan - und sitzt er schon?
+   "sitzt" heisst: JEDER Schritt hat das Lernziel erreicht. Ein Plan
+   wird also nicht gruen, weil das Kind durchgeklickt hat. */
+function lingoraPlanStand(p){
+  let gesamt = 0, fertig = 0, geuebt = 0;
+  (p.tage || []).forEach(t => (t.schritte || []).forEach(s=>{
+    gesamt++;
+    if(s.fertig) fertig++;
+    else if(s.versuche) geuebt++;
+  }));
+  const sitzt = gesamt > 0 && fertig === gesamt;
+  return {
+    gesamt: gesamt, fertig: fertig, geuebt: geuebt, sitzt: sitzt,
+    prozent: gesamt ? Math.round(fertig / gesamt * 100) : 0,
+    zustand: sitzt ? "sitzt" : ((fertig + geuebt) > 0 ? "laeuft" : "neu")
+  };
+}
+
+function lingoraPlanTitel(p){
+  const art = { ueben:"Übungsplan", vokabeltest:"Vokabeltest", arbeit:"Klassenarbeit" };
+  return art[p.art] || "Plan";
+}
+
+/* Woraus der Plan besteht - fuer die Zeile unter dem Titel. */
+function lingoraPlanInhalt(p){
+  const w = p.wahl || {};
+  const namen = (w.grammatik || []).map(id=>{
+    const t = grammarTopicById(id);
+    return t ? t.name : null;
+  }).filter(Boolean);
+  (w.vokabeln || []).forEach(k => namen.push(k));
+  if(!namen.length) return "";
+  return namen.slice(0, 3).join(" · ") + (namen.length > 3 ? " · …" : "");
+}
+
+function lingoraPlanOeffnen(id){
+  state.lingoraPlanAktiv = id;
+  state.lgLetzterSpruch = "";
+  saveProgress();
+  state.screen = "lingoraplan";
+  render();
+}
+
+function lingoraPlanLoeschen(id){
+  state.lingoraPlaene = lingoraPlaene().filter(p => p.id !== id);
+  if(state.lingoraPlanAktiv === id) state.lingoraPlanAktiv = "";
+  saveProgress();
+}
 
 function lingoraHeutigerTag(){
   const p = lingoraPlan();
@@ -4490,7 +4586,10 @@ function renderLingoraFrage(){
   anKnopf('lg-weiter', ()=>{
     if(!weiterAn) return;
     if(letzter){
-      state.lingoraPlan = lingoraPlanBauen(state.lgWahl);
+      const neu = lingoraPlanBauen(state.lgWahl);
+      neu.id = "p" + Date.now().toString(36);
+      lingoraPlaene().push(neu);          // dazu, nicht ersetzen
+      state.lingoraPlanAktiv = neu.id;
       saveProgress();
       state.screen = "lingoraplan";
       render();
@@ -4615,15 +4714,16 @@ function renderLingoraPlan(){
   });
   const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
   anKnopf('lg-neu', ()=>{
-    showConfirmModal('Neuen Plan machen? Der jetzige wird dabei verworfen.', ()=>{
-      state.lingoraPlan = null; state.lgWeisheit = ""; saveProgress();
-      lingoraFragebogenStarten();
-    });
+    /* Frueher wurde der alte Plan dabei weggeworfen. Jetzt laufen sie
+       nebeneinander - es gibt nichts mehr zu verlieren. */
+    state.lgWeisheit = "";
+    lingoraFragebogenStarten();
   });
   anKnopf('lg-weg', ()=>{
-    showConfirmModal('Plan wirklich verwerfen?', ()=>{
-      state.lingoraPlan = null; state.lgWeisheit = ""; state.lgLetzterSpruch = "";
-      saveProgress();
+    const offen = lingoraPlan();
+    showConfirmModal('Diesen Plan wirklich wegwerfen? Deine anderen Pläne bleiben.', ()=>{
+      if(offen) lingoraPlanLoeschen(offen.id);
+      state.lgWeisheit = ""; state.lgLetzterSpruch = "";
       state.screen = state.lingoraReturnTo || "start";
       render();
     });
@@ -7071,6 +7171,8 @@ function loadSave(){
     if(data.figurMalerei && typeof data.figurMalerei === "object") state.figurMalerei = data.figurMalerei;
     if(data.figurBasis === "import" || data.figurBasis === "rezept") state.figurBasis = data.figurBasis;
     if(data.lingoraPlan && typeof data.lingoraPlan === "object") state.lingoraPlan = data.lingoraPlan;
+    if(Array.isArray(data.lingoraPlaene)) state.lingoraPlaene = data.lingoraPlaene;
+    if(typeof data.lingoraPlanAktiv === "string") state.lingoraPlanAktiv = data.lingoraPlanAktiv;
     if(data.wortStand && typeof data.wortStand === "object") state.wortStand = data.wortStand;
     if(NOTEN_SCHLUESSEL[data.gradeKey]) state.gradeKey = data.gradeKey;
   }catch(e){ /* Speicher blockiert (z.B. Vorschau-Sandbox) - Standardwerte bleiben */ }
@@ -7104,6 +7206,8 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       figurMalerei: state.figurMalerei,
       figurBasis: state.figurBasis,
       lingoraPlan: state.lingoraPlan,
+      lingoraPlaene: state.lingoraPlaene,
+      lingoraPlanAktiv: state.lingoraPlanAktiv,
       wortStand: state.wortStand,
       boxTreffer: state.boxTreffer,
       gradeKey: state.gradeKey
@@ -7132,7 +7236,9 @@ const state = {
   ausspracheStand: {},     // was gerade im Aussprache-Modus passiert
   ausspracheVorrat: [],    // Wörter, unter denen nach Aufnahmen gesucht wird
   flutGewaehlt: false,     // Schwierigkeit im Flutungsraum schon gewählt?
-  lingoraPlan: null,       // Lingoras Lernplan
+  lingoraPlan: null,          // alt: EIN Plan - wird beim Laden umgezogen
+  lingoraPlaene: [],          // alle Plaene, nebeneinander
+  lingoraPlanAktiv: "",       // welcher gerade offen ist       // Lingoras Lernplan
   lingoraAktiv: null,      // welcher Planschritt gerade laeuft
   lingoraZurueck: false,   // Rueckweg zum Plan anbieten
   lingoraReturnTo: "start",
@@ -14866,6 +14972,17 @@ function lernwegVerlaufFuehren(){
   };
 }
 
+function lernwegPlaeneVerdrahten(){
+  document.querySelectorAll('[data-lw-plan]').forEach(el=>{
+    el.addEventListener('click', ()=> lingoraPlanOeffnen(el.dataset.lwPlan));
+  });
+  const neu = document.getElementById('lw-plan-neu');
+  if(neu) neu.addEventListener('click', ()=>{
+    state.lingoraReturnTo = "lernweg";
+    lingoraFragebogenStarten();
+  });
+}
+
 function lernwegSeit(tage){
   if(tage <= 1) return "seit gestern";
   if(tage <= 7) return "in den letzten " + tage + " Tagen";
@@ -14873,6 +14990,62 @@ function lernwegSeit(tage){
 }
 
 /* --- Bildschirm ----------------------------------------------------- */
+/* Die Plaene als Karten. Eine Karte = ein Plan, Farbe = Stand.
+   Bewusst mit Fortschrittsbalken: "3 von 8" sagt einem Kind mehr als
+   ein Prozentwert, der Balken sagt es noch schneller. */
+function lernwegPlaeneHtml(){
+  const alle = lingoraPlaene();
+  if(!alle.length) return "";
+
+  const karte = (p)=>{
+    const st = lingoraPlanStand(p);
+    const inhalt = lingoraPlanInhalt(p);
+    const offen = (p.id === state.lingoraPlanAktiv);
+    return `
+      <button class="lw-plan ${st.zustand} ${offen ? "offen" : ""}" data-lw-plan="${escapeHtml(p.id)}">
+        <span class="lw-plan-kopf">
+          <span class="lw-plan-ic">${st.sitzt ? "✅" : (st.zustand === "laeuft" ? "🔨" : "🗺️")}</span>
+          <span class="lw-plan-txt">
+            <span class="lw-plan-t">${escapeHtml(lingoraPlanTitel(p))}${offen ? " · offen" : ""}</span>
+            ${inhalt ? `<span class="lw-plan-u">${escapeHtml(inhalt)}</span>` : ""}
+          </span>
+          <span class="lw-plan-z">${st.fertig}/${st.gesamt}</span>
+        </span>
+        <span class="lw-plan-balken"><span style="width:${st.prozent}%"></span></span>
+      </button>`;
+  };
+
+  const laufend = alle.filter(p => !lingoraPlanStand(p).sitzt);
+  const fertig  = alle.filter(p =>  lingoraPlanStand(p).sitzt);
+
+  return `
+    <div class="panel">
+      <h3 class="abschnitt-h">🗺️ Deine Pläne</h3>
+      ${laufend.length ? `
+        <p class="muted" style="margin:0 0 8px;font-size:12.5px;">
+          Tipp einen an, um weiterzumachen. Grün wird ein Plan erst, wenn
+          alle Schritte bei 80 % sitzen.</p>
+        <div class="lw-plaene">${laufend.map(karte).join("")}</div>`
+      : `<p class="muted" style="margin:0 0 8px;font-size:12.5px;">
+          Gerade läuft kein Plan. Lass dir von Lingora einen zusammenstellen.</p>`}
+
+      ${fertig.length ? `
+        <details class="lw-regal sitzt" style="margin-top:12px;">
+          <summary>
+            <span class="lw-sym">✅</span>
+            <span class="lw-titel">Sitzt schon</span>
+            <span class="lw-zahl">${fertig.length}</span>
+          </summary>
+          <p class="lw-satz">Geschafft &ndash; du kannst sie jederzeit noch einmal üben.</p>
+          <div class="lw-plaene">${fertig.map(karte).join("")}</div>
+        </details>` : ""}
+
+      <button class="btn secondary small" id="lw-plan-neu" style="margin-top:12px;">
+        ✨ Neuen Plan von Lingora
+      </button>
+    </div>`;
+}
+
 function renderLernweg(){
   state.spielZurueck = "lernweg";
   const themen = lernwegAlleThemen();
@@ -14905,6 +15078,7 @@ function renderLernweg(){
       </details>`;
   };
 
+  /* Muss NACH dem Zeichnen verdrahtet werden - siehe unten. */
   app.innerHTML = `
     ${renderHeader("Mein Lernweg", true)}
     ${playerBadgeHtml(true)}
@@ -14919,6 +15093,8 @@ function renderLernweg(){
       <p class="lw-jetzt-g">${escapeHtml(schritt.grund)}</p>
       <button class="btn" id="lw-los">${schritt.knopf}</button>
     </div>
+
+    ${lernwegPlaeneHtml()}
 
     ${besser && (besser.themen > 0 || besser.woerter > 0) ? `
     <div class="panel lw-besser">
@@ -14947,6 +15123,7 @@ function renderLernweg(){
 
   document.getElementById('lw-los').addEventListener('click', ()=> schritt.los());
   document.getElementById('lw-plan').addEventListener('click', ()=> lingoraOeffnen("start"));
+  lernwegPlaeneVerdrahten();
 
   document.querySelectorAll('.lw-chip').forEach(el=>{
     el.addEventListener('click', ()=>{
