@@ -3199,7 +3199,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "73.1 – Heute dran";
+const APP_VERSION = "73.2 – Heute dran";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -7721,8 +7721,11 @@ function loadSave(){
     if(data.figurBasis === "import" || data.figurBasis === "rezept") state.figurBasis = data.figurBasis;
     if(data.lingoraPlan && typeof data.lingoraPlan === "object") state.lingoraPlan = data.lingoraPlan;
     if(Array.isArray(data.lingoraPlaene)) state.lingoraPlaene = data.lingoraPlaene;
-    if(typeof data.klasse === "number") state.klasse = data.klasse;
-    if(Array.isArray(data.gramDran)) state.gramDran = data.gramDran;
+    // Auch lokal gilt: nur zusammen ist die Antwort gueltig.
+    if(typeof data.klasse === "number" && Array.isArray(data.gramDran)){
+      state.klasse = data.klasse;
+      state.gramDran = data.gramDran;
+    }
     if(typeof data.lingoraPlanAktiv === "string") state.lingoraPlanAktiv = data.lingoraPlanAktiv;
     if(data.gramGelesen && typeof data.gramGelesen === "object") state.gramGelesen = data.gramGelesen;
     if(data.wortStand && typeof data.wortStand === "object") state.wortStand = data.wortStand;
@@ -7760,8 +7763,8 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       figurBasis: state.figurBasis,
       lingoraPlan: state.lingoraPlan,
       lingoraPlaene: state.lingoraPlaene,
-      klasse: state.klasse,
-      gramDran: state.gramDran,
+      klasse: state.klasse || 0,
+      gramDran: Array.isArray(state.gramDran) ? state.gramDran : null,
       lingoraPlanAktiv: state.lingoraPlanAktiv,
       gramGelesen: state.gramGelesen,
       wortStand: state.wortStand,
@@ -8076,8 +8079,14 @@ function applyPlayerToState(player){
   /* Diese drei standen in der Cloud, wurden hier aber nie gelesen.
      Zusammenfuehren, nicht ersetzen - siehe die Helfer oben. */
   if(Array.isArray(player.lingoraPlaene)) state.lingoraPlaene = plaeneVereinen(state.lingoraPlaene, player.lingoraPlaene);
-  if(typeof player.klasse === "number") state.klasse = player.klasse;
-  if(Array.isArray(player.gramDran)) state.gramDran = player.gramDran;
+  /* Eine Klasse OHNE gramDran stammt aus 73.0/73.1 und wurde dem Kind
+     untergeschoben, nicht von ihm gewaehlt. Die wird bewusst verworfen -
+     dann kommt die Frage beim naechsten Start eben nach. Seit 73.2
+     schreibt die App beide Felder immer zusammen. */
+  if(typeof player.klasse === "number" && Array.isArray(player.gramDran)){
+    state.klasse = player.klasse;
+    state.gramDran = player.gramDran;
+  }
   state.listen     = listenVereinen(state.listen, player.listen);
   state.wortStand  = wortStandVereinen(state.wortStand, player.wortStand);
   state.boxTreffer = boxTrefferVereinen(state.boxTreffer, player.boxTreffer);
@@ -8360,12 +8369,22 @@ function syncToCloud(){
          aeltere, zwischengespeicherte Fassung, schrieb deren
          saveProgress() den Speicher ohne dieses Feld zurueck - und die
          Plaene waren weg. In der Cloud kann das nicht passieren. */
-      lingoraPlaene: lingoraPlaene(),
-      /* Seit 73.0 in der Cloud: Sonst stand am Tablet Klasse 6 und am
-         Handy wieder Klasse 5 - mit voellig anderen Vorschlaegen. */
-      klasse: state.klasse || 5,
-      gramDran: Array.isArray(state.gramDran) ? state.gramDran : []
+      lingoraPlaene: lingoraPlaene()
     };
+    /* Seit 73.0 in der Cloud, damit am Tablet nicht Klasse 6 und am Handy
+       Klasse 5 steht. Aber NUR, wenn das Kind wirklich geantwortet hat.
+
+       In 73.0/73.1 stand hier "state.klasse || 5". Dieser Ersatzwert hat
+       die Frage still beantwortet: Der erste Abgleich nach dem Anmelden
+       schrieb eine 5, der naechste Ladevorgang holte sie zurueck - und
+       das Kind wurde nie gefragt. Gemessen an Nokies Profil.
+
+       Beide Felder gehen immer GEMEINSAM raus. Darauf verlaesst sich das
+       Laden weiter unten. */
+    if(state.klasse){
+      payload.klasse = state.klasse;
+      payload.gramDran = Array.isArray(state.gramDran) ? state.gramDran : [];
+    }
     if(state.spitzname){ payload.spitzname = state.spitzname; }
     if(state.portrait){ payload.portrait = state.portrait; }
     if(state.listen && state.listen.length){ payload.listen = state.listen; }
