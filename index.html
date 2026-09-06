@@ -3163,7 +3163,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "71.0 – Lingoras Tipp";
+const APP_VERSION = "72.1 – Fünf Münzen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4335,7 +4335,12 @@ function lingoraPlanLoeschen(id){
 }
 
 function lingoraHeutigerTag(){
-  const p = lingoraPlan();
+  return lingoraTagVonPlan(lingoraPlan());
+}
+
+/* Derselbe Blick, aber auf einen BELIEBIGEN Plan - parallele Plaene
+   haben jeder ihren eigenen "heute". */
+function lingoraTagVonPlan(p){
   if(!p) return null;
   const heute = dateKey(new Date());
   // Der Tag von heute - oder, falls ein Tag verpasst wurde, der erste
@@ -4346,6 +4351,183 @@ function lingoraHeutigerTag(){
     if(t.datum < heute && t.schritte.some(s=>!s.fertig) && !offen) offen = t;
   }
   return offen || p.tage[p.tage.length - 1] || null;
+}
+
+/* ==================================================================
+   WIEDERHOLUNG FUER GRAMMATIK
+
+   Vokabeln kamen dank Leitner von selbst wieder, Grammatik nicht. Ein
+   Thema, das einmal sass, verschwand fuer immer - und die App wirkte
+   leer, obwohl das Wissen laengst am Verblassen war.
+
+   Die Abstaende wachsen mit der Sicherheit: was wackelt, kommt morgen
+   wieder, was sitzt, in einem Monat. Aber es kommt wieder.
+
+   ABGELEITET, NICHT GESPEICHERT: grammarSkills enthaelt bereits die
+   Trefferquote und den Zeitpunkt der letzten Uebung. Mehr braucht es
+   nicht. Deshalb aendert sich weder das Datenmodell noch die
+   Firestore-Regel, und alte Profile funktionieren unveraendert weiter.
+================================================================== */
+const GRAM_ABSTAND = [1, 3, 7, 14, 30];   // Tage, je nach Sicherheit
+
+function gramStufe(info){
+  if(!info.genug)            return 0;   // zu wenig Daten - bald wieder
+  if(info.quote < 0.70)      return 0;   // wackelt      -> 1 Tag
+  if(info.quote < 0.85)      return 1;   //              -> 3 Tage
+  if(info.quote < 0.95)      return 2;   //              -> 7 Tage
+  if(info.fenster < SKILL_WINDOW) return 3;  //          -> 14 Tage
+  return 4;                              // sitzt sicher -> 30 Tage
+}
+
+/* Wann ist dieses Thema wieder dran? 0 heisst: sofort. */
+function gramFaelligAm(topic){
+  const info = grammarSkillInfo(topic);
+  if(!info.fenster || !info.zuletzt) return 0;      // nie geuebt = sofort
+  return info.zuletzt + GRAM_ABSTAND[gramStufe(info)] * 86400000;
+}
+function gramIstFaellig(topic){ return Date.now() >= gramFaelligAm(topic); }
+
+/* Alle faelligen Themen der Klasse - das Draengendste zuerst.
+   Sortiert nach "wie lange ueberfaellig", damit nichts liegen bleibt. */
+function gramFaelligeThemen(){
+  const jetzt = Date.now();
+  return grammatikThemenDerKlasse()
+    .filter(t => !t.locked && gramIstFaellig(t))
+    .sort((a, b) => (jetzt - gramFaelligAm(a) === jetzt - gramFaelligAm(b))
+        ? lingoraStaerke(a) - lingoraStaerke(b)
+        : gramFaelligAm(a) - gramFaelligAm(b));
+}
+
+/* ==================================================================
+   HEUTE DRAN
+
+   Die Liste, die Lingora beim Oeffnen zeigt. Sie ist NIE leer - das
+   ist ihr ganzer Zweck. Vier Quellen, in dieser Reihenfolge:
+
+     1. Offene Schritte aus laufenden Plaenen. Vorrang, weil das Kind
+        sich das selbst vorgenommen hat.
+     2. Faellige Grammatik der Klasse, das Wackeligste zuerst.
+     3. Ein paar zufaellige Woerter aus dem schon Geuebten.
+     4. Notnagel: Sitzt wirklich alles, kommt das Thema dran, das am
+        laengsten nicht geuebt wurde. Lieber Wiederholung als ein
+        leerer Bildschirm.
+================================================================== */
+const HEUTE_ZIEL = 3;      // so viele Sachen - machbar, nicht abschreckend
+
+function heuteDran(){
+  const liste = [];
+  const drin = new Set();
+
+  const rein = (eintrag, schluessel)=>{
+    if(liste.length >= HEUTE_ZIEL) return false;
+    if(schluessel){
+      if(drin.has(schluessel)) return false;
+      drin.add(schluessel);
+    }
+    liste.push(eintrag);
+    return true;
+  };
+
+  // 1) Offene Planschritte
+  for(const p of lingoraPlaene()){
+    const tag = lingoraTagVonPlan(p);
+    if(!tag) continue;
+    for(const s of (tag.schritte || [])){
+      if(s.fertig) continue;
+      rein({
+        quelle: "plan", schrittId: s.id, planId: p.id,
+        titel: s.titel, unter: s.unter, icon: s.icon || "📘",
+        dauer: s.dauer || 5
+      }, "schritt:" + s.id);
+      if(liste.length >= HEUTE_ZIEL) break;
+    }
+    if(liste.length >= HEUTE_ZIEL) break;
+  }
+
+  // 2) Faellige Grammatik
+  for(const t of gramFaelligeThemen()){
+    if(liste.length >= HEUTE_ZIEL) break;
+    const info = grammarSkillInfo(t);
+    rein({
+      quelle: "gram", topicId: t.id,
+      titel: t.name + (info.fenster ? " auffrischen" : " kennenlernen"),
+      unter: info.fenster
+        ? ("Zuletzt " + info.prozent + " % richtig – mal sehen, ob es noch sitzt")
+        : "Neu für dich – Lingora erklärt es dir erst",
+      icon: t.icon || "🧠", dauer: 5,
+      neu: !info.fenster
+    }, "gram:" + t.id);
+  }
+
+  // 3) Vokabeln aus dem schon Geuebten
+  if(liste.length < HEUTE_ZIEL && wiederholbareWoerter().length){
+    rein({
+      quelle: "vokabel",
+      titel: "Vokabeln auffrischen",
+      unter: "Ein paar Wörter, die du schon mal hattest",
+      icon: "🔁", dauer: 5
+    }, "vokabel");
+  }
+
+  // 4) Notnagel - es darf nie leer sein.
+  if(!liste.length){
+    const alle = grammatikThemenDerKlasse().filter(t => !t.locked);
+    if(alle.length){
+      // Das am laengsten nicht Geuebte zuerst.
+      const t = alle.slice().sort((a, b)=>
+        (grammarSkillInfo(a).zuletzt || 0) - (grammarSkillInfo(b).zuletzt || 0))[0];
+      rein({
+        quelle: "gram", topicId: t.id,
+        titel: t.name + " auffrischen",
+        unter: "Alles sitzt gerade – dann halten wir es auch so",
+        icon: t.icon || "🧠", dauer: 5
+      }, "gram:" + t.id);
+    } else {
+      rein({
+        quelle: "vokabel",
+        titel: "Vokabeln üben",
+        unter: "Ein paar Wörter gehen immer",
+        icon: "🔁", dauer: 5
+      }, "vokabel");
+    }
+  }
+
+  return liste;
+}
+
+/* Woerter, die das Kind schon einmal in der Hand hatte. */
+function wiederholbareWoerter(){
+  const stand = state.wortStand || {};
+  if(!Object.keys(stand).length) return [];
+  try{
+    return getAllVocab().filter(w => stand[wortSchluessel(w)]);
+  }catch(e){ return []; }
+}
+
+/* Einen Eintrag der Tagesliste starten. */
+function heuteStarten(eintrag){
+  if(!eintrag) return;
+  if(eintrag.quelle === "plan"){
+    state.lingoraPlanAktiv = eintrag.planId;
+    lingoraSchrittStarten(eintrag.schrittId);
+    return;
+  }
+  if(eintrag.quelle === "gram"){
+    state.mainMode = "grammar";
+    state.grammarTopicId = eintrag.topicId;
+    if(eintrag.neu){
+      // Noch nie geuebt: erst erklaeren, dann ueben.
+      state.grammarStatsReturnTo = "start";
+      state.screen = "grammarintro";
+      render();
+      return;
+    }
+    startGrammarPractice();
+    return;
+  }
+  state.mainMode = "vocab";
+  state.mode = "wiederholen";
+  startGame();
 }
 
 function lingoraFortschritt(){
@@ -8308,6 +8490,16 @@ function buildQueue(){
     if(dran.length) pool = dran;      // sonst lieber alles als eine leere Runde
   }
 
+  // "wiederholen" nimmt ein paar zufaellige Woerter aus dem, was das Kind
+  // schon einmal geuebt hat. Absichtlich NICHT nur das Faellige: Auch was
+  // sitzt, soll ab und zu wiederkommen - sonst faellt es still hinten
+  // runter. Hat das Kind noch nie geuebt, bleibt der volle Vorrat.
+  if(state.mode === "wiederholen"){
+    const stand = state.wortStand || {};
+    const bekannt = pool.filter(w => stand[wortSchluessel(w)]);
+    if(bekannt.length) pool = shuffle(bekannt).slice(0, 15);
+  }
+
   // Dringend zuerst: neue und ueberfaellige Woerter, dann die wackeligen,
   // zuletzt das, was sicher sitzt. Innerhalb derselben Dringlichkeit wird
   // gemischt - sonst kaeme jeden Tag exakt dieselbe Reihenfolge.
@@ -9532,12 +9724,12 @@ function renderAussprache(){
         const v = sprachVergleich(liste, ziel);
         let text, art;
         if(v.result === "correct"){
-          state.sessionCoins += 10;
+          state.sessionCoins += 5;
           text = "🎉 Genau so! <strong>" + escapeHtml(ziel) + "</strong>";
           art = "gut";
           wortGelernt(w, "correct");
         } else if(v.result === "almost"){
-          state.sessionCoins += 6;
+          state.sessionCoins += 3;
           text = "Fast! Ich habe &bdquo;" + escapeHtml(v.gehoert) + "&ldquo; verstanden. "
                + "Richtig heißt es <strong>" + escapeHtml(ziel) + "</strong> &ndash; hör es dir nochmal an.";
           art = "fast";
@@ -11552,6 +11744,7 @@ function startGame(){
   saveProgress();
   attemptCloudLogin();
   state.sessionCoins = 0;
+  state.muenzenAbgerechnet = false;
   state.streak = 0;
   state.bestStreak = 0;
   state.sessionLog = [];
@@ -11683,7 +11876,7 @@ function handleVocabFloodAnswer(btn, choice, word){
 
   if(richtig){
     btn.classList.add('correct');
-    state.sessionCoins += 10;
+    state.sessionCoins += 5;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
     state.grammarCorrectCount += 1;
@@ -11813,7 +12006,7 @@ function renderQuiz(){
 
 // Zieht bei falschen Antworten Münzen ab, geht aber nie unter 0 (weder Session- noch Gesamt-Kontostand)
 function deductCoinsForWrong(amount){
-  amount = amount || 10;
+  amount = amount || 5;
   state.sessionCoins = Math.max(0, state.sessionCoins - amount);
 }
 
@@ -11905,6 +12098,7 @@ function cancelGame(){
     bricheWeiterAb();
     stopFloodRise();
     protokolliereRunde("vocab", state.sessionLog);   // auch Abgebrochenes zaehlt
+    muenzenAbrechnen("vocab");   // Verdientes bleibt verdient, auch beim Abbrechen
     saveProgress(); syncToCloud();
     state.answered = true;
     zurueckZurSektion();
@@ -12217,7 +12411,7 @@ function handleChallengeAnswer(btn, choice, word){
 
   if(isCorrect){
     if(btn){ btn.classList.add('correct'); }
-    const coins = 10;
+    const coins = 5;
     state.sessionCoins += coins;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
@@ -12325,7 +12519,7 @@ function handleMcAnswer(btn, choice, word){
   const isCorrect = choice === ans.answerDisplay;
   if(isCorrect){
     btn.classList.add('correct');
-    const coins = 10;
+    const coins = 5;
     state.sessionCoins += coins;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
@@ -12357,7 +12551,7 @@ function handleTypedAnswer(value, word){
   const evalResult = evaluateTyped(value, ans.accepted, ans.answerDisplay);
 
   if(evalResult.result === "correct"){
-    const coins = 10;
+    const coins = 5;
     state.sessionCoins += coins;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
@@ -12365,7 +12559,7 @@ function handleTypedAnswer(value, word){
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"correct", userInput:value, word});
     wortGelernt(word, "correct");
   } else if(evalResult.result === "almost"){
-    const coins = 6;
+    const coins = 3;
     state.sessionCoins += coins;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
@@ -12408,6 +12602,7 @@ function startMistakeReview(){
   state.queue = shuffle(mistakeWords);
   state.currentIndex = 0;
   state.sessionCoins = 0;
+  state.muenzenAbgerechnet = false;
   state.streak = 0;
   state.bestStreak = 0;
   state.sessionLog = [];
@@ -12442,13 +12637,36 @@ function rueckmeldungInsBild(fb){
   }catch(e){}
 }
 
+/* ------------------------------------------------------------------
+   DIE EINZIGE STELLE, AN DER MUENZEN AUF DAS KONTO WANDERN
+
+   Vorher lagen diese zwei Zeilen in endSession und finishGrammarSession -
+   und fehlten in beiden Abbrechen-Wegen. Ergebnis: verdiente Muenzen
+   verschwanden beim Abbrechen spurlos.
+
+   Der Riegel muenzenAbgerechnet macht die Abrechnung wiederholbar
+   aufrufbar, ohne doppelt zu zahlen. Deshalb darf sie jetzt ueberall
+   stehen, wo eine Runde endet - auch zweimal.
+------------------------------------------------------------------ */
+function muenzenAbrechnen(bereich){
+  if(state.muenzenAbgerechnet) return 0;
+  state.muenzenAbgerechnet = true;
+  const offen = (bereich === "grammar")
+    ? (state.grammarSessionCoins || 0)
+    : (state.sessionCoins || 0);
+  if(offen > 0){
+    state.coins = Math.max(0, (state.coins || 0) + offen);
+    diamantenDazu(offen);          // Zeugnis, nicht Waehrung
+  }
+  return offen;
+}
+
 function endSession(reason){
   bricheWeiterAb();
   lingoraRundeBeendet(state.sessionLog);
   stopFloodRise();
   protokolliereRunde("vocab", state.sessionLog);
-  state.coins = Math.max(0, state.coins + state.sessionCoins);
-  diamantenDazu(state.sessionCoins);        // Zeugnis, nicht Waehrung
+  muenzenAbrechnen("vocab");
   state.lifetimeBestStreak = Math.max(state.lifetimeBestStreak, state.bestStreak);
   state.lastReason = reason;
   state.sessionQuote = pickRandom(MINECRAFT_QUOTES);
@@ -16427,6 +16645,7 @@ function resetGrammarSession(){
   state.grammarCorrectCount = 0;
   state.grammarWrongStreak = 0;
   state.grammarSessionCoins = 0;
+  state.muenzenAbgerechnet = false;
   state.grammarSessionLog = [];
   state.grammarAnswered = false;
   state.grammarGameResult = null;
@@ -16828,6 +17047,7 @@ function cancelGrammarGame(){
   showConfirmModal('Spiel abbrechen und zum Menü zurückkehren?', ()=>{
     stopFloodRise();
     protokolliereRunde("grammar", state.grammarSessionLog);
+    muenzenAbrechnen("grammar");   // Verdientes bleibt verdient, auch beim Abbrechen
     saveProgress(); syncToCloud();
     zurueckZurSektion();
   });
@@ -16867,7 +17087,7 @@ function handleGrammarAnswer(btn, choice, exercise){
   const fb = document.getElementById('feedback');
 
   if(correct){
-    state.grammarSessionCoins += 10;
+    state.grammarSessionCoins += 5;
     state.grammarCorrectCount += 1;
     showGoodToast('<span class="item-pop">✅</span> Richtig!');
     // Bewusst KEIN Zuruecksetzen des Fehlerzaehlers: das Wasser soll stehen
@@ -16878,7 +17098,7 @@ function handleGrammarAnswer(btn, choice, exercise){
     fb.innerHTML = '';
   } else {
     // In der ruhigen Uebungsrunde gibt es bewusst KEINEN Muenzabzug.
-    if(!practice){ state.grammarSessionCoins = Math.max(0, state.grammarSessionCoins - 10); }
+    if(!practice){ state.grammarSessionCoins = Math.max(0, state.grammarSessionCoins - 5); }
     state.grammarWrongStreak += 1;
     if(!practice){ raiseFloodWater(); }
     if(practice){
@@ -16980,8 +17200,7 @@ function finishGrammarSession(result){
   lingoraRundeBeendet(state.grammarSessionLog);
   stopFloodRise();
   protokolliereRunde("grammar", state.grammarSessionLog);
-  state.coins = Math.max(0, state.coins + state.grammarSessionCoins);
-  diamantenDazu(state.grammarSessionCoins);
+  muenzenAbrechnen("grammar");
   state.grammarGameResult = result;
   state.grammarQuote = pickRandom(GRAMMAR_MOTIVATION_QUOTES);
   state.gradeWisdom = pickRandom(GRADE_WISDOM);
