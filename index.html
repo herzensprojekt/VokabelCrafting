@@ -171,6 +171,28 @@
   }
   .modal-box p{ margin:0 0 16px 0; text-align:center; font-family:var(--font); font-size:19px; }
 
+  /* ---------- Lingoras Hilfe-Knopf ---------- */
+  /* Absolut gesetzt, und das ist der ganze Trick: So kostet der Knopf
+     KEINE Bauhoehe. Im Flutungsraum ist jeder Punkt gezaehlt - dort
+     fehlten schon einmal 233 Punkte, bis der WEITER-Knopf sichtbar war. */
+  .word-card{ position:relative; }
+  .gt-hilfe{
+    position:absolute; top:6px; right:6px;
+    width:38px; height:38px; padding:0;
+    border:0; border-radius:50%;
+    background:var(--gold); color:#4a3600;
+    font-size:19px; line-height:38px; text-align:center;
+    box-shadow:0 2px 0 rgba(0,0,0,.28);
+    cursor:pointer; z-index:3;
+    animation: gt-puls 2.6s ease-in-out infinite;
+  }
+  .gt-hilfe:active{ transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,.28); }
+  @keyframes gt-puls{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.09); } }
+  @media (prefers-reduced-motion: reduce){ .gt-hilfe{ animation:none; } }
+  .gt-box{ max-height:88vh; overflow-y:auto; }
+  .gt-hinweis{ font-size:13px; text-align:center; margin:11px 0 0; color:var(--tinte-hell); }
+  .gt-warn{ font-size:12.5px; text-align:center; margin:9px 0 0; color:var(--tinte-hell); }
+
   /* ---------- Title ---------- */
   .title-block{ text-align:center; margin-bottom:14px; }
   .title-block.compact{ margin-bottom:6px; }
@@ -3141,7 +3163,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "70.1 – Durchgelesen";
+const APP_VERSION = "71.0 – Lingoras Tipp";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -16631,6 +16653,120 @@ function floodBuehneAnpassen(erzwingen){
   floodSkalaFuer = erzwingen ? -1 : sicht;
 }
 
+/* ------------------------------------------------------------------
+   LINGORAS TIPP IM GRAMMATIK-QUIZ
+
+   Welche der Regelzeilen eines Themas gehoert zu DIESER Aufgabe? Die
+   Daten geben das nicht her - es steht nirgends. Also wird es
+   erschlossen, und zwar aus vier Hinweisen mit absteigendem Gewicht:
+
+     100  die Antwort IST die Form der Zeile      ("a few" -> "a few")
+      60  die Antwort steht im Beispielsatz       ("a few posters")
+     8/W  gemeinsame Woerter mit dem Aufgabensatz
+     4/W  gemeinsame Woerter mit der Uebersetzung
+
+   Ueber alle 1142 Aufgaben gemessen: 859 finden so eine Zeile (75,2 %).
+   Wo nichts ueber 20 Punkte kommt, gibt es keine Zeile - dann bleibt es
+   bei der Merkhilfe. Lieber keine Regel als die falsche.
+------------------------------------------------------------------ */
+function gtNorm(s){
+  return String(s || "").toLowerCase()
+    .replace(/[^a-zäöüß0-9' ]/g, " ").replace(/\s+/g, " ").trim();
+}
+function gtWoerter(s){ return gtNorm(s).split(" ").filter(w=>w.length > 1); }
+
+function gtPunkte(row, ex){
+  const antwort = gtNorm(ex.answer);
+  const bsp     = gtNorm(row.example);
+  const form    = gtNorm(row.form);
+  let p = 0;
+  if(form && (form === antwort || form.split(" / ").some(v=>v.trim() === antwort))) p += 100;
+  if(bsp && (" " + bsp + " ").includes(" " + antwort + " ")) p += 60;
+  const imSatz = new Set(gtWoerter(ex.sentence));
+  let g = 0; for(const w of gtWoerter(row.example)){ if(imSatz.has(w)) g++; }
+  p += g * 8;
+  const imDeutschen = new Set(gtWoerter(ex.de));
+  let gd = 0; for(const w of gtWoerter(row.de)){ if(imDeutschen.has(w)) gd++; }
+  p += gd * 4;
+  return p;
+}
+
+function grammarRegelZuAufgabe(topic, ex){
+  if(!topic || !topic.intro || !ex) return null;
+  const rows = topic.intro.rows || [];
+  let beste = null, bp = 0;
+  for(const r of rows){ const p = gtPunkte(r, ex); if(p > bp){ bp = p; beste = r; } }
+  return bp >= 20 ? beste : null;
+}
+
+/* Lingora sagt nicht jedes Mal dasselbe. Ein Helfer, der wie eine
+   Tonbandansage klingt, ist kein Helfer. */
+const GT_SPRUECHE = [
+  "Warte, ich hab da was für dich.",
+  "Kein Ding &ndash; dafür bin ich ja da.",
+  "Festgefahren? Guck mal her.",
+  "Das hier hilft mir auch immer.",
+  "Genau für so einen Moment hab ich mir das gemerkt.",
+  "Nicht raten. Erst gucken, dann wissen.",
+  "Komm, das kriegen wir zusammen hin."
+];
+
+function zeigeGrammatikTipp(){
+  const topic = grammarTopicById(state.grammarTopicId);
+  const ex    = state.grammarCurrentExercise;
+  if(!topic || !topic.intro || !ex) return;
+
+  // Im Test bleibt die Regelzeile zu: ihr Beispielsatz enthaelt zu 84 %
+  // die Loesung, und die Note traegt die Klassenarbeits-Prognose.
+  const istTest = state.grammarMode === "test";
+  const regel   = istTest ? null : grammarRegelZuAufgabe(topic, ex);
+  const spruch  = GT_SPRUECHE[Math.floor(Math.random() * GT_SPRUECHE.length)];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="panel modal-box gt-box">
+      ${lingoraKopfHtml(spruch, true)}
+      <div class="gk-tipp" style="margin-top:10px;">
+        <span class="gk-tipp-ic">💡</span>
+        <p>${escapeHtml(topic.intro.tip || topic.intro.lead || "")}</p>
+      </div>
+      ${regel ? `
+        <button class="btn ghost small" id="gt-regel" style="margin-top:11px;">
+          🔍 Zeig mir die Regel dazu
+        </button>
+        <div id="gt-regel-box" hidden style="margin-top:11px;">
+          <div class="gk-regel">
+            <div class="gk-kopf">
+              <span class="gk-pron">${escapeHtml(regel.en)}</span>
+              <span class="gk-form">${escapeHtml(regel.form)}</span>
+            </div>
+            <div class="gk-bsp">${escapeHtml(regel.example)}</div>
+            <div class="gk-de">${escapeHtml(regel.de)}</div>
+          </div>
+          <p class="gt-warn">Das war fast schon die Lösung &ndash;
+          beim nächsten Mal schaffst du es allein.</p>
+        </div>` : ""}
+      ${istTest ? `<p class="gt-hinweis">Das hier zählt für die Note.
+        Deshalb gibt&rsquo;s von mir nur die Merkhilfe &ndash; den Rest musst du können.</p>` : ""}
+      <button class="btn" id="gt-zu" style="margin-top:13px;">✓ ALLES KLAR</button>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  const zu = ()=>{ if(overlay.parentNode){ overlay.parentNode.removeChild(overlay); } };
+  overlay.querySelector('#gt-zu').addEventListener('click', zu);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) zu(); });
+
+  const rb = overlay.querySelector('#gt-regel');
+  if(rb){
+    rb.addEventListener('click', ()=>{
+      const box = overlay.querySelector('#gt-regel-box');
+      if(box){ box.hidden = false; }
+      rb.remove();
+    }, { once:true });
+  }
+}
+
 function renderGrammarQuiz(){
   const topic = grammarTopicById(state.grammarTopicId);
   const exercise = state.grammarCurrentExercise;
@@ -16670,6 +16806,7 @@ function renderGrammarQuiz(){
     ${stage}
 
     <div class="panel word-card" id="word-card">
+      <button class="gt-hilfe" id="gt-hilfe" type="button" aria-label="Lingora um einen Tipp fragen">💡</button>
       <div class="eyebrow">${(grammarTopicById(state.grammarTopicId) || {}).prompt || "WÄHLE DIE RICHTIGE FORM"}</div>
       <div class="term" style="font-size:26px;">${escapeHtml(before)}<span style="display:inline-block;min-width:70px;border-bottom:3px solid var(--gold);margin:0 4px;">&nbsp;</span>${escapeHtml(after)}</div>
       <div class="choices">
@@ -16683,6 +16820,8 @@ function renderGrammarQuiz(){
   document.querySelectorAll('.choice-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>handleGrammarAnswer(btn, btn.dataset.choice, exercise));
   });
+  const hilfe = document.getElementById('gt-hilfe');
+  if(hilfe){ hilfe.addEventListener('click', zeigeGrammatikTipp); }
 }
 
 function cancelGrammarGame(){
