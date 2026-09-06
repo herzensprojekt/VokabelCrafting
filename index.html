@@ -3199,7 +3199,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "73.2 – Heute dran";
+const APP_VERSION = "73.3 – Klasse ändern";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -11701,6 +11701,8 @@ function renderStart(){
       </div>
       ${state.guest ? `<button class="btn gold small" id="signup-btn" style="margin-top:10px;width:auto;margin-right:8px;">🆕 Konto anlegen</button>` : ``}<button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
         ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
+      </button><button class="btn secondary small" id="klasse-aendern" style="margin-top:10px;margin-left:8px;width:auto;">
+        🎒 Klasse${state.klasse ? " (" + state.klasse + ".)" : ""}
       </button>
 
       ${state.showLoginForm ? `
@@ -11822,6 +11824,23 @@ function startVerdrahten(){
   if(supportBtn){
     supportBtn.addEventListener('click', showSupportModal);
   }
+  /* Klasse neu waehlen. Beide Felder werden GEMEINSAM geleert, damit der
+     Waechter in render() wieder greift - eine Klasse ohne gramDran gilt
+     seit 73.2 als unbeantwortet. */
+  const klasseBtn = document.getElementById('klasse-aendern');
+  if(klasseBtn){
+    klasseBtn.addEventListener('click', ()=>{
+      showConfirmModal('Klasse neu einstellen? Lingora fragt dich dann noch mal.', ()=>{
+        state.klasse = 0;
+        state.gramDran = undefined;
+        kfWahl = { klasse: 0, themen: [] };
+        state.screen = "start";
+        saveProgress();
+        render();
+      });
+    });
+  }
+
   const toggleLoginFormBtn = document.getElementById('toggle-login-form');
   if(toggleLoginFormBtn){
     toggleLoginFormBtn.addEventListener('click', ()=>{
