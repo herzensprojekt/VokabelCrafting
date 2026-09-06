@@ -214,6 +214,8 @@
   .ht-t{ font-family:var(--font); font-weight:800; font-size:15px; color:var(--tinte); }
   .ht-u{ font-size:12.5px; color:var(--tinte-hell); line-height:1.35; }
   .ht-min{ flex:0 0 auto; font-size:11.5px; font-weight:700; color:var(--tinte-hell); }
+  .ht-min.frei{ color:#7a5c8f; }
+  .ht-zeile:has(.frei){ background:var(--papier); border-style:dashed; }
   .ht-rang-box{ margin:2px 0 10px; }
   .ht-rang{ margin:0 0 5px; font-size:13px; text-align:center; color:var(--tinte); }
   .ht-balken{ height:9px; border-radius:6px; background:#e0d7c6; overflow:hidden; }
@@ -3231,7 +3233,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "74.1 – Eine Karte";
+const APP_VERSION = "74.2 – Erledigt bleibt erledigt";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4544,14 +4546,29 @@ function heuteDran(){
     }, "gram:" + t.id);
   }
 
-  // 3) Vokabeln aus dem schon Geuebten
-  if(liste.length < HEUTE_ZIEL && wiederholbareWoerter().length){
-    rein({
-      quelle: "vokabel",
-      titel: "Vokabeln auffrischen",
-      unter: "Ein paar Wörter, die du schon mal hattest",
-      icon: "🔁", dauer: 5
-    }, "vokabel");
+  // 3) Vokabeln - aber nur, wenn heute wirklich etwas ansteht.
+  //
+  //    Vorher stand diese Zeile immer da, ohne jede Pruefung. Wer sie
+  //    abgearbeitet hatte, fand sie danach unveraendert wieder - genau
+  //    der Eindruck, immer dasselbe zu machen.
+  if(liste.length < HEUTE_ZIEL){
+    const bekannt = wiederholbareWoerter();
+    const faellig = bekannt.length ? faelligeWoerter(bekannt) : [];
+    if(faellig.length){
+      rein({
+        quelle: "vokabel",
+        titel: "Fällige Wörter",
+        unter: faellig.length + (faellig.length === 1 ? " Wort wartet" : " Wörter warten") + " auf dich",
+        icon: "🔁", dauer: 5
+      }, "vokabel");
+    } else if(bekannt.length && !heuteSchonVokabeln()){
+      rein({
+        quelle: "vokabel",
+        titel: "Vokabeln auffrischen",
+        unter: "Ein paar Wörter, die du schon mal hattest",
+        icon: "🔁", dauer: 5
+      }, "vokabel");
+    }
   }
 
   // 4) Notnagel - es darf nie leer sein.
@@ -4562,22 +4579,29 @@ function heuteDran(){
       const t = alle.slice().sort((a, b)=>
         (grammarSkillInfo(a).zuletzt || 0) - (grammarSkillInfo(b).zuletzt || 0))[0];
       rein({
-        quelle: "gram", topicId: t.id,
+        quelle: "gram", topicId: t.id, frei: true,
         titel: t.name + " auffrischen",
-        unter: "Alles sitzt gerade – dann halten wir es auch so",
+        unter: "Alles sitzt gerade. Lust auf eine Extrarunde?",
         icon: t.icon || "🧠", dauer: 5
       }, "gram:" + t.id);
     } else {
       rein({
-        quelle: "vokabel",
+        quelle: "vokabel", frei: true,
         titel: "Vokabeln üben",
-        unter: "Ein paar Wörter gehen immer",
+        unter: "Nichts fällig – aber üben geht immer",
         icon: "🔁", dauer: 5
       }, "vokabel");
     }
   }
 
   return liste;
+}
+
+/* Standen heute schon Vokabeln auf dem Programm? Die Tagesstatistik
+   weiss das ohnehin - v ist die Zahl der beantworteten Vokabelfragen. */
+function heuteSchonVokabeln(){
+  const e = (state.activityLog || {})[heuteKey()];
+  return !!(e && e.v > 0);
 }
 
 /* Woerter, die das Kind schon einmal in der Hand hatte. */
@@ -5716,7 +5740,7 @@ function heuteListeHtml(liste){
             <span class="ht-t">${escapeHtml(e.titel)}</span>
             <span class="ht-u">${escapeHtml(e.unter)}</span>
           </span>
-          <span class="ht-min">${e.dauer || 5}&thinsp;min</span>
+          <span class="ht-min ${e.frei ? "frei" : ""}">${e.frei ? "freiwillig" : (e.dauer || 5) + "&thinsp;min"}</span>
         </button>`).join("")}
     </div>`;
 }
