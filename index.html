@@ -171,6 +171,12 @@
   }
   .modal-box p{ margin:0 0 16px 0; text-align:center; font-family:var(--font); font-size:19px; }
 
+  /* ---------- Die eine Erklaerkarte ---------- */
+  .gk-eine{ padding:18px 15px; }
+  .gk-titel{ font-size:21px; line-height:1.25; margin:0 0 6px; }
+  .gk-lead{ text-align:center; font-size:14.5px; line-height:1.45;
+    color:var(--tinte-hell); margin:0 0 14px; }
+
   /* ---------- Regeln als Raster statt als Kartenstapel ---------- */
   .gk-gitter{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .gk-gitter.eng .gk-zelle{ padding:9px 10px; }
@@ -182,7 +188,8 @@
   .gk-z-form{ font-family:var(--font); font-weight:800; font-size:18px;
     color:var(--tinte); line-height:1.2; margin-bottom:6px; }
   .gk-z-bsp{ font-size:14px; font-weight:700; color:var(--tinte); line-height:1.3; }
-  .gk-z-de{ font-size:12px; color:var(--tinte-hell); margin-top:3px; line-height:1.3; }
+  .gk-z-de{ font-size:11.5px; color:var(--tinte-hell); margin-top:3px; line-height:1.3; }
+  .gk-eine .lg-kopf{ margin-top:14px; }
   @media (max-width:360px){ .gk-gitter{ grid-template-columns:1fr; } }
 
   /* ---------- Gelöstes Beispiel im Tipp ---------- */
@@ -3224,7 +3231,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "74.0 – Zwei Karten";
+const APP_VERSION = "74.1 – Eine Karte";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -16818,32 +16825,40 @@ function lingoraKartenWort(i, gesamt){
 
 /* Der Kartenstapel: eine Regel, ein Bildschirm, ein "Verstanden".
    Zuletzt die Merkhilfe, dann geht es zum Ueben. */
+/* Wie viele Erklaerkarten gibt es? EINE - und diese Zahl steht genau
+   hier, nirgends sonst.
+
+   In 74.0 stand sie an zwei Stellen: hier und in renderGrammarIntro().
+   Ich habe die eine geaendert und die andere vergessen - der Knopf
+   "Verstanden, jetzt ueben" rechnete mit acht Karten und blieb stehen.
+   Deshalb jetzt eine Funktion statt zweier Zahlen. */
+function grammarKartenAnzahl(){ return 1; }
+
+/* Der erste Satz der Einleitung. Gemessen ueber alle 51 Themen: ganze
+   Einleitung im Schnitt 159 Zeichen, erster Satz 75. Der erste Satz
+   sagt, worum es geht - der Rest ist Ausschmueckung, die ein Kind auf
+   einer Karte, die es wegklicken will, ohnehin nicht liest. */
+function gkErsterSatz(text){
+  const s = String(text || "");
+  const m = s.match(/^[^.!?]*[.!?]/);
+  return (m ? m[0] : s).trim();
+}
+
+/* EINE Karte, und darauf alles, was zaehlt.
+
+   Warum eine: Sie wird schnell weggeklickt - das ist keine Unart,
+   sondern die richtige Reaktion auf sechs fast gleiche Bildschirme.
+   Also lieber ein Bildschirm, auf dem sich Hinsehen lohnt.
+
+   Die Merkhilfe steht ZULETZT, nicht im Fliesstext: Sie ist die Pointe,
+   und Pointen kommen am Ende. */
 function grammarKartenHtml(topic, intro){
   const rows = intro.rows || [];
-  /* ZWEI Karten, nicht mehr eine je Regelzeile.
+  return `
+    <div class="panel gk-eine">
+      <h3 class="gk-titel">${topic.icon} ${escapeHtml(intro.title)}</h3>
+      <p class="gk-lead">${escapeHtml(gkErsterSatz(intro.lead))}</p>
 
-     Vorher: rows.length + 1, also im Schnitt 5,7 Bildschirme, die
-     alle gleich aussahen. Ein Kind klickt so etwas durch, ohne zu
-     lesen - und hat recht damit, denn es gab nichts zu entscheiden.
-
-     Jetzt stehen die Regeln NEBENEINANDER. Bei den meisten Themen
-     ist der Gegensatz die Regel: "a few" gegen "a little" sieht man
-     in einem Blick, untereinander muss man ihn sich merken. */
-  const gesamt = 2;
-  const i = Math.max(0, Math.min(gesamt - 1, state.gramKarte || 0));
-  const letzte = (i === gesamt - 1);
-  const wort = letzte
-    ? "Das ist mein Trick, damit du es behältst."
-    : (rows.length === 2
-        ? "Zwei Fälle, ein Unterschied. Guck ihn dir an."
-        : "Alles auf einen Blick. Mehr ist es wirklich nicht.");
-
-  const inhalt = letzte ? `
-      <div class="gk-tipp">
-        <span class="gk-tipp-ic">💡</span>
-        <p>${escapeHtml(intro.tip)}</p>
-      </div>`
-    : `
       <div class="gk-gitter ${rows.length > 4 ? "eng" : ""}">
         ${rows.map((r, k)=>`
           <div class="gk-zelle ${k % 2 ? "b" : "a"}">
@@ -16852,26 +16867,13 @@ function grammarKartenHtml(topic, intro){
             <div class="gk-z-bsp">${escapeHtml(r.example)}</div>
             <div class="gk-z-de">${escapeHtml(r.de)}</div>
           </div>`).join("")}
-      </div>`;
-
-  return `
-    <div class="panel">
-      <h3 style="font-size:19px;margin-bottom:4px;">${topic.icon} ${escapeHtml(intro.title)}</h3>
-      <p class="muted center-text" style="margin-bottom:12px;">${escapeHtml(intro.lead)}</p>
-
-      <div class="gk-punkte">
-        ${Array.from({length: gesamt}, (_, k)=>
-          `<span class="gk-punkt ${k < i ? "durch" : ""} ${k === i ? "jetzt" : ""}"></span>`).join("")}
-        <span class="gk-zahl">${i + 1} von ${gesamt}</span>
       </div>
 
-      ${lingoraKopfHtml(escapeHtml(wort), true)}
-      ${inhalt}
+      ${lingoraKopfHtml(escapeHtml(intro.tip || ""), true)}
 
       <button class="btn" id="gk-weiter" style="margin-top:14px;">
-        ${letzte ? "🚀 VERSTANDEN – JETZT ÜBEN" : "✓ VERSTANDEN"}
+        🚀 VERSTANDEN – JETZT ÜBEN
       </button>
-      ${i > 0 ? `<button class="btn ghost small" id="gk-zurueck" style="margin-top:8px;">◀ Eine Karte zurück</button>` : ""}
     </div>`;
 }
 
@@ -16893,7 +16895,7 @@ function renderGrammarIntro(){
       ${grammarKartenHtml(topic, intro)}
       <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
     const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
-    const gesamt = (intro.rows || []).length + 1;
+    const gesamt = grammarKartenAnzahl();   // EINE Quelle, siehe oben
     an('gk-weiter', ()=>{
       const i = (state.gramKarte || 0) + 1;
       if(i >= gesamt){
