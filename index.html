@@ -171,6 +171,28 @@
   }
   .modal-box p{ margin:0 0 16px 0; text-align:center; font-family:var(--font); font-size:19px; }
 
+  /* ---------- Regeln als Raster statt als Kartenstapel ---------- */
+  .gk-gitter{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .gk-gitter.eng .gk-zelle{ padding:9px 10px; }
+  .gk-zelle{ border-radius:13px; padding:12px 11px; border:2px solid transparent; }
+  .gk-zelle.a{ background:#eaf3de; border-color:#c0dd97; }
+  .gk-zelle.b{ background:#e6f1fb; border-color:#b5d4f4; }
+  .gk-z-fall{ font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.03em; color:#5f5e5a; margin-bottom:3px; }
+  .gk-z-form{ font-family:var(--font); font-weight:800; font-size:18px;
+    color:var(--tinte); line-height:1.2; margin-bottom:6px; }
+  .gk-z-bsp{ font-size:14px; font-weight:700; color:var(--tinte); line-height:1.3; }
+  .gk-z-de{ font-size:12px; color:var(--tinte-hell); margin-top:3px; line-height:1.3; }
+  @media (max-width:360px){ .gk-gitter{ grid-template-columns:1fr; } }
+
+  /* ---------- Gelöstes Beispiel im Tipp ---------- */
+  .gt-bsp-l{ margin:12px 0 5px; font-size:12px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.03em; color:var(--tinte-hell); }
+  .gt-bsp{ background:#eaf3de; border:2px solid #c0dd97; border-radius:13px; padding:12px; }
+  .gt-bsp-satz{ margin:0; font-size:16px; font-weight:700; color:var(--tinte); line-height:1.35; }
+  .gt-bsp-satz b{ color:#3b6d11; text-decoration:underline; text-underline-offset:3px; }
+  .gt-bsp-de{ margin:4px 0 0; font-size:12.5px; color:var(--tinte-hell); }
+
   /* ---------- Heute dran ---------- */
   .ht-liste{ display:flex; flex-direction:column; gap:8px; margin:4px 0 12px; }
   .ht-zeile{
@@ -216,8 +238,11 @@
     position:absolute; top:6px; right:6px;
     width:38px; height:38px; padding:0;
     border:0; border-radius:50%;
-    background:var(--gold); color:#4a3600;
-    font-size:19px; line-height:38px; text-align:center;
+    /* Vorher gelb auf gelb - man sah den Kreis, nicht die Birne.
+       Dunkler Grund, damit die Birne leuchtet. */
+    background:#3f3527; color:#ffd54a;
+    font-size:20px; line-height:38px; text-align:center;
+    border:2px solid var(--gold);
     box-shadow:0 2px 0 rgba(0,0,0,.28);
     cursor:pointer; z-index:3;
     animation: gt-puls 2.6s ease-in-out infinite;
@@ -3199,7 +3224,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "73.3 – Klasse ändern";
+const APP_VERSION = "74.0 – Zwei Karten";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -16795,25 +16820,39 @@ function lingoraKartenWort(i, gesamt){
    Zuletzt die Merkhilfe, dann geht es zum Ueben. */
 function grammarKartenHtml(topic, intro){
   const rows = intro.rows || [];
-  const gesamt = rows.length + 1;                 // + Merkhilfe
+  /* ZWEI Karten, nicht mehr eine je Regelzeile.
+
+     Vorher: rows.length + 1, also im Schnitt 5,7 Bildschirme, die
+     alle gleich aussahen. Ein Kind klickt so etwas durch, ohne zu
+     lesen - und hat recht damit, denn es gab nichts zu entscheiden.
+
+     Jetzt stehen die Regeln NEBENEINANDER. Bei den meisten Themen
+     ist der Gegensatz die Regel: "a few" gegen "a little" sieht man
+     in einem Blick, untereinander muss man ihn sich merken. */
+  const gesamt = 2;
   const i = Math.max(0, Math.min(gesamt - 1, state.gramKarte || 0));
   const letzte = (i === gesamt - 1);
-  const wort = letzte ? "Das ist mein Trick, damit du es behältst." : lingoraKartenWort(i, rows.length);
+  const wort = letzte
+    ? "Das ist mein Trick, damit du es behältst."
+    : (rows.length === 2
+        ? "Zwei Fälle, ein Unterschied. Guck ihn dir an."
+        : "Alles auf einen Blick. Mehr ist es wirklich nicht.");
 
   const inhalt = letzte ? `
       <div class="gk-tipp">
         <span class="gk-tipp-ic">💡</span>
         <p>${escapeHtml(intro.tip)}</p>
       </div>`
-    : (()=>{ const r = rows[i]; return `
-      <div class="gk-regel">
-        <div class="gk-kopf">
-          <span class="gk-pron">${escapeHtml(r.en)}</span>
-          <span class="gk-form">${escapeHtml(r.form)}</span>
-        </div>
-        <div class="gk-bsp">${escapeHtml(r.example)}</div>
-        <div class="gk-de">${escapeHtml(r.de)}</div>
-      </div>`; })();
+    : `
+      <div class="gk-gitter ${rows.length > 4 ? "eng" : ""}">
+        ${rows.map((r, k)=>`
+          <div class="gk-zelle ${k % 2 ? "b" : "a"}">
+            <div class="gk-z-fall">${escapeHtml(r.en)}</div>
+            <div class="gk-z-form">${escapeHtml(r.form)}</div>
+            <div class="gk-z-bsp">${escapeHtml(r.example)}</div>
+            <div class="gk-z-de">${escapeHtml(r.de)}</div>
+          </div>`).join("")}
+      </div>`;
 
   return `
     <div class="panel">
@@ -17222,6 +17261,24 @@ function gtPunkte(row, ex){
   return p;
 }
 
+/* Eine ANDERE Aufgabe desselben Themas, fertig geloest - und zwar
+   eine mit einer anderen Antwort als der gerade gesuchten.
+
+   Warum eine andere Antwort: Zeigte ich eine mit derselben, waere es
+   die Loesung durch die Hintertuer. So sieht das Kind das Muster
+   ("das Subjekt entscheidet") und muss es selbst anwenden.
+
+   Gemessen ueber alle 51 Themen: Fuer 1142 von 1142 Aufgaben gibt es
+   so einen Zwilling. Der Rueckgabewert null kann also praktisch nicht
+   vorkommen - abgefangen wird er trotzdem. */
+function gtGeloestesBeispiel(topic, ex){
+  if(!topic || !ex) return null;
+  const andere = (topic.exercises || []).filter(x =>
+    x !== ex && x.answer !== ex.answer && String(x.sentence || "").includes("___"));
+  if(!andere.length) return null;
+  return andere[Math.floor(Math.random() * andere.length)];
+}
+
 function grammarRegelZuAufgabe(topic, ex){
   if(!topic || !topic.intro || !ex) return null;
   const rows = topic.intro.rows || [];
@@ -17251,6 +17308,9 @@ function zeigeGrammatikTipp(){
   // die Loesung, und die Note traegt die Klassenarbeits-Prognose.
   const istTest = state.grammarMode === "test";
   const regel   = istTest ? null : grammarRegelZuAufgabe(topic, ex);
+  // Das geloeste Beispiel gibt es auch im Test: Es verraet die Antwort
+  // dieser Aufgabe nicht, weil es bewusst eine andere hat.
+  const beispiel = gtGeloestesBeispiel(topic, ex);
   const spruch  = GT_SPRUECHE[Math.floor(Math.random() * GT_SPRUECHE.length)];
 
   const overlay = document.createElement('div');
@@ -17258,7 +17318,13 @@ function zeigeGrammatikTipp(){
   overlay.innerHTML = `
     <div class="panel modal-box gt-box">
       ${lingoraKopfHtml(spruch, true)}
-      <div class="gk-tipp" style="margin-top:10px;">
+      ${beispiel ? `
+        <p class="gt-bsp-l">So sieht es woanders aus:</p>
+        <div class="gt-bsp">
+          <p class="gt-bsp-satz">${escapeHtml(beispiel.sentence.split("___")[0])}<b>${escapeHtml(beispiel.answer)}</b>${escapeHtml(beispiel.sentence.split("___")[1] || "")}</p>
+          <p class="gt-bsp-de">${escapeHtml(beispiel.de || "")}</p>
+        </div>` : ""}
+      <div class="gk-tipp" style="margin-top:11px;">
         <span class="gk-tipp-ic">💡</span>
         <p>${escapeHtml(topic.intro.tip || topic.intro.lead || "")}</p>
       </div>
