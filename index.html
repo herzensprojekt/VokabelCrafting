@@ -2789,6 +2789,10 @@ summary.mehr-knopf::after{ content:none; }
 .lg-opt.gross .lg-opt-ic{ font-size:30px; }
 .lg-opt.gross .lg-opt-t{ font-size:17px; }
 .lg-opt.schmal .lg-opt-ic{ font-size:22px; }
+
+/* --- Rang in der Rangliste ------------------------------------------- */
+.lb-rang{ font-family:var(--font); font-weight:800; font-size:12px; white-space:nowrap; }
+.lb-dia{ font-family:var(--font); font-weight:800; font-size:13px; color:#7a5c8f; }
 </style>
 </head>
 <body>
@@ -3137,7 +3141,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "69.1 – Zwei Wege";
+const APP_VERSION = "70.1 – Durchgelesen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -7327,6 +7331,7 @@ function loadSave(){
     if(data.playerName) state.playerName = data.playerName;
     if(data.avatarId) state.avatarId = data.avatarId;
     if(typeof data.coins === "number") state.coins = data.coins;
+    if(typeof data.diamanten === "number") state.diamanten = data.diamanten;
     if(data.inventory && typeof data.inventory === "object") state.inventory = data.inventory;
     if(typeof data.lifetimeBestStreak === "number") state.lifetimeBestStreak = data.lifetimeBestStreak;
     if(Array.isArray(data.customVocab)) state.customVocab = data.customVocab;
@@ -7353,6 +7358,7 @@ function loadSave(){
     if(data.lingoraPlan && typeof data.lingoraPlan === "object") state.lingoraPlan = data.lingoraPlan;
     if(Array.isArray(data.lingoraPlaene)) state.lingoraPlaene = data.lingoraPlaene;
     if(typeof data.lingoraPlanAktiv === "string") state.lingoraPlanAktiv = data.lingoraPlanAktiv;
+    if(data.gramGelesen && typeof data.gramGelesen === "object") state.gramGelesen = data.gramGelesen;
     if(data.wortStand && typeof data.wortStand === "object") state.wortStand = data.wortStand;
     if(NOTEN_SCHLUESSEL[data.gradeKey]) state.gradeKey = data.gradeKey;
   }catch(e){ /* Speicher blockiert (z.B. Vorschau-Sandbox) - Standardwerte bleiben */ }
@@ -7363,6 +7369,7 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       playerName: state.playerName,
       avatarId: state.avatarId,
       coins: state.coins,
+      diamanten: diamantenStand(),
       inventory: state.inventory,
       lifetimeBestStreak: state.lifetimeBestStreak,
       customVocab: state.customVocab,
@@ -7388,6 +7395,7 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       lingoraPlan: state.lingoraPlan,
       lingoraPlaene: state.lingoraPlaene,
       lingoraPlanAktiv: state.lingoraPlanAktiv,
+      gramGelesen: state.gramGelesen,
       wortStand: state.wortStand,
       boxTreffer: state.boxTreffer,
       gradeKey: state.gradeKey
@@ -7434,7 +7442,9 @@ const state = {
   playerName: "",
   category: "Alle",
 
-  coins: 0,          // persistenter Kontostand
+  coins: 0,          // persistenter Kontostand - WIRD AUSGEGEBEN
+  diamanten: null,   // Zeugnis - wird nie ausgegeben. null = Umstieg noetig
+  neuerRang: "",     // gerade aufgestiegen? Fuer die Gratulation
   inventory: {},      // persistentes, gekauftes Inventar {itemId: anzahl}
   lifetimeBestStreak: 0,
   customVocab: [],    // eigene, selbst hinzugefügte Vokabeln (nur wenn angemeldet dauerhaft in der Cloud)
@@ -7461,6 +7471,7 @@ const state = {
   mainMode: "vocab", // "vocab" oder "grammar" - Auswahl auf dem Startbildschirm
   grammarTopicId: null,
   gramKarte: 0,               // welche Erklaerkarte gerade dran ist
+  gramGelesen: {},            // welche Themen einmal durchgelesen wurden
   gramKartenAn: false,        // Stapel ausdruecklich noch einmal ansehen
   grammarSkills: {},      // {themenId: {r:"1101...", n:Gesamtzahl, ts:Zeitstempel}}
   grammarStatsReturnTo: "start",
@@ -7641,6 +7652,25 @@ function boxTrefferVereinen(lokal, cloud){
   return raus;
 }
 
+/* Plaene zusammenfuehren, nicht ersetzen. Was auf DIESEM Geraet weiter
+   ist, gewinnt - sonst wuerde ein aelterer Cloud-Stand die Arbeit von
+   heute Nachmittag ueberschreiben. */
+function plaeneVereinen(lokal, cloud){
+  const raus = Array.isArray(lokal) ? lokal.slice() : [];
+  const nachId = {};
+  raus.forEach((p, i)=>{ if(p && p.id) nachId[p.id] = i; });
+  (Array.isArray(cloud) ? cloud : []).forEach(p=>{
+    if(!p || !p.id) return;
+    const i = nachId[p.id];
+    if(i === undefined){ raus.push(p); return; }
+    /* Beide kennen den Plan: der mit mehr erledigten Schritten gewinnt. */
+    const hier = lingoraPlanStand(raus[i]).fertig;
+    const dort = lingoraPlanStand(p).fertig;
+    if(dort > hier) raus[i] = p;
+  });
+  return raus;
+}
+
 function listenVereinen(lokal, cloud){
   const raus = Array.isArray(lokal) ? lokal.slice() : [];
   const da = {};
@@ -7655,6 +7685,7 @@ function applyPlayerToState(player){
   state.cloudId = player.id;
   state.playerName = player.name || state.playerName;
   state.coins = typeof player.coins === "number" ? player.coins : 0;
+  if(typeof player.diamanten === "number") state.diamanten = player.diamanten;
   state.inventory = (player.inventory && typeof player.inventory === "object") ? player.inventory : {};
   state.avatarId = player.avatarId || state.avatarId;
   state.lifetimeBestStreak = typeof player.bestStreak === "number" ? player.bestStreak : 0;
@@ -7675,6 +7706,7 @@ function applyPlayerToState(player){
   if(player.portrait && typeof player.portrait === "object") state.portrait = player.portrait;
   /* Diese drei standen in der Cloud, wurden hier aber nie gelesen.
      Zusammenfuehren, nicht ersetzen - siehe die Helfer oben. */
+  if(Array.isArray(player.lingoraPlaene)) state.lingoraPlaene = plaeneVereinen(state.lingoraPlaene, player.lingoraPlaene);
   state.listen     = listenVereinen(state.listen, player.listen);
   state.wortStand  = wortStandVereinen(state.wortStand, player.wortStand);
   state.boxTreffer = boxTrefferVereinen(state.boxTreffer, player.boxTreffer);
@@ -7817,6 +7849,58 @@ function timeKey(d){
 }
 function heuteKey(){ return dateKey(new Date()); }
 
+/* =====================================================================
+   DIAMANTEN UND RAENGE
+
+   Diamanten sind das Zeugnis, nicht das Portemonnaie. Sie entstehen
+   zusammen mit den Muenzen und werden beim Einloesen NICHT angetastet.
+   ===================================================================== */
+const RAENGE = [
+  { ab:     0, name:"Frischling",        icon:"🌱", farbe:"#9aa08f" },
+  { ab:   250, name:"Holzsammler",       icon:"🪵", farbe:"#a9793f" },
+  { ab:   750, name:"Steinklopfer",      icon:"🪨", farbe:"#8d8d86" },
+  { ab:  1800, name:"Eisenschmied",      icon:"⛓️", farbe:"#7f8b96" },
+  { ab:  3500, name:"Goldgräber",        icon:"🥇", farbe:"#c99a22" },
+  { ab:  6500, name:"Smaragdjäger",      icon:"💚", farbe:"#2f9e5e" },
+  { ab: 11000, name:"Diamantsucher",     icon:"💎", farbe:"#22aec7" },
+  { ab: 18000, name:"Netherit-Meister",  icon:"🔥", farbe:"#7a5c8f" },
+  { ab: 30000, name:"Drachenbezwinger",  icon:"🐉", farbe:"#6b3fa0" }
+];
+
+function rangFuer(diamanten){
+  const d = Math.max(0, diamanten || 0);
+  let treffer = RAENGE[0];
+  for(const r of RAENGE){ if(d >= r.ab) treffer = r; }
+  return treffer;
+}
+
+/* Wie weit bis zum naechsten Rang? Fuer den Balken - "noch 120" ist ein
+   viel besserer Antrieb als eine nackte Gesamtzahl. */
+function rangFortschritt(diamanten){
+  const d = Math.max(0, diamanten || 0);
+  const jetzt = rangFuer(d);
+  const naechst = RAENGE.find(r => r.ab > d) || null;
+  if(!naechst) return { jetzt: jetzt, naechst: null, prozent: 100, fehlt: 0 };
+  const spanne = naechst.ab - jetzt.ab;
+  return {
+    jetzt: jetzt, naechst: naechst,
+    prozent: Math.round((d - jetzt.ab) / spanne * 100),
+    fehlt: naechst.ab - d
+  };
+}
+
+/* Diamanten gutschreiben. EINE Stelle - damit Vokabeln und Grammatik
+   nie unterschiedlich rechnen und nichts vergessen wird. */
+function diamantenDazu(anzahl){
+  if(!anzahl || anzahl <= 0) return;
+  const vorher = rangFuer(state.diamanten).name;
+  state.diamanten = Math.max(0, (state.diamanten || 0) + anzahl);
+  const nachher = rangFuer(state.diamanten).name;
+  /* Ein Aufstieg soll gefeiert werden - das ist der Moment, auf den
+     ein Kind hinarbeitet. */
+  if(nachher !== vorher){ state.neuerRang = nachher; }
+}
+
 function recordActivity(bereich, anzahl, richtig){
   if(state.guest || !anzahl) return;
   if(!state.activityLog || typeof state.activityLog !== "object"){ state.activityLog = {}; }
@@ -7836,6 +7920,16 @@ function protokolliereRunde(bereich, log){
   const richtig = log.filter(l=>l.result === "correct").length;
   recordActivity(bereich, log.length, richtig);
 }
+/* Der Diamantenstand - mit Umstieg fuer alle, die schon gespielt haben.
+   Ohne ihn staende ein Kind nach Monaten des Uebens ploetzlich bei null,
+   und die Rangliste waere ueber Nacht leer. */
+function diamantenStand(){
+  if(typeof state.diamanten !== "number"){
+    state.diamanten = Math.max(0, state.coins || 0);
+  }
+  return state.diamanten;
+}
+
 function computeAvgGrade(){
   if(!state.gradeEntries || state.gradeEntries.length === 0) return null;
   const letzte = state.gradeEntries.slice(0, GRADE_WINDOW);
@@ -7889,7 +7983,13 @@ function syncToCloud(){
       customAvatar: state.customAvatar || "",
       customSkin: state.customSkin || "",
       wortStand: state.wortStand || {},
-      boxTreffer: state.boxTreffer || {}
+      boxTreffer: state.boxTreffer || {},
+      diamanten: diamantenStand(),
+      /* Plaene lagen bisher NUR auf dem Geraet. Lief zwischendurch eine
+         aeltere, zwischengespeicherte Fassung, schrieb deren
+         saveProgress() den Speicher ohne dieses Feld zurueck - und die
+         Plaene waren weg. In der Cloud kann das nicht passieren. */
+      lingoraPlaene: lingoraPlaene()
     };
     if(state.spitzname){ payload.spitzname = state.spitzname; }
     if(state.portrait){ payload.portrait = state.portrait; }
@@ -7905,8 +8005,13 @@ function syncToCloud(){
        Austragen macht jetzt ausschliesslich ranglisteAustragen(). */
     try{
       if(db.setRangliste && state.spitzname){
+        /* Das Feld heisst in der Datenbank weiterhin "coins" - es traegt
+           jetzt aber die DIAMANTEN. Bewusst nicht umbenannt: Ein neues
+           Feld muesste erst in den Firestore-Regeln erlaubt werden, und
+           die Rangliste soll nicht stillschweigend aufhoeren zu
+           funktionieren. Fuer die Sortierung ist der Name egal. */
         await db.setRangliste(cloudId, {
-          name: state.spitzname, coins: state.coins, avatarId: state.avatarId
+          name: state.spitzname, coins: diamantenStand(), avatarId: state.avatarId
         });
       }
     }catch(e){ /* Rangliste ist Beiwerk - sie darf nie das Speichern kippen */ }
@@ -7925,7 +8030,7 @@ function syncToCloud(){
       // "spitzname" und "portrait" gehoeren seit Version 48/50 dazu; ohne sie
       // hier waere ein fehlendes Regel-Feld gleichbedeutend mit "gar nichts
       // wird mehr gespeichert".
-      const JUNGE_FELDER = ["wortStand", "boxTreffer", "customSkin", "spitzname", "portrait", "listen"];
+      const JUNGE_FELDER = ["wortStand", "boxTreffer", "customSkin", "spitzname", "portrait", "listen", "diamanten", "lingoraPlaene"];
       const dabei = JUNGE_FELDER.filter(f => payload[f] !== undefined);
       if(dabei.length){
         try{
@@ -12321,6 +12426,7 @@ function endSession(reason){
   stopFloodRise();
   protokolliereRunde("vocab", state.sessionLog);
   state.coins = Math.max(0, state.coins + state.sessionCoins);
+  diamantenDazu(state.sessionCoins);        // Zeugnis, nicht Waehrung
   state.lifetimeBestStreak = Math.max(state.lifetimeBestStreak, state.bestStreak);
   state.lastReason = reason;
   state.sessionQuote = pickRandom(MINECRAFT_QUOTES);
@@ -14229,7 +14335,7 @@ function renderShop(){
 function renderLeaderboard(){
   const dabei = !!state.spitzname;
   app.innerHTML = `
-    ${renderHeader("Wer hat die meisten Münzen?")}
+    ${renderHeader("Wer hat die meisten Diamanten?")}
     ${playerBadgeHtml()}
 
     <div class="panel">
@@ -14240,7 +14346,7 @@ function renderLeaderboard(){
     <div class="panel">
       ${dabei ? `
         <p style="margin:0 0 8px;">Du bist als <strong>${escapeHtml(state.spitzname)}</strong> dabei.</p>
-        <p class="muted" style="margin:0 0 10px;">Andere sehen deinen Spitznamen, deine Münzen und deine Figur.
+        <p class="muted" style="margin:0 0 10px;">Andere sehen deinen Spitznamen, deine Diamanten und deine Figur.
         Sonst nichts &ndash; deine Noten und dein Lernstand bleiben privat.</p>
         <button class="btn secondary small" id="lb-name-aendern" style="width:auto;margin-right:8px;">✏️ Spitznamen ändern</button>
         <button class="btn danger small" id="lb-raus" style="width:auto;">🚪 Nicht mehr mitmachen</button>
@@ -14357,13 +14463,15 @@ function renderLeaderboardBody(){
     // Werke der Kinder und gehoeren nicht in eine oeffentliche Liste.
     const av = avatarById(p.avatarId);
     const isMe = state.cloudId && p.id === state.cloudId;
-    const valueHtml = `🪙 ${p.coins||0}`;
+    const rang = rangFuer(p.coins || 0);
+    const valueHtml = `<span class="lb-rang" style="color:${rang.farbe};">${rang.icon} ${escapeHtml(rang.name)}</span>
+                       <span class="lb-dia">💎 ${p.coins||0}</span>`;
     return `
     <div class="vocab-row" style="align-items:center;${isMe ? 'background:#fff3c4;' : ''}">
       <span class="mark" style="font-family:var(--font);font-size:16px;">#${i+1}</span>
       <span class="avatar-swatch mini" style="${avatarStyle(av)}width:34px;max-width:34px;margin:0 8px;flex:0 0 auto;"></span>
-      <span style="flex:1;text-align:left;">${escapeHtml(p.name||'?')}</span>
-      <span style="flex:0 0 auto;">${valueHtml}</span>
+      <span style="flex:1;text-align:left;min-width:0;">${escapeHtml(p.name||'?')}</span>
+      <span style="flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;">${valueHtml}</span>
     </div>`;
   }).join("") + `</div>`;
 }
@@ -16181,11 +16289,12 @@ function renderGrammarIntro(){
   if(!topic){ state.screen = "start"; render(); return; }
   const intro = topic.intro;
 
-  /* Wer das Thema schon geuebt hat, kennt die Karten. Dann nicht wieder
-     durch den Stapel zwingen - sonst klickt er stumpf durch, und genau
-     das wollten wir ja abstellen. */
-  const schonGeuebt = grammarSkillInfo(topic).fenster > 0;
-  const zeigeKarten = state.gramKartenAn || !schonGeuebt;
+  /* FRUEHER stand hier "hat das Thema schon geuebt" - und das war
+     falsch: Direkt nach der letzten Karte hat das Kind noch nichts
+     geuebt, also fing der Stapel wieder von vorne an. Gemerkt wird
+     jetzt, was gemeint war: ob der Stapel durchgelesen wurde. */
+  const gelesen = !!(state.gramGelesen && state.gramGelesen[topic.id]);
+  const zeigeKarten = state.gramKartenAn || !gelesen;
 
   if(zeigeKarten && intro && (intro.rows || []).length){
     app.innerHTML = `
@@ -16196,7 +16305,15 @@ function renderGrammarIntro(){
     const gesamt = (intro.rows || []).length + 1;
     an('gk-weiter', ()=>{
       const i = (state.gramKarte || 0) + 1;
-      if(i >= gesamt){ state.gramKarte = 0; state.gramKartenAn = false; }
+      if(i >= gesamt){
+        /* Durch. Das wird gemerkt - sonst landet das Kind wieder auf
+           Karte eins statt bei den Uebungen. */
+        if(!state.gramGelesen || typeof state.gramGelesen !== "object") state.gramGelesen = {};
+        state.gramGelesen[topic.id] = true;
+        state.gramKarte = 0;
+        state.gramKartenAn = false;
+        saveProgress();
+      }
       else { state.gramKarte = i; }
       render();
     });
@@ -16725,6 +16842,7 @@ function finishGrammarSession(result){
   stopFloodRise();
   protokolliereRunde("grammar", state.grammarSessionLog);
   state.coins = Math.max(0, state.coins + state.grammarSessionCoins);
+  diamantenDazu(state.grammarSessionCoins);
   state.grammarGameResult = result;
   state.grammarQuote = pickRandom(GRAMMAR_MOTIVATION_QUOTES);
   state.gradeWisdom = pickRandom(GRADE_WISDOM);
