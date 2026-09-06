@@ -174,6 +174,7 @@
   /* ---------- Title ---------- */
   .title-block{ text-align:center; margin-bottom:14px; }
   .title-block.compact{ margin-bottom:6px; }
+  .title-block .logo-img{ cursor:pointer; }
   .logo-img{
     max-width:min(100%, 520px); width:100%; height:auto; display:inline-block;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
@@ -2736,6 +2737,58 @@ summary.mehr-knopf::after{ content:none; }
 .lw-plan-balken > span{ display:block; height:100%; border-radius:4px;
                         background:linear-gradient(90deg,#93b077,#5c7a45); }
 .lw-plan.sitzt .lw-plan-balken > span{ background:#5c7a45; }
+
+/* --- Hinweis auf eine neue Fassung ----------------------------------- */
+.version-banner{
+  position:fixed; left:10px; right:10px; bottom:10px; z-index:60;
+  display:flex; align-items:center; gap:10px;
+  padding:11px 12px; border-radius:16px;
+  background:rgba(253,250,243,0.98); border:2px solid #93b077;
+  box-shadow:0 6px 20px rgba(40,60,30,0.24);
+  font-family:var(--font); color:var(--tinte);
+}
+.vb-ic{ font-size:22px; line-height:1; flex:0 0 auto; }
+.vb-txt{ display:flex; flex-direction:column; gap:1px; flex:1; min-width:0; }
+.vb-t{ font-weight:800; font-size:14px; }
+.vb-s{ font-size:11.5px; color:var(--tinte-hell); line-height:1.3; }
+.vb-btn{
+  flex:0 0 auto; font-family:var(--font); font-weight:800; font-size:13px;
+  padding:9px 13px; border:none; border-radius:11px; cursor:pointer;
+  background:linear-gradient(180deg,#93b077,#5c7a45); color:#fffdf8;
+}
+.vb-btn:active{ transform:translateY(1px); }
+.vb-weg{
+  flex:0 0 auto; width:28px; height:28px; padding:0; cursor:pointer;
+  border:none; border-radius:9px; background:#ece7de; color:#7a6f60; font-size:13px;
+}
+
+/* --- Erklaerkarten ---------------------------------------------------- */
+.gk-punkte{ display:flex; align-items:center; gap:5px; margin:0 0 12px; }
+.gk-punkt{ width:9px; height:9px; border-radius:50%; background:#e0d7c6; }
+.gk-punkt.durch{ background:#93b077; }
+.gk-punkt.jetzt{ background:#5c7a45; transform:scale(1.25); }
+.gk-zahl{ margin-left:auto; font-size:11.5px; font-weight:700; color:var(--tinte-hell); }
+.gk-regel{
+  background:var(--papier-tief); border:2px solid var(--papier-rand);
+  border-radius:15px; padding:15px 14px; text-align:center;
+}
+.gk-kopf{ display:flex; flex-direction:column; gap:3px; margin-bottom:9px; }
+.gk-pron{ font-family:var(--font); font-weight:800; font-size:22px; color:var(--tinte); }
+.gk-form{ font-size:13px; font-weight:700; color:#5c7a45; }
+.gk-bsp{ font-size:17px; font-weight:700; color:var(--tinte); line-height:1.35; }
+.gk-de{ font-size:13.5px; color:var(--tinte-hell); margin-top:5px; }
+.gk-tipp{
+  display:flex; gap:11px; align-items:flex-start;
+  background:#fdf6e6; border:2px solid #e6cf94; border-radius:15px; padding:14px;
+}
+.gk-tipp-ic{ font-size:24px; line-height:1; flex:0 0 auto; }
+.gk-tipp p{ margin:0; font-size:14.5px; line-height:1.5; }
+
+/* Zwei Wege am Anfang: gross und ruhig statt drei enger Kaesten. */
+.lg-opt.gross{ padding:16px 14px; }
+.lg-opt.gross .lg-opt-ic{ font-size:30px; }
+.lg-opt.gross .lg-opt-t{ font-size:17px; }
+.lg-opt.schmal .lg-opt-ic{ font-size:22px; }
 </style>
 </head>
 <body>
@@ -3084,7 +3137,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "68.2 – Nebeneinander";
+const APP_VERSION = "69.1 – Zwei Wege";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4387,6 +4440,7 @@ function lingoraThemaStand(info){
 
 function lingoraFragebogenStarten(){
   state.lgWahl = { art:"", vokabeln:[], grammatik:[], minuten:20, tageBis:0, vorschlag:"" };
+  state.lgZielOffen = false;
   state.lgSchritt = 0;
   state.lgSpruch = lingoraSpruch(LINGORA_START);
   state.screen = "lingorafrage";
@@ -4449,30 +4503,45 @@ function renderLingoraFrage(){
   let weiterAn = false;
 
   if(schritt === 0){
+    /* Zwei Wege. Die Unterscheidung Test/Arbeit kommt erst, wenn sie
+       gebraucht wird - vorher waeren es drei Entscheidungen auf einmal. */
+    const zielGewaehlt = (w.art === "vokabeltest" || w.art === "arbeit");
+    const zielOffen = zielGewaehlt || state.lgZielOffen;
     inhalt = `
-      <h3 class="lg-frage">Was steht an?</h3>
+      <h3 class="lg-frage">Warum bist du heute hier?</h3>
       <div class="lg-wahl">
-        <button class="lg-opt ${w.art==='ueben'?'active':''}" data-lgart="ueben">
+        <button class="lg-opt gross ${w.art==='ueben'?'active':''}" data-lgweg="ueben">
           <span class="lg-opt-ic">🌱</span>
-          <span class="lg-opt-t">Nur üben</span>
-          <span class="lg-opt-s">Dranbleiben, ohne Termin im Nacken</span>
+          <span class="lg-opt-t">Einfach so üben</span>
+          <span class="lg-opt-s">Kein Termin, kein Druck. Ich such dir was raus, das sich lohnt.</span>
         </button>
-        <button class="lg-opt ${w.art==='vokabeltest'?'active':''}" data-lgart="vokabeltest">
-          <span class="lg-opt-ic">🔤</span>
-          <span class="lg-opt-t">Vokabeltest</span>
-          <span class="lg-opt-s">Nur Wörter &ndash; ich plane bis zum Test</span>
+        <button class="lg-opt gross ${zielOffen?'active':''}" data-lgweg="ziel">
+          <span class="lg-opt-ic">🎯</span>
+          <span class="lg-opt-t">Für ein Ziel üben</span>
+          <span class="lg-opt-s">Etwas steht an. Dann teile ich die Tage bis dahin für dich ein.</span>
         </button>
-        <button class="lg-opt ${w.art==='arbeit'?'active':''}" data-lgart="arbeit">
-          <span class="lg-opt-ic">📝</span>
-          <span class="lg-opt-t">Klassenarbeit</span>
-          <span class="lg-opt-s">Wörter und Grammatik, bis zum Termin</span>
-        </button>
-      </div>`;
+      </div>
+
+      ${zielOffen ? `
+        <p class="lg-gruppe" style="margin-top:14px;">Und was steht an?</p>
+        <div class="lg-wahl">
+          <button class="lg-opt schmal ${w.art==='vokabeltest'?'active':''}" data-lgart="vokabeltest">
+            <span class="lg-opt-ic">🔤</span>
+            <span class="lg-opt-t">Ein Vokabeltest</span>
+            <span class="lg-opt-s">Nur Wörter</span>
+          </button>
+          <button class="lg-opt schmal ${w.art==='arbeit'?'active':''}" data-lgart="arbeit">
+            <span class="lg-opt-ic">📝</span>
+            <span class="lg-opt-t">Eine Klassenarbeit</span>
+            <span class="lg-opt-s">Wörter und Grammatik</span>
+          </button>
+        </div>` : ""}`;
     weiterAn = !!w.art;
 
   } else if(schritt === 1){
     inhalt = `
       <h3 class="lg-frage">Wann ist ${w.art === "vokabeltest" ? "der Test" : "die Arbeit"}?</h3>
+      <p class="muted lg-hinweis">Je früher du anfängst, desto ruhiger wird der letzte Abend.</p>
       <div class="lg-gitter">
         ${LINGORA_TAGE.map(t=>`
           <button class="lg-chip ${w.tageBis===t.t?'active':''}" data-lgtage="${t.t}">${t.name}</button>
@@ -4482,8 +4551,10 @@ function renderLingoraFrage(){
 
   } else if(schritt === 2){
     inhalt = `
-      <h3 class="lg-frage">Was musst du können?</h3>
-      <p class="muted lg-hinweis">Tipp alles an, was drankommt. Mehreres geht.</p>
+      <h3 class="lg-frage">${w.art === "ueben" ? "Was nehmen wir uns vor?" : "Was musst du können?"}</h3>
+      <p class="muted lg-hinweis">${w.art === "ueben"
+        ? "Ich hab mir deinen Stand angeschaut. Such dir aus, was du magst."
+        : "Tipp alles an, was drankommt. Mehreres geht."}</p>
       ${kats.length ? `
         <p class="lg-gruppe">📖 Vokabeln</p>
         <div class="lg-gitter">
@@ -4518,6 +4589,8 @@ function renderLingoraFrage(){
   } else {
     inhalt = `
       <h3 class="lg-frage">Wie viel Zeit hast du am Tag?</h3>
+      <p class="muted lg-hinweis">Lieber jeden Tag ein bisschen als einmal alles &ndash;
+      dein Kopf behält es so viel besser.</p>
       <div class="lg-wahl">
         ${LINGORA_ZEITEN.map(z=>`
           <button class="lg-opt schmal ${w.minuten===z.min?'active':''}" data-lgzeit="${z.min}">
@@ -4548,6 +4621,19 @@ function renderLingoraFrage(){
 
   const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
 
+  document.querySelectorAll('[data-lgweg]').forEach(el=>el.addEventListener('click', ()=>{
+    if(el.dataset.lgweg === "ueben"){
+      state.lgWahl.art = "ueben";
+      state.lgZielOffen = false;
+    } else {
+      /* Nur die Tuer aufmachen - die Art waehlt das Kind gleich darunter.
+         Eine vorher getroffene Wahl bleibt stehen, damit ein Zurueck-
+         und-wieder-Vor nichts wegwirft. */
+      state.lgZielOffen = true;
+      if(state.lgWahl.art === "ueben") state.lgWahl.art = "";
+    }
+    render();
+  }));
   document.querySelectorAll('[data-lgart]').forEach(el=>el.addEventListener('click', ()=>{
     state.lgWahl.art = el.dataset.lgart; render();
   }));
@@ -5464,6 +5550,100 @@ function installBannerAuffrischen(){
 // Die Stimmen des Geraets laden asynchron - je frueher gefragt, desto
 // wahrscheinlicher sind sie da, wenn das Kind auf den Lautsprecher tippt.
 try{ sprachStimmenLaden(); }catch(e){}
+
+/* =====================================================================
+   NEUE FASSUNG? - die App fragt selbst nach
+   ===================================================================== */
+
+/* Aus "68.3 – Frischluft" wird 68.3 - nur die Zahl zaehlt. */
+function versionsZahl(text){
+  const m = String(text || "").match(/(\d+)(?:\.(\d+))?/);
+  if(!m) return 0;
+  return parseInt(m[1], 10) * 1000 + parseInt(m[2] || "0", 10);
+}
+
+let neueFassung = null;          // {version} sobald etwas bereitliegt
+let versionZuletztGeprueft = 0;
+const VERSION_PAUSE_MS = 30 * 60 * 1000;   // hoechstens alle 30 Minuten
+
+async function pruefeAufNeueVersion(erzwingen){
+  if(!navigator.onLine) return;
+  if(!erzwingen && (Date.now() - versionZuletztGeprueft) < VERSION_PAUSE_MS) return;
+  versionZuletztGeprueft = Date.now();
+  try{
+    const r = await fetch("version.json?x=" + Date.now(), { cache: "no-store" });
+    if(!r.ok) return;
+    const d = await r.json();
+    /* Nur eine HOEHERE Nummer gilt. Eine vergessene oder veraltete
+       version.json loest dadurch keinen Fehlalarm aus. */
+    if(versionsZahl(d.version) > versionsZahl(APP_VERSION)){
+      neueFassung = d;
+      versionsBannerAuffrischen();
+    }
+  }catch(e){ /* kein Netz, keine Datei - dann eben nicht */ }
+}
+
+function versionsBannerWeg(){
+  const b = document.getElementById('version-banner');
+  if(b) b.remove();
+  document.body.classList.remove("hat-version-banner");
+}
+
+function versionsBannerAuffrischen(){
+  if(!neueFassung){ versionsBannerWeg(); return; }
+  if(document.getElementById('version-banner')) return;
+  document.body.classList.add("hat-version-banner");
+  const b = document.createElement('div');
+  b.id = 'version-banner';
+  b.className = 'version-banner';
+  b.innerHTML = `
+    <span class="vb-ic">🆕</span>
+    <div class="vb-txt">
+      <span class="vb-t">Neue Fassung ist da</span>
+      <span class="vb-s">Version ${escapeHtml(String(neueFassung.version))} &ndash; mit den neuesten Verbesserungen.</span>
+    </div>
+    <button class="vb-btn" id="vb-jetzt">Aktualisieren</button>
+    <button class="vb-weg" id="vb-spaeter" aria-label="Später">✕</button>`;
+  document.body.appendChild(b);
+
+  document.getElementById('vb-jetzt').addEventListener('click', async ()=>{
+    /* Erst den Service Worker anstupsen, dann neu laden - sonst zeigt
+       der Browser womoeglich wieder die Fassung aus dem Speicher. */
+    try{
+      const reg = await navigator.serviceWorker.getRegistration();
+      if(reg) await reg.update();
+    }catch(e){}
+    location.reload();
+  });
+  document.getElementById('vb-spaeter').addEventListener('click', ()=>{
+    neueFassung = null;
+    versionsBannerWeg();
+  });
+}
+
+/* Beim Start und immer, wenn die App wieder in den Vordergrund kommt.
+   Genau dann ist der Moment guenstig: Das Kind faengt gerade an. */
+setTimeout(()=> pruefeAufNeueVersion(true), 4000);
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible") pruefeAufNeueVersion(false);
+});
+
+/* Klick aufs Logo fuehrt heim. EINE Ausnahme: Waehrend einer laufenden
+   Runde wird gefragt - sonst waere ein versehentlicher Tipp aufs Logo
+   der stille Verlust einer halben Uebungsrunde. Dafuer gibt es die
+   Abbrechen-Funktionen bereits, die fragen ordentlich nach. */
+document.addEventListener("click", (e)=>{
+  const ziel = e.target;
+  if(!ziel || !ziel.closest) return;
+  if(!ziel.closest(".logo-img")) return;
+  const s = state.screen;
+  if(s === "start" || s === "login") return;          // schon da
+  if(s === "quiz"){ cancelGame(); return; }
+  if(s === "grammarquiz"){ cancelGrammarGame(); return; }
+  if(s === "aussprache"){ zurueckZurSektion(); return; }
+  state.screen = "start";
+  render();
+});
 
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
@@ -7280,6 +7460,8 @@ const state = {
   avatarEntwurf: "",       // angesehener, aber noch nicht uebernommener Avatar // true = Login-Formular ausgeklappt (nur relevant, wenn schon eingeloggt)
   mainMode: "vocab", // "vocab" oder "grammar" - Auswahl auf dem Startbildschirm
   grammarTopicId: null,
+  gramKarte: 0,               // welche Erklaerkarte gerade dran ist
+  gramKartenAn: false,        // Stapel ausdruecklich noch einmal ansehen
   grammarSkills: {},      // {themenId: {r:"1101...", n:Gesamtzahl, ts:Zeitstempel}}
   grammarStatsReturnTo: "start",
   impressumReturnTo: "start",
@@ -15939,10 +16121,92 @@ function renderInventar(){
 /* ---------------------------------------------------
    GRAMMATIKCRAFTING - Bildschirme
 --------------------------------------------------- */
+/* Was Lingora zu einer Karte sagt. Nicht bei jeder Karte dasselbe -
+   sonst liest man es nach dem zweiten Mal nicht mehr. */
+function lingoraKartenWort(i, gesamt){
+  if(i === 0)            return "Fangen wir vorne an. Lies in Ruhe – ich warte.";
+  if(i === gesamt - 1)   return "Letzte Regel. Die hier vergisst man am leichtesten.";
+  if(i === 1)            return "Weiter. Das baut auf der ersten Karte auf.";
+  if(i === gesamt - 2)   return "Fast geschafft – dranbleiben.";
+  return "Und noch eine. Du machst das gut.";
+}
+
+/* Der Kartenstapel: eine Regel, ein Bildschirm, ein "Verstanden".
+   Zuletzt die Merkhilfe, dann geht es zum Ueben. */
+function grammarKartenHtml(topic, intro){
+  const rows = intro.rows || [];
+  const gesamt = rows.length + 1;                 // + Merkhilfe
+  const i = Math.max(0, Math.min(gesamt - 1, state.gramKarte || 0));
+  const letzte = (i === gesamt - 1);
+  const wort = letzte ? "Das ist mein Trick, damit du es behältst." : lingoraKartenWort(i, rows.length);
+
+  const inhalt = letzte ? `
+      <div class="gk-tipp">
+        <span class="gk-tipp-ic">💡</span>
+        <p>${escapeHtml(intro.tip)}</p>
+      </div>`
+    : (()=>{ const r = rows[i]; return `
+      <div class="gk-regel">
+        <div class="gk-kopf">
+          <span class="gk-pron">${escapeHtml(r.en)}</span>
+          <span class="gk-form">${escapeHtml(r.form)}</span>
+        </div>
+        <div class="gk-bsp">${escapeHtml(r.example)}</div>
+        <div class="gk-de">${escapeHtml(r.de)}</div>
+      </div>`; })();
+
+  return `
+    <div class="panel">
+      <h3 style="font-size:19px;margin-bottom:4px;">${topic.icon} ${escapeHtml(intro.title)}</h3>
+      <p class="muted center-text" style="margin-bottom:12px;">${escapeHtml(intro.lead)}</p>
+
+      <div class="gk-punkte">
+        ${Array.from({length: gesamt}, (_, k)=>
+          `<span class="gk-punkt ${k < i ? "durch" : ""} ${k === i ? "jetzt" : ""}"></span>`).join("")}
+        <span class="gk-zahl">${i + 1} von ${gesamt}</span>
+      </div>
+
+      ${lingoraKopfHtml(escapeHtml(wort), true)}
+      ${inhalt}
+
+      <button class="btn" id="gk-weiter" style="margin-top:14px;">
+        ${letzte ? "🚀 VERSTANDEN – JETZT ÜBEN" : "✓ VERSTANDEN"}
+      </button>
+      ${i > 0 ? `<button class="btn ghost small" id="gk-zurueck" style="margin-top:8px;">◀ Eine Karte zurück</button>` : ""}
+    </div>`;
+}
+
 function renderGrammarIntro(){
   const topic = grammarTopicById(state.grammarTopicId);
   if(!topic){ state.screen = "start"; render(); return; }
   const intro = topic.intro;
+
+  /* Wer das Thema schon geuebt hat, kennt die Karten. Dann nicht wieder
+     durch den Stapel zwingen - sonst klickt er stumpf durch, und genau
+     das wollten wir ja abstellen. */
+  const schonGeuebt = grammarSkillInfo(topic).fenster > 0;
+  const zeigeKarten = state.gramKartenAn || !schonGeuebt;
+
+  if(zeigeKarten && intro && (intro.rows || []).length){
+    app.innerHTML = `
+      ${renderHeader("Grammatik", true)}
+      ${grammarKartenHtml(topic, intro)}
+      <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
+    const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+    const gesamt = (intro.rows || []).length + 1;
+    an('gk-weiter', ()=>{
+      const i = (state.gramKarte || 0) + 1;
+      if(i >= gesamt){ state.gramKarte = 0; state.gramKartenAn = false; }
+      else { state.gramKarte = i; }
+      render();
+    });
+    an('gk-zurueck', ()=>{ state.gramKarte = Math.max(0, (state.gramKarte || 0) - 1); render(); });
+    an('back-btn', ()=>{
+      state.gramKarte = 0; state.gramKartenAn = false;
+      state.screen = "uebengrammatik"; render();
+    });
+    return;
+  }
 
   app.innerHTML = `
     ${renderHeader("Grammatik", true)}
@@ -15950,22 +16214,8 @@ function renderGrammarIntro(){
 
     <div class="panel">
       <h3 style="font-size:19px;margin-bottom:8px;">${topic.icon} ${escapeHtml(intro.title)}</h3>
-      <p class="muted center-text" style="margin-bottom:16px;">${escapeHtml(intro.lead)}</p>
-
-      <div class="gram-table">
-        ${intro.rows.map(r=>`
-          <div class="gram-row">
-            <div class="gram-line">
-              <span class="gram-pron">${escapeHtml(r.en)}</span>
-              <span class="gram-form">${escapeHtml(r.form)}</span>
-            </div>
-            <div class="gram-ex">${escapeHtml(r.example)}</div>
-            <div class="gram-de">${escapeHtml(r.de)}</div>
-          </div>
-        `).join("")}
-      </div>
-
-      <p class="gram-tip">💡 ${escapeHtml(intro.tip)}</p>
+      <p class="muted center-text" style="margin-bottom:12px;">${escapeHtml(intro.lead)}</p>
+      <button class="btn secondary small" id="gk-nochmal">📖 Erklärung noch einmal ansehen</button>
     </div>
 
     <div class="panel">
@@ -15997,6 +16247,10 @@ function renderGrammarIntro(){
   document.getElementById('grammar-test-btn').addEventListener('click', startGrammarTest);
   document.getElementById('grammar-flood-btn').addEventListener('click', ()=>startGrammarQuiz(false));
   document.getElementById('grammar-floodhard-btn').addEventListener('click', ()=>startGrammarQuiz(true));
+  const nochmal = document.getElementById('gk-nochmal');
+  if(nochmal) nochmal.addEventListener('click', ()=>{
+    state.gramKarte = 0; state.gramKartenAn = true; render();
+  });
   document.getElementById('back-btn').addEventListener('click', ()=>{
     state.screen = "start";
     render();
