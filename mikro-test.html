@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>Mikrofon-Test</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mikro-Test">
+<title>Mikrofon-Test 2</title>
 <style>
   :root{ color-scheme: light; }
   body{ font-family:-apple-system,system-ui,sans-serif; margin:0; padding:16px 14px 60px;
@@ -29,14 +31,24 @@
         font-size:12px; line-height:1.5; padding:12px; border-radius:10px;
         white-space:pre-wrap; word-break:break-word; min-height:120px; }
   .hinweis{ font-size:13px; color:#666; margin:6px 0 0; }
+  .merk{ background:#fff8e6; border-left:4px solid #e0a800; padding:10px 12px;
+         border-radius:8px; font-size:14px; margin-bottom:12px; }
+  #urteil{ font-size:15px; font-weight:600; }
 </style>
 </head>
 <body>
 
-<h1>Mikrofon-Test</h1>
-<p class="sub">Misst, was die Spracherkennung auf diesem Gerät wirklich tut.
-Bitte alle drei Tests der Reihe nach drücken und jedes Mal laut
-<b>„apple"</b> sagen.</p>
+<h1>Mikrofon-Test 2</h1>
+<p class="sub">Findet heraus, wie lange das Mikrofon nach einer Sprachausgabe
+braucht. Bei jedem Test bitte laut und deutlich <b>„apple"</b> sagen,
+sobald der Knopf grau wird.</p>
+
+<div class="merk">
+  <b>Zweimal durchlaufen lassen:</b> einmal hier in Safari, und danach das
+  Gleiche noch einmal, nachdem die Seite über <b>Teilen&nbsp;→&nbsp;Zum
+  Home-Bildschirm</b> als App abgelegt wurde. Nur dieser Vergleich
+  beantwortet die Frage, ob der Homescreen-Modus schuld ist.
+</div>
 
 <div class="box">
   <h2>Was dieses Gerät meldet</h2>
@@ -44,23 +56,23 @@ Bitte alle drei Tests der Reihe nach drücken und jedes Mal laut
 </div>
 
 <div class="box">
-  <h2>Test 1 &ndash; sofort beim Tippen</h2>
-  <button id="t1">Test 1 starten</button>
-  <p class="hinweis">So sollte es sein: Start direkt im Fingerdruck.</p>
+  <h2>0 &ndash; Kontrolle, ohne Vorlesen</h2>
+  <button id="t0">Kontrolle starten</button>
+  <p class="hinweis">Muss klappen. Tut es das nicht, liegt es nicht am Vorlesen.</p>
 </div>
 
 <div class="box">
-  <h2>Test 2 &ndash; 260 ms später</h2>
-  <button id="t2">Test 2 starten</button>
-  <p class="hinweis">Genau das macht LingoCrafter heute, wenn vorher etwas
-  vorgelesen wurde. Schlägt nur dieser Test fehl, ist die Ursache gefunden.</p>
+  <h2>Vorlesen, dann zuhören</h2>
+  <button id="t260">Nach 260 ms &ndash; wie die App heute</button>
+  <button id="t800">Nach 800 ms</button>
+  <button id="t1500">Nach 1500 ms</button>
+  <p class="hinweis">Von oben nach unten durchprobieren. Die erste Zeile, die
+  ein <b>onresult</b> liefert, ist die Antwort.</p>
 </div>
 
 <div class="box">
-  <h2>Test 3 &ndash; direkt nach dem Vorlesen</h2>
-  <button id="t3">Test 3 starten</button>
-  <p class="hinweis">Erst spricht das Gerät, dann wird sofort zugehört.
-  Der häufigste Weg im Übungsmodus &ndash; und der übliche Absturzkandidat.</p>
+  <h2>Ergebnis</h2>
+  <div id="urteil">Noch kein Test gelaufen.</div>
 </div>
 
 <div class="box">
@@ -73,14 +85,15 @@ Bitte alle drei Tests der Reihe nach drücken und jedes Mal laut
 (function(){
   "use strict";
 
-  var logEl = document.getElementById("log");
+  var logEl    = document.getElementById("log");
+  var urteilEl = document.getElementById("urteil");
   var zeilen = [];
   var t0 = 0;
+  var ergebnisse = {};
 
   function log(text){
     var ms = t0 ? (Date.now() - t0) : 0;
-    var z = (t0 ? ("+" + String(ms).padStart(4, " ") + " ms  ") : "        ") + text;
-    zeilen.push(z);
+    zeilen.push((t0 ? ("+" + String(ms).padStart(4, " ") + " ms  ") : "        ") + text);
     logEl.textContent = zeilen.join("\n");
     logEl.scrollTop = logEl.scrollHeight;
   }
@@ -89,6 +102,17 @@ Bitte alle drei Tests der Reihe nach drücken und jedes Mal laut
     zeilen.push("");
     zeilen.push("=== " + titel + " ===");
     logEl.textContent = zeilen.join("\n");
+  }
+  function urteil(){
+    var teile = [];
+    ["Kontrolle","260 ms","800 ms","1500 ms"].forEach(function(k){
+      if(k in ergebnisse){
+        teile.push('<div class="zeile"><span>' + k + "</span><b class=\""
+                 + (ergebnisse[k] ? "ja" : "nein") + '">'
+                 + (ergebnisse[k] ? "verstanden" : "NICHTS") + "</b></div>");
+      }
+    });
+    urteilEl.innerHTML = teile.join("") || "Noch kein Test gelaufen.";
   }
 
   // ---------- Umgebung ----------
@@ -101,83 +125,89 @@ Bitte alle drei Tests der Reihe nach drücken und jedes Mal laut
   var ua = navigator.userAgent;
   var istIOS = /iPad|iPhone|iPod/.test(ua) ||
                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  var iosVersion = (function(){
-    var m = ua.match(/OS (\d+)[_.](\d+)/);
-    return m ? (m[1] + "." + m[2]) : "unbekannt";
-  })();
-  // Vom Homescreen gestartet? Genau hier hat WebKit die Erkennung lange gesperrt.
+  var iosVersion = (function(){ var m = ua.match(/OS (\d+)[_.](\d+)/); return m ? (m[1]+"."+m[2]) : "unbekannt"; })();
   var standalone = (window.navigator.standalone === true) ||
                    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
 
   var html = "";
   html += zeile("Spracherkennung vorhanden", Erkenner ? "ja" : "NEIN", !!Erkenner);
-  html += zeile("davon Apples eigene", window.webkitSpeechRecognition ? "webkit" : "standard");
   html += zeile("iOS", istIOS ? iosVersion : "nein (kein iPhone)");
-  html += zeile("Vom Homescreen gestartet",
-                standalone ? "JA" : "nein, im Browser",
+  html += zeile("Vom Homescreen gestartet", standalone ? "JA - als App" : "nein, in Safari",
                 standalone ? "warn" : true);
   html += zeile("Sprachausgabe vorhanden", ("speechSynthesis" in window) ? "ja" : "nein",
                 ("speechSynthesis" in window));
-  html += zeile("Verbindung sicher (https)", location.protocol === "https:" ? "ja" : "NEIN",
-                location.protocol === "https:");
-  if(standalone){
-    html += '<p class="hinweis" style="color:#b06a00;"><b>Achtung:</b> Diese Seite läuft '
-          + "als installierte App. Bitte den Test <b>zusätzlich in Safari</b> öffnen "
-          + "und vergleichen &ndash; wenn es dort geht und hier nicht, liegt es am "
-          + "Homescreen-Modus.</p>";
-  }
   document.getElementById("umgebung").innerHTML = html;
 
-  // ---------- Der eigentliche Versuch ----------
-  function versuch(bezeichnung, fertig){
-    if(!Erkenner){ log("ABBRUCH: keine Spracherkennung vorhanden"); if(fertig) fertig(); return; }
-    var r;
+  // ---------- Ein Hörversuch. Startet garantiert nur einmal. ----------
+  function versuch(marke, fertig){
+    if(!Erkenner){ log("ABBRUCH: keine Spracherkennung"); if(fertig) fertig(); return; }
+    var r, hatErgebnis = false, aus = false;
+    function schluss(){
+      if(aus) return; aus = true;
+      ergebnisse[marke] = hatErgebnis; urteil();
+      if(fertig) fertig();
+    }
     try{ r = new Erkenner(); }
-    catch(e){ log("FEHLER beim Anlegen: " + e.message); if(fertig) fertig(); return; }
+    catch(e){ log("FEHLER beim Anlegen: " + e.message); schluss(); return; }
 
-    r.lang = "en-GB";
-    r.interimResults = false;
-    r.maxAlternatives = 5;
-    r.continuous = false;
+    r.lang = "en-GB"; r.interimResults = false;
+    r.maxAlternatives = 5; r.continuous = false;
 
-    var fertigGemeldet = false;
-    function schluss(){ if(fertigGemeldet) return; fertigGemeldet = true; if(fertig) fertig(); }
-
-    r.onstart      = function(){ log("onstart      - Erkenner läuft"); };
-    r.onaudiostart = function(){ log("onaudiostart - Mikrofon liefert Ton"); };
-    r.onspeechstart= function(){ log("onspeechstart- Sprache erkannt"); };
-    r.onspeechend  = function(){ log("onspeechend"); };
-    r.onaudioend   = function(){ log("onaudioend"); };
+    r.onstart       = function(){ log("onstart"); };
+    r.onaudiostart  = function(){ log("onaudiostart - Mikrofon offen"); };
+    r.onspeechstart = function(){ log("onspeechstart"); };
+    r.onspeechend   = function(){ log("onspeechend"); };
+    r.onaudioend    = function(){ log("onaudioend"); };
     r.onresult = function(e){
       var liste = [];
-      try{
-        var res = e.results[0];
-        for(var i = 0; i < res.length; i++) liste.push(res[i].transcript);
-      }catch(err){}
-      log("onresult     - VERSTANDEN: " + JSON.stringify(liste));
+      try{ var res = e.results[0];
+           for(var i = 0; i < res.length; i++) liste.push(res[i].transcript); }catch(err){}
+      hatErgebnis = liste.length > 0;
+      log("onresult - VERSTANDEN: " + JSON.stringify(liste));
     };
-    r.onnomatch = function(){ log("onnomatch    - nichts zugeordnet"); };
-    r.onerror = function(e){
-      log("onerror      - \"" + ((e && e.error) || "unbekannt") + "\""
+    r.onnomatch = function(){ log("onnomatch"); };
+    r.onerror   = function(e){
+      log("onerror - \"" + ((e && e.error) || "unbekannt") + "\""
           + (e && e.message ? (" / " + e.message) : ""));
     };
-    r.onend = function(){ log("onend        - fertig"); schluss(); };
+    r.onend = function(){ log("onend"); schluss(); };
 
-    try{
-      r.start();
-      log("start() aufgerufen, ohne Ausnahme");
-    }catch(e){
-      log("start() WARF: " + e.name + " - " + e.message);
-      schluss();
-    }
-    // Notbremse, falls gar kein Ereignis kommt
+    try{ r.start(); log("start() aufgerufen"); }
+    catch(e){ log("start() WARF: " + e.name + " - " + e.message); schluss(); }
+
     setTimeout(function(){
-      if(!fertigGemeldet){
-        log("nach 12 s kein onend - hier hängt etwas");
-        try{ r.abort(); }catch(e2){}
-        schluss();
-      }
+      if(!aus){ log("nach 12 s kein onend - hängt"); try{ r.abort(); }catch(e2){} schluss(); }
     }, 12000);
+  }
+
+  // ---------- Vorlesen, dann nach n ms zuhören ----------
+  // Der Rueckruf feuert GENAU EINMAL - das war der Fehler in Fassung 1:
+  // cancel() loest zusaetzlich ein onerror aus, und dann lief alles doppelt.
+  function vorlesenDann(pause, marke, fertig){
+    if(!("speechSynthesis" in window)){
+      log("keine Sprachausgabe - hoere direkt zu");
+      versuch(marke, fertig); return;
+    }
+    var weiter = false;
+    function danach(grund){
+      if(weiter) return; weiter = true;
+      log("Ausgabe beendet (" + grund + ") - warte " + pause + " ms");
+      setTimeout(function(){ versuch(marke, fertig); }, pause);
+    }
+    try{
+      var u = new SpeechSynthesisUtterance("apple");
+      u.lang = "en-GB";
+      u.onstart = function(){ log("Ausgabe: spricht"); };
+      u.onend   = function(){ danach("onend"); };
+      u.onerror = function(e){ danach("onerror " + ((e && e.error) || "?")); };
+      window.speechSynthesis.speak(u);
+      log("speak() aufgerufen");
+      // Falls das Geraet gar nichts meldet
+      setTimeout(function(){ danach("Notbremse nach 6 s"); }, 6000);
+    }catch(e){
+      log("Ausgabe warf: " + e.message);
+      danach("Ausnahme");
+    }
   }
 
   function knopf(id, fn){
@@ -188,64 +218,25 @@ Bitte alle drei Tests der Reihe nach drücken und jedes Mal laut
     });
   }
 
-  // Test 1: direkt in der Geste
-  knopf("t1", function(fertig){
-    trenner("TEST 1 - sofort beim Tippen");
-    versuch("sofort", fertig);
-  });
-
-  // Test 2: 260 ms später - so wie die App es heute macht
-  knopf("t2", function(fertig){
-    trenner("TEST 2 - 260 ms nach dem Tippen");
-    log("warte 260 ms (Geste ist danach auf iOS abgelaufen)");
-    setTimeout(function(){ versuch("verzögert", fertig); }, 260);
-  });
-
-  // Test 3: erst vorlesen, dann sofort zuhören
-  knopf("t3", function(fertig){
-    trenner("TEST 3 - direkt nach dem Vorlesen");
-    if(!("speechSynthesis" in window)){
-      log("keine Sprachausgabe vorhanden - übersprungen");
-      fertig(); return;
-    }
-    try{
-      var u = new SpeechSynthesisUtterance("apple");
-      u.lang = "en-GB";
-      u.onstart = function(){ log("Ausgabe: spricht"); };
-      u.onend = function(){
-        log("Ausgabe: fertig - jetzt cancel() und sofort zuhören");
-        try{ window.speechSynthesis.cancel(); }catch(e){}
-        versuch("nach Ausgabe", fertig);
-      };
-      u.onerror = function(e){
-        log("Ausgabe FEHLER: " + ((e && e.error) || "unbekannt") + " - trotzdem zuhören");
-        versuch("nach Ausgabe", fertig);
-      };
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-      log("speak() aufgerufen");
-      // Manche Geräte melden onend nie
-      setTimeout(function(){
-        if(!window.speechSynthesis.speaking && !window.speechSynthesis.pending){ return; }
-      }, 3000);
-    }catch(e){
-      log("Ausgabe warf: " + e.message);
-      versuch("nach Ausgabe", fertig);
-    }
-  });
+  knopf("t0",   function(f){ trenner("KONTROLLE - ohne Vorlesen"); versuch("Kontrolle", f); });
+  knopf("t260", function(f){ trenner("260 ms nach dem Vorlesen");  vorlesenDann(260,  "260 ms",  f); });
+  knopf("t800", function(f){ trenner("800 ms nach dem Vorlesen");  vorlesenDann(800,  "800 ms",  f); });
+  knopf("t1500",function(f){ trenner("1500 ms nach dem Vorlesen"); vorlesenDann(1500, "1500 ms", f); });
 
   document.getElementById("kopieren").addEventListener("click", function(){
-    var text = document.getElementById("umgebung").innerText + "\n" + zeilen.join("\n");
-    var fertig = function(){ log("(Protokoll kopiert)"); };
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(fertig, function(){ notfall(text); });
-    } else { notfall(text); }
+    var text = document.getElementById("umgebung").innerText + "\n"
+             + document.getElementById("urteil").innerText + "\n"
+             + zeilen.join("\n");
+    function fertig(){ log("(Protokoll kopiert)"); }
     function notfall(t){
       var ta = document.createElement("textarea");
       ta.value = t; document.body.appendChild(ta); ta.select();
       try{ document.execCommand("copy"); fertig(); }catch(e){}
       document.body.removeChild(ta);
     }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(fertig, function(){ notfall(text); });
+    } else { notfall(text); }
   });
 })();
 </script>
