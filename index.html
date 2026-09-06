@@ -171,6 +171,42 @@
   }
   .modal-box p{ margin:0 0 16px 0; text-align:center; font-family:var(--font); font-size:19px; }
 
+  /* ---------- Heute dran ---------- */
+  .ht-liste{ display:flex; flex-direction:column; gap:8px; margin:4px 0 12px; }
+  .ht-zeile{
+    display:flex; align-items:center; gap:11px; width:100%;
+    padding:11px 12px; border:2px solid var(--papier-rand);
+    border-radius:14px; background:var(--papier-tief);
+    text-align:left; cursor:pointer;
+  }
+  .ht-zeile:active{ transform:translateY(1px); }
+  .ht-ic{ font-size:23px; line-height:1; flex:0 0 auto; }
+  .ht-txt{ display:flex; flex-direction:column; gap:2px; flex:1 1 auto; min-width:0; }
+  .ht-t{ font-family:var(--font); font-weight:800; font-size:15px; color:var(--tinte); }
+  .ht-u{ font-size:12.5px; color:var(--tinte-hell); line-height:1.35; }
+  .ht-min{ flex:0 0 auto; font-size:11.5px; font-weight:700; color:var(--tinte-hell); }
+  .ht-rang-box{ margin:2px 0 10px; }
+  .ht-rang{ margin:0 0 5px; font-size:13px; text-align:center; color:var(--tinte); }
+  .ht-balken{ height:9px; border-radius:6px; background:#e0d7c6; overflow:hidden; }
+  .ht-balken span{ display:block; height:100%; border-radius:6px;
+    background:linear-gradient(90deg,#a06fc4,#7a4a9e); }
+  .ht-box{ max-height:88vh; overflow-y:auto; }
+  .ht-kopf{ margin:10px 0 10px; text-align:center; font-size:15px; }
+  .ht-ziel{ margin:8px 0 0; text-align:center; font-size:13px; color:var(--tinte-hell); }
+
+  /* ---------- Klassenabfrage ---------- */
+  .kf-unit{ margin:14px 0 6px; font-family:var(--font); font-weight:800;
+    font-size:13px; color:var(--tinte-hell); text-transform:uppercase; letter-spacing:.04em; }
+  .kf-gitter{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .kf-thema{
+    display:flex; align-items:center; gap:7px; padding:9px 8px;
+    border:2px solid var(--papier-rand); border-radius:12px;
+    background:var(--papier-tief); cursor:pointer; text-align:left;
+  }
+  .kf-thema.aktiv{ border-color:#5c7a45; background:#e8f0df; }
+  .kf-ic{ font-size:17px; line-height:1; flex:0 0 auto; }
+  .kf-n{ font-size:12px; font-weight:700; color:var(--tinte); line-height:1.25; }
+
   /* ---------- Lingoras Hilfe-Knopf ---------- */
   /* Absolut gesetzt, und das ist der ganze Trick: So kostet der Knopf
      KEINE Bauhoehe. Im Flutungsraum ist jeder Punkt gezaehlt - dort
@@ -3163,7 +3199,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "72.1 – Fünf Münzen";
+const APP_VERSION = "73.1 – Heute dran";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4389,10 +4425,27 @@ function gramIstFaellig(topic){ return Date.now() >= gramFaelligAm(topic); }
 
 /* Alle faelligen Themen der Klasse - das Draengendste zuerst.
    Sortiert nach "wie lange ueberfaellig", damit nichts liegen bleibt. */
+/* Welche Themen darf Lingora ueberhaupt vorschlagen?
+
+   In Klasse 5 kommt der Stoff erst nach und nach dran - ein Thema aus
+   Unit 9 im Oktober vorzuschlagen waere sinnlos und entmutigend.
+   Deshalb hakt das Kind einmal ab, was schon drankam.
+
+   Ist nichts abgehakt (Klasse 6, oder die Frage wurde uebersprungen),
+   gilt alles. Und wenn die Auswahl leer laufen wuerde, gilt ebenfalls
+   alles - lieber ein unpassender Vorschlag als gar keiner. */
+function themenFreigegeben(){
+  const alle = grammatikThemenDerKlasse().filter(t => !t.locked);
+  if(!Array.isArray(state.gramDran) || !state.gramDran.length) return alle;
+  const erlaubt = new Set(state.gramDran);
+  const eng = alle.filter(t => erlaubt.has(t.id));
+  return eng.length ? eng : alle;
+}
+
 function gramFaelligeThemen(){
   const jetzt = Date.now();
-  return grammatikThemenDerKlasse()
-    .filter(t => !t.locked && gramIstFaellig(t))
+  return themenFreigegeben()
+    .filter(t => gramIstFaellig(t))
     .sort((a, b) => (jetzt - gramFaelligAm(a) === jetzt - gramFaelligAm(b))
         ? lingoraStaerke(a) - lingoraStaerke(b)
         : gramFaelligAm(a) - gramFaelligAm(b));
@@ -4471,7 +4524,7 @@ function heuteDran(){
 
   // 4) Notnagel - es darf nie leer sein.
   if(!liste.length){
-    const alle = grammatikThemenDerKlasse().filter(t => !t.locked);
+    const alle = themenFreigegeben();
     if(alle.length){
       // Das am laengsten nicht Geuebte zuerst.
       const t = alle.slice().sort((a, b)=>
@@ -5589,11 +5642,15 @@ function lingoraStartHtml(){
   const schritt = lernwegNaechsterSchritt();
   lingoraJetzt = schritt;              // fuer den Klick aufbewahren
 
+  // Die Tagesliste. Sie ist nie leer - siehe heuteDran().
+  heuteListe = heuteDran();
+  const minuten = heuteListe.reduce((s, e) => s + (e.dauer || 5), 0);
   const satz = offen
     ? "Dein Plan läuft &ndash; noch <strong>" + offen + "</strong> "
       + (offen === 1 ? "Schritt" : "Schritte") + " für heute."
-    : (p ? "Für heute ist alles abgehakt. Stark!"
-         : escapeHtml(lingoraHallo()));
+    : ("Heute dran: <strong>" + heuteListe.length + "</strong> "
+       + (heuteListe.length === 1 ? "Sache" : "Sachen")
+       + ", ungefähr <strong>" + minuten + "</strong> Minuten.");
 
   return `
     <div class="panel lg-start jetzt">
@@ -5601,10 +5658,9 @@ function lingoraStartHtml(){
         <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
         <div class="lg-blase">${satz}</div>
       </div>
-      <p class="lw-jetzt-l">DAS IST JETZT DRAN</p>
-      <p class="lw-jetzt-t">${escapeHtml(schritt.titel)}</p>
-      <p class="lw-jetzt-g">${escapeHtml(schritt.grund)}</p>
-      <button class="btn einzeilig" id="lg-jetzt">${schritt.knopf}</button>
+      <p class="lw-jetzt-l">HEUTE DRAN</p>
+      ${heuteListeHtml(heuteListe)}
+      ${rangZeileHtml()}
       ${zuletztHtml()}
       <div class="lg-nebenwege">
         <button class="btn secondary einzeilig" id="lg-start-plan">📅 PLAN MACHEN</button>
@@ -5614,6 +5670,104 @@ function lingoraStartHtml(){
 }
 
 let lingoraJetzt = null;
+let heuteListe = [];
+
+/* Die Tagesliste als Knoepfe. Jede Zeile startet direkt die Uebung -
+   kein Umweg ueber ein Menue, in dem man haengen bleibt. */
+function heuteListeHtml(liste){
+  return `
+    <div class="ht-liste">
+      ${liste.map((e, i)=>`
+        <button class="ht-zeile" data-heute="${i}">
+          <span class="ht-ic">${e.icon || "📘"}</span>
+          <span class="ht-txt">
+            <span class="ht-t">${escapeHtml(e.titel)}</span>
+            <span class="ht-u">${escapeHtml(e.unter)}</span>
+          </span>
+          <span class="ht-min">${e.dauer || 5}&thinsp;min</span>
+        </button>`).join("")}
+    </div>`;
+}
+
+/* Wofuer das Ganze: der naechste Rang. Ohne dieses Ziel ist Ueben
+   eine Pflicht ohne Richtung. */
+function rangZeileHtml(){
+  const f = rangFortschritt(diamantenStand());
+  if(!f.naechst){
+    return `<p class="ht-rang">${f.jetzt.icon} <strong>${escapeHtml(f.jetzt.name)}</strong>
+      &ndash; höher geht es nicht. Alle Achtung.</p>`;
+  }
+  return `
+    <div class="ht-rang-box">
+      <p class="ht-rang">${f.jetzt.icon} <strong>${escapeHtml(f.jetzt.name)}</strong>
+        &nbsp;·&nbsp; noch <strong>${f.fehlt}</strong> 💜 bis
+        ${f.naechst.icon} <strong>${escapeHtml(f.naechst.name)}</strong></p>
+      <div class="ht-balken"><span style="width:${Math.max(2, f.prozent)}%;"></span></div>
+    </div>`;
+}
+
+/* ------------------------------------------------------------------
+   DAS OVERLAY BEIM ERSTEN OEFFNEN DES TAGES
+
+   Einmal am Tag - nicht bei jedem Oeffnen. Ein Dialog, den ein Kind
+   fuenfmal taeglich wegklickt, wird nach zwei Tagen nicht mehr gelesen.
+   Der Merker bleibt nur auf dem Geraet; in der Cloud-Nutzlast hat er
+   nichts verloren, sonst lehnt die Firestore-Regel alles ab.
+------------------------------------------------------------------ */
+const HT_BEGRUESSUNG = [
+  "Da bist du ja! Ich hab schon was rausgesucht.",
+  "Gut, dass du kommst &ndash; ich hab was für dich.",
+  "Kurz was zusammen? Ich hab es schon sortiert.",
+  "Drei Sachen, dann bist du durch. Versprochen.",
+  "Ich hab nachgeschaut, was wieder dran ist."
+];
+
+function heuteOverlayVielleicht(){
+  if(!state.cloudId && !state.guest) return;
+  if(state.screen !== "start") return;
+  const heute = dateKey(new Date());
+  if(state.heuteGezeigt === heute) return;
+  if(document.querySelector('.ht-overlay')) return;
+  state.heuteGezeigt = heute;
+  try{ saveProgress(); }catch(e){}
+
+  const liste = heuteDran();
+  if(!liste.length) return;                       // kann nicht vorkommen
+  const minuten = liste.reduce((s, e)=> s + (e.dauer || 5), 0);
+  const f = rangFortschritt(diamantenStand());
+  const gruss = HT_BEGRUESSUNG[Math.floor(Math.random() * HT_BEGRUESSUNG.length)];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay ht-overlay';
+  overlay.innerHTML = `
+    <div class="panel modal-box ht-box">
+      ${lingoraKopfHtml(gruss, true)}
+      <p class="ht-kopf">Heute dran: <strong>${liste.length}</strong>
+        ${liste.length === 1 ? "Sache" : "Sachen"},
+        ungefähr <strong>${minuten}</strong> Minuten.</p>
+      ${heuteListeHtml(liste)}
+      ${f.naechst ? `<p class="ht-ziel">Jede richtige Antwort bringt dich näher an
+        ${f.naechst.icon} <strong>${escapeHtml(f.naechst.name)}</strong> &ndash;
+        noch <strong>${f.fehlt}</strong> Diamanten.</p>` : ""}
+      <button class="btn" id="ht-los" style="margin-top:12px;">🚀 LOSGEHEN</button>
+      <button class="btn ghost small" id="ht-spaeter" style="margin-top:8px;">Später</button>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  const zu = ()=>{ if(overlay.parentNode){ overlay.parentNode.removeChild(overlay); } };
+  overlay.querySelector('#ht-spaeter').addEventListener('click', zu);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) zu(); });
+  overlay.querySelector('#ht-los').addEventListener('click', ()=>{
+    zu(); heuteStarten(liste[0]);
+  });
+  // Auch aus dem Overlay heraus laesst sich gezielt etwas auswaehlen.
+  overlay.querySelectorAll('[data-heute]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const i = parseInt(b.dataset.heute, 10);
+      zu(); heuteStarten(liste[i]);
+    });
+  });
+}
 
 function lingoraStartVerdrahten(){
   const el = document.getElementById('lg-start-plan');
@@ -5622,6 +5776,12 @@ function lingoraStartVerdrahten(){
   if(lw){ lw.addEventListener('click', ()=>{ state.screen = "lernweg"; render(); }); }
   const jetzt = document.getElementById('lg-jetzt');
   if(jetzt){ jetzt.addEventListener('click', ()=>{ if(lingoraJetzt) lingoraJetzt.los(); }); }
+  document.querySelectorAll('.lg-start [data-heute]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const i = parseInt(b.dataset.heute, 10);
+      if(heuteListe[i]) heuteStarten(heuteListe[i]);
+    });
+  });
   const fort = document.getElementById('lg-fortsetzen');
   if(fort){ fort.addEventListener('click', zuletztStarten); }
   // Einmal am Tag begruesst Lingora hoerbar. Der erste Fingerdruck des
@@ -7561,6 +7721,8 @@ function loadSave(){
     if(data.figurBasis === "import" || data.figurBasis === "rezept") state.figurBasis = data.figurBasis;
     if(data.lingoraPlan && typeof data.lingoraPlan === "object") state.lingoraPlan = data.lingoraPlan;
     if(Array.isArray(data.lingoraPlaene)) state.lingoraPlaene = data.lingoraPlaene;
+    if(typeof data.klasse === "number") state.klasse = data.klasse;
+    if(Array.isArray(data.gramDran)) state.gramDran = data.gramDran;
     if(typeof data.lingoraPlanAktiv === "string") state.lingoraPlanAktiv = data.lingoraPlanAktiv;
     if(data.gramGelesen && typeof data.gramGelesen === "object") state.gramGelesen = data.gramGelesen;
     if(data.wortStand && typeof data.wortStand === "object") state.wortStand = data.wortStand;
@@ -7598,6 +7760,8 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       figurBasis: state.figurBasis,
       lingoraPlan: state.lingoraPlan,
       lingoraPlaene: state.lingoraPlaene,
+      klasse: state.klasse,
+      gramDran: state.gramDran,
       lingoraPlanAktiv: state.lingoraPlanAktiv,
       gramGelesen: state.gramGelesen,
       wortStand: state.wortStand,
@@ -7685,7 +7849,8 @@ const state = {
   //   0    = das Kind hat bewusst alles zugeklappt
   //   1..5 = diese Unit ist offen
   spitzname: "",           // Name in der oeffentlichen Rangliste; leer = nicht dabei
-  klasse: 5,               // welche Klassenstufe ist gewaehlt
+  klasse: 0,               // 0 = noch nicht gefragt. Alle Leser haben
+                           // einen Rueckfall auf 5, siehe v73.1.
   paketSuche: "",          // was gerade im Suchfeld der Paketauswahl steht
   evSuche: "",             // was im Suchfeld bei "Meine Vokabeln" steht
   evWeg: "",               // welcher der vier Wege gerade aufgeklappt ist
@@ -7911,6 +8076,8 @@ function applyPlayerToState(player){
   /* Diese drei standen in der Cloud, wurden hier aber nie gelesen.
      Zusammenfuehren, nicht ersetzen - siehe die Helfer oben. */
   if(Array.isArray(player.lingoraPlaene)) state.lingoraPlaene = plaeneVereinen(state.lingoraPlaene, player.lingoraPlaene);
+  if(typeof player.klasse === "number") state.klasse = player.klasse;
+  if(Array.isArray(player.gramDran)) state.gramDran = player.gramDran;
   state.listen     = listenVereinen(state.listen, player.listen);
   state.wortStand  = wortStandVereinen(state.wortStand, player.wortStand);
   state.boxTreffer = boxTrefferVereinen(state.boxTreffer, player.boxTreffer);
@@ -8193,7 +8360,11 @@ function syncToCloud(){
          aeltere, zwischengespeicherte Fassung, schrieb deren
          saveProgress() den Speicher ohne dieses Feld zurueck - und die
          Plaene waren weg. In der Cloud kann das nicht passieren. */
-      lingoraPlaene: lingoraPlaene()
+      lingoraPlaene: lingoraPlaene(),
+      /* Seit 73.0 in der Cloud: Sonst stand am Tablet Klasse 6 und am
+         Handy wieder Klasse 5 - mit voellig anderen Vorschlaegen. */
+      klasse: state.klasse || 5,
+      gramDran: Array.isArray(state.gramDran) ? state.gramDran : []
     };
     if(state.spitzname){ payload.spitzname = state.spitzname; }
     if(state.portrait){ payload.portrait = state.portrait; }
@@ -9844,7 +10015,7 @@ function render(){
       || (state.screen === "quiz" && (state.mode === "flood" || state.mode === "floodhard")));
   }catch(e){}
   // Lingoras Knopf lebt ausserhalb von #app und ueberlebt das Neuzeichnen.
-  setTimeout(()=>{ try{ fensterHoeheSetzen(); lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); floodBuehneAnpassen(); }catch(e){} }, 0);
+  setTimeout(()=>{ try{ fensterHoeheSetzen(); lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); heuteOverlayVielleicht(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); floodBuehneAnpassen(); }catch(e){} }, 0);
 
   // Der Elternbereich sperrt sich selbst, sobald man ihn verlaesst - egal
   // ueber welchen Knopf. Damit kommt niemand ohne PIN zurueck hinein.
@@ -9866,6 +10037,9 @@ function render(){
   if(state.screen==="portraitwerkstatt") return renderPortraitWerkstatt();
   // Alles andere ist gesperrt, solange keine gueltige Firebase-Anmeldung besteht.
   if(!state.cloudId && !state.guest) return renderLogin();
+  // Ohne Klasse kann Lingora nichts Sinnvolles vorschlagen - also
+  // fragen wir, bevor irgendetwas anderes passiert.
+  if(!state.klasse || kfWahl.klasse) return renderKlassenfrage();
   if(state.screen==="start") return renderStart();
   if(state.screen==="uebenvokabeln") return renderUebenVokabeln();
   if(state.screen==="uebengrammatik") return renderUebenGrammatik();
@@ -11379,6 +11553,106 @@ function renderUebenGrammatik(){
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
   startVerdrahten();
+}
+
+/* ------------------------------------------------------------------
+   IN WELCHE KLASSE GEHST DU?
+
+   Klasse 6: die komplette Grammatik ist dabei - der Stoff aus Klasse 5
+   gilt als bekannt und muss wiederholt werden.
+   Klasse 5: das Kind hakt ab, was im Unterricht schon drankam. Sonst
+   schlaegt Lingora im Oktober Themen aus Unit 9 vor, und das Kind haelt
+   sich fuer schlecht, obwohl es den Stoff nie hatte.
+------------------------------------------------------------------ */
+let kfWahl = { klasse: 0, themen: [] };
+
+function renderKlassenfrage(){
+  const k = kfWahl.klasse;
+  const themen = k === 5 ? grammatikThemenDerKlasse() : [];
+
+  if(!k){
+    app.innerHTML = `
+      ${renderHeader("", false, true)}
+      <div class="panel">
+        ${lingoraKopfHtml("Hallo! Bevor wir loslegen &ndash; in welche Klasse gehst du?", false)}
+        <p class="muted center-text" style="margin:10px 0 16px;">
+          Danach weiß ich, was ich dir vorschlagen kann.</p>
+        <button class="btn gross" data-kf="5" style="margin-bottom:10px;">5. Klasse</button>
+        <button class="btn gross" data-kf="6">6. Klasse</button>
+      </div>`;
+    document.querySelectorAll('[data-kf]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const gewaehlt = parseInt(b.dataset.kf, 10);
+        if(gewaehlt === 6){
+          // Klasse 6: alles ist dran, auch der Stoff aus Klasse 5.
+          state.klasse = 6;
+          state.gramDran = [];              // leer = keine Einschraenkung
+          saveProgress(); syncToCloud(); render();
+          return;
+        }
+        // state.klasse bleibt bewusst 0, sonst greift der Waechter nicht
+        // mehr und die Themenauswahl wird uebersprungen. Die Themenliste
+        // stimmt trotzdem: grammatikThemenDerKlasse() faellt auf 5 zurueck.
+        kfWahl = { klasse: 5, themen: [] };
+        render();
+      });
+    });
+    return;
+  }
+
+  // Klasse 5: abhaken, was schon drankam. Nach Units gruppiert.
+  const units = [];
+  themen.forEach(t=>{
+    let u = units.find(x=>x.nr === t.unit);
+    if(!u){ u = { nr: t.unit, themen: [] }; units.push(u); }
+    u.themen.push(t);
+  });
+  units.sort((a,b)=>a.nr - b.nr);
+  const gewaehlt = new Set(kfWahl.themen);
+
+  app.innerHTML = `
+    ${renderHeader("", false, true)}
+    <div class="panel">
+      ${lingoraKopfHtml("Und was hattet ihr davon schon im Unterricht?", true)}
+      <p class="muted center-text" style="margin:10px 0 14px;">
+        Tipp einfach an, was ihr schon hattet. Was du nicht ankreuzt,
+        schlage ich dir auch nicht vor. Ändern kannst du das später jederzeit.</p>
+      ${units.map(u=>`
+        <p class="kf-unit">Unit ${u.nr}</p>
+        <div class="kf-gitter">
+          ${u.themen.map(t=>`
+            <button class="kf-thema ${gewaehlt.has(t.id) ? "aktiv" : ""}" data-kft="${t.id}">
+              <span class="kf-ic">${t.icon || "🧠"}</span>
+              <span class="kf-n">${escapeHtml(t.name)}</span>
+            </button>`).join("")}
+        </div>`).join("")}
+      <button class="btn" id="kf-fertig" style="margin-top:16px;">
+        ✓ FERTIG${kfWahl.themen.length ? " (" + kfWahl.themen.length + " ausgewählt)" : ""}
+      </button>
+      <button class="btn ghost small" id="kf-alle" style="margin-top:8px;">
+        Wir hatten schon alles
+      </button>
+    </div>`;
+
+  document.querySelectorAll('[data-kft]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id = b.dataset.kft;
+      const i = kfWahl.themen.indexOf(id);
+      if(i >= 0) kfWahl.themen.splice(i, 1); else kfWahl.themen.push(id);
+      render();
+    });
+  });
+  const fertig = ()=>{
+    state.klasse = 5;
+    state.gramDran = kfWahl.themen.slice();
+    kfWahl = { klasse: 0, themen: [] };     // Auswahl ist beendet
+    state.screen = "start";
+    saveProgress(); syncToCloud(); render();
+  };
+  document.getElementById('kf-fertig').addEventListener('click', fertig);
+  document.getElementById('kf-alle').addEventListener('click', ()=>{
+    kfWahl.themen = themen.map(t=>t.id); fertig();
+  });
 }
 
 function renderStart(){
