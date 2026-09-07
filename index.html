@@ -171,6 +171,13 @@
   }
   .modal-box p{ margin:0 0 16px 0; text-align:center; font-family:var(--font); font-size:19px; }
 
+  /* ---------- Gesperrte Units ---------- */
+  .unit-block.zu .unit-bar{ opacity:.55; }
+  .unit-block.zu .unit-nr{ filter:grayscale(1); }
+  .unit-block.zu .unit-zahl{ font-size:15px; }
+  .unit-zu-btn{ font-size:12px; }
+  .nu-box{ margin-top:12px; }
+
   /* ---------- Die eine Erklaerkarte ---------- */
   .gk-eine{ padding:18px 15px; }
   .gk-titel{ font-size:21px; line-height:1.25; margin:0 0 6px; }
@@ -3233,7 +3240,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "74.2 – Erledigt bleibt erledigt";
+const APP_VERSION = "75.1 – Units freischalten";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4469,11 +4476,56 @@ function gramIstFaellig(topic){ return Date.now() >= gramFaelligAm(topic); }
    gilt alles. Und wenn die Auswahl leer laufen wuerde, gilt ebenfalls
    alles - lieber ein unpassender Vorschlag als gar keiner. */
 function themenFreigegeben(){
-  const alle = grammatikThemenDerKlasse().filter(t => !t.locked);
-  if(!Array.isArray(state.gramDran) || !state.gramDran.length) return alle;
+  const alle = grammatikThemenSichtbar();
+  /* NICHT gesetzt heisst "nie gefragt" - alte Profile duerfen alles.
+     Eine LEERE Liste heisst dagegen "noch nichts freigeschaltet", und
+     das ist ein Unterschied: In Klasse 5 ist am ersten Schultag
+     tatsaechlich noch nichts dran. */
+  if(!Array.isArray(state.gramDran)) return alle;
   const erlaubt = new Set(state.gramDran);
-  const eng = alle.filter(t => erlaubt.has(t.id));
-  return eng.length ? eng : alle;
+  return alle.filter(t => erlaubt.has(t.id));
+}
+
+/* Alle Themen, die zur Klasse GEHOEREN - freigeschaltet oder nicht.
+   Klasse 6 sieht auch Klasse 5, denn der Stoff bleibt gueltig. */
+function grammatikThemenSichtbar(){
+  const k = state.klasse || 5;
+  return GRAMMAR_TOPICS.filter(t => !t.locked && (t.klasse || 5) <= k);
+}
+
+/* Alle Units, die zur Klasse gehoeren - aufsteigend. */
+function grammatikUnitsSichtbar(){
+  const k = state.klasse || 5;
+  return GRAMMAR_UNITS.filter(u => (u.klasse || 5) <= k)
+    .slice().sort((a, b) => ((a.klasse || 5) - (b.klasse || 5)) || (a.nr - b.nr));
+}
+
+function unitThemen(u){
+  return GRAMMAR_TOPICS.filter(t =>
+    !t.locked && t.unit === u.nr && (t.klasse || 5) === (u.klasse || 5));
+}
+
+/* Eine Unit gilt als frei, wenn ihre Themen freigeschaltet sind.
+   Bei nicht gesetztem gramDran (alte Profile) ist alles frei. */
+function unitIstFrei(u){
+  const th = unitThemen(u);
+  if(!th.length) return false;
+  if(!Array.isArray(state.gramDran)) return true;
+  const erlaubt = new Set(state.gramDran);
+  return th.every(t => erlaubt.has(t.id));
+}
+
+/* Freischalten oder wieder sperren. Gespeichert wird die Themenliste,
+   nicht die Unit-Nummer - dann bleibt gramDran genau das, was
+   themenFreigegeben() ohnehin liest, und es gibt keine zweite Wahrheit. */
+function unitUmschalten(u){
+  if(!Array.isArray(state.gramDran)) state.gramDran = grammatikThemenSichtbar().map(t => t.id);
+  const th = unitThemen(u).map(t => t.id);
+  const frei = unitIstFrei(u);
+  const menge = new Set(state.gramDran);
+  th.forEach(id => { if(frei) menge.delete(id); else menge.add(id); });
+  state.gramDran = Array.from(menge);
+  saveProgress(); syncToCloud();
 }
 
 function gramFaelligeThemen(){
@@ -5039,6 +5091,23 @@ function lingoraAblaufHtml(tag){
     </div>`;
 }
 
+/* "Für heute alles erledigt" hat den Tag beendet - obwohl daneben
+   faellige Vokabeln und Grammatik lagen. Ein Plan ist ein Vorschlag,
+   kein Deckel. Deshalb steht unter jedem Plan, was sonst noch offen
+   ist, und ein Weg dorthin. */
+function nochUebenHtml(){
+  const offen = heuteDran().filter(e => !e.frei);
+  const text = offen.length
+    ? ("Du kannst aber noch üben &ndash; <strong>" + offen.length + "</strong> "
+       + (offen.length === 1 ? "Sache wartet" : "Sachen warten") + " noch auf dich.")
+    : "Du kannst aber jederzeit weiterüben, wenn du magst.";
+  return `
+    <div class="panel nu-box">
+      ${lingoraKopfHtml(text, true)}
+      <button class="btn" id="nu-los" style="margin-top:11px;">📚 ZU DEN ÜBUNGEN</button>
+    </div>`;
+}
+
 function renderLingoraPlan(){
   state.spielZurueck = "lingoraplan";
   const p = lingoraPlan();
@@ -5109,9 +5178,12 @@ function renderLingoraPlan(){
       <button class="btn ghost" id="lg-weg" style="margin-top:8px;">🗑️ Plan verwerfen</button>
     </div>
 
+    ${nochUebenHtml()}
+
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
 
+  /* Wird an mehreren Bildschirmen gebraucht - deshalb eine Funktion. */
   document.querySelectorAll('[data-lgstart]').forEach(el=>{
     el.addEventListener('click', ()=>lingoraSchrittStarten(el.dataset.lgstart));
   });
@@ -5130,6 +5202,11 @@ function renderLingoraPlan(){
       state.screen = state.lingoraReturnTo || "start";
       render();
     });
+  });
+  anKnopf('nu-los', ()=>{
+    const offen = heuteDran().filter(e => !e.frei);
+    if(offen.length){ heuteStarten(offen[0]); return; }
+    state.screen = "start"; render();
   });
   anKnopf('back-btn', ()=>{ state.screen = state.lingoraReturnTo || "start"; render(); });
 }
@@ -10114,7 +10191,7 @@ function render(){
   if(!state.cloudId && !state.guest) return renderLogin();
   // Ohne Klasse kann Lingora nichts Sinnvolles vorschlagen - also
   // fragen wir, bevor irgendetwas anderes passiert.
-  if(!state.klasse || kfWahl.klasse) return renderKlassenfrage();
+  if(!state.klasse) return renderKlassenfrage();
   if(state.screen==="start") return renderStart();
   if(state.screen==="uebenvokabeln") return renderUebenVokabeln();
   if(state.screen==="uebengrammatik") return renderUebenGrammatik();
@@ -11536,6 +11613,57 @@ function renderSpielart(){
   startVerdrahten();
 }
 
+/* Die Unit-Leisten verdrahten: gesperrte fragen nach, freie klappen auf. */
+/* Nach dem Aufklappen die Unit nach oben holen. Erst im naechsten Bild,
+   weil render() das Element gerade neu gebaut hat. */
+function unitInsBild(u){
+  setTimeout(()=>{
+    try{
+      const el = document.querySelector('[data-unit-frei="' + (u.klasse || 5) + ':' + u.nr + '"]');
+      if(el && el.scrollIntoView) el.scrollIntoView({ behavior:"smooth", block:"start" });
+    }catch(e){}
+  }, 60);
+}
+
+function unitKnoepfeVerdrahten(){
+  const finde = (wert)=>{
+    const [kl, nr] = String(wert).split(":").map(Number);
+    return grammatikUnitsSichtbar().find(u => (u.klasse || 5) === kl && u.nr === nr);
+  };
+  document.querySelectorAll('[data-unit-frei]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const u = finde(el.dataset.unitFrei);
+      if(!u) return;
+      if(unitIstFrei(u)){
+        // Schon frei: normal auf- und zuklappen.
+        const oeffnen = grammatikOffeneUnit() !== u.nr;
+        state.gramUnitOffen = oeffnen ? u.nr : 0;
+        render();
+        // Sonst klappt weiter unten etwas auf, das man nicht sieht.
+        if(oeffnen) unitInsBild(u);
+        return;
+      }
+      showConfirmModal('Hattet ihr "' + u.name + '" schon im Unterricht?', ()=>{
+        unitUmschalten(u);
+        state.gramUnitOffen = u.nr;
+        render();
+        unitInsBild(u);
+      });
+    });
+  });
+  document.querySelectorAll('[data-unit-sperren]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const u = finde(el.dataset.unitSperren);
+      if(!u) return;
+      showConfirmModal('"' + u.name + '" wieder sperren? Lingora schlägt es dann nicht mehr vor.', ()=>{
+        unitUmschalten(u);
+        state.gramUnitOffen = 0;
+        render();
+      });
+    });
+  });
+}
+
 function renderUebenGrammatik(){
   state.mainMode = "grammar";
   state.spielZurueck = "uebengrammatik";
@@ -11585,21 +11713,22 @@ function renderUebenGrammatik(){
         </div>`;
       })()}
       <div class="unit-tipp">👇 <span>Alle Themen nach Units &ndash; tippe eine an.</span></div>
-      ${grammatikUnitsDerKlasse().map(u=>{
-        const themen = grammarTopicsOfUnit(u.nr);
+      ${grammatikUnitsSichtbar().map(u=>{
+        const themen = unitThemen(u);
         if(themen.length === 0) return "";
-        const offen = grammatikOffeneUnit() === u.nr;
+        const frei = unitIstFrei(u);
+        const offen = frei && grammatikOffeneUnit() === u.nr;
         const geuebt = themen.filter(t=>grammarSkillInfo(t).fenster > 0).length;
         return `
-        <div class="unit-block ${offen ? 'offen' : ''}">
-          <button class="unit-bar" data-unit-toggle="${u.nr}" aria-expanded="${offen}">
+        <div class="unit-block ${offen ? 'offen' : ''} ${frei ? '' : 'zu'}">
+          <button class="unit-bar" data-unit-frei="${u.klasse || 5}:${u.nr}" aria-expanded="${offen}">
             <span class="unit-nr" data-unit="${u.nr}">Unit ${u.nr}</span>
             <span class="unit-txt">
               <span class="unit-name">${escapeHtml(u.name)}</span>
-              <span class="unit-hint">${escapeHtml(u.hint)}</span>
+              <span class="unit-hint">${frei ? escapeHtml(u.hint) : "Noch nicht freigeschaltet"}</span>
             </span>
-            <span class="unit-zahl">${geuebt > 0 ? geuebt + '/' + themen.length : themen.length}</span>
-            <span class="unit-chev">▶</span>
+            <span class="unit-zahl">${frei ? (geuebt > 0 ? geuebt + '/' + themen.length : themen.length) : "🔒"}</span>
+            <span class="unit-chev">${frei ? "▶" : ""}</span>
           </button>
           ${offen ? `
           <div class="mode-grid">
@@ -11618,6 +11747,8 @@ function renderUebenGrammatik(){
                 ${stufe}
               </button>`;
             }).join("")}
+            <button class="btn ghost small unit-zu-btn" data-unit-sperren="${u.klasse || 5}:${u.nr}"
+              style="grid-column:1/-1;margin-top:6px;">🔒 Hatten wir doch noch nicht</button>
           </div>` : ''}
         </div>`;
       }).join("")}
@@ -11628,6 +11759,7 @@ function renderUebenGrammatik(){
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
   startVerdrahten();
+  unitKnoepfeVerdrahten();
 }
 
 /* ------------------------------------------------------------------
@@ -11639,94 +11771,31 @@ function renderUebenGrammatik(){
    schlaegt Lingora im Oktober Themen aus Unit 9 vor, und das Kind haelt
    sich fuer schlecht, obwohl es den Stoff nie hatte.
 ------------------------------------------------------------------ */
-let kfWahl = { klasse: 0, themen: [] };
-
 function renderKlassenfrage(){
-  const k = kfWahl.klasse;
-  const themen = k === 5 ? grammatikThemenDerKlasse() : [];
-
-  if(!k){
-    app.innerHTML = `
-      ${renderHeader("", false, true)}
-      <div class="panel">
-        ${lingoraKopfHtml("Hallo! Bevor wir loslegen &ndash; in welche Klasse gehst du?", false)}
-        <p class="muted center-text" style="margin:10px 0 16px;">
-          Danach weiß ich, was ich dir vorschlagen kann.</p>
-        <button class="btn gross" data-kf="5" style="margin-bottom:10px;">5. Klasse</button>
-        <button class="btn gross" data-kf="6">6. Klasse</button>
-      </div>`;
-    document.querySelectorAll('[data-kf]').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        const gewaehlt = parseInt(b.dataset.kf, 10);
-        if(gewaehlt === 6){
-          // Klasse 6: alles ist dran, auch der Stoff aus Klasse 5.
-          state.klasse = 6;
-          state.gramDran = [];              // leer = keine Einschraenkung
-          saveProgress(); syncToCloud(); render();
-          return;
-        }
-        // state.klasse bleibt bewusst 0, sonst greift der Waechter nicht
-        // mehr und die Themenauswahl wird uebersprungen. Die Themenliste
-        // stimmt trotzdem: grammatikThemenDerKlasse() faellt auf 5 zurueck.
-        kfWahl = { klasse: 5, themen: [] };
-        render();
-      });
-    });
-    return;
-  }
-
-  // Klasse 5: abhaken, was schon drankam. Nach Units gruppiert.
-  const units = [];
-  themen.forEach(t=>{
-    let u = units.find(x=>x.nr === t.unit);
-    if(!u){ u = { nr: t.unit, themen: [] }; units.push(u); }
-    u.themen.push(t);
-  });
-  units.sort((a,b)=>a.nr - b.nr);
-  const gewaehlt = new Set(kfWahl.themen);
-
   app.innerHTML = `
     ${renderHeader("", false, true)}
     <div class="panel">
-      ${lingoraKopfHtml("Und was hattet ihr davon schon im Unterricht?", true)}
-      <p class="muted center-text" style="margin:10px 0 14px;">
-        Tipp einfach an, was ihr schon hattet. Was du nicht ankreuzt,
-        schlage ich dir auch nicht vor. Ändern kannst du das später jederzeit.</p>
-      ${units.map(u=>`
-        <p class="kf-unit">Unit ${u.nr}</p>
-        <div class="kf-gitter">
-          ${u.themen.map(t=>`
-            <button class="kf-thema ${gewaehlt.has(t.id) ? "aktiv" : ""}" data-kft="${t.id}">
-              <span class="kf-ic">${t.icon || "🧠"}</span>
-              <span class="kf-n">${escapeHtml(t.name)}</span>
-            </button>`).join("")}
-        </div>`).join("")}
-      <button class="btn" id="kf-fertig" style="margin-top:16px;">
-        ✓ FERTIG${kfWahl.themen.length ? " (" + kfWahl.themen.length + " ausgewählt)" : ""}
-      </button>
-      <button class="btn ghost small" id="kf-alle" style="margin-top:8px;">
-        Wir hatten schon alles
-      </button>
+      ${lingoraKopfHtml("Hallo! Bevor wir loslegen &ndash; in welche Klasse gehst du?", false)}
+      <p class="muted center-text" style="margin:10px 0 16px;">
+        Danach zeige ich dir die passenden Themen. Was ihr im Unterricht
+        noch nicht hattet, schaltest du später einfach frei.</p>
+      <button class="btn gross" data-kf="5" style="margin-bottom:10px;">5. Klasse</button>
+      <button class="btn gross" data-kf="6">6. Klasse</button>
     </div>`;
-
-  document.querySelectorAll('[data-kft]').forEach(b=>{
+  document.querySelectorAll('[data-kf]').forEach(b=>{
     b.addEventListener('click', ()=>{
-      const id = b.dataset.kft;
-      const i = kfWahl.themen.indexOf(id);
-      if(i >= 0) kfWahl.themen.splice(i, 1); else kfWahl.themen.push(id);
-      render();
+      const gewaehlt = parseInt(b.dataset.kf, 10);
+      state.klasse = gewaehlt;
+      /* Klasse 6: Der Stoff aus Klasse 5 war da, der gilt als bekannt.
+         Klasse 5: noch gar nichts - es geht ja gerade erst los.
+         In beiden Faellen eine ECHTE Liste, nie undefined: Genau daran
+         erkennt themenFreigegeben(), dass gefragt wurde. */
+      state.gramDran = (gewaehlt === 6)
+        ? GRAMMAR_TOPICS.filter(t => !t.locked && (t.klasse || 5) === 5).map(t => t.id)
+        : [];
+      state.screen = "start";
+      saveProgress(); syncToCloud(); render();
     });
-  });
-  const fertig = ()=>{
-    state.klasse = 5;
-    state.gramDran = kfWahl.themen.slice();
-    kfWahl = { klasse: 0, themen: [] };     // Auswahl ist beendet
-    state.screen = "start";
-    saveProgress(); syncToCloud(); render();
-  };
-  document.getElementById('kf-fertig').addEventListener('click', fertig);
-  document.getElementById('kf-alle').addEventListener('click', ()=>{
-    kfWahl.themen = themen.map(t=>t.id); fertig();
   });
 }
 
@@ -11889,7 +11958,6 @@ function startVerdrahten(){
       showConfirmModal('Klasse neu einstellen? Lingora fragt dich dann noch mal.', ()=>{
         state.klasse = 0;
         state.gramDran = undefined;
-        kfWahl = { klasse: 0, themen: [] };
         state.screen = "start";
         saveProgress();
         render();
@@ -11924,22 +11992,6 @@ function startVerdrahten(){
   if(portraitBtn){ portraitBtn.addEventListener('click', ()=>portraitWerkstattOeffnen('start')); }
   document.querySelectorAll('.mode-btn[data-mainmode]').forEach(el=>{
     el.addEventListener('click', ()=>{ state.mainMode = el.dataset.mainmode; render(); });
-  });
-  document.querySelectorAll('.unit-bar[data-unit-toggle]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const nr = parseInt(el.dataset.unitToggle, 10);
-      const oeffnen = grammatikOffeneUnit() !== nr;
-      state.grammarOpenUnit = oeffnen ? nr : 0;   // 0 = bewusst zu
-      render();
-      // Die frisch geoeffnete Unit nach oben holen, damit ihre Themen
-      // sofort sichtbar sind.
-      if(oeffnen){
-        const leiste = document.querySelector('.unit-bar[data-unit-toggle="' + nr + '"]');
-        if(leiste && leiste.scrollIntoView){
-          leiste.scrollIntoView({ behavior:"smooth", block:"start" });
-        }
-      }
-    });
   });
   document.querySelectorAll('.mode-btn[data-grammar-topic]').forEach(el=>{
     el.addEventListener('click', ()=>{
