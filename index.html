@@ -3240,7 +3240,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "75.1 – Units freischalten";
+const APP_VERSION = "75.2 – Units freischalten";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4493,11 +4493,18 @@ function grammatikThemenSichtbar(){
   return GRAMMAR_TOPICS.filter(t => !t.locked && (t.klasse || 5) <= k);
 }
 
-/* Alle Units, die zur Klasse gehoeren - aufsteigend. */
+/* Die Units der GEWAEHLTEN Klasse - nur dieser einen.
+
+   Zwei verschiedene Fragen, die ich in 75.0 verwechselt hatte:
+     - Was darf geuebt werden?  -> grammatikThemenSichtbar(), alles bis
+       zur eigenen Klasse. Ein Sechstklaessler wiederholt Klasse-5-Stoff.
+     - Was steht in der Liste?  -> diese Funktion, eine Klasse auf einmal.
+       Wer den Stoff aus Klasse 5 sehen will, schaltet oben um. */
 function grammatikUnitsSichtbar(){
-  const k = state.klasse || 5;
-  return GRAMMAR_UNITS.filter(u => (u.klasse || 5) <= k)
-    .slice().sort((a, b) => ((a.klasse || 5) - (b.klasse || 5)) || (a.nr - b.nr));
+  const kl = grammatikKlassen();
+  const gewaehlt = state.klasse || kl[0] || 5;
+  const eigene = GRAMMAR_UNITS.filter(u => (u.klasse || 5) === gewaehlt);
+  return (eigene.length ? eigene : GRAMMAR_UNITS).slice().sort((a, b) => a.nr - b.nr);
 }
 
 function unitThemen(u){
@@ -11637,7 +11644,7 @@ function unitKnoepfeVerdrahten(){
       if(unitIstFrei(u)){
         // Schon frei: normal auf- und zuklappen.
         const oeffnen = grammatikOffeneUnit() !== u.nr;
-        state.gramUnitOffen = oeffnen ? u.nr : 0;
+        state.grammarOpenUnit = oeffnen ? u.nr : 0;
         render();
         // Sonst klappt weiter unten etwas auf, das man nicht sieht.
         if(oeffnen) unitInsBild(u);
@@ -11645,7 +11652,7 @@ function unitKnoepfeVerdrahten(){
       }
       showConfirmModal('Hattet ihr "' + u.name + '" schon im Unterricht?', ()=>{
         unitUmschalten(u);
-        state.gramUnitOffen = u.nr;
+        state.grammarOpenUnit = u.nr;
         render();
         unitInsBild(u);
       });
@@ -11657,7 +11664,7 @@ function unitKnoepfeVerdrahten(){
       if(!u) return;
       showConfirmModal('"' + u.name + '" wieder sperren? Lingora schlägt es dann nicht mehr vor.', ()=>{
         unitUmschalten(u);
-        state.gramUnitOffen = 0;
+        state.grammarOpenUnit = 0;
         render();
       });
     });
