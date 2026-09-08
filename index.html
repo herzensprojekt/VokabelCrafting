@@ -207,6 +207,8 @@
   .gt-bsp-satz b{ color:#3b6d11; text-decoration:underline; text-underline-offset:3px; }
   .gt-bsp-de{ margin:4px 0 0; font-size:12.5px; color:var(--tinte-hell); }
 
+  .mz-plus{ color:#2f7a3c; font-size:12px; margin-left:2px; }
+
   /* ---------- Weiter im Plan ---------- */
   .pw-box{ border:3px solid #93b077; }
   .pw-stand{ margin:0 0 8px; text-align:center; font-size:13px;
@@ -3292,7 +3294,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "79.1 – Schritt für Schritt";
+const APP_VERSION = "80.0 – Erst erkennen, dann tippen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4159,20 +4161,34 @@ function lingoraStaerke(topic){
    den Startpunkt vor, und zweimal dieselbe Uebungsart hintereinander
    gibt es nie. So sieht kein Tag aus wie der davor, ohne dass der
    didaktische Aufbau dabei verlorengeht. */
+/* Die STUFE ist der Schwierigkeitsgrad des Abrufs, nicht des Inhalts:
+
+     1  Wiedererkennen - das Wort steht da, man muss es finden
+     2  Spielen        - dasselbe, nur unter leichtem Zeitdruck
+     3  Gemischt       - mal wiedererkennen, mal selbst schreiben
+     4  Frei abrufen   - ohne jeden Anhaltspunkt aus dem Gedaechtnis
+
+   Am ersten Tag mit neuen Woertern erzeugt Stufe 4 fast nur
+   Fehlschlaege - und Fehlschlaege am Anfang kosten genau das, worauf
+   die ganze App gebaut ist. Deshalb steigt die Stufe im Lauf des
+   Tages, statt zufaellig zu springen. */
 const LINGORA_WEG = {
   warm: [
-    {mode:"mc",      art:"vokabel_mc",    t:"Multiple Choice", u:"Vier Antworten – zum Reinkommen",       ic:"🎯"},
-    {mode:"flood",   art:"vokabel_spiel", t:"Flutungsraum",    u:"Kletter dem Wasser davon",              ic:"🌊"},
-    {mode:"faellig", art:"vokabel_mc",    t:"Fällig heute",    u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"}
+    {stufe:1, mode:"mc",      art:"vokabel_mc",    t:"Multiple Choice", u:"Vier Antworten – zum Reinkommen",       ic:"🎯"},
+    {stufe:1, mode:"flood",   art:"vokabel_spiel", t:"Flutungsraum",    u:"Kletter dem Wasser davon",              ic:"🌊"},
+    {stufe:1, mode:"faellig", art:"vokabel_mc",    t:"Fällig heute",    u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"}
   ],
   haupt: [
-    {mode:"mix",     art:"vokabel_mix",    t:"Gemischt",      u:"Mal Auswahl, mal Tippen",               ic:"🔀"},
-    {mode:"type",    art:"vokabel_tippen", t:"Selbst tippen", u:"Ohne Hilfe schreiben – das sitzt am besten", ic:"✍️"},
-    {mode:"faellig", art:"vokabel_mix",    t:"Fällig heute",  u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"}
+    {stufe:1, mode:"faellig", art:"vokabel_mc",     t:"Fällig heute",  u:"Genau die Wörter, die jetzt dran sind", ic:"🔁"},
+    {stufe:1, mode:"mc",      art:"vokabel_mc",     t:"Multiple Choice", u:"Vier Antworten – erst mal erkennen",  ic:"🎯"},
+    {stufe:2, mode:"flood",   art:"vokabel_spiel",  t:"Flutungsraum",  u:"Kletter dem Wasser davon",              ic:"🌊"},
+    {stufe:2, mode:"challenge", art:"vokabel_spiel", t:"Challenge",    u:"Zehn Sekunden pro Wort",                ic:"⚔️"},
+    {stufe:3, mode:"mix",     art:"vokabel_mix",    t:"Gemischt",      u:"Mal Auswahl, mal Tippen",               ic:"🔀"},
+    {stufe:4, mode:"type",    art:"vokabel_tippen", t:"Selbst tippen", u:"Ohne Hilfe schreiben – das sitzt am besten", ic:"✍️"}
   ],
   spiel: [
-    {mode:"challenge", art:"vokabel_spiel", t:"Challenge",    u:"Zehn Sekunden pro Wort",   ic:"⚔️"},
-    {mode:"flood",     art:"vokabel_spiel", t:"Flutungsraum", u:"Kletter dem Wasser davon", ic:"🌊"}
+    {stufe:2, mode:"challenge", art:"vokabel_spiel", t:"Challenge",    u:"Zehn Sekunden pro Wort",   ic:"⚔️"},
+    {stufe:2, mode:"flood",     art:"vokabel_spiel", t:"Flutungsraum", u:"Kletter dem Wasser davon", ic:"🌊"}
   ]
 };
 
@@ -4197,19 +4213,27 @@ function lingoraKurzname(schritt){
    wenn alles schon dran war, reicht es, dass es nicht direkt davor
    stand. Sonst stand an einem Tag zweimal der Flutungsraum - nicht
    nebeneinander, aber fuer das Kind trotzdem derselbe Tag zweimal. */
-function lingoraMethodeWaehlen(liste, versatz, schritte){
+function lingoraMethodeWaehlen(liste, versatz, schritte, maxStufe){
   const benutzt = schritte.map(s => (s.start || {}).mode).filter(Boolean);
   const letzte = benutzt.length ? benutzt[benutzt.length - 1] : null;
 
-  for(let i = 0; i < liste.length; i++){
-    const k = liste[(versatz + i) % liste.length];
+  /* Erlaubt ist hoechstens die Stufe, die zur Position im Tag passt.
+     Der erste Schritt ist damit immer Wiedererkennen, Tippen kann
+     fruehestens an vierter Stelle stehen - und an einem kurzen Tag
+     gar nicht. Ohne Vorgabe (Generalprobe) gilt alles. */
+  const grenze = (typeof maxStufe === "number") ? maxStufe : 9;
+  const erlaubt = liste.filter(k => (k.stufe || 1) <= grenze);
+  const pool = erlaubt.length ? erlaubt : liste;
+
+  for(let i = 0; i < pool.length; i++){
+    const k = pool[(versatz + i) % pool.length];
     if(benutzt.indexOf(k.mode) < 0) return k;      // heute noch ungenutzt
   }
-  for(let i = 0; i < liste.length; i++){
-    const k = liste[(versatz + i) % liste.length];
+  for(let i = 0; i < pool.length; i++){
+    const k = pool[(versatz + i) % pool.length];
     if(k.mode !== letzte) return k;                // wenigstens nicht doppelt
   }
-  return liste[versatz % liste.length];
+  return pool[versatz % pool.length];
 }
 
 /* Letzter Durchgang ueber den fertigen Tag: Stehen zwei gleiche
@@ -4270,7 +4294,8 @@ function lingoraTagBauen(wahl, minuten, phase, tagNr){
   // 1) Aufwaermen: etwas Leichtes zum Reinkommen.
   if(kats.length){
     const k = kats[tagNr % kats.length];
-    const m = lingoraMethodeWaehlen(LINGORA_WEG.warm, tagNr, schritte);
+    // Aufwaermen ist immer Stufe 1 - das ist der Sinn des Aufwaermens.
+    const m = lingoraMethodeWaehlen(LINGORA_WEG.warm, tagNr, schritte, 1);
     rein(lingoraSchritt(m.art, m.t + ": " + k, "Zum Aufwärmen · " + m.u, m.ic,
       { bereich:"vocab", mode:m.mode, category:k }));
   } else if(themen.length){
@@ -4301,7 +4326,11 @@ function lingoraTagBauen(wahl, minuten, phase, tagNr){
       gi++;
     } else if(vi < kats.length * 2){
       const k = kats[vi % kats.length];
-      const m = lingoraMethodeWaehlen(LINGORA_WEG.haupt, tagNr + vi, schritte);
+      /* Die Stufe waechst mit der Position im Tag: erster Schritt
+         Stufe 1, zweiter Stufe 2, und so weiter. Bei der Generalprobe
+         faellt die Grenze weg - dort SOLL geprueft werden wie im Test. */
+      const stufe = (phase === "generalprobe") ? 9 : (schritte.length + 1);
+      const m = lingoraMethodeWaehlen(LINGORA_WEG.haupt, tagNr + vi, schritte, stufe);
       gesetzt = rein(lingoraSchritt(m.art, m.t + ": " + k, m.u, m.ic,
         { bereich:"vocab", mode:m.mode, category:k }));
       vi++;
@@ -5429,6 +5458,24 @@ function planWeiterVerdrahten(){
   }
   const p = document.getElementById('pw-pause');
   if(p){ p.addEventListener('click', ()=>{ state.screen = "start"; render(); }); }
+}
+
+/* Der Muenzstand waehrend einer Runde.
+
+   Vorher stand hier nur die Ausbeute der LAUFENDEN Runde. Die faengt
+   bei jeder neuen Runde bei null an - Nokie hat daraus geschlossen,
+   seine Muenzen seien verfallen. Waren sie nie; sie standen nur
+   nirgends.
+
+   Jetzt gross der Kontostand, daneben klein der Zugewinn. Waehrend
+   der Runde sind die Muenzen noch nicht gutgeschrieben, deshalb wird
+   hier addiert - am Ende steht dieselbe Zahl auf dem Konto. */
+function muenzBadge(rundenMuenzen){
+  const dazu = rundenMuenzen || 0;
+  const stand = (state.coins || 0) + dazu;
+  return '<span class="score-badge">🪙 ' + stand
+       + (dazu > 0 ? ' <b class="mz-plus">+' + dazu + '</b>' : '')
+       + '</span>';
 }
 
 function lingoraSchrittAbhaken(id){
@@ -10203,7 +10250,7 @@ function renderAussprache(){
     ${topBarHtml("cancel-btn")}
     <div class="hud">
       <span class="score-badge">🗣️ ${state.currentIndex+1}/${woerter.length}</span>
-      <span class="score-badge">🪙 ${state.sessionCoins}</span>
+      ${muenzBadge(state.sessionCoins)}
     </div>
     <div class="progress-outer"><div class="progress-inner" style="width:${Math.round(state.currentIndex/woerter.length*100)}%"></div></div>
 
@@ -12508,7 +12555,7 @@ function renderVocabFlood(){
     ${topBarHtml("cancel-btn")}
     <div class="hud">
       <span class="score-badge">🏁 ${level}/${GRAMMAR_GOAL_CORRECT}</span>
-      <span class="score-badge">🪙 ${state.sessionCoins}</span>
+      ${muenzBadge(state.sessionCoins)}
     </div>
 
     <div class="panel dirt-panel" style="padding:10px;margin-bottom:10px;">
@@ -12626,7 +12673,7 @@ function renderQuiz(){
     ${topBarHtml("cancel-btn")}
     <div class="hud">
       <span class="score-badge">📖 ${state.currentIndex+1}/${total}</span>
-      <span class="score-badge">🪙 ${state.sessionCoins}</span>
+      ${muenzBadge(state.sessionCoins)}
       <span class="score-badge">🔥 ${state.streak}</span>
     </div>
     <div class="progress-outer"><div class="progress-inner" style="width:${progressPct}%"></div></div>
@@ -12959,7 +13006,7 @@ function renderChallengeQuiz(){
     ${topBarHtml("cancel-btn")}
     <div class="hud">
       <span class="score-badge">📖 ${state.currentIndex+1}/${total}</span>
-      <span class="score-badge">🪙 ${state.sessionCoins}</span>
+      ${muenzBadge(state.sessionCoins)}
     </div>
     <div class="progress-outer"><div class="progress-inner" style="width:${progressPct}%"></div></div>
 
@@ -18251,7 +18298,7 @@ function renderGrammarQuiz(){
     ${topBarHtml("cancel-grammar-btn")}
     <div class="hud">
       <span class="score-badge">${practice ? `✅ ${state.grammarCorrectCount}/${state.grammarQueue.length}` : `🏁 ${state.grammarCorrectCount}/${GRAMMAR_GOAL_CORRECT}`}</span>
-      <span class="score-badge">🪙 ${state.grammarSessionCoins}</span>
+      ${muenzBadge(state.grammarSessionCoins)}
     </div>
 
     ${stage}
