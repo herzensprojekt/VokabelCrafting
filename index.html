@@ -3240,7 +3240,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "75.2 – Units freischalten";
+const APP_VERSION = "76.2 – Listen teilen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4873,7 +4873,11 @@ function lingoraVorschlagHtml(w){
 function renderLingoraFrage(){
   const w = state.lgWahl;
   const schritt = state.lgSchritt;
-  const kats = categories().filter(k => k !== "Alle");
+  /* Eigene Listen zuerst: Wer sich fuer Freitag eine gebaut hat, will
+     im Plan genau die - nicht das ganze Lehrwerkspaket. Sie heissen
+     ueberall "★ Name", und woerterVonQuelle() versteht das schon. */
+  const kats = listenAlle().map(l => LISTEN_ZEICHEN + l.name)
+                 .concat(categories().filter(k => k !== "Alle"));
 
   let inhalt = "";
   let weiterAn = false;
@@ -5375,14 +5379,21 @@ const LINGORA_STILL = ["quiz", "grammarquiz", "lingorafrage", "lingoraplan"];
 function lingoraStillSchluessel(){
   return "lc-lingora-still-" + (state.cloudId || (state.guest ? "gast" : "-"));
 }
+/* Lingora ist von Haus aus LEISE - er sitzt still in der Ecke, bis
+   man ihn antippt. Vorher war es umgekehrt: Er redete, bis man ihn
+   wegklickte.
+
+   Deshalb steht bei "nicht still" jetzt ein ausdrueckliches "nein" im
+   Speicher statt gar nichts. Wuerde dort nichts stehen, waere jedes
+   Geraet ohne Eintrag wieder gespraechig - und das ist ja der
+   Ausgangszustand, den wir gerade abschaffen. */
 function lingoraIstStill(){
-  try{ return localStorage.getItem(lingoraStillSchluessel()) === "ja"; }
-  catch(e){ return false; }
+  try{ return localStorage.getItem(lingoraStillSchluessel()) !== "nein"; }
+  catch(e){ return true; }
 }
 function lingoraStillSetzen(still){
   try{
-    if(still) localStorage.setItem(lingoraStillSchluessel(), "ja");
-    else localStorage.removeItem(lingoraStillSchluessel());
+    localStorage.setItem(lingoraStillSchluessel(), still ? "ja" : "nein");
   }catch(e){}
   try{ lingoraChatLeeren(); }catch(e){}
   lingoraChat.screen = null;      // damit die Begruessung spaeter wiederkommt
@@ -8195,6 +8206,8 @@ function listenVereinen(lokal, cloud){
 
 function applyPlayerToState(player){
   state.cloudId = player.id;
+  // Ein Listen-Link, der vor der Anmeldung kam, wird jetzt eingeloest.
+  setTimeout(()=>{ try{ geteilteListeNachholen(); }catch(e){} }, 500);
   state.playerName = player.name || state.playerName;
   state.coins = typeof player.coins === "number" ? player.coins : 0;
   if(typeof player.diamanten === "number") state.diamanten = player.diamanten;
@@ -16158,6 +16171,236 @@ function paketeDerKlasse(klasse){
   return alle.filter(p => !p.klasse || p.klasse === klasse);
 }
 
+/* ==================================================================
+   EINE LISTE TEILEN
+
+   Es gibt keinen Server, auf dem eine geteilte Liste liegen koennte.
+   Also reist sie IM LINK mit - hinter dem Rautezeichen. Das ist keine
+   Spitzfindigkeit: Alles hinter # schickt der Browser nicht an den
+   Server. Die Vokabeln bleiben zwischen Absender und Empfaenger.
+
+   Im Paket steht nur, was zum Lernen noetig ist: der Listenname und
+   die Wortpaare. Kein Kindername, kein Lernstand, keine Kennung.
+================================================================== */
+/* Eine schlichte Textform statt JSON:
+
+       Listenname
+       english|deutsch
+       english|deutsch
+
+   Gemessen spart das rund ein Viertel gegenueber JSON - dort kostet
+   jedes Wortpaar sechs Zeichen an Anfuehrungszeichen und Klammern.
+   Bei 150 Woertern ist das der Unterschied zwischen einem Link, den
+   man verschicken mag, und einem, den man nicht mehr ansieht. */
+function listeSauber(s){
+  // Die beiden Trennzeichen duerfen im Inhalt nicht vorkommen. In
+  // Vokabeln tun sie das praktisch nie - und ein ersetzter Strich ist
+  // harmloser als ein zerrissenes Paket.
+  return String(s || "").replace(/[|\r\n]+/g, " ").trim();
+}
+
+function listeAlsText(liste){
+  const alle = getAllVocab();
+  const nach = {};
+  alle.forEach(v => { nach[wortSchluessel(v)] = v; });
+  const zeilen = [listeSauber(liste.name || "Meine Liste")];
+  (liste.woerter || []).forEach(k=>{
+    const v = nach[k];
+    if(v && v.en && v.de) zeilen.push(listeSauber(v.en) + "|" + listeSauber(v.de));
+  });
+  return zeilen.join("\n");
+}
+
+/* Umlaute vertragen sich nicht mit btoa - deshalb erst nach UTF-8. */
+function listePacken(liste){
+  const roh = listeAlsText(liste);
+  const bytes = new TextEncoder().encode(roh);
+  let s = "";
+  bytes.forEach(b => { s += String.fromCharCode(b); });
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function listeAuspacken(code){
+  try{
+    let s = String(code || "").replace(/-/g, "+").replace(/_/g, "/");
+    while(s.length % 4) s += "=";
+    const roh = atob(s);
+    const bytes = new Uint8Array(roh.length);
+    for(let i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
+    const zeilen = new TextDecoder().decode(bytes).split("\n");
+    if(zeilen.length < 2) return null;
+    const name = (zeilen.shift() || "Geteilte Liste").slice(0, 40);
+    // Nur sauber gebaute Paare, und eine Obergrenze gegen Unsinn.
+    const paare = zeilen
+      .map(z => z.split("|"))
+      .filter(p => p.length === 2 && p[0].trim() && p[1].trim())
+      .slice(0, 300)
+      .map(p => [p[0].trim().slice(0, 80), p[1].trim().slice(0, 80)]);
+    if(!paare.length) return null;
+    return { name: name.trim() || "Geteilte Liste", paare: paare };
+  }catch(e){ return null; }
+}
+
+function listeLink(liste){
+  const basis = location.origin + location.pathname;
+  return basis + "#liste=" + listePacken(liste);
+}
+
+/* Das Bild fuer den Klassenchat. Muss ohne Netz auskommen und in jedem
+   Browser gleich aussehen - also alles selbst gezeichnet. */
+function listeBildMalen(liste, anzahl, fertig){
+  const c = document.createElement("canvas");
+  c.width = 1080; c.height = 1080;
+  const g = c.getContext("2d");
+
+  g.fillStyle = "#7cc0e8"; g.fillRect(0, 0, 1080, 620);
+  g.fillStyle = "#6aa84f"; g.fillRect(0, 620, 1080, 90);
+  g.fillStyle = "#8b6239"; g.fillRect(0, 710, 1080, 370);
+  // Ein paar Bloecke, damit es nach Minecraft aussieht statt nach Formular.
+  g.fillStyle = "rgba(0,0,0,0.07)";
+  for(let x = 0; x < 1080; x += 90){
+    for(let y = 710; y < 1080; y += 90){
+      if(((x + y) / 90) % 2 === 0) g.fillRect(x, y, 90, 90);
+    }
+  }
+  const kasten = (x, y, w, h, f, r)=>{
+    g.fillStyle = f; g.beginPath();
+    if(g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h);
+    g.fill();
+  };
+  kasten(70, 150, 940, 560, "rgba(255,255,255,0.94)", 40);
+
+  g.textAlign = "center";
+  g.fillStyle = "#5c7a45";
+  g.font = "bold 42px system-ui, sans-serif";
+  g.fillText("VOKABELLISTE FÜR DICH", 540, 250);
+
+  g.fillStyle = "#2b2b28";
+  let groesse = 92;
+  const name = String(liste.name || "Meine Liste");
+  g.font = "bold " + groesse + "px system-ui, sans-serif";
+  while(g.measureText(name).width > 820 && groesse > 40){
+    groesse -= 4;
+    g.font = "bold " + groesse + "px system-ui, sans-serif";
+  }
+  g.fillText(name, 540, 380);
+
+  kasten(390, 420, 300, 84, "#eaf3de", 42);
+  g.fillStyle = "#3b6d11";
+  g.font = "bold 46px system-ui, sans-serif";
+  g.fillText(anzahl + (anzahl === 1 ? " Vokabel" : " Vokabeln"), 540, 478);
+
+  g.fillStyle = "#5f5e5a";
+  g.font = "34px system-ui, sans-serif";
+  g.fillText("Kostenlos üben – mit richtig coolen Spielen.", 540, 570);
+  g.fillStyle = "#2b2b28";
+  g.font = "bold 44px system-ui, sans-serif";
+  g.fillText("lingocrafter.de", 540, 645);
+
+  g.fillStyle = "#ffffff";
+  g.font = "bold 64px system-ui, sans-serif";
+  g.fillText("LingoCrafter", 540, 880);
+  g.fillStyle = "rgba(255,255,255,0.85)";
+  g.font = "32px system-ui, sans-serif";
+  g.fillText("Englisch üben, ohne dass es sich danach anfühlt", 540, 940);
+
+  try{ c.toBlob(b => fertig(b), "image/png"); }
+  catch(e){ fertig(null); }
+}
+
+function listeTeilen(name){
+  const liste = listeFinden(name);
+  if(!liste){ return; }
+  const anzahl = (liste.woerter || []).length;
+  const link = listeLink(liste);
+  const spruch = "Hier sind die Vokabeln \u201e" + liste.name + "\u201c als fertige Lernliste. "
+    + "Einfach antippen und in LingoCrafter kostenlos üben – mit coolen Spielen.\n" + link;
+
+  // Zu lang wird es erst bei sehr grossen Listen. Dann lieber ehrlich sein,
+  // als einen Link zu verschicken, den Messenger abschneiden.
+  /* 12000 statt 6000: Messenger und Browser kommen damit muehelos
+     zurecht. Die Grenze soll vor absurd grossen Listen schuetzen, nicht
+     vor einer normalen Unit - gemessen sind 150 Woerter rund 5500
+     Zeichen in der sparsamen Form. */
+  if(link.length > 12000){
+    zeigeHinweis("Diese Liste ist zum Teilen zu groß (" + anzahl
+      + " Wörter). Teile sie in zwei kleinere Listen auf.");
+    return;
+  }
+
+  listeBildMalen(liste, anzahl, (blob)=>{
+    const datei = blob ? new File([blob], "lingocrafter-liste.png", { type:"image/png" }) : null;
+    const mitBild = datei && navigator.canShare && navigator.canShare({ files:[datei] });
+    if(navigator.share){
+      const paket = { text: spruch };
+      if(mitBild) paket.files = [datei];
+      navigator.share(paket).catch(()=>{});
+      return;
+    }
+    // Kein Teilen-Dialog (meist am Rechner): WhatsApp im Netz, sonst kopieren.
+    try{
+      window.open("https://wa.me/?text=" + encodeURIComponent(spruch), "_blank");
+    }catch(e){
+      try{ navigator.clipboard.writeText(spruch); zeigeHinweis("Link kopiert."); }catch(e2){}
+    }
+  });
+}
+
+/* Eine geteilte Liste uebernehmen: fehlende Woerter kommen zu den
+   eigenen Vokabeln, dann wird die Liste angelegt. */
+function listeUebernehmen(paket){
+  if(!paket) return 0;
+  if(!Array.isArray(state.customVocab)) state.customVocab = [];
+  const alle = getAllVocab();
+  const da = {};
+  alle.forEach(v => { da[wortSchluessel(v)] = true; });
+
+  const schluessel = [];
+  paket.paare.forEach(([en, de])=>{
+    const w = { en: en, de: de, cat: "Eigene" };
+    const k = wortSchluessel(w);
+    if(!da[k]){ state.customVocab.push(w); da[k] = true; }
+    if(schluessel.indexOf(k) < 0) schluessel.push(k);
+  });
+
+  // Namensgleiche Liste nicht ueberschreiben - lieber durchnummerieren.
+  let name = paket.name, n = 2;
+  while(listeFinden(name)){ name = paket.name + " (" + n + ")"; n++; }
+  listenAlle().push({ name: name, woerter: schluessel });
+  saveProgress(); syncToCloud();
+  return schluessel.length;
+}
+
+/* Nach dem Anmelden: Lag ein Listen-Link an, bevor jemand da war? */
+function geteilteListeNachholen(){
+  const paket = state.geteilteListe;
+  if(!paket) return;
+  state.geteilteListe = null;
+  showConfirmModal("Liste \u201e" + paket.name + "\u201c mit " + paket.paare.length
+    + " Wörtern übernehmen?", ()=>{
+    const n = listeUebernehmen(paket);
+    zeigeHinweis("Fertig – " + n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
+    render();
+  });
+}
+
+/* Beim Start: Steckt eine Liste im Link? */
+function geteilteListePruefen(){
+  const h = String(location.hash || "");
+  const m = h.match(/[#&]liste=([A-Za-z0-9\-_]+)/);
+  if(!m) return;
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+  const paket = listeAuspacken(m[1]);
+  if(!paket){ zeigeHinweis("Dieser Listen-Link ist leider unvollständig."); return; }
+  if(!(state.cloudId || state.guest)){ state.geteilteListe = paket; return; }
+  showConfirmModal("Liste \u201e" + paket.name + "\u201c mit " + paket.paare.length
+    + " Wörtern übernehmen?", ()=>{
+    const n = listeUebernehmen(paket);
+    zeigeHinweis("Fertig – " + n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
+    render();
+  });
+}
+
 /* --- Eigene Listen -------------------------------------------------- */
 const LISTEN_ZEICHEN = "★ ";
 
@@ -16489,6 +16732,9 @@ function evListenbauVerdrahten(){
     });
   });
 
+  document.querySelectorAll('[data-liste-teilen]').forEach(el=>{
+    el.addEventListener('click', ()=>listeTeilen(el.dataset.listeTeilen));
+  });
   document.querySelectorAll('[data-liste-um]').forEach(el=>{
     el.addEventListener('click', ()=>{
       const alt = el.dataset.listeUm;
@@ -16597,6 +16843,7 @@ function renderCustomVocab(){
               <span class="ev-liste">
                 <b>${escapeHtml(l.name)}</b>
                 <span class="muted">${(l.woerter||[]).length}</span>
+                <button type="button" data-liste-teilen="${escapeHtml(l.name)}" aria-label="Liste teilen" title="Teilen">📤</button>
                 <button type="button" data-liste-um="${escapeHtml(l.name)}" aria-label="Liste umbenennen" title="Umbenennen">✏️</button>
                 <button type="button" data-liste-weg="${escapeHtml(l.name)}" aria-label="Liste löschen" title="Löschen">✕</button>
               </span>`).join("")}
@@ -18396,6 +18643,11 @@ document.body.style.backgroundImage = `linear-gradient(180deg, rgba(90,150,190,0
 preloadAvatarImages();
 if(!checkForParentConfirmLink()){
   render();
+  /* Steckt eine geteilte Liste im Link? Erst nach dem ersten Zeichnen -
+     das Rueckfragefenster braucht einen Bildschirm, auf dem es sitzen
+     kann. Ist noch niemand angemeldet, legt die Funktion das Paket in
+     state.geteilteListe ab und die Anmeldung holt es sich. */
+  setTimeout(()=>{ try{ geteilteListePruefen(); }catch(e){} }, 400);
 }
 
 // Beim Start prüfen, ob die Cloud erreichbar ist, UND (falls dieses Gerät
