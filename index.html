@@ -3294,7 +3294,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "80.0 – Erst erkennen, dann tippen";
+const APP_VERSION = "80.1 – Logo im Teilen-Bild";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -16539,164 +16539,99 @@ function teilBildMalen(titel, marke, ueber, fertig){
   c.width = 1080; c.height = 1080;
   const g = c.getContext("2d");
 
-  g.fillStyle = "#7cc0e8"; g.fillRect(0, 0, 1080, 620);
-  g.fillStyle = "#6aa84f"; g.fillRect(0, 620, 1080, 90);
-  g.fillStyle = "#8b6239"; g.fillRect(0, 710, 1080, 370);
-  // Ein paar Bloecke, damit es nach Minecraft aussieht statt nach Formular.
+  /* Hintergrund: Himmel, Grasstreifen, Erde - der Bildaufbau der App. */
+  g.fillStyle = "#7cc0e8"; g.fillRect(0, 0, 1080, 600);
+  g.fillStyle = "#6aa84f"; g.fillRect(0, 600, 1080, 62);
+  g.fillStyle = "#8b6239"; g.fillRect(0, 662, 1080, 418);
   g.fillStyle = "rgba(0,0,0,0.07)";
   for(let x = 0; x < 1080; x += 90){
-    for(let y = 710; y < 1080; y += 90){
+    for(let y = 662; y < 1080; y += 90){
       if(((x + y) / 90) % 2 === 0) g.fillRect(x, y, 90, 90);
     }
   }
+
   const kasten = (x, y, w, h, f, r)=>{
     g.fillStyle = f; g.beginPath();
     if(g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h);
     g.fill();
   };
-  kasten(70, 150, 940, 560, "rgba(255,255,255,0.94)", 40);
+
+  /* Die Karte sitzt UNTER dem Logo - sie beginnt erst bei 612. */
+  kasten(60, 612, 960, 293, "rgba(255,255,255,0.95)", 38);
 
   g.textAlign = "center";
   g.fillStyle = "#5c7a45";
-  g.font = "bold 42px system-ui, sans-serif";
-  g.fillText(ueber, 540, 250);
+  g.font = "bold 38px system-ui, sans-serif";
+  g.fillText(ueber, 540, 668);
 
   g.fillStyle = "#2b2b28";
-  let groesse = 92;
+  let groesse = 72;
   const name = String(titel || "");
   g.font = "bold " + groesse + "px system-ui, sans-serif";
-  while(g.measureText(name).width > 820 && groesse > 40){
-    groesse -= 4;
+  while(g.measureText(name).width > 850 && groesse > 32){
+    groesse -= 3;
     g.font = "bold " + groesse + "px system-ui, sans-serif";
   }
-  g.fillText(name, 540, 380);
+  g.fillText(name, 540, 752);
 
-  kasten(390, 420, 300, 84, "#eaf3de", 42);
+  kasten(390, 780, 300, 72, "#eaf3de", 36);
   g.fillStyle = "#3b6d11";
-  g.font = "bold 46px system-ui, sans-serif";
-  g.fillText(marke, 540, 478);
+  g.font = "bold 40px system-ui, sans-serif";
+  g.fillText(marke, 540, 828);
 
-  g.fillStyle = "#3b6d11";
-  g.font = "bold 38px system-ui, sans-serif";
-  g.fillText("Antippen – dann hast du sie auch 👇", 540, 578);
   g.fillStyle = "#5f5e5a";
-  g.font = "31px system-ui, sans-serif";
-  g.fillText("Kostenlos · Ohne Werbung · Mit Spielen", 540, 634);
-  g.fillStyle = "#2b2b28";
-  g.font = "bold 44px system-ui, sans-serif";
-  g.fillText("lingocrafter.de", 540, 686);
+  g.font = "bold 31px system-ui, sans-serif";
+  g.fillText("Antippen – dann hast du sie auch 👇", 540, 882);
 
-  /* Das echte Logo statt des blossen Namens. Es liegt neben der Seite,
-     also gleiche Herkunft - der Zeichenbereich bleibt sauber und
-     toBlob() funktioniert weiter. Kommt es nicht rechtzeitig, wird
-     eben der Schriftzug gemalt: ein fehlendes Bild darf das Teilen
-     nicht verhindern. */
+  g.fillStyle = "rgba(255,255,255,0.92)";
+  g.font = "31px system-ui, sans-serif";
+  g.fillText("Kostenlos · Ohne Werbung · Mit Spielen", 540, 970);
+  g.fillStyle = "#ffffff";
+  g.font = "bold 46px system-ui, sans-serif";
+  g.fillText("lingocrafter.de", 540, 1032);
+
   const schluss = ()=>{
     try{ c.toBlob(b => fertig(b), "image/png"); }
     catch(e){ fertig(null); }
   };
   const ersatz = ()=>{
+    // Ohne Bild wenigstens der Schriftzug - ein fehlendes Logo darf das
+    // Teilen nicht verhindern.
     g.fillStyle = "#ffffff";
-    g.font = "bold 64px system-ui, sans-serif";
+    g.font = "bold 96px system-ui, sans-serif";
     g.textAlign = "center";
-    g.fillText("LingoCrafter", 540, 900);
+    g.fillText("LingoCrafter", 540, 330);
     schluss();
   };
+
+  /* DAS LOGO IST DER HAUPTDARSTELLER.
+
+     Vorher: 304 x 210, ganz unten, kleiner als der Listenname.
+     Jetzt: 820 x 566 ganz oben - die neunfache Flaeche.
+
+     Im Klassenchat entscheidet ein Kind in einer halben Sekunde, ob es
+     hinsieht. In dieser halben Sekunde wirkt ein Bild, kein Text.
+
+     logo-emblem.webp ist das reine Emblem, aus logo-neu.webp
+     herausgeschnitten - jenes traegt oben noch den Slogan, und auf
+     einem Bild, das ohnehin Text hat, macht das nur alles kleiner. */
   try{
     const logo = new Image();
-    let fertigMalen = false;
+    let gemalt = false;
     const zeichnen = ()=>{
-      if(fertigMalen) return; fertigMalen = true;
+      if(gemalt) return; gemalt = true;
       try{
-        const bh = 210;
-        const bw = Math.min(760, logo.width * (bh / (logo.height || 1)));
-        g.drawImage(logo, 540 - bw / 2, 770, bw, bh);
+        const bw = 820;
+        const bh = bw * ((logo.height || 621) / (logo.width || 900));
+        g.drawImage(logo, 540 - bw / 2, 22, bw, bh);
         schluss();
       }catch(e){ ersatz(); }
     };
     logo.onload = zeichnen;
-    logo.onerror = ()=>{ if(!fertigMalen){ fertigMalen = true; ersatz(); } };
-    setTimeout(()=>{ if(!fertigMalen){ fertigMalen = true; ersatz(); } }, 1500);
-    logo.src = "logo-neu.webp";
+    logo.onerror = ()=>{ if(!gemalt){ gemalt = true; ersatz(); } };
+    setTimeout(()=>{ if(!gemalt){ gemalt = true; ersatz(); } }, 2000);
+    logo.src = "logo-emblem.webp";
   }catch(e){ ersatz(); }
-}
-
-/* Eine Nummer, die niemand raet: 22 Zeichen aus dem Zufallsgenerator
-   des Browsers. Dieselbe Groessenordnung wie bei den Eltern-Links. */
-function teilToken(){
-  const zeichen = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const roh = new Uint8Array(22);
-  (crypto || window.crypto).getRandomValues(roh);
-  let s = "";
-  roh.forEach(b => { s += zeichen[b % zeichen.length]; });
-  return s;
-}
-
-/* Legt den Inhalt in der Datenbank ab und gibt den kurzen Link zurueck.
-   Klappt das nicht - Testmodus, kein Netz, alte Regeln -, kommt der
-   lange Link zurueck. Lieber haesslich als gar nicht. */
-async function kurzLink(art, name, inhalt, langerLink){
-  try{
-    const db = await getVokabelDB();
-    if(!db || !db.available || !db.geteiltAnlegen || !state.cloudId) return langerLink;
-    const token = teilToken();
-    await db.geteiltAnlegen(token, {
-      art: art, name: String(name || "").slice(0, 40),
-      inhalt: inhalt, ts: Date.now()
-    });
-    return location.origin + location.pathname + "#t=" + token;
-  }catch(e){ return langerLink; }
-}
-
-/* Der Sendedialog.
-
-   ZWEI SCHRITTE, UND DAS IST ABSICHT: navigator.share verlangt einen
-   frischen Fingerdruck. Ein await auf die Datenbank dazwischen macht
-   die Geste ungueltig - auf iOS passiert dann gar nichts. Also erst
-   vorbereiten, dann senden. Das Kind sieht den kurzen Link dabei und
-   kann ihn auch kopieren. */
-function teilDialog(link, spruch, blob, dateiname){
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-    <div class="panel modal-box tl-box">
-      <p class="tl-titel">Fertig zum Verschicken!</p>
-      ${blob ? `<img class="tl-bild" alt="Vorschau">` : ""}
-      <p class="tl-link">${escapeHtml(link)}</p>
-      <button class="btn teilen-btn" id="tl-senden">💬 JETZT SENDEN</button>
-      <button class="btn ghost small" id="tl-kopieren" style="margin-top:8px;">🔗 Nur Link kopieren</button>
-      <button class="btn ghost small" id="tl-zu" style="margin-top:8px;">Abbrechen</button>
-    </div>`;
-  document.body.appendChild(overlay);
-  const zu = ()=>{ if(overlay.parentNode) overlay.parentNode.removeChild(overlay); };
-
-  if(blob){
-    const bild = overlay.querySelector('.tl-bild');
-    const url = URL.createObjectURL(blob);
-    bild.src = url;
-    bild.addEventListener('load', ()=>{ try{ URL.revokeObjectURL(url); }catch(e){} });
-  }
-
-  overlay.querySelector('#tl-zu').addEventListener('click', zu);
-  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) zu(); });
-  overlay.querySelector('#tl-kopieren').addEventListener('click', ()=>{
-    try{ navigator.clipboard.writeText(link); zeigeHinweis("Link kopiert."); }catch(e){}
-    zu();
-  });
-  overlay.querySelector('#tl-senden').addEventListener('click', ()=>{
-    const datei = blob ? new File([blob], dateiname, { type:"image/png" }) : null;
-    const mitBild = datei && navigator.canShare && navigator.canShare({ files:[datei] });
-    if(navigator.share){
-      const paket = { text: spruch };
-      if(mitBild) paket.files = [datei];
-      navigator.share(paket).catch(()=>{});
-      zu();
-      return;
-    }
-    try{ window.open("https://wa.me/?text=" + encodeURIComponent(spruch), "_blank"); }
-    catch(e){ try{ navigator.clipboard.writeText(spruch); zeigeHinweis("Link kopiert."); }catch(e2){} }
-    zu();
-  });
 }
 
 function listeTeilen(name){
