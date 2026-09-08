@@ -2516,7 +2516,16 @@ summary.mehr-knopf::after{ content:none; }
 .ev-korb-z{ font-weight:800; font-size:13.5px; color:#1e4515; flex:1; min-width:100px; }
 
 /* --- Die gespeicherten Listen ---------------------------------------- */
-.ev-listen{ display:flex; flex-wrap:wrap; gap:8px; }
+.ev-listen{ display:flex; flex-direction:column; gap:14px; }
+.ev-listenkarte{ display:flex; flex-direction:column; gap:8px; }
+/* Der Teilen-Knopf ist das Beste an der Sache und sieht jetzt auch so
+   aus - WhatsApp-Gruen, volle Breite, mit Wort statt nur Symbol. */
+.teilen-btn{
+  background:linear-gradient(180deg,#3ec463,#25a04a) !important;
+  border-color:#1c7c39 !important; color:#fff !important;
+  font-size:15px !important; letter-spacing:.01em;
+}
+.teilen-hinweis{ margin:0; font-size:12px; color:var(--tinte-hell); text-align:center; }
 .ev-liste{
   display:inline-flex; align-items:center; gap:8px;
   padding:7px 9px 7px 12px; font-size:13px;
@@ -3240,7 +3249,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "76.2 – Listen teilen";
+const APP_VERSION = "77.0 – Teilen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -5185,6 +5194,11 @@ function renderLingoraPlan(){
         <span class="lg-w-kopf">✨ Lingora sagt</span>
         <span class="lg-w-txt">${escapeHtml(state.lgWeisheit || (state.lgWeisheit = lingoraSpruch(LINGORA_WEISHEIT)))}</span>
       </div>
+      <button class="btn teilen-btn" id="lg-teilen" style="margin-top:14px;">
+        📤 DIESEN PLAN TEILEN
+      </button>
+      <p class="teilen-hinweis">Schick ihn in den Klassenchat &ndash;
+        die anderen haben den Lernweg dann auch.</p>
       <button class="btn ghost" id="lg-neu" style="margin-top:12px;">🔄 Neuen Plan machen</button>
       <button class="btn ghost" id="lg-weg" style="margin-top:8px;">🗑️ Plan verwerfen</button>
     </div>
@@ -5214,6 +5228,7 @@ function renderLingoraPlan(){
       render();
     });
   });
+  anKnopf('lg-teilen', planTeilen);
   anKnopf('nu-los', ()=>{
     const offen = heuteDran().filter(e => !e.frei);
     if(offen.length){ heuteStarten(offen[0]); return; }
@@ -8207,7 +8222,7 @@ function listenVereinen(lokal, cloud){
 function applyPlayerToState(player){
   state.cloudId = player.id;
   // Ein Listen-Link, der vor der Anmeldung kam, wird jetzt eingeloest.
-  setTimeout(()=>{ try{ geteilteListeNachholen(); }catch(e){} }, 500);
+  setTimeout(()=>{ try{ geteilteListeNachholen(); geteiltenPlanNachholen(); }catch(e){} }, 500);
   state.playerName = player.name || state.playerName;
   state.coins = typeof player.coins === "number" ? player.coins : 0;
   if(typeof player.diamanten === "number") state.diamanten = player.diamanten;
@@ -16249,6 +16264,12 @@ function listeLink(liste){
 /* Das Bild fuer den Klassenchat. Muss ohne Netz auskommen und in jedem
    Browser gleich aussehen - also alles selbst gezeichnet. */
 function listeBildMalen(liste, anzahl, fertig){
+  teilBildMalen(String(liste.name || "Meine Liste"),
+    anzahl + (anzahl === 1 ? " Vokabel" : " Vokabeln"),
+    "VOKABELLISTE FÜR DICH", fertig);
+}
+
+function teilBildMalen(titel, marke, ueber, fertig){
   const c = document.createElement("canvas");
   c.width = 1080; c.height = 1080;
   const g = c.getContext("2d");
@@ -16273,11 +16294,11 @@ function listeBildMalen(liste, anzahl, fertig){
   g.textAlign = "center";
   g.fillStyle = "#5c7a45";
   g.font = "bold 42px system-ui, sans-serif";
-  g.fillText("VOKABELLISTE FÜR DICH", 540, 250);
+  g.fillText(ueber, 540, 250);
 
   g.fillStyle = "#2b2b28";
   let groesse = 92;
-  const name = String(liste.name || "Meine Liste");
+  const name = String(titel || "");
   g.font = "bold " + groesse + "px system-ui, sans-serif";
   while(g.measureText(name).width > 820 && groesse > 40){
     groesse -= 4;
@@ -16288,7 +16309,7 @@ function listeBildMalen(liste, anzahl, fertig){
   kasten(390, 420, 300, 84, "#eaf3de", 42);
   g.fillStyle = "#3b6d11";
   g.font = "bold 46px system-ui, sans-serif";
-  g.fillText(anzahl + (anzahl === 1 ? " Vokabel" : " Vokabeln"), 540, 478);
+  g.fillText(marke, 540, 478);
 
   g.fillStyle = "#5f5e5a";
   g.font = "34px system-ui, sans-serif";
@@ -16369,6 +16390,170 @@ function listeUebernehmen(paket){
   listenAlle().push({ name: name, woerter: schluessel });
   saveProgress(); syncToCloud();
   return schluessel.length;
+}
+
+/* ==================================================================
+   EINEN PLAN TEILEN
+
+   Ein Plan ist mehr wert als eine Liste: Aufteilung auf Tage,
+   Grammatikthemen, Vokabelquellen. Wer ihn bekommt, hat den ganzen
+   Weg bis zur Arbeit fertig vor sich.
+
+   Eigene Listen, auf die der Plan zeigt, reisen MIT - sonst zeigt er
+   beim Empfaenger auf etwas, das dort nicht existiert. Deshalb hier
+   JSON und nicht die sparsame Textform: Ein Plan hat mehrere Teile,
+   und Uebersichtlichkeit ist hier mehr wert als ein paar Zeichen.
+================================================================== */
+function planPacken(p){
+  const w = p.wahl || {};
+  const kats = (w.vokabeln || []).slice();
+  // Jede eigene Liste, auf die der Plan zeigt, kommt vollstaendig mit.
+  const listen = [];
+  kats.forEach(k=>{
+    if(String(k).indexOf(LISTEN_ZEICHEN) !== 0) return;
+    const l = listeFinden(String(k).slice(LISTEN_ZEICHEN.length));
+    if(!l) return;
+    const zeilen = listeAlsText(l).split("\n");
+    zeilen.shift();                       // erste Zeile ist der Name
+    listen.push({ n: listeSauber(l.name), w: zeilen.filter(Boolean) });
+  });
+  const daten = {
+    a: p.art || "ueben",
+    m: p.minuten || 15,
+    t: p.tageBis || 0,
+    g: (w.grammatik || []).slice(0, 60),
+    v: kats.slice(0, 30),
+    l: listen
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(daten));
+  let s = ""; bytes.forEach(b => { s += String.fromCharCode(b); });
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function planAuspacken(code){
+  try{
+    let s = String(code || "").replace(/-/g, "+").replace(/_/g, "/");
+    while(s.length % 4) s += "=";
+    const roh = atob(s);
+    const bytes = new Uint8Array(roh.length);
+    for(let i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
+    const d = JSON.parse(new TextDecoder().decode(bytes));
+    if(!d || typeof d !== "object") return null;
+    const arten = ["ueben", "vokabeltest", "arbeit"];
+    const paket = {
+      art: arten.indexOf(d.a) >= 0 ? d.a : "ueben",
+      minuten: Math.max(5, Math.min(60, Number(d.m) || 15)),
+      tageBis: Math.max(0, Math.min(14, Number(d.t) || 0)),
+      grammatik: Array.isArray(d.g) ? d.g.filter(x => typeof x === "string").slice(0, 60) : [],
+      vokabeln: Array.isArray(d.v) ? d.v.filter(x => typeof x === "string").slice(0, 30) : [],
+      listen: []
+    };
+    (Array.isArray(d.l) ? d.l : []).slice(0, 10).forEach(l=>{
+      if(!l || !Array.isArray(l.w)) return;
+      const paare = l.w.map(z => String(z).split("|"))
+        .filter(p => p.length === 2 && p[0].trim() && p[1].trim())
+        .slice(0, 300)
+        .map(p => [p[0].trim().slice(0, 80), p[1].trim().slice(0, 80)]);
+      if(paare.length) paket.listen.push({ name: String(l.n || "Liste").slice(0, 40), paare: paare });
+    });
+    // Ein Plan ohne Inhalt ist kein Plan.
+    if(!paket.grammatik.length && !paket.vokabeln.length) return null;
+    return paket;
+  }catch(e){ return null; }
+}
+
+function planLink(p){
+  return location.origin + location.pathname + "#plan=" + planPacken(p);
+}
+
+function planTitelKurz(p){
+  const art = { ueben:"Übungsplan", vokabeltest:"Vokabeltest", arbeit:"Klassenarbeit" };
+  return art[p.art] || "Lernplan";
+}
+
+function planTeilen(){
+  const p = lingoraPlan();
+  if(!p){ return; }
+  const link = planLink(p);
+  if(link.length > 12000){
+    zeigeHinweis("Dieser Plan ist zum Teilen zu groß. Nimm weniger Listen hinein.");
+    return;
+  }
+  const tage = (p.tage || []).length;
+  const spruch = "Ich hab den kompletten Lernplan für " + planTitelKurz(p).toLowerCase()
+    + " fertig – " + tage + (tage === 1 ? " Tag" : " Tage") + ", Schritt für Schritt. "
+    + "Einfach antippen und in LingoCrafter kostenlos mitmachen – mit coolen Spielen.\n" + link;
+
+  teilBildMalen(planTitelKurz(p), tage + (tage === 1 ? " Tag" : " Tage") + " Plan",
+    "LERNPLAN FÜR DICH", (blob)=>{
+    const datei = blob ? new File([blob], "lingocrafter-plan.png", { type:"image/png" }) : null;
+    const mitBild = datei && navigator.canShare && navigator.canShare({ files:[datei] });
+    if(navigator.share){
+      const paket = { text: spruch };
+      if(mitBild) paket.files = [datei];
+      navigator.share(paket).catch(()=>{});
+      return;
+    }
+    try{ window.open("https://wa.me/?text=" + encodeURIComponent(spruch), "_blank"); }
+    catch(e){ try{ navigator.clipboard.writeText(spruch); zeigeHinweis("Link kopiert."); }catch(e2){} }
+  });
+}
+
+/* Einen geteilten Plan uebernehmen: erst die mitgereisten Listen, dann
+   den Plan selbst - sonst zeigt er auf Listen, die es noch nicht gibt. */
+function planUebernehmen(paket){
+  if(!paket) return null;
+  const umbenannt = {};
+  (paket.listen || []).forEach(l=>{
+    const alt = LISTEN_ZEICHEN + l.name;
+    const vorher = listenAlle().length;
+    listeUebernehmen(l);
+    const neu = listenAlle()[listenAlle().length - 1];
+    if(listenAlle().length > vorher && neu) umbenannt[alt] = LISTEN_ZEICHEN + neu.name;
+  });
+  const wahl = {
+    art: paket.art, minuten: paket.minuten, tageBis: paket.tageBis,
+    grammatik: paket.grammatik.filter(id => !!grammarTopicById(id)),
+    // Eine Liste kann beim Uebernehmen einen neuen Namen bekommen haben.
+    vokabeln: paket.vokabeln.map(k => umbenannt[k] || k)
+  };
+  if(!wahl.grammatik.length && !wahl.vokabeln.length) return null;
+  const plan = lingoraPlanBauen(wahl);
+  plan.id = "p" + Date.now().toString(36);
+  lingoraPlaene().push(plan);
+  state.lingoraPlanAktiv = plan.id;
+  saveProgress(); syncToCloud();
+  return plan;
+}
+
+function geteiltenPlanPruefen(){
+  const m = String(location.hash || "").match(/[#&]plan=([A-Za-z0-9\-_]+)/);
+  if(!m) return;
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+  const paket = planAuspacken(m[1]);
+  if(!paket){ zeigeHinweis("Dieser Plan-Link ist leider unvollständig."); return; }
+  if(!(state.cloudId || state.guest)){ state.geteilterPlan = paket; return; }
+  planFragen(paket);
+}
+
+function planFragen(paket){
+  const teile = [];
+  if(paket.vokabeln.length) teile.push(paket.vokabeln.length + "x Vokabeln");
+  if(paket.grammatik.length) teile.push(paket.grammatik.length + "x Grammatik");
+  showConfirmModal("Lernplan übernehmen? (" + teile.join(", ") + ")", ()=>{
+    const plan = planUebernehmen(paket);
+    if(!plan){ zeigeHinweis("Der Plan passt leider nicht zu deinen Themen."); return; }
+    zeigeHinweis("Plan übernommen – Lingora hat ihn für dich eingerichtet.");
+    state.screen = "lingoraplan";
+    render();
+  });
+}
+
+function geteiltenPlanNachholen(){
+  const paket = state.geteilterPlan;
+  if(!paket) return;
+  state.geteilterPlan = null;
+  planFragen(paket);
 }
 
 /* Nach dem Anmelden: Lag ein Listen-Link an, bevor jemand da war? */
@@ -16840,13 +17025,19 @@ function renderCustomVocab(){
           <div class="setting-label" style="margin-top:16px;">Listen verwalten</div>
           <div class="ev-listen">
             ${listen.map(l => `
-              <span class="ev-liste">
-                <b>${escapeHtml(l.name)}</b>
-                <span class="muted">${(l.woerter||[]).length}</span>
-                <button type="button" data-liste-teilen="${escapeHtml(l.name)}" aria-label="Liste teilen" title="Teilen">📤</button>
-                <button type="button" data-liste-um="${escapeHtml(l.name)}" aria-label="Liste umbenennen" title="Umbenennen">✏️</button>
-                <button type="button" data-liste-weg="${escapeHtml(l.name)}" aria-label="Liste löschen" title="Löschen">✕</button>
-              </span>`).join("")}
+              <div class="ev-listenkarte">
+                <span class="ev-liste">
+                  <b>${escapeHtml(l.name)}</b>
+                  <span class="muted">${(l.woerter||[]).length}</span>
+                  <button type="button" data-liste-um="${escapeHtml(l.name)}" aria-label="Liste umbenennen" title="Umbenennen">✏️</button>
+                  <button type="button" data-liste-weg="${escapeHtml(l.name)}" aria-label="Liste löschen" title="Löschen">✕</button>
+                </span>
+                <button class="btn teilen-btn" data-liste-teilen="${escapeHtml(l.name)}">
+                  📤 IM KLASSENCHAT TEILEN
+                </button>
+                <p class="teilen-hinweis">Schick sie deiner Klasse &ndash; die anderen können
+                  sofort mitüben.</p>
+              </div>`).join("")}
           </div>` : ""}
       ` : `<p class="muted center-text" style="margin:6px 0;">Noch keine eigene Liste.
            Such dir unten Wörter zusammen oder tipp welche ein.</p>`}
@@ -18647,7 +18838,7 @@ if(!checkForParentConfirmLink()){
      das Rueckfragefenster braucht einen Bildschirm, auf dem es sitzen
      kann. Ist noch niemand angemeldet, legt die Funktion das Paket in
      state.geteilteListe ab und die Anmeldung holt es sich. */
-  setTimeout(()=>{ try{ geteilteListePruefen(); }catch(e){} }, 400);
+  setTimeout(()=>{ try{ geteilteListePruefen(); geteiltenPlanPruefen(); }catch(e){} }, 400);
 }
 
 // Beim Start prüfen, ob die Cloud erreichbar ist, UND (falls dieses Gerät
