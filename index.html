@@ -207,6 +207,28 @@
   .gt-bsp-satz b{ color:#3b6d11; text-decoration:underline; text-underline-offset:3px; }
   .gt-bsp-de{ margin:4px 0 0; font-size:12.5px; color:var(--tinte-hell); }
 
+  /* ---------- Weiter im Plan ---------- */
+  .pw-box{ border:3px solid #93b077; }
+  .pw-stand{ margin:0 0 8px; text-align:center; font-size:13px;
+    font-weight:700; color:#3b6d11; }
+  .pw-balken{ display:flex; gap:5px; margin:0 0 12px; }
+  .pw-balken span{ flex:1; height:8px; border-radius:5px; background:#e0d7c6; }
+  .pw-balken span.voll{ background:#5c7a45; }
+  .pw-balken span.jetzt{ background:#93b077; }
+  .pw-l{ margin:0 0 3px; font-size:11.5px; font-weight:800; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--tinte-hell); text-align:center; }
+  .pw-t{ margin:0 0 2px; font-family:var(--font); font-weight:800; font-size:18px;
+    text-align:center; color:var(--tinte); }
+  .pw-u{ margin:0 0 12px; font-size:12.5px; text-align:center; color:var(--tinte-hell); }
+
+  /* ---------- Zielplan ganz oben ---------- */
+  .zp-box{ border:3px solid #d98b2b; margin-bottom:12px; }
+  .zp-kopf{ display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+  .zp-marke{ font-family:var(--font); font-weight:800; font-size:17px; color:var(--tinte); }
+  .zp-wann{ margin-left:auto; font-family:var(--font); font-weight:800; font-size:13px;
+    background:#fbe6c8; color:#7a4a0d; border-radius:9px; padding:4px 10px; }
+  .zp-stand{ margin:0 0 8px; font-size:13.5px; text-align:center; color:var(--tinte); }
+
   /* ---------- Sendedialog ---------- */
   .tl-box{ max-height:88vh; overflow-y:auto; text-align:center; }
   .tl-titel{ margin:0 0 12px; font-family:var(--font); font-weight:800; font-size:19px; }
@@ -3270,7 +3292,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "78.0 – Kurzer Link";
+const APP_VERSION = "79.1 – Schritt für Schritt";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -5296,6 +5318,119 @@ function lingoraSchrittStarten(id){
   startGrammarQuiz(false);
 }
 
+/* Der naechste offene Schritt von heute - aus IRGENDEINEM laufenden
+   Plan, nicht nur dem gerade aktiven. Dazu die Position, damit das
+   Kind sieht, wo es steht. */
+function planNaechsterSchritt(){
+  for(const p of lingoraPlaene()){
+    const tag = lingoraTagVonPlan(p);
+    if(!tag || !Array.isArray(tag.schritte)) continue;
+    const offen = tag.schritte.findIndex(s => !s.fertig);
+    if(offen < 0) continue;
+    return {
+      plan: p, schritt: tag.schritte[offen],
+      nummer: offen + 1, gesamt: tag.schritte.length,
+      fertig: tag.schritte.filter(s => s.fertig).length
+    };
+  }
+  return null;
+}
+
+/* Der Block auf dem Ergebnisbildschirm.
+
+   PAEDAGOGISCH DIE WICHTIGSTE STELLE DER APP: Die Anstrengung ist
+   gerade vorbei, die Belohnung frisch, die Bereitschaft am hoechsten.
+   Wer jetzt nicht sagt, wie es weitergeht, verliert das Kind ans
+   Menue - genau das ist Nokie passiert, er hielt sich fuer fertig.
+
+   Deshalb steht hier zuerst, was geschafft ist (sichtbarer Fortschritt),
+   dann konkret was als Naechstes kommt (kein "weiter" ins Ungewisse),
+   und der Weiter-Knopf ist der groesste auf dem Bildschirm. */
+/* Der laufende Plan MIT TERMIN - Vokabeltest oder Klassenarbeit.
+   Ein Uebungsplan ist eine gute Gewohnheit; ein Termin laeuft ab.
+   Deshalb steht nur dieser oben. */
+function zielPlanOffen(){
+  const heute = dateKey(new Date());
+  for(const p of lingoraPlaene()){
+    if(!lingoraMitTermin(p.art)) continue;
+    const stand = lingoraPlanStand(p);
+    if(stand.sitzt) continue;
+    const letzter = (p.tage || [])[(p.tage || []).length - 1];
+    if(letzter && letzter.datum < heute) continue;      // Termin ist vorbei
+    return p;
+  }
+  return null;
+}
+
+function zielPlanHtml(){
+  const p = zielPlanOffen();
+  if(!p) return "";
+  const heute = dateKey(new Date());
+  const letzter = (p.tage || [])[(p.tage || []).length - 1];
+  const tage = letzter
+    ? Math.max(0, Math.round((new Date(letzter.datum) - new Date(heute)) / 86400000)) : 0;
+  const tag = lingoraTagVonPlan(p);
+  const offen = tag ? (tag.schritte || []).filter(s => !s.fertig).length : 0;
+  const gesamt = tag ? (tag.schritte || []).length : 0;
+  const fertig = gesamt - offen;
+  const titel = { vokabeltest:"Vokabeltest", arbeit:"Klassenarbeit" }[p.art] || "Test";
+
+  /* "noch 3 Tage" statt eines Datums: Ein Datum muss ein Kind erst
+     umrechnen, eine Zahl wirkt sofort. */
+  const wann = tage === 0 ? "HEUTE" : (tage === 1 ? "MORGEN" : "in " + tage + " Tagen");
+
+  return `
+    <div class="panel zp-box">
+      <div class="zp-kopf">
+        <span class="zp-marke">${tage <= 1 ? "🔥" : "🎯"} ${escapeHtml(titel)}</span>
+        <span class="zp-wann">${wann}</span>
+      </div>
+      ${gesamt ? `
+        <p class="zp-stand">${offen
+          ? "Heute noch <strong>" + offen + "</strong> von " + gesamt + " Schritten"
+          : "Heute alles geschafft &ndash; stark!"}</p>
+        <div class="pw-balken">
+          ${Array.from({length: gesamt}, (_, k)=>
+            `<span class="${k < fertig ? "voll" : (k === fertig ? "jetzt" : "")}"></span>`).join("")}
+        </div>` : ""}
+      <button class="btn" id="zp-los" style="margin-top:11px;">
+        ${offen ? "▶ WEITERMACHEN" : "📅 PLAN ANSEHEN"}
+      </button>
+    </div>`;
+}
+
+function planWeiterHtml(){
+  const n = planNaechsterSchritt();
+  if(!n) return "";
+  return `
+    <div class="panel pw-box">
+      <p class="pw-stand">✓ ${n.fertig} von ${n.gesamt} für heute geschafft</p>
+      <div class="pw-balken">
+        ${Array.from({length: n.gesamt}, (_, k)=>
+          `<span class="${k < n.fertig ? "voll" : (k === n.fertig ? "jetzt" : "")}"></span>`).join("")}
+      </div>
+      <p class="pw-l">ALS NÄCHSTES</p>
+      <p class="pw-t">${n.schritt.icon || "📘"} ${escapeHtml(n.schritt.titel)}</p>
+      <p class="pw-u">${escapeHtml(n.schritt.unter || "")}</p>
+      <button class="btn" id="pw-weiter">▶ WEITER &ndash; SCHRITT ${n.nummer} VON ${n.gesamt}</button>
+      <button class="btn ghost small" id="pw-pause" style="margin-top:8px;">Später weitermachen</button>
+    </div>`;
+}
+
+function planWeiterVerdrahten(){
+  const b = document.getElementById('pw-weiter');
+  if(b){
+    b.addEventListener('click', ()=>{
+      const n = planNaechsterSchritt();
+      if(!n) return;
+      state.lingoraPlanAktiv = n.plan.id;
+      lingoraSchrittStarten(n.schritt.id);
+    });
+  }
+  const p = document.getElementById('pw-pause');
+  if(p){ p.addEventListener('click', ()=>{ state.screen = "start"; render(); }); }
+}
+
 function lingoraSchrittAbhaken(id){
   const s = lingoraSchrittFinden(id);
   if(!s || s.fertig) return false;
@@ -5961,6 +6096,20 @@ function lingoraStartVerdrahten(){
   if(el){ el.addEventListener('click', ()=>lingoraOeffnen("start")); }
   const lw = document.getElementById('lg-lernweg');
   if(lw){ lw.addEventListener('click', ()=>{ state.screen = "lernweg"; render(); }); }
+  const zp = document.getElementById('zp-los');
+  if(zp){
+    zp.addEventListener('click', ()=>{
+      const p = zielPlanOffen();
+      if(!p) return;
+      state.lingoraPlanAktiv = p.id;
+      const tag = lingoraTagVonPlan(p);
+      const naechst = tag ? (tag.schritte || []).find(s => !s.fertig) : null;
+      // Direkt in den offenen Schritt - ein Umweg ueber den Plan waere
+      // ein Klick, an dem ein Kind haengen bleiben kann.
+      if(naechst){ lingoraSchrittStarten(naechst.id); return; }
+      state.screen = "lingoraplan"; render();
+    });
+  }
   const jetzt = document.getElementById('lg-jetzt');
   if(jetzt){ jetzt.addEventListener('click', ()=>{ if(lingoraJetzt) lingoraJetzt.los(); }); }
   document.querySelectorAll('.lg-start [data-heute]').forEach(b=>{
@@ -7885,7 +8034,7 @@ function loadSave(){
     if(typeof data.diamanten === "number") state.diamanten = data.diamanten;
     if(data.inventory && typeof data.inventory === "object") state.inventory = data.inventory;
     if(typeof data.lifetimeBestStreak === "number") state.lifetimeBestStreak = data.lifetimeBestStreak;
-    if(Array.isArray(data.customVocab)) state.customVocab = data.customVocab;
+    if(Array.isArray(data.customVocab)){ state.customVocab = data.customVocab; vokabelCacheLeeren(); }
     if(data.wortStand && typeof data.wortStand === "object") state.wortStand = data.wortStand;
     if(data.boxTreffer && typeof data.boxTreffer === "object") state.boxTreffer = data.boxTreffer;
     if(Array.isArray(data.gradeEntries)) state.gradeEntries = data.gradeEntries;
@@ -8840,11 +8989,52 @@ function lernUeberblick(pool){
   return u;
 }
 
+/* Alle Woerter - JEDES GENAU EINMAL.
+
+   Der Fehler, den das behebt: Ein Wort, das im Lehrwerkspaket und in
+   den eigenen Vokabeln steht, wurde zweimal gefunden. Eine Liste mit
+   46 Woertern ergab so eine Runde mit 93 Fragen. Gemessen an Nokies
+   Liste vom 11.9.
+
+   Es gewinnt der erste Fund, also das Paketwort. Damit bleiben die
+   Kategorien vollstaendig, und der Lernstand haengt ohnehin am
+   Schluessel und nicht am einzelnen Objekt.
+
+   Gemessen kostet das Entdoppeln 0,099 ms bei 428 Woertern. Der
+   Zwischenspeicher ist trotzdem drin, weil getAllVocab() in Schleifen
+   aufgerufen wird - und weil billig nicht umsonst heisst. */
+let vokabelCache = null;
+let vokabelCacheStand = "";
+
+function vokabelCacheLeeren(){ vokabelCache = null; vokabelCacheStand = ""; }
+
 function getAllVocab(){
-  if(state.customVocab && state.customVocab.length){
-    return VOCAB.concat(state.customVocab);
+  const eigene = (state.customVocab && state.customVocab.length) ? state.customVocab : null;
+  if(!eigene){
+    // Auch das Paket allein hat Dubletten: "orange|orange", "sad|traurig".
+    if(!vokabelCache || vokabelCacheStand !== "paket"){
+      vokabelCache = vokabelEntdoppeln(VOCAB);
+      vokabelCacheStand = "paket";
+    }
+    return vokabelCache;
   }
-  return VOCAB;
+  const stand = "eigen:" + eigene.length + ":" + (eigene[eigene.length - 1] || {}).en;
+  if(!vokabelCache || vokabelCacheStand !== stand){
+    vokabelCache = vokabelEntdoppeln(VOCAB.concat(eigene));
+    vokabelCacheStand = stand;
+  }
+  return vokabelCache;
+}
+
+function vokabelEntdoppeln(liste){
+  const gesehen = new Set();
+  return liste.filter(w=>{
+    const k = wortSchluessel(w);
+    if(!k || k === "|") return false;
+    if(gesehen.has(k)) return false;
+    gesehen.add(k);
+    return true;
+  });
 }
 
 function categories(){
@@ -11864,6 +12054,8 @@ function renderStart(){
 
     ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""}${state.guest ? `<div class="guest-bar"><span class="guest-txt">&#128064; <strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">&#127381; Konto anlegen</button></div>` : ""}
 
+    ${zielPlanHtml()}
+
     ${lingoraStartHtml()}
 
     ${fortschrittZeileHtml()}
@@ -13749,6 +13941,8 @@ function renderCertificate(){
     <button class="btn secondary" id="share-btn" style="margin-top:14px;">📤 PER WHATSAPP TEILEN</button>
     <div style="height:10px;"></div>
     <button class="btn gold" id="shop-btn" ${state.guest ? "disabled" : ""}>🛒 MÜNZEN IM SHOP AUSGEBEN</button>
+    ${planWeiterHtml()}
+
     <div style="height:10px;"></div>
     <button class="btn secondary" id="leaderboard-btn" ${state.guest ? "disabled" : ""}>🏆 RANGLISTE ANSEHEN</button>
     <div style="height:10px;"></div>
@@ -13756,6 +13950,8 @@ function renderCertificate(){
     <div style="height:10px;"></div>
     <button class="btn danger" id="menu-btn">✕ ZUM MENÜ</button>
   `;
+
+  planWeiterVerdrahten();
 
   if(mistakes.length>0){
     document.getElementById('mistake-review-btn').addEventListener('click', startMistakeReview);
@@ -15206,6 +15402,7 @@ function addCustomVocabEntry(de, en){
     accepted: [de.toLowerCase()]
   };
   state.customVocab.push(wort);
+  vokabelCacheLeeren();
   /* Alle vier Wege - tippen, Sammeleingabe, Foto, Excel - laufen durch
      diese eine Funktion. Deshalb reicht es, hier zu merken, was gerade
      dazugekommen ist. Daraus wird oben das Angebot "gleich als Liste
@@ -16494,6 +16691,7 @@ function listeUebernehmen(paket){
   });
 
   // Namensgleiche Liste nicht ueberschreiben - lieber durchnummerieren.
+  vokabelCacheLeeren();          // die neuen Woerter sollen sofort zaehlen
   let name = paket.name, n = 2;
   while(listeFinden(name)){ name = paket.name + " (" + n + ")"; n++; }
   listenAlle().push({ name: name, woerter: schluessel });
@@ -18949,6 +19147,7 @@ function renderGrammarCertificate(){
     else { startGrammarPractice(); }
   });
   document.getElementById('grammar-home-btn').addEventListener('click', zurueckZurSektion);
+  planWeiterVerdrahten();
 }
 
 // Die drei Pixel-Kacheln als Hintergrund setzen (liegen als JS-Konstanten vor)
