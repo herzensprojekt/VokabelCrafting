@@ -3249,7 +3249,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "77.0 – Teilen";
+const APP_VERSION = "77.1 – Teilen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -5195,10 +5195,10 @@ function renderLingoraPlan(){
         <span class="lg-w-txt">${escapeHtml(state.lgWeisheit || (state.lgWeisheit = lingoraSpruch(LINGORA_WEISHEIT)))}</span>
       </div>
       <button class="btn teilen-btn" id="lg-teilen" style="margin-top:14px;">
-        📤 DIESEN PLAN TEILEN
+        💬 PLAN PER WHATSAPP TEILEN
       </button>
-      <p class="teilen-hinweis">Schick ihn in den Klassenchat &ndash;
-        die anderen haben den Lernweg dann auch.</p>
+      <p class="teilen-hinweis">Schick ihn zum Beispiel in euren Klassenchat &ndash;
+        dann weiß die ganze Klasse, was bis wann dran ist.</p>
       <button class="btn ghost" id="lg-neu" style="margin-top:12px;">🔄 Neuen Plan machen</button>
       <button class="btn ghost" id="lg-weg" style="margin-top:8px;">🗑️ Plan verwerfen</button>
     </div>
@@ -17033,10 +17033,10 @@ function renderCustomVocab(){
                   <button type="button" data-liste-weg="${escapeHtml(l.name)}" aria-label="Liste löschen" title="Löschen">✕</button>
                 </span>
                 <button class="btn teilen-btn" data-liste-teilen="${escapeHtml(l.name)}">
-                  📤 IM KLASSENCHAT TEILEN
+                  💬 PER WHATSAPP TEILEN
                 </button>
-                <p class="teilen-hinweis">Schick sie deiner Klasse &ndash; die anderen können
-                  sofort mitüben.</p>
+                <p class="teilen-hinweis">Schick sie zum Beispiel in euren Klassenchat &ndash;
+                  dann haben alle die Vokabeln sofort und ihr könnt zusammen üben.</p>
               </div>`).join("")}
           </div>` : ""}
       ` : `<p class="muted center-text" style="margin:6px 0;">Noch keine eigene Liste.
