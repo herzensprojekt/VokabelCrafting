@@ -232,6 +232,7 @@
   .zp-stand{ margin:0 0 8px; font-size:13.5px; text-align:center; color:var(--tinte); }
 
   /* ---------- Sendedialog ---------- */
+  .modal-overlay.tl-warte{ z-index:1001; }
   .tl-box{ max-height:88vh; overflow-y:auto; text-align:center; }
   .tl-titel{ margin:0 0 12px; font-family:var(--font); font-weight:800; font-size:19px; }
   .tl-bild{ width:100%; max-width:260px; border-radius:14px; margin:0 auto 12px; display:block;
@@ -3294,7 +3295,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "80.1 – Logo im Teilen-Bild";
+const APP_VERSION = "80.2 – Teilen repariert";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -16634,24 +16635,125 @@ function teilBildMalen(titel, marke, ueber, fertig){
   }catch(e){ ersatz(); }
 }
 
+/* Eine Nummer, die niemand raet: 22 Zeichen aus dem Zufallsgenerator
+   des Browsers. Dieselbe Groessenordnung wie bei den Eltern-Links. */
+function teilToken(){
+  const zeichen = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const roh = new Uint8Array(22);
+  (crypto || window.crypto).getRandomValues(roh);
+  let s = "";
+  roh.forEach(b => { s += zeichen[b % zeichen.length]; });
+  return s;
+}
+
+/* Legt den Inhalt in der Datenbank ab und gibt den kurzen Link zurueck.
+   Klappt das nicht - Testmodus, kein Netz, alte Regeln -, kommt der
+   lange Link zurueck. Lieber haesslich als gar nicht. */
+async function kurzLink(art, name, inhalt, langerLink){
+  try{
+    const db = await getVokabelDB();
+    if(!db || !db.available || !db.geteiltAnlegen || !state.cloudId) return langerLink;
+    const token = teilToken();
+    await db.geteiltAnlegen(token, {
+      art: art, name: String(name || "").slice(0, 40),
+      inhalt: inhalt, ts: Date.now()
+    });
+    return location.origin + location.pathname + "#t=" + token;
+  }catch(e){ return langerLink; }
+}
+
+/* Der Sendedialog.
+
+   ZWEI SCHRITTE, UND DAS IST ABSICHT: navigator.share verlangt einen
+   frischen Fingerdruck. Ein await auf die Datenbank dazwischen macht
+   die Geste ungueltig - auf iOS passiert dann gar nichts. Also erst
+   vorbereiten, dann senden. Das Kind sieht den kurzen Link dabei und
+   kann ihn auch kopieren. */
+function teilDialog(link, spruch, blob, dateiname){
+  // Eine eventuell noch offene "Einen Moment"-Meldung wegraeumen -
+  // sonst steht das Kind vor zwei Fenstern uebereinander.
+  document.querySelectorAll('.modal-overlay.tl-warte').forEach(o=>{
+    if(o.parentNode) o.parentNode.removeChild(o);
+  });
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="panel modal-box tl-box">
+      <p class="tl-titel">Fertig zum Verschicken!</p>
+      ${blob ? `<img class="tl-bild" alt="Vorschau">` : ""}
+      <p class="tl-link">${escapeHtml(link)}</p>
+      <button class="btn teilen-btn" id="tl-senden">💬 JETZT SENDEN</button>
+      <button class="btn ghost small" id="tl-kopieren" style="margin-top:8px;">🔗 Nur Link kopieren</button>
+      <button class="btn ghost small" id="tl-zu" style="margin-top:8px;">Abbrechen</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  const zu = ()=>{ if(overlay.parentNode){ overlay.parentNode.removeChild(overlay); } };
+
+  if(blob){
+    const bild = overlay.querySelector('.tl-bild');
+    const url = URL.createObjectURL(blob);
+    bild.src = url;
+    bild.addEventListener('load', ()=>{ try{ URL.revokeObjectURL(url); }catch(e){} });
+  }
+
+  overlay.querySelector('#tl-zu').addEventListener('click', zu);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) zu(); });
+  overlay.querySelector('#tl-kopieren').addEventListener('click', ()=>{
+    try{ navigator.clipboard.writeText(link); }catch(e){}
+    zu();
+  });
+  overlay.querySelector('#tl-senden').addEventListener('click', ()=>{
+    const datei = blob ? new File([blob], dateiname, { type:"image/png" }) : null;
+    const mitBild = datei && navigator.canShare && navigator.canShare({ files:[datei] });
+    if(navigator.share){
+      const paket = { text: spruch };
+      if(mitBild) paket.files = [datei];
+      navigator.share(paket).catch(()=>{});
+      zu();
+      return;
+    }
+    try{ window.open("https://wa.me/?text=" + encodeURIComponent(spruch), "_blank"); }
+    catch(e){ try{ navigator.clipboard.writeText(spruch); }catch(e2){} }
+    zu();
+  });
+}
+
+/* Die Wartemeldung bekommt eine Marke, damit teilDialog sie
+   wiederfindet und wegraeumt. */
+function teilWarten(){
+  zeigeHinweis("Einen Moment …", "Ich mache das Bild fertig.");
+  const alle = document.querySelectorAll('.modal-overlay');
+  const letzte = alle[alle.length - 1];
+  if(letzte) letzte.classList.add('tl-warte');
+}
+
+/* Geht beim Vorbereiten etwas schief, darf das Kind nicht vor einem
+   haengenden "Einen Moment" stehen bleiben. */
+function teilAbbruch(grund){
+  document.querySelectorAll('.modal-overlay.tl-warte').forEach(o=>{
+    if(o.parentNode) o.parentNode.removeChild(o);
+  });
+  zeigeHinweis("Das hat nicht geklappt", grund);
+}
+
 function listeTeilen(name){
   const liste = listeFinden(name);
   if(!liste){ return; }
   const anzahl = (liste.woerter || []).length;
   const lang = listeLink(liste);
   if(lang.length > 12000){
-    zeigeHinweis("Diese Liste ist zum Teilen zu groß (" + anzahl
-      + " Wörter). Teile sie in zwei kleinere Listen auf.");
+    zeigeHinweis("Zu viele Wörter", "Diese Liste hat " + anzahl
+      + " Wörter. Teile sie zum Verschicken in zwei kleinere Listen auf.");
     return;
   }
-  zeigeHinweis("Einen Moment – ich mache das Bild fertig …");
+  teilWarten();
   listeBildMalen(liste, anzahl, (blob)=>{
     kurzLink("liste", liste.name, listePacken(liste), lang).then(link=>{
       const spruch = "Guck mal 👀 Ich hab die Vokabeln \u201e" + liste.name
         + "\u201c schon fertig als Lernliste – " + anzahl + " Stück.\n"
         + "Antippen, dann hast du sie auch. Kostenlos, ohne Werbung, mit Spielen 🎮\n" + link;
       teilDialog(link, spruch, blob, "lingocrafter-liste.png");
-    });
+    }).catch(e => teilAbbruch("Der Link liess sich nicht erzeugen."));
   });
 }
 
@@ -16765,11 +16867,11 @@ function planTeilen(){
   if(!p){ return; }
   const lang = planLink(p);
   if(lang.length > 12000){
-    zeigeHinweis("Dieser Plan ist zum Teilen zu groß. Nimm weniger Listen hinein.");
+    zeigeHinweis("Zu groß", "Nimm weniger Listen in den Plan hinein, dann klappt das Verschicken.");
     return;
   }
   const tage = (p.tage || []).length;
-  zeigeHinweis("Einen Moment – ich mache das Bild fertig …");
+  teilWarten();
   teilBildMalen(planTitelKurz(p), tage + (tage === 1 ? " Tag" : " Tage") + " Plan",
     "FERTIGER LERNPLAN", (blob)=>{
     kurzLink("plan", planTitelKurz(p), planPacken(p), lang).then(link=>{
@@ -16777,7 +16879,7 @@ function planTeilen(){
         + tage + (tage === 1 ? " Tag" : " Tage") + ", Schritt für Schritt.\n"
         + "Antippen, dann hast du ihn auch. Kostenlos, ohne Werbung, mit Spielen 🎮\n" + link;
       teilDialog(link, spruch, blob, "lingocrafter-plan.png");
-    });
+    }).catch(e => teilAbbruch("Der Link liess sich nicht erzeugen."));
   });
 }
 
@@ -16817,26 +16919,26 @@ async function kurzLinkPruefen(){
   try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
   try{
     const db = await getVokabelDB();
-    if(!db || !db.geteiltLesen){ zeigeHinweis("Der Link braucht Internet."); return; }
+    if(!db || !db.geteiltLesen){ zeigeHinweis("Kein Internet", "Für geteilte Listen braucht die App kurz eine Verbindung."); return; }
     const d = await db.geteiltLesen(m[1]);
-    if(!d || !d.inhalt){ zeigeHinweis("Diesen geteilten Inhalt gibt es nicht mehr."); return; }
+    if(!d || !d.inhalt){ zeigeHinweis("Nicht gefunden", "Diesen geteilten Inhalt gibt es nicht mehr."); return; }
     if(d.art === "plan"){
       const paket = planAuspacken(d.inhalt);
-      if(!paket){ zeigeHinweis("Dieser Plan-Link ist leider unvollständig."); return; }
+      if(!paket){ zeigeHinweis("Link unvollständig", "Von diesem Plan ist unterwegs etwas verloren gegangen."); return; }
       if(!(state.cloudId || state.guest)){ state.geteilterPlan = paket; return; }
       planFragen(paket);
       return;
     }
     const paket = listeAuspacken(d.inhalt);
-    if(!paket){ zeigeHinweis("Dieser Listen-Link ist leider unvollständig."); return; }
+    if(!paket){ zeigeHinweis("Link unvollständig", "Von dieser Liste ist unterwegs etwas verloren gegangen."); return; }
     if(!(state.cloudId || state.guest)){ state.geteilteListe = paket; return; }
     showConfirmModal("Liste \u201e" + paket.name + "\u201c mit " + paket.paare.length
       + " Wörtern übernehmen?", ()=>{
       const n = listeUebernehmen(paket);
-      zeigeHinweis("Fertig – " + n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
+      zeigeHinweis("Fertig 🎉", n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
       render();
     });
-  }catch(e){ zeigeHinweis("Der geteilte Inhalt liess sich nicht laden."); }
+  }catch(e){ zeigeHinweis("Hat nicht geklappt", "Der geteilte Inhalt liess sich nicht laden. Probier den Link noch mal."); }
 }
 
 function geteiltenPlanPruefen(){
@@ -16844,7 +16946,7 @@ function geteiltenPlanPruefen(){
   if(!m) return;
   try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
   const paket = planAuspacken(m[1]);
-  if(!paket){ zeigeHinweis("Dieser Plan-Link ist leider unvollständig."); return; }
+  if(!paket){ zeigeHinweis("Link unvollständig", "Von diesem Plan ist unterwegs etwas verloren gegangen."); return; }
   if(!(state.cloudId || state.guest)){ state.geteilterPlan = paket; return; }
   planFragen(paket);
 }
@@ -16855,8 +16957,8 @@ function planFragen(paket){
   if(paket.grammatik.length) teile.push(paket.grammatik.length + "x Grammatik");
   showConfirmModal("Lernplan übernehmen? (" + teile.join(", ") + ")", ()=>{
     const plan = planUebernehmen(paket);
-    if(!plan){ zeigeHinweis("Der Plan passt leider nicht zu deinen Themen."); return; }
-    zeigeHinweis("Plan übernommen – Lingora hat ihn für dich eingerichtet.");
+    if(!plan){ zeigeHinweis("Passt nicht", "Dieser Plan gehört zu Themen, die du noch nicht freigeschaltet hast."); return; }
+    zeigeHinweis("Plan übernommen 🎉", "Lingora hat ihn für dich eingerichtet.");
     state.screen = "lingoraplan";
     render();
   });
@@ -16877,7 +16979,7 @@ function geteilteListeNachholen(){
   showConfirmModal("Liste \u201e" + paket.name + "\u201c mit " + paket.paare.length
     + " Wörtern übernehmen?", ()=>{
     const n = listeUebernehmen(paket);
-    zeigeHinweis("Fertig – " + n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
+    zeigeHinweis("Fertig 🎉", n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
     render();
   });
 }
@@ -16889,12 +16991,12 @@ function geteilteListePruefen(){
   if(!m) return;
   try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
   const paket = listeAuspacken(m[1]);
-  if(!paket){ zeigeHinweis("Dieser Listen-Link ist leider unvollständig."); return; }
+  if(!paket){ zeigeHinweis("Link unvollständig", "Von dieser Liste ist unterwegs etwas verloren gegangen."); return; }
   if(!(state.cloudId || state.guest)){ state.geteilteListe = paket; return; }
   showConfirmModal("Liste \u201e" + paket.name + "\u201c mit " + paket.paare.length
     + " Wörtern übernehmen?", ()=>{
     const n = listeUebernehmen(paket);
-    zeigeHinweis("Fertig – " + n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
+    zeigeHinweis("Fertig 🎉", n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
     render();
   });
 }
