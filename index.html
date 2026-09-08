@@ -207,6 +207,15 @@
   .gt-bsp-satz b{ color:#3b6d11; text-decoration:underline; text-underline-offset:3px; }
   .gt-bsp-de{ margin:4px 0 0; font-size:12.5px; color:var(--tinte-hell); }
 
+  /* ---------- Sendedialog ---------- */
+  .tl-box{ max-height:88vh; overflow-y:auto; text-align:center; }
+  .tl-titel{ margin:0 0 12px; font-family:var(--font); font-weight:800; font-size:19px; }
+  .tl-bild{ width:100%; max-width:260px; border-radius:14px; margin:0 auto 12px; display:block;
+    border:2px solid var(--papier-rand); }
+  .tl-link{ margin:0 0 12px; font-size:13px; color:var(--tinte-hell);
+    background:var(--papier-tief); border-radius:10px; padding:9px 10px;
+    word-break:break-all; }
+
   /* ---------- Heute dran ---------- */
   .ht-liste{ display:flex; flex-direction:column; gap:8px; margin:4px 0 12px; }
   .ht-zeile{
@@ -3183,6 +3192,17 @@ summary.mehr-knopf::after{ content:none; }
          Eine eigene, duenne Sammlung fuer den Eltern-Link. Sie ersetzt
          den Zugriff auf das Profil vollstaendig: lesen UND schreiben
          passiert nur noch hier. */
+      /* Geteilte Listen und Plaene - dieselbe Bauart wie die
+         Eltern-Bestaetigungen: ein Dokument unter einer nicht zu
+         erratenden Nummer, lesbar fuer jeden, der den Link hat. */
+      async function geteiltAnlegen(token, daten){
+        await setDoc(doc(db, "geteilt", token), daten);
+      }
+      async function geteiltLesen(token){
+        const snap = await getDoc(doc(db, "geteilt", token));
+        return snap.exists() ? snap.data() : null;
+      }
+
       async function bestaetigungAnlegen(token, daten){
         await setDoc(doc(db, "bestaetigungen", token), daten);
       }
@@ -3235,6 +3255,7 @@ summary.mehr-knopf::after{ content:none; }
         savePlayer, getRangliste, setRangliste, getPlayerById,
         adjustCoinsAndInventory, appendRedeemLogEntry, confirmRedeemEntry,
         bestaetigungAnlegen, bestaetigungLesen, bestaetigungErledigen,
+        geteiltAnlegen, geteiltLesen,
         deleteAccount
       };
     }catch(e){
@@ -3249,7 +3270,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "77.1 – Teilen";
+const APP_VERSION = "78.0 – Kurzer Link";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -16266,7 +16287,7 @@ function listeLink(liste){
 function listeBildMalen(liste, anzahl, fertig){
   teilBildMalen(String(liste.name || "Meine Liste"),
     anzahl + (anzahl === 1 ? " Vokabel" : " Vokabeln"),
-    "VOKABELLISTE FÜR DICH", fertig);
+    "FERTIGE LERNLISTE 🔥", fertig);
 }
 
 function teilBildMalen(titel, marke, ueber, fertig){
@@ -16311,59 +16332,147 @@ function teilBildMalen(titel, marke, ueber, fertig){
   g.font = "bold 46px system-ui, sans-serif";
   g.fillText(marke, 540, 478);
 
+  g.fillStyle = "#3b6d11";
+  g.font = "bold 38px system-ui, sans-serif";
+  g.fillText("Antippen – dann hast du sie auch 👇", 540, 578);
   g.fillStyle = "#5f5e5a";
-  g.font = "34px system-ui, sans-serif";
-  g.fillText("Kostenlos üben – mit richtig coolen Spielen.", 540, 570);
+  g.font = "31px system-ui, sans-serif";
+  g.fillText("Kostenlos · Ohne Werbung · Mit Spielen", 540, 634);
   g.fillStyle = "#2b2b28";
   g.font = "bold 44px system-ui, sans-serif";
-  g.fillText("lingocrafter.de", 540, 645);
+  g.fillText("lingocrafter.de", 540, 686);
 
-  g.fillStyle = "#ffffff";
-  g.font = "bold 64px system-ui, sans-serif";
-  g.fillText("LingoCrafter", 540, 880);
-  g.fillStyle = "rgba(255,255,255,0.85)";
-  g.font = "32px system-ui, sans-serif";
-  g.fillText("Englisch üben, ohne dass es sich danach anfühlt", 540, 940);
+  /* Das echte Logo statt des blossen Namens. Es liegt neben der Seite,
+     also gleiche Herkunft - der Zeichenbereich bleibt sauber und
+     toBlob() funktioniert weiter. Kommt es nicht rechtzeitig, wird
+     eben der Schriftzug gemalt: ein fehlendes Bild darf das Teilen
+     nicht verhindern. */
+  const schluss = ()=>{
+    try{ c.toBlob(b => fertig(b), "image/png"); }
+    catch(e){ fertig(null); }
+  };
+  const ersatz = ()=>{
+    g.fillStyle = "#ffffff";
+    g.font = "bold 64px system-ui, sans-serif";
+    g.textAlign = "center";
+    g.fillText("LingoCrafter", 540, 900);
+    schluss();
+  };
+  try{
+    const logo = new Image();
+    let fertigMalen = false;
+    const zeichnen = ()=>{
+      if(fertigMalen) return; fertigMalen = true;
+      try{
+        const bh = 210;
+        const bw = Math.min(760, logo.width * (bh / (logo.height || 1)));
+        g.drawImage(logo, 540 - bw / 2, 770, bw, bh);
+        schluss();
+      }catch(e){ ersatz(); }
+    };
+    logo.onload = zeichnen;
+    logo.onerror = ()=>{ if(!fertigMalen){ fertigMalen = true; ersatz(); } };
+    setTimeout(()=>{ if(!fertigMalen){ fertigMalen = true; ersatz(); } }, 1500);
+    logo.src = "logo-neu.webp";
+  }catch(e){ ersatz(); }
+}
 
-  try{ c.toBlob(b => fertig(b), "image/png"); }
-  catch(e){ fertig(null); }
+/* Eine Nummer, die niemand raet: 22 Zeichen aus dem Zufallsgenerator
+   des Browsers. Dieselbe Groessenordnung wie bei den Eltern-Links. */
+function teilToken(){
+  const zeichen = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const roh = new Uint8Array(22);
+  (crypto || window.crypto).getRandomValues(roh);
+  let s = "";
+  roh.forEach(b => { s += zeichen[b % zeichen.length]; });
+  return s;
+}
+
+/* Legt den Inhalt in der Datenbank ab und gibt den kurzen Link zurueck.
+   Klappt das nicht - Testmodus, kein Netz, alte Regeln -, kommt der
+   lange Link zurueck. Lieber haesslich als gar nicht. */
+async function kurzLink(art, name, inhalt, langerLink){
+  try{
+    const db = await getVokabelDB();
+    if(!db || !db.available || !db.geteiltAnlegen || !state.cloudId) return langerLink;
+    const token = teilToken();
+    await db.geteiltAnlegen(token, {
+      art: art, name: String(name || "").slice(0, 40),
+      inhalt: inhalt, ts: Date.now()
+    });
+    return location.origin + location.pathname + "#t=" + token;
+  }catch(e){ return langerLink; }
+}
+
+/* Der Sendedialog.
+
+   ZWEI SCHRITTE, UND DAS IST ABSICHT: navigator.share verlangt einen
+   frischen Fingerdruck. Ein await auf die Datenbank dazwischen macht
+   die Geste ungueltig - auf iOS passiert dann gar nichts. Also erst
+   vorbereiten, dann senden. Das Kind sieht den kurzen Link dabei und
+   kann ihn auch kopieren. */
+function teilDialog(link, spruch, blob, dateiname){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="panel modal-box tl-box">
+      <p class="tl-titel">Fertig zum Verschicken!</p>
+      ${blob ? `<img class="tl-bild" alt="Vorschau">` : ""}
+      <p class="tl-link">${escapeHtml(link)}</p>
+      <button class="btn teilen-btn" id="tl-senden">💬 JETZT SENDEN</button>
+      <button class="btn ghost small" id="tl-kopieren" style="margin-top:8px;">🔗 Nur Link kopieren</button>
+      <button class="btn ghost small" id="tl-zu" style="margin-top:8px;">Abbrechen</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  const zu = ()=>{ if(overlay.parentNode) overlay.parentNode.removeChild(overlay); };
+
+  if(blob){
+    const bild = overlay.querySelector('.tl-bild');
+    const url = URL.createObjectURL(blob);
+    bild.src = url;
+    bild.addEventListener('load', ()=>{ try{ URL.revokeObjectURL(url); }catch(e){} });
+  }
+
+  overlay.querySelector('#tl-zu').addEventListener('click', zu);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) zu(); });
+  overlay.querySelector('#tl-kopieren').addEventListener('click', ()=>{
+    try{ navigator.clipboard.writeText(link); zeigeHinweis("Link kopiert."); }catch(e){}
+    zu();
+  });
+  overlay.querySelector('#tl-senden').addEventListener('click', ()=>{
+    const datei = blob ? new File([blob], dateiname, { type:"image/png" }) : null;
+    const mitBild = datei && navigator.canShare && navigator.canShare({ files:[datei] });
+    if(navigator.share){
+      const paket = { text: spruch };
+      if(mitBild) paket.files = [datei];
+      navigator.share(paket).catch(()=>{});
+      zu();
+      return;
+    }
+    try{ window.open("https://wa.me/?text=" + encodeURIComponent(spruch), "_blank"); }
+    catch(e){ try{ navigator.clipboard.writeText(spruch); zeigeHinweis("Link kopiert."); }catch(e2){} }
+    zu();
+  });
 }
 
 function listeTeilen(name){
   const liste = listeFinden(name);
   if(!liste){ return; }
   const anzahl = (liste.woerter || []).length;
-  const link = listeLink(liste);
-  const spruch = "Hier sind die Vokabeln \u201e" + liste.name + "\u201c als fertige Lernliste. "
-    + "Einfach antippen und in LingoCrafter kostenlos üben – mit coolen Spielen.\n" + link;
-
-  // Zu lang wird es erst bei sehr grossen Listen. Dann lieber ehrlich sein,
-  // als einen Link zu verschicken, den Messenger abschneiden.
-  /* 12000 statt 6000: Messenger und Browser kommen damit muehelos
-     zurecht. Die Grenze soll vor absurd grossen Listen schuetzen, nicht
-     vor einer normalen Unit - gemessen sind 150 Woerter rund 5500
-     Zeichen in der sparsamen Form. */
-  if(link.length > 12000){
+  const lang = listeLink(liste);
+  if(lang.length > 12000){
     zeigeHinweis("Diese Liste ist zum Teilen zu groß (" + anzahl
       + " Wörter). Teile sie in zwei kleinere Listen auf.");
     return;
   }
-
+  zeigeHinweis("Einen Moment – ich mache das Bild fertig …");
   listeBildMalen(liste, anzahl, (blob)=>{
-    const datei = blob ? new File([blob], "lingocrafter-liste.png", { type:"image/png" }) : null;
-    const mitBild = datei && navigator.canShare && navigator.canShare({ files:[datei] });
-    if(navigator.share){
-      const paket = { text: spruch };
-      if(mitBild) paket.files = [datei];
-      navigator.share(paket).catch(()=>{});
-      return;
-    }
-    // Kein Teilen-Dialog (meist am Rechner): WhatsApp im Netz, sonst kopieren.
-    try{
-      window.open("https://wa.me/?text=" + encodeURIComponent(spruch), "_blank");
-    }catch(e){
-      try{ navigator.clipboard.writeText(spruch); zeigeHinweis("Link kopiert."); }catch(e2){}
-    }
+    kurzLink("liste", liste.name, listePacken(liste), lang).then(link=>{
+      const spruch = "Guck mal 👀 Ich hab die Vokabeln \u201e" + liste.name
+        + "\u201c schon fertig als Lernliste – " + anzahl + " Stück.\n"
+        + "Antippen, dann hast du sie auch. Kostenlos, ohne Werbung, mit Spielen 🎮\n" + link;
+      teilDialog(link, spruch, blob, "lingocrafter-liste.png");
+    });
   });
 }
 
@@ -16474,28 +16583,21 @@ function planTitelKurz(p){
 function planTeilen(){
   const p = lingoraPlan();
   if(!p){ return; }
-  const link = planLink(p);
-  if(link.length > 12000){
+  const lang = planLink(p);
+  if(lang.length > 12000){
     zeigeHinweis("Dieser Plan ist zum Teilen zu groß. Nimm weniger Listen hinein.");
     return;
   }
   const tage = (p.tage || []).length;
-  const spruch = "Ich hab den kompletten Lernplan für " + planTitelKurz(p).toLowerCase()
-    + " fertig – " + tage + (tage === 1 ? " Tag" : " Tage") + ", Schritt für Schritt. "
-    + "Einfach antippen und in LingoCrafter kostenlos mitmachen – mit coolen Spielen.\n" + link;
-
+  zeigeHinweis("Einen Moment – ich mache das Bild fertig …");
   teilBildMalen(planTitelKurz(p), tage + (tage === 1 ? " Tag" : " Tage") + " Plan",
-    "LERNPLAN FÜR DICH", (blob)=>{
-    const datei = blob ? new File([blob], "lingocrafter-plan.png", { type:"image/png" }) : null;
-    const mitBild = datei && navigator.canShare && navigator.canShare({ files:[datei] });
-    if(navigator.share){
-      const paket = { text: spruch };
-      if(mitBild) paket.files = [datei];
-      navigator.share(paket).catch(()=>{});
-      return;
-    }
-    try{ window.open("https://wa.me/?text=" + encodeURIComponent(spruch), "_blank"); }
-    catch(e){ try{ navigator.clipboard.writeText(spruch); zeigeHinweis("Link kopiert."); }catch(e2){} }
+    "FERTIGER LERNPLAN", (blob)=>{
+    kurzLink("plan", planTitelKurz(p), planPacken(p), lang).then(link=>{
+      const spruch = "Guck mal 👀 Ich hab den kompletten Lernplan fertig – "
+        + tage + (tage === 1 ? " Tag" : " Tage") + ", Schritt für Schritt.\n"
+        + "Antippen, dann hast du ihn auch. Kostenlos, ohne Werbung, mit Spielen 🎮\n" + link;
+      teilDialog(link, spruch, blob, "lingocrafter-plan.png");
+    });
   });
 }
 
@@ -16524,6 +16626,37 @@ function planUebernehmen(paket){
   state.lingoraPlanAktiv = plan.id;
   saveProgress(); syncToCloud();
   return plan;
+}
+
+/* Der kurze Link: Inhalt aus der Datenbank holen und weiterreichen.
+   Der lange Link funktioniert weiterhin - alte Nachrichten sollen
+   nicht ins Leere laufen. */
+async function kurzLinkPruefen(){
+  const m = String(location.hash || "").match(/[#&]t=([A-Za-z0-9]{8,40})/);
+  if(!m) return;
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+  try{
+    const db = await getVokabelDB();
+    if(!db || !db.geteiltLesen){ zeigeHinweis("Der Link braucht Internet."); return; }
+    const d = await db.geteiltLesen(m[1]);
+    if(!d || !d.inhalt){ zeigeHinweis("Diesen geteilten Inhalt gibt es nicht mehr."); return; }
+    if(d.art === "plan"){
+      const paket = planAuspacken(d.inhalt);
+      if(!paket){ zeigeHinweis("Dieser Plan-Link ist leider unvollständig."); return; }
+      if(!(state.cloudId || state.guest)){ state.geteilterPlan = paket; return; }
+      planFragen(paket);
+      return;
+    }
+    const paket = listeAuspacken(d.inhalt);
+    if(!paket){ zeigeHinweis("Dieser Listen-Link ist leider unvollständig."); return; }
+    if(!(state.cloudId || state.guest)){ state.geteilteListe = paket; return; }
+    showConfirmModal("Liste \u201e" + paket.name + "\u201c mit " + paket.paare.length
+      + " Wörtern übernehmen?", ()=>{
+      const n = listeUebernehmen(paket);
+      zeigeHinweis("Fertig – " + n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
+      render();
+    });
+  }catch(e){ zeigeHinweis("Der geteilte Inhalt liess sich nicht laden."); }
 }
 
 function geteiltenPlanPruefen(){
@@ -18838,7 +18971,7 @@ if(!checkForParentConfirmLink()){
      das Rueckfragefenster braucht einen Bildschirm, auf dem es sitzen
      kann. Ist noch niemand angemeldet, legt die Funktion das Paket in
      state.geteilteListe ab und die Anmeldung holt es sich. */
-  setTimeout(()=>{ try{ geteilteListePruefen(); geteiltenPlanPruefen(); }catch(e){} }, 400);
+  setTimeout(()=>{ try{ geteilteListePruefen(); geteiltenPlanPruefen(); kurzLinkPruefen(); }catch(e){} }, 400);
 }
 
 // Beim Start prüfen, ob die Cloud erreichbar ist, UND (falls dieses Gerät
