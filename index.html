@@ -273,7 +273,29 @@
   .tm-mein-ein:active, .tm-mein-raus:active{ transform:translateY(1px); }
 
   /* ---------- Weiter im Plan ---------- */
-  .pw-box{ border:3px solid #93b077; }
+  .pw-box{ border:3px solid #93b077; background:#f2f7ea; }
+  .pw-plan{ margin:0 0 6px; text-align:center; font-size:12px; font-weight:800;
+    letter-spacing:.04em; text-transform:uppercase; color:#4d6b33; }
+  .pw-gross{ font-size:17px; padding:16px 12px; box-shadow:0 4px 0 #3f5c2a,
+    0 7px 14px rgba(60,90,35,0.3); }
+
+  /* Das Band ganz oben - klebt am Rollkasten, nicht am Fenster. */
+  .plan-band{
+    position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:10px;
+    width:100%; margin:0 0 10px; padding:10px 12px; text-align:left; cursor:pointer;
+    background:linear-gradient(160deg,#6f9c46,#4d7229); border:none;
+    border-radius:0 0 16px 16px; box-shadow:0 4px 12px rgba(40,70,25,0.35);
+  }
+  .plan-band:active{ transform:translateY(1px); }
+  .pb-pfeil{ flex:0 0 auto; font-size:15px; color:#e8f5d8; }
+  .pb-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+  .pb-t{ font-family:var(--font); font-weight:800; font-size:14.5px; color:#fff;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pb-u{ font-size:11.5px; color:rgba(255,255,255,0.85);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pb-los{ flex:0 0 auto; padding:6px 11px; border-radius:10px;
+    background:rgba(255,255,255,0.22); color:#fff;
+    font-family:var(--font); font-weight:800; font-size:12.5px; letter-spacing:.04em; }
   .pw-stand{ margin:0 0 8px; text-align:center; font-size:13px;
     font-weight:700; color:#3b6d11; }
   .pw-balken{ display:flex; gap:5px; margin:0 0 12px; }
@@ -3437,7 +3459,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "86.0 – Mehrere Teams";
+const APP_VERSION = "87.0 – Kürzer und klarer";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4266,6 +4288,7 @@ const LINGORA_DAUER = {
   vokabel_tippen:6,
   vokabel_mix:   5,
   vokabel_test:  6,
+  vokabel_wackel:4,
   vokabel_spiel: 5,
   gram_lesen:    3,
   gram_ueben:    5,
@@ -4339,7 +4362,7 @@ const LINGORA_WEG = {
    allein sagt einem Kind nicht, was dahintersteckt; zwei Woerter
    darunter schon. */
 const LINGORA_KURZ = {
-  mc:"Auswahl", type:"Tippen", mix:"Gemischt", faellig:"Fällig",
+  mc:"Auswahl", type:"Tippen", mix:"Gemischt", faellig:"Fällig", wackel:"Wackler",
   flood:"Flut", floodhard:"Flut", challenge:"Duell", aussprache:"Sprechen",
   intro:"Regel", practice:"Üben", test:"Test"
 };
@@ -4424,9 +4447,13 @@ function lingoraTagBauen(wahl, minuten, phase, tagNr){
     if(kats.length)   tests.push("vokabel");
     while(tests.length > 1 && 6 * tests.length > minuten - 4){ tests.pop(); }
   }
-  // Auch an normalen Tagen bekommt der Vokabeltest seine Zeit vorab
-  // zurueckgelegt - sonst faellt er hinten immer wieder heraus.
-  const abschlussTest = (phase !== "generalprobe" && kats.length && minuten >= 14) ? 6 : 0;
+  /* KEIN benoteter Tipp-Test an den Tagen davor.
+
+     Hier stand vorher, er gehoere "in JEDEN Tagesplan". Nachgerechnet
+     an Nokies Plan hiess das: fuenfmal alle 46 Woerter tippen. An den
+     Tagen vor dem Termin wird geuebt, nicht geprueft - gepruefet wird
+     einmal, in der Generalprobe. */
+  const abschlussTest = 0;
   let rest = minuten - 6 * tests.length - abschlussTest;
 
   const rein = s => {
@@ -4492,22 +4519,29 @@ function lingoraTagBauen(wahl, minuten, phase, tagNr){
           "Mit Note - wie in echt", "📝",
           { bereich:"grammar", mode:"test", topic:themen[0].id }));
       } else {
+        /* DIE EINZIGE RUNDE OHNE GRENZE. Einmal alles, ganz am Ende -
+           erst dann zeigt sich, was wirklich sitzt. */
         rein(lingoraSchritt("vokabel_test", "Vokabeltest: " + kats[0],
-          "Mit Note - zeig, was sitzt", "📝",
-          { bereich:"vocab", mode:"type", category:kats[0] }));
+          "Alle Wörter, mit Note - zeig, was sitzt", "📝",
+          { bereich:"vocab", mode:"type", category:kats[0], umfang:"alle" }));
+        /* Und direkt danach: nur noch das, was der Test aufgedeckt hat.
+           Das ist der Moment, in dem eine Wiederholung am meisten
+           bringt - und der kuerzeste Weg zu einer besseren Note.
+
+           Bewusst OHNE rein(): Beim Nachrechnen fiel dieser Schritt
+           durch das Zeitbudget, weil der Test davor es schon
+           aufgebraucht hatte. Eine Runde ueber 15 Woerter ist der
+           wichtigste Schritt des ganzen Plans - sie darf nicht an einer
+           Minutenrechnung scheitern. */
+        schritte.push(lingoraSchritt("vokabel_wackel", "Nur die Wackler: " + kats[0],
+          "Die Wörter, die noch nicht sitzen", "🎯",
+          { bereich:"vocab", mode:"wackel", category:kats[0] }));
       }
     });
   } else {
     rest += abschlussTest;
-    // Zum Abschluss ein benoteter Vokabeltest - der zeigt schwarz auf weiss,
-    // was wirklich sitzt, und gehoert deshalb in JEDEN Tagesplan, nicht nur
-    // in die Generalprobe.
-    if(kats.length){
-      rein(lingoraSchritt("vokabel_test", "Vokabeltest: " + kats[tagNr % kats.length],
-        "Mit Note - zeig, was heute sitzt", "📝",
-        { bereich:"vocab", mode:"type", category:kats[tagNr % kats.length] }));
-    }
-    // Und wenn danach noch Luft ist, etwas Spielerisches obendrauf.
+    // Zum Abschluss etwas Spielerisches - der benotete Test steht in der
+    // Generalprobe, nicht an jedem Tag.
     if(rest >= 4){
       if(themen.length && tagNr % 2 === 0){
         rein(lingoraSchritt("gram_spiel", "Flutungsraum: " + themen[0].name,
@@ -5470,6 +5504,8 @@ function lingoraSchrittStarten(id){
     state.mainMode = "vocab";
     state.mode = z.mode;
     state.category = z.category;
+    // Nur der Abschlusstest nimmt alles - siehe RUNDE_UMFANG.
+    state.rundenAlle = (z.umfang === "alle");
     startGame();
     return;
   }
@@ -5490,22 +5526,58 @@ function lingoraSchrittStarten(id){
   startGrammarQuiz(false);
 }
 
-/* Der naechste offene Schritt von heute - aus IRGENDEINEM laufenden
-   Plan, nicht nur dem gerade aktiven. Dazu die Position, damit das
-   Kind sieht, wo es steht. */
+/* Ein Schritt wird erst ab 80 % abgehakt. Darunter blieb er offen -
+   und der WEITER-Knopf bot exakt dieselbe Runde noch einmal an. Genau
+   das hat Markus gesehen: "nach weiter exakt die gleiche Runde".
+
+   Ab jetzt: Nach zwei Anlaeufen tritt ein Schritt zur Seite und laesst
+   den naechsten vor. Er ist damit nicht erledigt - er kommt wieder,
+   nur nicht als Sackgasse. */
+const SCHRITT_MAX_VERSUCHE = 2;
+
+/* Der naechste offene Schritt von heute.
+
+   DER GERADE OFFENE PLAN KOMMT ZUERST. Vorher lief die Schleife
+   einfach ueber alle Plaene und nahm den ersten mit offenem Schritt -
+   deshalb standen unter dem Vokabeltest Schritte aus einem ganz
+   anderen Plan. */
 function planNaechsterSchritt(){
-  for(const p of lingoraPlaene()){
+  const aktiv = lingoraPlan();
+  const reihe = [];
+  if(aktiv) reihe.push(aktiv);
+  lingoraPlaene().forEach(p => { if(p !== aktiv) reihe.push(p); });
+
+  let zaeher = null;                 // ein schon zweimal versuchter Schritt
+  for(const p of reihe){
     const tag = lingoraTagVonPlan(p);
     if(!tag || !Array.isArray(tag.schritte)) continue;
-    const offen = tag.schritte.findIndex(s => !s.fertig);
-    if(offen < 0) continue;
-    return {
-      plan: p, schritt: tag.schritte[offen],
-      nummer: offen + 1, gesamt: tag.schritte.length,
-      fertig: tag.schritte.filter(s => s.fertig).length
-    };
+    const fertig = tag.schritte.filter(s => s.fertig).length;
+    let ersterOffener = null;
+    for(let i = 0; i < tag.schritte.length; i++){
+      const s = tag.schritte[i];
+      if(s.fertig) continue;
+      const bau = { plan: p, schritt: s, nummer: i + 1,
+                    gesamt: tag.schritte.length, fertig: fertig,
+                    versuche: s.versuche || 0 };
+      if((s.versuche || 0) < SCHRITT_MAX_VERSUCHE) return bau;
+      if(!ersterOffener) ersterOffener = bau;
+    }
+    if(ersterOffener && !zaeher) zaeher = ersterOffener;
   }
-  return null;
+  // Alles Offene ist zaeh? Dann eben das - aber nie "nichts zu tun".
+  return zaeher;
+}
+
+/* Wie es weitergeht, wenn ein Schritt schon einmal danebenging.
+
+   Die identische Runde noch einmal ist das Ermuedendste, was man einem
+   Kind anbieten kann: Es hat die Woerter, die es kann, gerade eben
+   beantwortet. Also die kurze Runde nur mit den Wacklern. */
+function planWiederholung(n){
+  if(!n || !n.versuche) return null;
+  const z = n.schritt.start || {};
+  if(z.bereich !== "vocab" || !z.category) return null;
+  return { category: z.category };
 }
 
 /* Der Block auf dem Ergebnisbildschirm.
@@ -5574,17 +5646,21 @@ function zielPlanHtml(){
 function planWeiterHtml(){
   const n = planNaechsterSchritt();
   if(!n) return "";
+  const wdh = planWiederholung(n);
   return `
     <div class="panel pw-box">
+      <p class="pw-plan">📅 ${escapeHtml(lingoraPlanTitel(n.plan))}</p>
       <p class="pw-stand">✓ ${n.fertig} von ${n.gesamt} für heute geschafft</p>
       <div class="pw-balken">
         ${Array.from({length: n.gesamt}, (_, k)=>
           `<span class="${k < n.fertig ? "voll" : (k === n.fertig ? "jetzt" : "")}"></span>`).join("")}
       </div>
       <p class="pw-l">ALS NÄCHSTES</p>
-      <p class="pw-t">${n.schritt.icon || "📘"} ${escapeHtml(n.schritt.titel)}</p>
-      <p class="pw-u">${escapeHtml(n.schritt.unter || "")}</p>
-      <button class="btn" id="pw-weiter">▶ WEITER &ndash; SCHRITT ${n.nummer} VON ${n.gesamt}</button>
+      <p class="pw-t">${wdh ? "🎯 Nur die Wackler" : (n.schritt.icon || "📘") + " " + escapeHtml(n.schritt.titel)}</p>
+      <p class="pw-u">${wdh
+        ? "Kurze Runde – nur die Wörter, die noch nicht sitzen"
+        : escapeHtml(n.schritt.unter || "")}</p>
+      <button class="btn pw-gross" id="pw-weiter">▶ WEITER &nbsp;·&nbsp; SCHRITT ${n.nummer} VON ${n.gesamt}</button>
       <button class="btn ghost small" id="pw-pause" style="margin-top:8px;">Später weitermachen</button>
     </div>`;
 }
@@ -5596,6 +5672,17 @@ function planWeiterVerdrahten(){
       const n = planNaechsterSchritt();
       if(!n) return;
       state.lingoraPlanAktiv = n.plan.id;
+      const wdh = planWiederholung(n);
+      if(wdh){
+        // Wiederholung heisst kurze Wacklerrunde, nicht dasselbe noch mal.
+        state.lingoraAktiv = n.schritt.id;
+        state.mainMode = "vocab";
+        state.mode = "wackel";
+        state.category = wdh.category;
+        state.rundenAlle = false;
+        startGame();
+        return;
+      }
       lingoraSchrittStarten(n.schritt.id);
     });
   }
@@ -9261,6 +9348,47 @@ function shuffle(arr){
   }
   return a;
 }
+/* WIE VIELE WOERTER EINE RUNDE NIMMT.
+
+   Bis Fassung 86 schnitt buildQueue() nirgends ab: Eine Liste mit 46
+   Woertern ergab 46 Fragen - in JEDER Runde, auch beim Tippen. Nokies
+   Plan kam damit auf 230 getippte Antworten in fuenf Tagen. Das ist
+   nicht Ueben, das ist Abarbeiten.
+
+   Die Reihenfolge war schon nach Dringlichkeit sortiert. Eine kurze
+   Runde nimmt also die noetigsten Woerter - sie laesst nichts weg, sie
+   verschiebt nur. Was heute hinten liegt, ist morgen vorn.
+
+   Tippen ist die anstrengendste Form und bekommt die kuerzeste Runde.
+
+   DIE ZAHLEN SIND NACHGERECHNET, nicht geraten. Mein erster Entwurf war
+   mit 20/12 zu knapp: Ein Tag, der 15 Minuten verspricht, lieferte
+   gemessene 4. Ein Plan, der weniger haelt als er ankuendigt, ist
+   genauso falsch wie einer, der ermuedet. */
+const RUNDE_UMFANG = {
+  mc: 30, faellig: 30, mix: 25, type: 20,
+  flood: 25, floodhard: 25, wackel: 15, aussprache: 12
+};
+const RUNDE_STANDARD = 25;
+
+/* Der Umfang gilt fuer GENAU EINE Runde und wird beim Bauen verbraucht.
+   Ein Merker, der liegen bleibt, waere schlimmer als keiner: Er wuerde
+   irgendwann eine ganz andere Runde beschneiden. */
+function rundenUmfangVerbrauchen(){
+  const alle = !!state.rundenAlle;
+  const eigen = state.rundenUmfang;
+  state.rundenAlle = false;
+  state.rundenUmfang = null;
+  if(alle) return 0;                                  // 0 = ohne Grenze
+  if(typeof eigen === "number" && eigen > 0) return eigen;
+  return RUNDE_UMFANG[state.mode] || RUNDE_STANDARD;
+}
+
+/* Was wackelt noch? Box 1 bis 3 - und alles, was noch nie geuebt wurde.
+   Ab Box 4 liegen 7 bzw. 16 Tage zwischen den Wiederholungen; was dort
+   angekommen ist, sitzt. */
+function wackeltNoch(w){ return lernRang(w) < 4; }
+
 function buildQueue(){
   const all = getAllVocab();
   // Pakete, eigene Listen und "Alle" laufen durch dieselbe Tuer.
@@ -9270,6 +9398,16 @@ function buildQueue(){
   if(state.mode === "faellig"){
     const dran = faelligeWoerter(pool);
     if(dran.length) pool = dran;      // sonst lieber alles als eine leere Runde
+  }
+
+  /* "wackel": nur das, was noch nicht sitzt. Nach dem Abschlusstest
+     genau das Richtige - und beim Wiederholen eines Schrittes auch,
+     denn die Woerter, die schon sassen, muss niemand noch einmal
+     durchkauen. Sitzt alles, bleibt der volle Vorrat: lieber eine
+     Runde zu viel als eine leere. */
+  if(state.mode === "wackel"){
+    const wackelt = pool.filter(wackeltNoch);
+    if(wackelt.length) pool = wackelt;
   }
 
   // "wiederholen" nimmt ein paar zufaellige Woerter aus dem, was das Kind
@@ -9290,6 +9428,12 @@ function buildQueue(){
     if(da !== db) return da - db;
     return lernRang(a) - lernRang(b);
   });
+  // Erst sortieren, dann kuerzen - sonst waere die kurze Runde zufaellig
+  // statt dringlich.
+  const grenze = rundenUmfangVerbrauchen();
+  if(grenze > 0 && state.queue.length > grenze){
+    state.queue = state.queue.slice(0, grenze);
+  }
   state.currentIndex = 0;
 }
 
@@ -10590,6 +10734,82 @@ function renderAusspracheFertig(){
   anKnopf('back-btn', zurueckZurSektion);
 }
 
+/* Ein Auffrischen aus dem Hintergrund darf NIE in eine laufende Frage
+   platzen - siehe die Erklaerung bei antwortHaengt(). Der Zustand ist
+   ohnehin schon aktuell; der Bildschirm holt es beim naechsten
+   natuerlichen Zeichnen nach. */
+function renderAusHintergrund(){
+  if(BAND_NICHT.indexOf(state.screen) >= 0) return;
+  render();
+}
+
+/* ---------------------------------------------------
+   DAS BAND GANZ OBEN
+
+   Markus: "Das muss immer praesent sein, da die Kinder immer hektisch
+   und unaufmerksam sind."
+
+   Es klebt oben am Rollkasten (#app ist der Rollbalken, nicht das
+   Fenster - deshalb position:sticky hier und nicht fixed) und bleibt
+   damit sichtbar, auch wenn das Kind nach unten scrollt.
+
+   NICHT im Spiel selbst: Waehrend einer Frage waere ein Weiter-Knopf
+   eine Einladung, die Runde abzubrechen. Und nicht auf den
+   Zeugnisseiten - dort steht der grosse Block ohnehin schon.
+--------------------------------------------------- */
+const BAND_NICHT = ["quiz", "milestone", "flutwahl", "certificate",
+                    "grammarquiz", "grammarcertificate", "challengeend",
+                    "aussprache", "lingorafrage", "scan",
+                    "skinwerkstatt", "portraitwerkstatt", "parentconfirm"];
+
+function planBandHtml(){
+  const n = planNaechsterSchritt();
+  if(!n) return "";
+  const wdh = planWiederholung(n);
+  return `
+    <button class="plan-band" id="plan-band" type="button">
+      <span class="pb-pfeil">▶</span>
+      <span class="pb-txt">
+        <span class="pb-t">Weiter für ${escapeHtml(lingoraPlanTitel(n.plan))}</span>
+        <span class="pb-u">${wdh ? "Nur die Wackler" : escapeHtml(n.schritt.titel)}
+          &nbsp;·&nbsp; Schritt ${n.nummer} von ${n.gesamt}</span>
+      </span>
+      <span class="pb-los">LOS</span>
+    </button>`;
+}
+
+function planBandZeigen(){
+  try{
+    const alt = document.getElementById('plan-band');
+    if(alt && alt.parentNode) alt.parentNode.removeChild(alt);
+    if(!app) return;
+    if(BAND_NICHT.indexOf(state.screen) >= 0) return;
+    if(!(state.cloudId || state.guest)) return;
+    const html = planBandHtml();
+    if(!html) return;
+    app.insertAdjacentHTML('afterbegin', html);
+    const b = document.getElementById('plan-band');
+    if(b){
+      b.addEventListener('click', ()=>{
+        const n = planNaechsterSchritt();
+        if(!n) return;
+        state.lingoraPlanAktiv = n.plan.id;
+        const wdh = planWiederholung(n);
+        if(wdh){
+          state.lingoraAktiv = n.schritt.id;
+          state.mainMode = "vocab";
+          state.mode = "wackel";
+          state.category = wdh.category;
+          state.rundenAlle = false;
+          startGame();
+          return;
+        }
+        lingoraSchrittStarten(n.schritt.id);
+      });
+    }
+  }catch(e){ /* ein fehlendes Band darf nie einen Bildschirm kippen */ }
+}
+
 /* ---------------------------------------------------
    RENDER-HELFER
 --------------------------------------------------- */
@@ -10626,7 +10846,7 @@ function render(){
       || (state.screen === "quiz" && (state.mode === "flood" || state.mode === "floodhard")));
   }catch(e){}
   // Lingoras Knopf lebt ausserhalb von #app und ueberlebt das Neuzeichnen.
-  setTimeout(()=>{ try{ fensterHoeheSetzen(); lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); heuteOverlayVielleicht(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); floodBuehneAnpassen(); }catch(e){} }, 0);
+  setTimeout(()=>{ try{ planBandZeigen(); fensterHoeheSetzen(); lingoraKnopfAuffrischen(); lingoraZurueckVerdrahten(); lingoraStartVerdrahten(); heuteOverlayVielleicht(); lingoraChatZeigen(); installBannerAuffrischen(); hoerKnoepfeVerdrahten(); floodBuehneAnpassen(); }catch(e){} }, 0);
 
   // Der Elternbereich sperrt sich selbst, sobald man ihn verlaesst - egal
   // ueber welchen Knopf. Damit kommt niemand ohne PIN zurueck hinein.
@@ -12695,7 +12915,8 @@ function startGame(){
   if(state.mainMode !== "grammar"){
     const namen = {faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
                    mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
-                   floodhard:"Flutungsraum", aussprache:"Aussprache"};
+                   floodhard:"Flutungsraum", aussprache:"Aussprache",
+                   wackel:"Wackelkandidaten"};
     zuletztMerken({bereich:"vocab", mode:state.mode, category:state.category,
                    titel:(namen[state.mode] || "Üben")});
   }
@@ -12740,6 +12961,13 @@ function startGame(){
 function pickQuestionType(){
   if(state.mode==="mc") return "mc";
   if(state.mode==="type") return "type";
+  /* Wackler: erst wiedererkennen, dann schreiben - dieselbe Staffelung
+     wie bei "faellig". Ein Wort, das gar nicht sitzt, sofort tippen zu
+     lassen, erzeugt nur Fehler. */
+  if(state.mode==="wackel"){
+    const ww = state.queue && state.queue[state.currentIndex];
+    return ((wortStand(ww) || {}).b || 1) >= 3 ? "type" : "mc";
+  }
   if(state.mode==="faellig"){
     // Die Schwierigkeit waechst mit dem Koennen: erst wiedererkennen,
     // dann selbst abrufen. Abrufen ist deutlich schwerer - und deutlich
@@ -13160,6 +13388,37 @@ function goOnAfterDelay(){
   planeWeiter(advanceAfterAnswer, 1400);
 }
 
+/* ===================================================================
+   WENN BILDSCHIRM UND ZUSTAND AUSEINANDERLAUFEN
+
+   handleTypedAnswer() und handleMcAnswer() beginnen beide mit
+   "if(state.answered) return". Das ist richtig gegen Doppeltippen -
+   aber es schweigt auch dann, wenn die Frage auf dem Bildschirm
+   unbeantwortet AUSSIEHT.
+
+   Genau das passiert, wenn ein Auffrischen aus dem Hintergrund
+   waehrend einer laufenden Frage render() ruft: Der Spielbildschirm
+   wird neu gezeichnet, Eingabefeld und Knopf sind wieder frei, die
+   Rueckmeldung ist weg - state.answered aber steht noch. Ab da tut der
+   Knopf nichts mehr, und das Kind sitzt fest.
+
+   Erkennungsmerkmal: Der Zustand sagt "beantwortet", auf dem
+   Bildschirm steht aber keine Rueckmeldung. Dann ist die Runde
+   weiterzubringen statt zu schweigen. Die Antwort war ja bereits
+   gewertet, als sie das erste Mal kam - es geht nichts verloren.
+=================================================================== */
+function antwortHaengt(){
+  if(!state.answered) return false;
+  const fb = document.getElementById('feedback');
+  if(fb && String(fb.className).indexOf("show") >= 0) return false;  // alles in Ordnung
+  return true;
+}
+
+function antwortEntknoten(){
+  holeWeiterNach();                       // haengt noch ein Zeitgeber? jetzt.
+  if(state.answered){ advanceAfterAnswer(); }
+}
+
 /* ---------------------------------------------------
    "DIE CHALLENGE" — Tippspiel mit Timer gegen den Bösewicht
 --------------------------------------------------- */
@@ -13469,7 +13728,10 @@ function renderChallengeRoundEnd(){
 }
 
 function handleMcAnswer(btn, choice, word){
-  if(state.answered) return;
+  if(state.answered){
+    if(antwortHaengt()) antwortEntknoten();
+    return;
+  }
   state.answered = true;
   document.querySelectorAll('.choice-btn').forEach(b=>b.setAttribute('disabled','true'));
 
@@ -13500,7 +13762,10 @@ function handleMcAnswer(btn, choice, word){
 }
 
 function handleTypedAnswer(value, word){
-  if(state.answered) return;
+  if(state.answered){
+    if(antwortHaengt()) antwortEntknoten();
+    return;
+  }
   state.answered = true;
   document.getElementById('submit-btn').setAttribute('disabled','true');
   document.getElementById('type-input').setAttribute('disabled','true');
@@ -17441,7 +17706,7 @@ async function teilenBelohnungPruefen(){
     + (neueLeute === 1 ? "Person ist" : "Leute sind") + " dadurch neu dazugekommen");
   zeigeHinweis("Danke fürs Teilen! 🎁",
     teile.join(" und ") + ". Dafür gibt es <strong>" + dazu + " 💎 Diamanten</strong>.");
-  try{ render(); }catch(e){}
+  try{ renderAusHintergrund(); }catch(e){}
 }
 
 /* Nach einem erfolgreichen Import: dem Absender gutschreiben lassen.
