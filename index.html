@@ -209,6 +209,29 @@
 
   .mz-plus{ color:#2f7a3c; font-size:12px; margin-left:2px; }
 
+  /* ---------- Teams ---------- */
+  .lb-schalter{ display:flex; gap:8px; margin-bottom:12px; }
+  .lb-tab{ flex:1; padding:9px 8px; border:2px solid var(--papier-rand);
+    border-radius:12px; background:var(--papier-tief); font-size:13.5px;
+    font-weight:700; color:var(--tinte-hell); cursor:pointer; }
+  .lb-tab.aktiv{ background:#e8f0df; border-color:#5c7a45; color:#2b4a17; }
+  .tm-zeile{ display:flex; align-items:center; gap:10px; padding:9px 10px;
+    border-bottom:1px solid var(--papier-rand); }
+  .tm-zeile.meins{ background:#f4eeff; border-radius:10px; }
+  .tm-platz{ width:26px; text-align:center; font-family:var(--font);
+    font-weight:800; color:var(--tinte-hell); }
+  .tm-txt{ display:flex; flex-direction:column; flex:1; min-width:0; }
+  .tm-n{ font-weight:700; font-size:14.5px; color:var(--tinte); }
+  .tm-u{ font-size:12px; color:var(--tinte-hell); }
+  .tm-d{ font-family:var(--font); font-weight:800; font-size:14px; color:#7a5c8f; }
+  .tm-jetzt{ margin:0; text-align:center; font-size:13px; color:var(--tinte-hell); }
+  .tm-name{ margin:4px 0 0; text-align:center; font-family:var(--font);
+    font-weight:800; font-size:22px; color:var(--tinte); }
+  .tm-eintrag{ display:block; width:100%; text-align:left; padding:11px 12px;
+    border:none; border-bottom:1px solid var(--papier-rand); background:none;
+    font-size:14.5px; font-weight:700; color:var(--tinte); cursor:pointer; }
+  .tm-eintrag:active{ background:var(--papier-tief); }
+
   /* ---------- Weiter im Plan ---------- */
   .pw-box{ border:3px solid #93b077; }
   .pw-stand{ margin:0 0 8px; text-align:center; font-size:13px;
@@ -3182,12 +3205,16 @@ summary.mehr-knopf::after{ content:none; }
           try{ await deleteDoc(ref); }catch(e){ /* war nie drin */ }
           return;
         }
-        await setDoc(ref, {
+        const daten = {
           name: String(eintrag.name).slice(0, 20),
           coins: Math.max(0, parseInt(eintrag.coins, 10) || 0),
           avatarId: String(eintrag.avatarId || "steve").slice(0, 40),
           ts: Date.now()
-        });
+        };
+        // Das Team wird fuer die Team-Ansicht gebraucht. In der
+        // Einzelliste wird es bewusst nicht angezeigt.
+        if(eintrag.team) daten.team = String(eintrag.team).slice(0, 40);
+        await setDoc(ref, daten);
       }
 
       async function getPlayerById(id){
@@ -3222,6 +3249,25 @@ summary.mehr-knopf::after{ content:none; }
          erratenden Nummer, lesbar fuer jeden, der den Link hat. */
       async function geteiltAnlegen(token, daten){
         await setDoc(doc(db, "geteilt", token), daten);
+      }
+      /* Mehr als +1 auf importe laesst die Regel nicht zu - siehe
+         firestore-regeln-v81. */
+      async function geteiltImportZaehlen(token, alt){
+        await updateDoc(doc(db, "geteilt", token), { importe: alt + 1 });
+      }
+      /* Ein Team ist nur ein Name. Kein Mitgliederverzeichnis - wer
+         dazugehoert, steht im eigenen Profil und in der Rangliste. */
+      async function teamAnlegen(slug, name){
+        await setDoc(doc(db, "teams", slug), { name: name, ts: Date.now() });
+      }
+      async function teamsLesen(){
+        const snap = await getDocs(collection(db, "teams"));
+        const raus = [];
+        snap.forEach(d => raus.push(Object.assign({ slug: d.id }, d.data())));
+        return raus;
+      }
+      async function geteiltNeuZaehlen(token, alt){
+        await updateDoc(doc(db, "geteilt", token), { neue: alt + 1 });
       }
       async function geteiltLesen(token){
         const snap = await getDoc(doc(db, "geteilt", token));
@@ -3280,7 +3326,8 @@ summary.mehr-knopf::after{ content:none; }
         savePlayer, getRangliste, setRangliste, getPlayerById,
         adjustCoinsAndInventory, appendRedeemLogEntry, confirmRedeemEntry,
         bestaetigungAnlegen, bestaetigungLesen, bestaetigungErledigen,
-        geteiltAnlegen, geteiltLesen,
+        geteiltAnlegen, geteiltLesen, geteiltImportZaehlen, geteiltNeuZaehlen,
+        teamAnlegen, teamsLesen,
         deleteAccount
       };
     }catch(e){
@@ -3295,7 +3342,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "80.2 – Teilen repariert";
+const APP_VERSION = "83.0 – Teams";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -8106,6 +8153,8 @@ function loadSave(){
     if(data.lingoraPlan && typeof data.lingoraPlan === "object") state.lingoraPlan = data.lingoraPlan;
     if(Array.isArray(data.lingoraPlaene)) state.lingoraPlaene = data.lingoraPlaene;
     // Auch lokal gilt: nur zusammen ist die Antwort gueltig.
+    if(Array.isArray(data.meineLinks)) state.meineLinks = data.meineLinks;
+    if(typeof data.team === "string") state.team = data.team;
     if(typeof data.klasse === "number" && Array.isArray(data.gramDran)){
       state.klasse = data.klasse;
       state.gramDran = data.gramDran;
@@ -8147,6 +8196,8 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       figurBasis: state.figurBasis,
       lingoraPlan: state.lingoraPlan,
       lingoraPlaene: state.lingoraPlaene,
+      meineLinks: state.meineLinks,
+      team: state.team,
       klasse: state.klasse || 0,
       gramDran: Array.isArray(state.gramDran) ? state.gramDran : null,
       lingoraPlanAktiv: state.lingoraPlanAktiv,
@@ -8441,6 +8492,7 @@ function applyPlayerToState(player){
   state.cloudId = player.id;
   // Ein Listen-Link, der vor der Anmeldung kam, wird jetzt eingeloest.
   setTimeout(()=>{ try{ geteilteListeNachholen(); geteiltenPlanNachholen(); }catch(e){} }, 500);
+  setTimeout(()=>{ try{ teilenBelohnungPruefen(); }catch(e){} }, 2500);
   state.playerName = player.name || state.playerName;
   state.coins = typeof player.coins === "number" ? player.coins : 0;
   if(typeof player.diamanten === "number") state.diamanten = player.diamanten;
@@ -8469,6 +8521,8 @@ function applyPlayerToState(player){
      untergeschoben, nicht von ihm gewaehlt. Die wird bewusst verworfen -
      dann kommt die Frage beim naechsten Start eben nach. Seit 73.2
      schreibt die App beide Felder immer zusammen. */
+  if(Array.isArray(player.meineLinks)) state.meineLinks = player.meineLinks;
+  if(typeof player.team === "string") state.team = player.team;
   if(typeof player.klasse === "number" && Array.isArray(player.gramDran)){
     state.klasse = player.klasse;
     state.gramDran = player.gramDran;
@@ -8568,6 +8622,9 @@ async function registerNewAccount(){
     const res = await db.registerWithPin(name, pin, { avatarId: state.avatarId });
     if(res.status === "ok"){
       applyPlayerToState(res.player);
+      // Ist dieses Kind ueber einen geteilten Link hergekommen? Dann
+      // bekommt der Absender die groessere Belohnung.
+      setTimeout(()=>{ try{ neukontoMelden(); }catch(e){} }, 800);
     } else {
       state.loginError = LOGIN_MESSAGES[res.status] || LOGIN_MESSAGES.error;
     }
@@ -8767,6 +8824,10 @@ function syncToCloud(){
 
        Beide Felder gehen immer GEMEINSAM raus. Darauf verlaesst sich das
        Laden weiter unten. */
+    if(Array.isArray(state.meineLinks) && state.meineLinks.length){
+      payload.meineLinks = state.meineLinks.slice(-50);
+    }
+    if(state.team){ payload.team = String(state.team).slice(0, 40); }
     if(state.klasse){
       payload.klasse = state.klasse;
       payload.gramDran = Array.isArray(state.gramDran) ? state.gramDran : [];
@@ -8791,7 +8852,8 @@ function syncToCloud(){
            die Rangliste soll nicht stillschweigend aufhoeren zu
            funktionieren. Fuer die Sortierung ist der Name egal. */
         await db.setRangliste(cloudId, {
-          name: state.spitzname, coins: diamantenStand(), avatarId: state.avatarId
+          name: state.spitzname, coins: diamantenStand(), avatarId: state.avatarId,
+          team: state.team || ""
         });
       }
     }catch(e){ /* Rangliste ist Beiwerk - sie darf nie das Speichern kippen */ }
@@ -10496,6 +10558,7 @@ function render(){
   if(state.screen==="certificate") return renderCertificate();
   if(state.screen==="shop") return renderShop();
   if(state.screen==="leaderboard") return renderLeaderboard();
+  if(state.screen==="team") return renderTeam();
   if(state.screen==="customvocab") return renderCustomVocab();
   if(state.screen==="lernweg") return renderLernweg();
   if(state.screen==="scan") return renderScan();
@@ -15292,6 +15355,137 @@ function renderShop(){
   });
 }
 
+/* ==================================================================
+   TEAMS
+
+   Ein Team ist nur ein Name. Es gibt KEIN Mitgliederverzeichnis - wer
+   dazugehoert, steht im eigenen Profil und in der Rangliste, und
+   zusammengerechnet wird erst hier im Browser.
+
+   In der Einzelliste steht das Team bewusst nicht neben dem
+   Spitznamen: "Spitzname plus Schule" ist zusammen deutlich
+   identifizierender als ein Spitzname allein, und die Rangliste ist
+   ohne Anmeldung lesbar.
+================================================================== */
+function teamSlug(name){
+  return String(name || "").toLowerCase().trim()
+    .replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss")
+    .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0, 40);
+}
+
+/* Die Rangliste nach Teams zusammenrechnen. Kein Serverdienst noetig -
+   die Liste liegt ohnehin schon im Browser. */
+function teamsAusRangliste(){
+  const nach = {};
+  (state.leaderboardData || []).forEach(p=>{
+    const t = (p.team || "").trim();
+    if(!t) return;
+    if(!nach[t]) nach[t] = { name: t, diamanten: 0, leute: 0 };
+    nach[t].diamanten += Math.max(0, parseInt(p.coins, 10) || 0);
+    nach[t].leute += 1;
+  });
+  return Object.values(nach).sort((a, b)=> b.diamanten - a.diamanten);
+}
+
+async function teamBeitreten(name){
+  const sauber = String(name || "").trim().slice(0, 40);
+  if(sauber.length < 3){
+    zeigeHinweis("Zu kurz", "Ein Teamname braucht mindestens drei Zeichen.");
+    return;
+  }
+  state.team = sauber;
+  saveProgress(); syncToCloud();
+  try{
+    const db = await getVokabelDB();
+    if(db && db.teamAnlegen){
+      // Legt das Team an, falls es noch keins ist. Gibt es den Namen
+      // schon, lehnt die Regel das Ueberschreiben ab - genau richtig.
+      try{ await db.teamAnlegen(teamSlug(sauber), sauber); }catch(e){}
+    }
+  }catch(e){}
+  state.teamListe = null;
+  zeigeHinweis("Willkommen im Team! 🛡️",
+    "Du spielst jetzt für <strong>" + escapeHtml(sauber) + "</strong>. "
+    + "Deine Diamanten zählen ab sofort auch für dein Team.");
+  ranglisteLaden();
+  render();
+}
+
+function teamVerlassen(){
+  showConfirmModal("Team wirklich verlassen?", ()=>{
+    state.team = "";
+    saveProgress(); syncToCloud();
+    ranglisteLaden();
+    render();
+  });
+}
+
+async function teamListeLaden(){
+  if(state.teamListe) return;
+  try{
+    const db = await getVokabelDB();
+    if(!db || !db.teamsLesen) return;
+    state.teamListe = (await db.teamsLesen()).slice(0, 200);
+    render();
+  }catch(e){ state.teamListe = []; }
+}
+
+function renderTeam(){
+  teamListeLaden();
+  const liste = state.teamListe || [];
+  app.innerHTML = `
+    ${renderHeader("Dein Team", true)}
+
+    <div class="panel">
+      ${state.team ? `
+        <p class="tm-jetzt">🛡️ Du spielst für</p>
+        <p class="tm-name">${escapeHtml(state.team)}</p>
+        <button class="btn ghost small" id="tm-raus" style="margin-top:10px;">Team verlassen</button>
+      ` : `
+        ${lingoraKopfHtml("Zusammen macht es mehr Spaß. Such dir ein Team – oder gründe eins.", true)}
+        <p class="muted center-text" style="margin:12px 0 0;font-size:13px;">
+          Eure Diamanten werden zusammengezählt. In der Rangliste sieht man nur den
+          Teamnamen und die Summe &ndash; nicht, wer dazugehört.</p>
+      `}
+    </div>
+
+    ${state.team ? "" : `
+      <div class="panel">
+        <div class="setting-label">Neues Team gründen</div>
+        <input type="text" id="tm-neu" maxlength="40" placeholder="z. B. Die Wortjäger">
+        <p class="muted" style="margin:6px 0 10px;font-size:12px;">
+          Tipp: Ein Fantasiename ist schöner als der echte Schulname &ndash;
+          und niemand kann daraus schließen, wer ihr seid.</p>
+        <button class="btn" id="tm-gruenden">🛡️ TEAM GRÜNDEN</button>
+      </div>
+
+      <div class="panel">
+        <div class="setting-label">Einem Team beitreten</div>
+        ${liste.length ? `
+          <div class="vocab-list" style="max-height:300px;">
+            ${liste.map(t=>`
+              <button class="tm-eintrag" data-team="${escapeHtml(t.name)}">
+                <span>🛡️ ${escapeHtml(t.name)}</span>
+              </button>`).join("")}
+          </div>` : `<p class="muted center-text" style="margin:6px 0;">
+            ${state.teamListe ? "Noch kein Team da – gründe das erste!" : "Lade …"}</p>`}
+      </div>
+    `}
+
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
+
+  const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  an('tm-raus', teamVerlassen);
+  an('tm-gruenden', ()=>{
+    const feld = document.getElementById('tm-neu');
+    teamBeitreten(feld ? feld.value : "");
+  });
+  an('back-btn', ()=>{ state.screen = "leaderboard"; render(); });
+  document.querySelectorAll('[data-team]').forEach(el=>{
+    el.addEventListener('click', ()=>teamBeitreten(el.dataset.team));
+  });
+}
+
 function renderLeaderboard(){
   const dabei = !!state.spitzname;
   app.innerHTML = `
@@ -15299,8 +15493,14 @@ function renderLeaderboard(){
     ${playerBadgeHtml()}
 
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:10px;">🏆 TOP SPIELER</h3>
-      ${renderLeaderboardBody()}
+      <div class="lb-schalter">
+        <button class="lb-tab ${state.lbTeams ? "" : "aktiv"}" id="lb-einzeln">🏆 Einzeln</button>
+        <button class="lb-tab ${state.lbTeams ? "aktiv" : ""}" id="lb-teams">🛡️ Teams</button>
+      </div>
+      ${state.lbTeams ? renderTeamlisteBody() : renderLeaderboardBody()}
+      <button class="btn secondary small" id="lb-mein-team" style="margin-top:12px;">
+        ${state.team ? "🛡️ " + escapeHtml(state.team) : "🛡️ Team gründen oder beitreten"}
+      </button>
     </div>
 
     <div class="panel">
@@ -15342,6 +15542,9 @@ function renderLeaderboard(){
     if(wert.length < 2){ if(st) st.textContent = "⚠️ Der Spitzname braucht mindestens zwei Zeichen."; return; }
     nameSetzen(wert);
   });
+  anLb('lb-einzeln', ()=>{ state.lbTeams = false; render(); });
+  anLb('lb-teams',   ()=>{ state.lbTeams = true;  render(); });
+  anLb('lb-mein-team', ()=>{ state.screen = "team"; render(); });
   anLb('lb-name-aendern', ()=>{
     /* Frueher nur lokal geleert. Der oeffentliche Eintrag blieb damit
        stehen, und die App bot gleichzeitig "MITMACHEN" an - ein Kind
@@ -15403,6 +15606,25 @@ function showGradeDetailModal(player){
   const close = ()=>{ if(overlay.parentNode){ overlay.parentNode.removeChild(overlay); } };
   overlay.querySelector('#grade-detail-close-btn').addEventListener('click', close);
   overlay.addEventListener('click', (e)=>{ if(e.target===overlay) close(); });
+}
+
+/* Die Team-Ansicht. Absichtlich ohne Mitgliedernamen - siehe der
+   Kommentar bei teamSlug(). */
+function renderTeamlisteBody(){
+  if(state.leaderboardLoading) return `<p class="center-text muted">Lade Rangliste &hellip;</p>`;
+  const teams = teamsAusRangliste();
+  if(!teams.length){
+    return `<p class="center-text muted">Noch keine Teams &ndash; gründe das erste!</p>`;
+  }
+  return `<div class="vocab-list" style="max-height:420px;">` + teams.map((t, i)=>`
+    <div class="tm-zeile ${t.name === state.team ? "meins" : ""}">
+      <span class="tm-platz">${i + 1}</span>
+      <span class="tm-txt">
+        <span class="tm-n">🛡️ ${escapeHtml(t.name)}</span>
+        <span class="tm-u">${t.leute} ${t.leute === 1 ? "Mitglied" : "Mitglieder"}</span>
+      </span>
+      <span class="tm-d">💜 ${t.diamanten}</span>
+    </div>`).join("") + `</div>`;
 }
 
 function renderLeaderboardBody(){
@@ -16535,6 +16757,32 @@ function listeBildMalen(liste, anzahl, fertig){
     "FERTIGE LERNLISTE 🔥", fertig);
 }
 
+/* Der Absender auf dem Bild: Avatar und Name.
+
+   "Von Nokie für euch" statt "Supporte mich" - das Kind ist der, der
+   etwas GIBT. Bei Kindern traegt Stolz weiter als eine Bitte, und der
+   Mitschueler wird nicht zum Mittel gemacht.
+
+   Der Hinweis auf die Muenzen steht klein darunter: Wer etwas
+   bekommt, soll wissen, was dabei passiert - aber es soll nicht die
+   Ueberschrift sein. */
+function absenderMalen(g, y){
+  const name = String(state.playerName || "").trim();
+  if(!name) return;
+  try{
+    const av = avatarById(state.avatarId);
+    if(av) drawAvatarOnCanvas(g, av, 540 - 150, y - 46, 92);
+  }catch(e){}
+  g.textAlign = "left";
+  g.fillStyle = "#ffffff";
+  g.font = "bold 40px system-ui, sans-serif";
+  g.fillText("Von " + name + " für euch", 540 - 40, y + 4);
+  g.fillStyle = "rgba(255,255,255,0.75)";
+  g.font = "23px system-ui, sans-serif";
+  g.fillText("Jeder Import bringt " + name + " " + TEILEN_DIAMANTEN + " Diamanten", 540 - 40, y + 36);
+  g.textAlign = "center";
+}
+
 function teilBildMalen(titel, marke, ueber, fertig){
   const c = document.createElement("canvas");
   c.width = 1080; c.height = 1080;
@@ -16584,12 +16832,14 @@ function teilBildMalen(titel, marke, ueber, fertig){
   g.font = "bold 31px system-ui, sans-serif";
   g.fillText("Antippen – dann hast du sie auch 👇", 540, 882);
 
+  absenderMalen(g, 952);
+
   g.fillStyle = "rgba(255,255,255,0.92)";
-  g.font = "31px system-ui, sans-serif";
-  g.fillText("Kostenlos · Ohne Werbung · Mit Spielen", 540, 970);
+  g.font = "27px system-ui, sans-serif";
+  g.fillText("Kostenlos · Ohne Werbung · Mit Spielen", 540, 1010);
   g.fillStyle = "#ffffff";
-  g.font = "bold 46px system-ui, sans-serif";
-  g.fillText("lingocrafter.de", 540, 1032);
+  g.font = "bold 42px system-ui, sans-serif";
+  g.fillText("lingocrafter.de", 540, 1058);
 
   const schluss = ()=>{
     try{ c.toBlob(b => fertig(b), "image/png"); }
@@ -16656,8 +16906,10 @@ async function kurzLink(art, name, inhalt, langerLink){
     const token = teilToken();
     await db.geteiltAnlegen(token, {
       art: art, name: String(name || "").slice(0, 40),
-      inhalt: inhalt, ts: Date.now()
+      inhalt: inhalt, ts: Date.now(),
+      von: state.cloudId, importe: 0, neue: 0
     });
+    meinenLinkMerken(token);
     return location.origin + location.pathname + "#t=" + token;
   }catch(e){ return langerLink; }
 }
@@ -16734,6 +16986,163 @@ function teilAbbruch(grund){
     if(o.parentNode) o.parentNode.removeChild(o);
   });
   zeigeHinweis("Das hat nicht geklappt", grund);
+}
+
+/* ==================================================================
+   TEILEN WIRD BELOHNT
+
+   Wer eine Liste teilt und jemand uebernimmt sie wirklich, bekommt
+   70 Muenzen. Der Weg dorthin ist absichtlich indirekt:
+
+   Niemand darf in ein fremdes Profil schreiben - dabei bleibt es. Der
+   Empfaenger kann dem Absender also nichts gutschreiben. Stattdessen
+   zaehlt das geteilte Dokument mit (die Regel erlaubt dort nur "+1 auf
+   importe"), und die App des Absenders holt sich die Belohnung beim
+   naechsten Start selbst ab.
+
+   NUR MUENZEN, KEINE DIAMANTEN: Diamanten bestimmen den Rang und
+   stehen fuer Koennen. Wer viel teilt, wuerde sonst aufsteigen, ohne
+   mehr zu koennen - und genau diese Trennung war ihr Sinn.
+
+   Und das gehoert dazu gesagt: faelschungssicher ist das nicht. Die
+   App laeuft im Browser des Kindes, ihr Code ist lesbar. Die drei
+   Bremsen unten begrenzen den Schaden, sie verhindern ihn nicht.
+================================================================== */
+/* DIAMANTEN, NICHT MUENZEN.
+
+   Muenzen werden zu Hause in echte Belohnungen umgewandelt - wer
+   fleissig Links verteilt, koennte sich damit etwas auszahlen lassen,
+   ohne gelernt zu haben. Diamanten sind ein Zeugnis und kosten
+   niemanden etwas.
+
+   Zur Einordnung: eine richtige Antwort bringt 5 Diamanten. 25 sind
+   also fuenf richtige Antworten, 100 etwa eine ganze Uebungsrunde. */
+const TEILEN_DIAMANTEN   = 25;   // je uebernommener Liste
+const NEUKONTO_DIAMANTEN = 100;  // wer ueber den Link NEU dazukommt
+const TEILEN_MAX_PRO_LINK = 10; // mehr wird pro Link nicht belohnt
+
+/* Wer hat mich hergeschickt?
+
+   Zwischen dem Antippen eines Links und dem Anmelden kann ein Neuladen
+   der Seite liegen - beim Anlegen eines Kontos passiert das regelmaessig.
+   Im Arbeitsspeicher waere der Absender dann weg, und genau deshalb ging
+   in Fassung 81 jeder Import verloren, der vor der Anmeldung ankam.
+   Also zusaetzlich in den Geraetespeicher. */
+const WERBER_SCHLUESSEL = "lc_werber";
+
+function werberMerken(token, von){
+  if(!token || !von) return;
+  state.werber = { t: token, von: von, ts: Date.now() };
+  try{ localStorage.setItem(WERBER_SCHLUESSEL, JSON.stringify(state.werber)); }catch(e){}
+}
+
+function werberHolen(){
+  if(state.werber) return state.werber;
+  try{
+    const roh = localStorage.getItem(WERBER_SCHLUESSEL);
+    if(!roh) return null;
+    const w = JSON.parse(roh);
+    // Nach zwei Wochen ist ein Link kein Hinweis mehr, sondern ein Rest.
+    if(!w || !w.t || !w.von || (Date.now() - (w.ts || 0)) > 14 * 86400000) return null;
+    state.werber = w;
+    return w;
+  }catch(e){ return null; }
+}
+
+function werberVergessen(){
+  state.werber = null;
+  try{ localStorage.removeItem(WERBER_SCHLUESSEL); }catch(e){}
+}
+
+/* Ein frisch angelegtes Konto ueber einen geteilten Link. Zaehlt genau
+   einmal - der Merker wird VOR dem Melden geloescht, damit ein zweiter
+   Versuch ins Leere laeuft. */
+async function neukontoMelden(){
+  const w = werberHolen();
+  if(!w) return;
+  werberVergessen();
+  if(w.von === state.cloudId) return;      // sich selbst wirbt niemand
+  try{
+    const db = await getVokabelDB();
+    if(!db || !db.geteiltNeuZaehlen || !state.cloudId) return;
+    const d = await db.geteiltLesen(w.t);
+    if(!d) return;
+    await db.geteiltNeuZaehlen(w.t, Number(d.neue) || 0);
+  }catch(e){ /* nett, aber keine Fehlermeldung wert */ }
+}
+
+function meineLinks(){
+  if(!Array.isArray(state.meineLinks)) state.meineLinks = [];
+  return state.meineLinks;
+}
+
+function meinenLinkMerken(token){
+  const liste = meineLinks();
+  if(liste.some(x => x && x.t === token)) return;
+  liste.push({ t: token, b: 0 });          // b = schon belohnte Importe
+  // Aeltere Links fallen hinten raus - die Regel deckelt bei 60.
+  while(liste.length > 50) liste.shift();
+  try{ saveProgress(); syncToCloud(); }catch(e){}
+}
+
+/* Beim Start: Hat jemand meine Listen uebernommen? */
+async function teilenBelohnungPruefen(){
+  const liste = meineLinks();
+  if(!liste.length || !state.cloudId) return;
+  let dazu = 0, wieOft = 0, neueLeute = 0;
+  try{
+    const db = await getVokabelDB();
+    if(!db || !db.geteiltLesen) return;
+    for(const eintrag of liste){
+      if(!eintrag || !eintrag.t) continue;
+      if((eintrag.b || 0) >= TEILEN_MAX_PRO_LINK
+         && (eintrag.n || 0) >= TEILEN_MAX_PRO_LINK) continue;
+      let d = null;
+      try{ d = await db.geteiltLesen(eintrag.t); }catch(e){ continue; }
+      if(!d) continue;
+      const importe = Math.min(TEILEN_MAX_PRO_LINK, Math.max(0, Number(d.importe) || 0));
+      const neuKonten = Math.min(TEILEN_MAX_PRO_LINK, Math.max(0, Number(d.neue) || 0));
+      const nImporte = importe - (eintrag.b || 0);
+      const nKonten  = neuKonten - (eintrag.n || 0);
+      if(nImporte > 0){
+        dazu += nImporte * TEILEN_DIAMANTEN;
+        wieOft += nImporte;
+        eintrag.b = importe;
+      }
+      if(nKonten > 0){
+        dazu += nKonten * NEUKONTO_DIAMANTEN;
+        neueLeute += nKonten;
+        eintrag.n = neuKonten;
+      }
+    }
+  }catch(e){ return; }
+  if(dazu <= 0) return;
+  // Auf das Konto der DIAMANTEN, nicht der Muenzen - siehe oben.
+  diamantenDazu(dazu);
+  saveProgress(); syncToCloud();
+  const teile = [];
+  if(wieOft) teile.push("<strong>" + wieOft + "</strong> "
+    + (wieOft === 1 ? "Person hat" : "Leute haben") + " deine Liste übernommen");
+  if(neueLeute) teile.push("<strong>" + neueLeute + "</strong> "
+    + (neueLeute === 1 ? "Person ist" : "Leute sind") + " dadurch neu dazugekommen");
+  zeigeHinweis("Danke fürs Teilen! 🎁",
+    teile.join(" und ") + ". Dafür gibt es <strong>" + dazu + " 💜 Diamanten</strong>.");
+  try{ render(); }catch(e){}
+}
+
+/* Nach einem erfolgreichen Import: dem Absender gutschreiben lassen.
+   Der eigene Link zaehlt nicht - sonst koennte man sich selbst
+   beschenken, indem man den eigenen Link antippt. */
+async function importMelden(token, von){
+  if(!token || !von) return;
+  if(von === state.cloudId) return;
+  try{
+    const db = await getVokabelDB();
+    if(!db || !db.geteiltImportZaehlen || !state.cloudId) return;
+    const d = await db.geteiltLesen(token);
+    if(!d) return;
+    await db.geteiltImportZaehlen(token, Number(d.importe) || 0);
+  }catch(e){ /* Belohnung ist nett, aber nicht wichtig genug fuer eine Fehlermeldung */ }
 }
 
 function listeTeilen(name){
@@ -16925,16 +17334,26 @@ async function kurzLinkPruefen(){
     if(d.art === "plan"){
       const paket = planAuspacken(d.inhalt);
       if(!paket){ zeigeHinweis("Link unvollständig", "Von diesem Plan ist unterwegs etwas verloren gegangen."); return; }
-      if(!(state.cloudId || state.guest)){ state.geteilterPlan = paket; return; }
-      planFragen(paket);
+      if(!(state.cloudId || state.guest)){
+        state.geteilterPlan = paket;
+        werberMerken(m[1], d.von);
+        return;
+      }
+      planFragen(paket, m[1], d.von);
       return;
     }
     const paket = listeAuspacken(d.inhalt);
     if(!paket){ zeigeHinweis("Link unvollständig", "Von dieser Liste ist unterwegs etwas verloren gegangen."); return; }
-    if(!(state.cloudId || state.guest)){ state.geteilteListe = paket; return; }
+    if(!(state.cloudId || state.guest)){
+      state.geteilteListe = paket;
+      werberMerken(m[1], d.von);
+      return;
+    }
     showConfirmModal("Liste \u201e" + paket.name + "\u201c mit " + paket.paare.length
       + " Wörtern übernehmen?", ()=>{
       const n = listeUebernehmen(paket);
+      // Erst jetzt zaehlt der Import - nicht schon beim Antippen des Links.
+      importMelden(m[1], d.von);
       zeigeHinweis("Fertig 🎉", n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
       render();
     });
@@ -16951,13 +17370,14 @@ function geteiltenPlanPruefen(){
   planFragen(paket);
 }
 
-function planFragen(paket){
+function planFragen(paket, token, von){
   const teile = [];
   if(paket.vokabeln.length) teile.push(paket.vokabeln.length + "x Vokabeln");
   if(paket.grammatik.length) teile.push(paket.grammatik.length + "x Grammatik");
   showConfirmModal("Lernplan übernehmen? (" + teile.join(", ") + ")", ()=>{
     const plan = planUebernehmen(paket);
     if(!plan){ zeigeHinweis("Passt nicht", "Dieser Plan gehört zu Themen, die du noch nicht freigeschaltet hast."); return; }
+    importMelden(token, von);
     zeigeHinweis("Plan übernommen 🎉", "Lingora hat ihn für dich eingerichtet.");
     state.screen = "lingoraplan";
     render();
@@ -16968,7 +17388,8 @@ function geteiltenPlanNachholen(){
   const paket = state.geteilterPlan;
   if(!paket) return;
   state.geteilterPlan = null;
-  planFragen(paket);
+  const w = werberHolen();
+  planFragen(paket, w ? w.t : null, w ? w.von : null);
 }
 
 /* Nach dem Anmelden: Lag ein Listen-Link an, bevor jemand da war? */
@@ -16976,9 +17397,13 @@ function geteilteListeNachholen(){
   const paket = state.geteilteListe;
   if(!paket) return;
   state.geteilteListe = null;
+  // Der Absender ist ueber werberMerken() erhalten geblieben - deshalb
+  // geht seine Belohnung jetzt nicht mehr verloren.
+  const w = werberHolen();
   showConfirmModal("Liste \u201e" + paket.name + "\u201c mit " + paket.paare.length
     + " Wörtern übernehmen?", ()=>{
     const n = listeUebernehmen(paket);
+    if(w) importMelden(w.t, w.von);
     zeigeHinweis("Fertig 🎉", n + " Wörter liegen jetzt unter deinen eigenen Vokabeln.");
     render();
   });
