@@ -209,6 +209,27 @@
 
   .mz-plus{ color:#2f7a3c; font-size:12px; margin-left:2px; }
 
+  /* ---------- Mehr verdienen ---------- */
+  .fz-klick{ cursor:pointer; border:none; font:inherit; text-align:center; }
+  .fz-mehr{ display:block; margin-top:3px; font-size:10.5px; font-weight:700;
+    color:#7a5c8f; letter-spacing:.02em; }
+  .mv-box{ max-height:88vh; overflow-y:auto; }
+  .mv-titel{ margin:0 0 12px; text-align:center; font-family:var(--font);
+    font-weight:800; font-size:19px; }
+  .mv-haupt{ display:flex; gap:11px; align-items:flex-start; padding:12px;
+    background:#eaf3de; border:2px solid #c0dd97; border-radius:14px; }
+  .mv-l{ margin:14px 0 7px; font-size:11.5px; font-weight:800; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--tinte-hell); text-align:center; }
+  .mv-weg{ display:flex; gap:11px; align-items:flex-start; width:100%;
+    padding:12px; margin-bottom:8px; text-align:left; cursor:pointer;
+    background:var(--papier-tief); border:2px solid var(--papier-rand);
+    border-radius:14px; }
+  .mv-weg:active{ transform:translateY(1px); }
+  .mv-ic{ font-size:24px; line-height:1.1; flex:0 0 auto; }
+  .mv-txt{ display:flex; flex-direction:column; gap:2px; }
+  .mv-t{ font-family:var(--font); font-weight:800; font-size:15.5px; color:var(--tinte); }
+  .mv-u{ font-size:12.5px; line-height:1.45; color:var(--tinte-hell); margin:0; }
+
   /* ---------- Teams ---------- */
   .lb-schalter{ display:flex; gap:8px; margin-bottom:12px; }
   .lb-tab{ flex:1; padding:9px 8px; border:2px solid var(--papier-rand);
@@ -3342,7 +3363,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "83.1 – Kacheln getauscht";
+const APP_VERSION = "84.0 – Mehr verdienen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6191,6 +6212,9 @@ function lingoraStartVerdrahten(){
   if(el){ el.addEventListener('click', ()=>lingoraOeffnen("start")); }
   const lw = document.getElementById('lg-lernweg');
   if(lw){ lw.addEventListener('click', ()=>{ state.screen = "lernweg"; render(); }); }
+  const fzd = document.getElementById('fz-diamanten');
+  if(fzd){ fzd.addEventListener('click', mehrVerdienenZeigen); }
+
   const zp = document.getElementById('zp-los');
   if(zp){
     zp.addEventListener('click', ()=>{
@@ -11538,13 +11562,13 @@ function werkzeugGitterHtml(){
     <div class="panel">
       <h3 style="font-size:14px;margin-bottom:2px;opacity:.75;">AUSSERDEM</h3>
       <div class="werk-gitter">
-        ${kachel("radar-btn", "ic-plan", "Klassenarbeits-Radar", false, "wk-rot")}
+        ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
         ${kachel("custom-vocab-btn", "ic-eigene", "Eigene Vokabeln", !state.cloudId, "wk-gruen")}
         ${kachel("grammar-stats-btn", "ic-skills", "Grammatik-Skills", false, "wk-violett")}
         ${kachel("vokabel-stats-btn", "ic-speicher", "Vokabel-Skills", false, "wk-tuerkis")}
         ${kachel("shop-btn", "ic-muenzen", "Shop", g, "wk-gold")}
         ${kachel("inventar-btn", "ic-geschenk", "Inventar (" + anzahlImInventar() + ")", false, "wk-braun")}
-        ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
+        ${kachel("radar-btn", "ic-plan", "Klassenarbeits-Radar", false, "wk-rot")}
       </div>
     </div>
 `;
@@ -11591,10 +11615,65 @@ function tageBisArbeit(){
   }catch(e){ return 0; }
 }
 
+/* "Mehr verdienen".
+
+   Ganz oben steht bewusst, dass Ueben die Hauptquelle ist. Das Fenster
+   soll nicht den Eindruck erwecken, Teilen sei der schnellere Weg nach
+   oben - Diamanten stehen fuer Koennen, und dabei soll es bleiben. */
+function mehrVerdienenZeigen(){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="panel modal-box mv-box">
+      <p class="mv-titel">💜 Mehr Diamanten verdienen</p>
+
+      <div class="mv-haupt">
+        <span class="mv-ic">🎯</span>
+        <div>
+          <p class="mv-t">Üben bringt am meisten</p>
+          <p class="mv-u">Jede richtige Antwort bringt <strong>5 Diamanten</strong>.
+          Eine Übungsrunde also rund 100.</p>
+        </div>
+      </div>
+
+      <p class="mv-l">UND AUSSERDEM</p>
+
+      <button class="mv-weg" id="mv-teilen">
+        <span class="mv-ic">💬</span>
+        <span class="mv-txt">
+          <span class="mv-t">Vokabelliste teilen</span>
+          <span class="mv-u">Wer deine Liste übernimmt, bringt dir
+            <strong>${TEILEN_DIAMANTEN} Diamanten</strong>.</span>
+        </span>
+      </button>
+
+      <button class="mv-weg" id="mv-team">
+        <span class="mv-ic">🛡️</span>
+        <span class="mv-txt">
+          <span class="mv-t">Neue Mitglieder finden</span>
+          <span class="mv-u">Stärkt euer Team mit mehr Mitgliedern. Wer über
+            deinen Link neu dazukommt, bringt dir
+            <strong>${NEUKONTO_DIAMANTEN} Diamanten</strong>.</span>
+        </span>
+      </button>
+
+      <button class="btn" id="mv-zu" style="margin-top:12px;">✓ ALLES KLAR</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  const zu = ()=>{ if(overlay.parentNode) overlay.parentNode.removeChild(overlay); };
+  overlay.querySelector('#mv-zu').addEventListener('click', zu);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) zu(); });
+  overlay.querySelector('#mv-teilen').addEventListener('click', ()=>{
+    zu(); state.screen = "customvocab"; render();
+  });
+  overlay.querySelector('#mv-team').addEventListener('click', ()=>{
+    zu(); state.screen = "team"; render();
+  });
+}
+
 function fortschrittZeileHtml(){
   if(!(state.cloudId || state.guest)) return "";
   const heute  = heuteGeschafft();
-  const serie  = tagesSerie();
   const tage   = tageBisArbeit();
   const anteil = Math.min(100, Math.round(heute.gesamt / TAGESZIEL * 100));
   const voll   = heute.gesamt >= TAGESZIEL;
@@ -11607,11 +11686,12 @@ function fortschrittZeileHtml(){
         <span class="fz-m-u">Münzen</span>
       </div>
       <div class="fz-rest">
-        <div class="fz-kachel">
-          <span class="fz-k-ic">${serie > 0 ? "🔥" : "💤"}</span>
-          <span class="fz-k-t">${serie}</span>
-          <span class="fz-k-u">${serie === 1 ? "Tag" : "Tage"} am Stück</span>
-        </div>
+        <button class="fz-kachel fz-klick" id="fz-diamanten" type="button">
+          <span class="fz-k-ic">💜</span>
+          <span class="fz-k-t">${diamantenStand()}</span>
+          <span class="fz-k-u">Diamanten</span>
+          <span class="fz-mehr">Mehr verdienen ›</span>
+        </button>
         <div class="fz-kachel ${voll ? "voll" : ""}">
           <span class="fz-k-ic">${voll ? "🏆" : "✅"}</span>
           <span class="fz-k-t">${heute.gesamt}<small>/${TAGESZIEL}</small></span>
