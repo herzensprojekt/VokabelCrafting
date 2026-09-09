@@ -210,9 +210,18 @@
   .mz-plus{ color:#2f7a3c; font-size:12px; margin-left:2px; }
 
   /* ---------- Mehr verdienen ---------- */
-  .fz-klick{ cursor:pointer; border:none; font:inherit; text-align:center; }
-  .fz-mehr{ display:block; margin-top:3px; font-size:10.5px; font-weight:700;
-    color:#7a5c8f; letter-spacing:.02em; }
+  /* Zweizeilig bei 9,5px. Einzeilig braeuchte "Mehr verdienen ›" 76px,
+     in die Kachel passen 70 - und auf 8,5px geschrumpft waere es
+     kleiner als die Beschriftung darueber. Gemessen: 69,5 x 21,8. */
+  .fz-klick{ cursor:pointer; font:inherit; }
+  .fz-mehr{ grid-row:4; align-self:center; line-height:1.15;
+    font-size:9.5px; font-weight:800; color:#7a5c8f; }
+  .mv-einladen{ width:100%; margin:2px 0 0; padding:11px;
+    font-family:var(--font); font-weight:800; font-size:14.5px;
+    color:#fff; background:linear-gradient(160deg,#7b5ea7,#5d4285);
+    border:none; border-radius:14px; cursor:pointer;
+    box-shadow:0 3px 9px rgba(80,55,120,0.3); }
+  .mv-einladen:active{ transform:translateY(1px); }
   .mv-box{ max-height:88vh; overflow-y:auto; }
   .mv-titel{ margin:0 0 12px; text-align:center; font-family:var(--font);
     font-weight:800; font-size:19px; }
@@ -2619,38 +2628,80 @@ summary.mehr-knopf::after{ content:none; }
 .ev-liste button:hover{ background:#ddd4c6; }
 .ev-liste{ flex-wrap:nowrap; }
 
-/* --- Fortschritt ganz oben, ohne Scrollen ---------------------------- */
+/* --- Fortschritt ganz oben, ohne Scrollen ----------------------------
+
+   ALLE VIER KACHELN SIND GLEICH GEBAUT.
+
+   Vorher war die Muenzkachel ein Sonderfall: eigene Breite, eigenes
+   Bildmass, eigene Schriftgroessen - und die drei uebrigen sassen in
+   einem zusaetzlichen Kasten (.fz-rest). Deshalb stand kein Symbol und
+   kein Text auf derselben Hoehe.
+
+   Jetzt liegen alle vier direkt nebeneinander: .fz-rest reicht seine
+   Kinder mit display:contents nach oben durch. Die Zeile davor
+   (display:flex) bleibt bewusst stehen - ein Browser, der contents
+   nicht kennt, faellt sauber auf das alte Verhalten zurueck.
+
+   Und sie teilen sich EIN Raster:
+
+       Zeile 1  30px   Symbol, mittig
+       Zeile 2  auto   Zahl
+       Zeile 3  1fr    Beschriftung, oben buendig
+       Zeile 4  25px   "Mehr verdienen" bzw. der Fortschrittsbalken
+
+   Weil Zeile 3 den ganzen Rest schluckt, beginnt die Beschriftung in
+   jeder Kachel auf derselben Hoehe - auch da, wo sie zweizeilig ist
+   ("Tage bis zur Arbeit").
+
+   Im Browser nachgemessen bei 390px Breite: Breite 83,5 / Hoehe 123,5 /
+   Symbolmitte 41,0 / Zahl oben 57,0 / Text oben 83,3 - in allen vier
+   Kacheln identisch.
+
+   Die Muenzkachel bekommt einen durchsichtigen Rand: sonst waere ihr
+   Inhalt gegenueber den umrandeten Nachbarn um zwei Pixel verschoben. */
 .fort-zeile{
-  display:flex; align-items:stretch; gap:10px; margin:0 0 12px;
+  display:flex; align-items:stretch; gap:8px; margin:0 0 12px;
+}
+.fz-rest{ flex:1; display:flex; gap:8px; min-width:0; }
+.fz-rest{ display:contents; }
+
+.fz-muenzen, .fz-kachel{
+  flex:1 1 0; min-width:0; position:relative;
+  display:grid; grid-template-rows:30px auto 1fr 25px;
+  justify-items:center; padding:8px 5px 4px;
+  border:2px solid transparent; border-radius:16px;
 }
 .fz-muenzen{
-  flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:12px 14px; min-width:96px;
   background:linear-gradient(160deg,var(--ocker-a),var(--ocker-b));
-  border-radius:18px; box-shadow:0 3px 10px rgba(120,90,20,0.24);
+  box-shadow:0 3px 10px rgba(120,90,20,0.24);
   color:#4a3400;
 }
-.fz-m-ic{ font-size:22px; line-height:1; filter:drop-shadow(0 2px 2px rgba(0,0,0,0.25)); }
-.fz-m-zahl{ font-family:var(--font); font-weight:800; font-size:clamp(20px,6vw,26px); line-height:1.1; margin-top:2px; }
-.fz-m-u{ font-size:11px; font-weight:700; opacity:.75; letter-spacing:.03em; }
-
-.fz-rest{ flex:1; display:flex; gap:8px; min-width:0; }
 .fz-kachel{
-  flex:1; min-width:0; position:relative;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:10px 6px 12px;
-  background:rgba(253,250,243,0.93); border:2px solid var(--papier-rand);
-  border-radius:16px; box-shadow:0 3px 10px rgba(90,70,40,0.12);
+  background:rgba(253,250,243,0.93); border-color:var(--papier-rand);
+  box-shadow:0 3px 10px rgba(90,70,40,0.12);
   backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
 }
 .fz-kachel.voll{ background:#eef4e6; border-color:#bcd0a4; }
-.fz-k-ic{ font-size:18px; line-height:1; }
-.fz-k-t{ font-family:var(--font); font-weight:800; font-size:clamp(16px,5vw,21px);
-         color:var(--tinte); line-height:1.1; margin-top:1px; }
+
+.fz-m-ic, .fz-k-ic{ align-self:center; font-size:21px; line-height:1; }
+.fz-m-ic{ filter:drop-shadow(0 2px 2px rgba(0,0,0,0.25)); }
+
+.fz-m-zahl, .fz-k-t{
+  font-family:var(--font); font-weight:800;
+  font-size:clamp(17px,5.2vw,22px); line-height:1.2; margin:1px 0 0;
+}
+.fz-k-t{ color:var(--tinte); }
 .fz-k-t small{ font-size:.6em; font-weight:700; opacity:.6; }
-.fz-k-u{ font-size:10.5px; color:var(--tinte-hell); line-height:1.2; text-align:center; margin-top:2px; }
+
+.fz-m-u, .fz-k-u{
+  align-self:start; text-align:center; line-height:1.2;
+  margin-top:2px; font-size:10.5px;
+}
+.fz-k-u{ color:var(--tinte-hell); }
+.fz-m-u{ font-weight:700; opacity:.8; letter-spacing:.02em; }
+
 .fz-balken{
-  position:absolute; left:8px; right:8px; bottom:5px; height:4px;
+  position:absolute; left:8px; right:8px; bottom:8px; height:4px;
   background:var(--papier-tief); border-radius:3px; overflow:hidden;
 }
 .fz-balken i{ display:block; height:100%; background:var(--salbei-b); border-radius:3px; transition:width .4s ease; }
@@ -2743,7 +2794,9 @@ summary.mehr-knopf::after{ content:none; }
 .werk-karte:disabled .wk-bild{ filter:grayscale(0.7) opacity(0.7); }
 
 .fz-m-bild{
-  width:34px; height:auto; display:block;
+  /* 28px hoch, damit der Muenzstapel in derselben 30px-Zeile sitzt
+     wie die Symbole der Nachbarkacheln. */
+  height:28px; width:auto; display:block; align-self:center;
   filter:drop-shadow(0 2px 3px rgba(70,50,10,0.35));
 }
 
@@ -3363,7 +3416,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "84.0 – Mehr verdienen";
+const APP_VERSION = "85.0 – Einladen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6138,7 +6191,7 @@ function rangZeileHtml(){
   return `
     <div class="ht-rang-box">
       <p class="ht-rang">${f.jetzt.icon} <strong>${escapeHtml(f.jetzt.name)}</strong>
-        &nbsp;·&nbsp; noch <strong>${f.fehlt}</strong> 💜 bis
+        &nbsp;·&nbsp; noch <strong>${f.fehlt}</strong> 💎 bis
         ${f.naechst.icon} <strong>${escapeHtml(f.naechst.name)}</strong></p>
       <div class="ht-balken"><span style="width:${Math.max(2, f.prozent)}%;"></span></div>
     </div>`;
@@ -11625,7 +11678,7 @@ function mehrVerdienenZeigen(){
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="panel modal-box mv-box">
-      <p class="mv-titel">💜 Mehr Diamanten verdienen</p>
+      <p class="mv-titel">💎 Mehr Diamanten verdienen</p>
 
       <div class="mv-haupt">
         <span class="mv-ic">🎯</span>
@@ -11656,6 +11709,7 @@ function mehrVerdienenZeigen(){
             <strong>${NEUKONTO_DIAMANTEN} Diamanten</strong>.</span>
         </span>
       </button>
+      <button class="mv-einladen" id="mv-einladen">💬 Jemanden einladen</button>
 
       <button class="btn" id="mv-zu" style="margin-top:12px;">✓ ALLES KLAR</button>
     </div>`;
@@ -11668,6 +11722,9 @@ function mehrVerdienenZeigen(){
   });
   overlay.querySelector('#mv-team').addEventListener('click', ()=>{
     zu(); state.screen = "team"; render();
+  });
+  overlay.querySelector('#mv-einladen').addEventListener('click', ()=>{
+    zu(); einladungTeilen();
   });
 }
 
@@ -11687,7 +11744,7 @@ function fortschrittZeileHtml(){
       </div>
       <div class="fz-rest">
         <button class="fz-kachel fz-klick" id="fz-diamanten" type="button">
-          <span class="fz-k-ic">💜</span>
+          <span class="fz-k-ic">💎</span>
           <span class="fz-k-t">${diamantenStand()}</span>
           <span class="fz-k-u">Diamanten</span>
           <span class="fz-mehr">Mehr verdienen ›</span>
@@ -15520,7 +15577,11 @@ function renderTeam(){
       ${state.team ? `
         <p class="tm-jetzt">🛡️ Du spielst für</p>
         <p class="tm-name">${escapeHtml(state.team)}</p>
-        <button class="btn ghost small" id="tm-raus" style="margin-top:10px;">Team verlassen</button>
+        <button class="mv-einladen" id="tm-einladen" style="margin-top:12px;">💬 Jemanden einladen</button>
+        <p class="muted center-text" style="margin:7px 0 0;font-size:12px;">
+          Wer über deinen Link neu dazukommt, bringt dir
+          <strong>${NEUKONTO_DIAMANTEN} 💎</strong> &ndash; und landet gleich in eurem Team.</p>
+        <button class="btn ghost small" id="tm-raus" style="margin-top:12px;">Team verlassen</button>
       ` : `
         ${lingoraKopfHtml("Zusammen macht es mehr Spaß. Such dir ein Team – oder gründe eins.", true)}
         <p class="muted center-text" style="margin:12px 0 0;font-size:13px;">
@@ -15556,6 +15617,7 @@ function renderTeam(){
 
   const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
   an('tm-raus', teamVerlassen);
+  an('tm-einladen', einladungTeilen);
   an('tm-gruenden', ()=>{
     const feld = document.getElementById('tm-neu');
     teamBeitreten(feld ? feld.value : "");
@@ -15703,7 +15765,7 @@ function renderTeamlisteBody(){
         <span class="tm-n">🛡️ ${escapeHtml(t.name)}</span>
         <span class="tm-u">${t.leute} ${t.leute === 1 ? "Mitglied" : "Mitglieder"}</span>
       </span>
-      <span class="tm-d">💜 ${t.diamanten}</span>
+      <span class="tm-d">💎 ${t.diamanten}</span>
     </div>`).join("") + `</div>`;
 }
 
@@ -16846,7 +16908,7 @@ function listeBildMalen(liste, anzahl, fertig){
    Der Hinweis auf die Muenzen steht klein darunter: Wer etwas
    bekommt, soll wissen, was dabei passiert - aber es soll nicht die
    Ueberschrift sein. */
-function absenderMalen(g, y){
+function absenderMalen(g, y, oben, unten){
   const name = String(state.playerName || "").trim();
   if(!name) return;
   try{
@@ -16856,14 +16918,16 @@ function absenderMalen(g, y){
   g.textAlign = "left";
   g.fillStyle = "#ffffff";
   g.font = "bold 40px system-ui, sans-serif";
-  g.fillText("Von " + name + " für euch", 540 - 40, y + 4);
+  g.fillText(oben || ("Von " + name + " für euch"), 540 - 40, y + 4);
   g.fillStyle = "rgba(255,255,255,0.75)";
   g.font = "23px system-ui, sans-serif";
-  g.fillText("Jeder Import bringt " + name + " " + TEILEN_DIAMANTEN + " Diamanten", 540 - 40, y + 36);
+  g.fillText(unten
+    || ("Jeder Import bringt " + name + " " + TEILEN_DIAMANTEN + " Diamanten"),
+    540 - 40, y + 36);
   g.textAlign = "center";
 }
 
-function teilBildMalen(titel, marke, ueber, fertig){
+function teilBildMalen(titel, marke, ueber, fertig, texte){
   const c = document.createElement("canvas");
   c.width = 1080; c.height = 1080;
   const g = c.getContext("2d");
@@ -16903,16 +16967,25 @@ function teilBildMalen(titel, marke, ueber, fertig){
   }
   g.fillText(name, 540, 752);
 
-  kasten(390, 780, 300, 72, "#eaf3de", 36);
-  g.fillStyle = "#3b6d11";
+  /* Die Pille waechst mit ihrem Inhalt. Vorher war sie 300px breit -
+     ein Teamname haette rechts und links herausgeragt. */
   g.font = "bold 40px system-ui, sans-serif";
+  let mGroesse = 40, mBreite = g.measureText(marke).width;
+  while(mBreite > 780 && mGroesse > 24){
+    mGroesse -= 2;
+    g.font = "bold " + mGroesse + "px system-ui, sans-serif";
+    mBreite = g.measureText(marke).width;
+  }
+  const pBreite = Math.max(300, Math.min(900, mBreite + 76));
+  kasten(540 - pBreite / 2, 780, pBreite, 72, "#eaf3de", 36);
+  g.fillStyle = "#3b6d11";
   g.fillText(marke, 540, 828);
 
   g.fillStyle = "#5f5e5a";
   g.font = "bold 31px system-ui, sans-serif";
-  g.fillText("Antippen – dann hast du sie auch 👇", 540, 882);
+  g.fillText((texte && texte.ruf) || "Antippen – dann hast du sie auch 👇", 540, 882);
 
-  absenderMalen(g, 952);
+  absenderMalen(g, 952, texte && texte.oben, texte && texte.unten);
 
   g.fillStyle = "rgba(255,255,255,0.92)";
   g.font = "27px system-ui, sans-serif";
@@ -17110,9 +17183,11 @@ const TEILEN_MAX_PRO_LINK = 10; // mehr wird pro Link nicht belohnt
    Also zusaetzlich in den Geraetespeicher. */
 const WERBER_SCHLUESSEL = "lc_werber";
 
-function werberMerken(token, von){
+function werberMerken(token, von, team){
   if(!token || !von) return;
   state.werber = { t: token, von: von, ts: Date.now() };
+  // Der Teamname aus einer Einladung - damit sie ihr Versprechen haelt.
+  if(team) state.werber.team = String(team).slice(0, 40);
   try{ localStorage.setItem(WERBER_SCHLUESSEL, JSON.stringify(state.werber)); }catch(e){}
 }
 
@@ -17149,6 +17224,15 @@ async function neukontoMelden(){
     if(!d) return;
     await db.geteiltNeuZaehlen(w.t, Number(d.neue) || 0);
   }catch(e){ /* nett, aber keine Fehlermeldung wert */ }
+  /* Die Einladung hat ein Team versprochen - also auch hineinlassen.
+     Gefragt wird trotzdem: eingeladen zu sein heisst nicht, dass man
+     schon zugesagt hat. */
+  if(w.team && !state.team){
+    setTimeout(()=>{
+      showConfirmModal("Du wurdest ins Team \u201e" + w.team
+        + "\u201c eingeladen. Mitmachen?", ()=>{ teamBeitreten(w.team); });
+    }, 600);
+  }
 }
 
 function meineLinks(){
@@ -17206,7 +17290,7 @@ async function teilenBelohnungPruefen(){
   if(neueLeute) teile.push("<strong>" + neueLeute + "</strong> "
     + (neueLeute === 1 ? "Person ist" : "Leute sind") + " dadurch neu dazugekommen");
   zeigeHinweis("Danke fürs Teilen! 🎁",
-    teile.join(" und ") + ". Dafür gibt es <strong>" + dazu + " 💜 Diamanten</strong>.");
+    teile.join(" und ") + ". Dafür gibt es <strong>" + dazu + " 💎 Diamanten</strong>.");
   try{ render(); }catch(e){}
 }
 
@@ -17223,6 +17307,48 @@ async function importMelden(token, von){
     if(!d) return;
     await db.geteiltImportZaehlen(token, Number(d.importe) || 0);
   }catch(e){ /* Belohnung ist nett, aber nicht wichtig genug fuer eine Fehlermeldung */ }
+}
+
+/* ==================================================================
+   JEMANDEN EINLADEN
+
+   Dieselbe Kette wie beim Teilen einer Liste, nur ohne Inhalt: Der
+   Link merkt sich, WER eingeladen hat. Tippt ihn jemand an, wird das
+   im Geraetespeicher hinterlegt (werberMerken); meldet sich dieses
+   Kind dann wirklich an, zaehlt neukontoMelden() den Zaehler hoch, und
+   der Einladende bekommt beim naechsten Start seine 100 Diamanten.
+
+   DER TEAMNAME REIST MIT. "Komm in mein Team" waere sonst eine leere
+   Einladung - der Link fuehrte in die App, aber nicht ins Team. Jetzt
+   wird nach der Anmeldung gefragt, ob es gleich losgehen soll.
+
+   Ohne Netz oder ohne Konto kommt der blanke Adresslink zurueck. Der
+   funktioniert als Einladung weiterhin, bringt dann aber keine
+   Belohnung - lieber so als gar kein Link.
+================================================================== */
+function einladungTeilen(){
+  const team = String(state.team || "").trim();
+  const name = String(state.playerName || "").trim();
+  teilWarten();
+  teilBildMalen(
+    team ? "Komm in mein Team!" : "Komm zu LingoCrafter!",
+    team ? "🛡️ " + team : "🎮 Englisch mit Spielen",
+    name ? ("EINLADUNG VON " + name.toUpperCase()) : "EINE EINLADUNG",
+    (blob)=>{
+      kurzLink("einladung", team, "einladung",
+               location.origin + location.pathname).then(link=>{
+        const spruch = (team
+          ? "Hey 👋 Ich bin bei LingoCrafter und spiele für das Team \u201e" + team + "\u201c.\n"
+            + "Komm in mein Team – dann lernen wir zusammen Englisch und sammeln Diamanten 💎\n"
+          : "Hey 👋 Ich bin bei LingoCrafter – da lernt man Englisch mit Spielen.\n"
+            + "Komm dazu, dann üben wir zusammen und sammeln Diamanten 💎\n")
+          + "Kostenlos, ohne Werbung 🎮\n" + link;
+        teilDialog(link, spruch, blob, "lingocrafter-einladung.png");
+      }).catch(e => teilAbbruch("Der Link ließ sich nicht erzeugen."));
+    },
+    { ruf: "Antippen und mitmachen 👇",
+      oben: name ? (name + " lädt dich ein") : "Du bist eingeladen",
+      unten: team ? ("Zusammen lernen für " + team) : "Zusammen lernen macht mehr Spaß" });
 }
 
 function listeTeilen(name){
@@ -17411,6 +17537,23 @@ async function kurzLinkPruefen(){
     if(!db || !db.geteiltLesen){ zeigeHinweis("Kein Internet", "Für geteilte Listen braucht die App kurz eine Verbindung."); return; }
     const d = await db.geteiltLesen(m[1]);
     if(!d || !d.inhalt){ zeigeHinweis("Nicht gefunden", "Diesen geteilten Inhalt gibt es nicht mehr."); return; }
+    /* Eine Einladung bringt keinen Inhalt mit - sie merkt sich nur, wer
+       eingeladen hat. Die Belohnung entsteht erst bei der Anmeldung. */
+    if(d.art === "einladung"){
+      if(state.cloudId){
+        zeigeHinweis("Du bist schon dabei 🙂",
+          "Diesen Link brauchen nur Leute, die noch kein Konto haben."
+          + (d.name ? " Das Team <strong>" + escapeHtml(d.name)
+                      + "</strong> findest du unter Rangliste ▸ Teams." : ""));
+        return;
+      }
+      werberMerken(m[1], d.von, d.name);
+      zeigeHinweis("Willkommen bei LingoCrafter 👋",
+        "Melde dich an – dann lernst du mit"
+        + (d.name ? " im Team <strong>" + escapeHtml(d.name) + "</strong>" : "")
+        + ". Kostenlos, ohne Werbung.");
+      return;
+    }
     if(d.art === "plan"){
       const paket = planAuspacken(d.inhalt);
       if(!paket){ zeigeHinweis("Link unvollständig", "Von diesem Plan ist unterwegs etwas verloren gegangen."); return; }
