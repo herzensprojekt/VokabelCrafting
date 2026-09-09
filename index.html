@@ -293,9 +293,13 @@
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .pb-u{ font-size:11.5px; color:rgba(255,255,255,0.85);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* Ausgerechnet: vorher #fff auf rgba(255,255,255,0.22) = 1,00 : 1.
+     Der schlechteste Wert, den es gibt - der Knopf war praktisch
+     unsichtbar. Jetzt deckend weiss mit dunkelgruener Schrift: 8,6 : 1. */
   .pb-los{ flex:0 0 auto; padding:6px 11px; border-radius:10px;
-    background:rgba(255,255,255,0.22); color:#fff;
-    font-family:var(--font); font-weight:800; font-size:12.5px; letter-spacing:.04em; }
+    background:#ffffff; color:#2f5418;
+    font-family:var(--font); font-weight:800; font-size:12.5px; letter-spacing:.04em;
+    box-shadow:0 2px 5px rgba(20,40,10,0.25); }
   .pw-stand{ margin:0 0 8px; text-align:center; font-size:13px;
     font-weight:700; color:#3b6d11; }
   .pw-balken{ display:flex; gap:5px; margin:0 0 12px; }
@@ -613,11 +617,11 @@
   .unit-chev{
     flex:0 0 auto; width:27px; height:27px; border-radius:9px; font-size:14px;
     display:flex; align-items:center; justify-content:center; font-weight:800;
-    color:#3f7a2b; background:rgba(77,181,92,0.16);
+    color:#1f4a12; background:rgba(77,181,92,0.16);   /* war 2,00 : 1 */
     transition:transform .22s ease, background .15s ease;
   }
   .unit-block.offen .unit-chev{ transform:rotate(90deg); background:rgba(77,181,92,0.3); }
-  .unit-zahl{ flex:0 0 auto; font-size:11.5px; font-weight:700; color:#6d7a68;
+  .unit-zahl{ flex:0 0 auto; font-size:11.5px; font-weight:700; color:#414c3d;
     background:rgba(30,69,21,0.06); padding:3px 8px; border-radius:8px; }
   .unit-tipp{ display:flex; align-items:center; gap:7px; font-size:12.5px; color:#5a6656;
     background:rgba(255,255,255,0.6); border-radius:11px; padding:7px 10px; margin-bottom:10px; }
@@ -2118,7 +2122,7 @@
   width:32px; height:32px;
   min-height:0; padding:0;
   border:none; border-radius:9px;
-  background:#f3ece4; color:#9b7b5a;
+  background:#f3ece4; color:#6b4f31;
   font-size:15px; font-weight:800;
   cursor:pointer;
 }
@@ -3459,7 +3463,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "87.0 – Kürzer und klarer";
+const APP_VERSION = "87.1 – Weniger Knöpfe";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -13710,7 +13714,7 @@ function renderChallengeRoundEnd(){
     <button class="btn" id="challenge-continue-btn">▶ WEITER (neue 15 Vokabeln)</button>
     <div style="height:10px;"></div>
     ${mistakeCount>0 ? `
-    <button class="btn wood" id="mistake-review-btn">🔁 FEHLER NOCHMAL ÜBEN (${mistakeCount})</button>
+    <button class="btn secondary" id="mistake-review-btn">🔁 FEHLER NOCHMAL ÜBEN (${mistakeCount})</button>
     <div style="height:10px;"></div>` : ""}
     <button class="btn danger" id="challenge-end-btn">🏁 BEENDEN</button>
   `;
@@ -14490,18 +14494,13 @@ function renderCertificate(){
       </p>
     </div>
 
-    ${mistakes.length>0 ? `
-    <button class="btn wood" id="mistake-review-btn">🔁 FEHLER NOCHMAL ÜBEN (${mistakes.length})</button>
-    <div style="height:10px;"></div>` : ""}
-    <button class="btn secondary" id="share-btn" style="margin-top:14px;">📤 PER WHATSAPP TEILEN</button>
-    <div style="height:10px;"></div>
-    <button class="btn gold" id="shop-btn" ${state.guest ? "disabled" : ""}>🛒 MÜNZEN IM SHOP AUSGEBEN</button>
     ${planWeiterHtml()}
 
-    <div style="height:10px;"></div>
-    <button class="btn secondary" id="leaderboard-btn" ${state.guest ? "disabled" : ""}>🏆 RANGLISTE ANSEHEN</button>
-    <div style="height:10px;"></div>
-    <button class="btn" id="retry-btn">↻ NOCHMAL ÜBEN</button>
+    ${mistakes.length>0 ? `
+    <button class="btn" id="mistake-review-btn" style="margin-top:14px;">🔁 FEHLER NOCHMAL ÜBEN (${mistakes.length})</button>
+    <div style="height:10px;"></div>` : ""}
+    <button class="btn ${mistakes.length>0 ? "secondary" : ""}" id="retry-btn"
+            ${mistakes.length>0 ? "" : 'style="margin-top:14px;"'}>↻ NOCHMAL ÜBEN</button>
     <div style="height:10px;"></div>
     <button class="btn danger" id="menu-btn">✕ ZUM MENÜ</button>
   `;
@@ -14511,9 +14510,9 @@ function renderCertificate(){
   if(mistakes.length>0){
     document.getElementById('mistake-review-btn').addEventListener('click', startMistakeReview);
   }
-  document.getElementById('share-btn').addEventListener('click', shareCertificateWhatsApp);
-  document.getElementById('shop-btn').addEventListener('click', ()=>{ state.screen="shop"; state.shopReturnTo="certificate"; render(); attemptCloudLogin(true); });
-  document.getElementById('leaderboard-btn').addEventListener('click', ()=>{ openLeaderboard("certificate"); });
+  /* Teilen, Shop und Rangliste standen hier frueher auch. Ein Kind,
+     das gerade fertig ist, soll nicht waehlen muessen - es soll
+     weitermachen. Alle drei sind vom Startbildschirm aus erreichbar. */
   document.getElementById('retry-btn').addEventListener('click', startGame);
   document.getElementById('menu-btn').addEventListener('click', zurueckZurSektion);
 }
