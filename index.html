@@ -3342,7 +3342,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "83.0 – Teams";
+const APP_VERSION = "83.1 – Kacheln getauscht";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -11539,9 +11539,9 @@ function werkzeugGitterHtml(){
       <h3 style="font-size:14px;margin-bottom:2px;opacity:.75;">AUSSERDEM</h3>
       <div class="werk-gitter">
         ${kachel("radar-btn", "ic-plan", "Klassenarbeits-Radar", false, "wk-rot")}
-        ${kachel("vokabel-stats-btn", "ic-speicher", "Vokabel-Skills", false, "wk-tuerkis")}
-        ${kachel("grammar-stats-btn", "ic-skills", "Grammatik-Skills", false, "wk-violett")}
         ${kachel("custom-vocab-btn", "ic-eigene", "Eigene Vokabeln", !state.cloudId, "wk-gruen")}
+        ${kachel("grammar-stats-btn", "ic-skills", "Grammatik-Skills", false, "wk-violett")}
+        ${kachel("vokabel-stats-btn", "ic-speicher", "Vokabel-Skills", false, "wk-tuerkis")}
         ${kachel("shop-btn", "ic-muenzen", "Shop", g, "wk-gold")}
         ${kachel("inventar-btn", "ic-geschenk", "Inventar (" + anzahlImInventar() + ")", false, "wk-braun")}
         ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
