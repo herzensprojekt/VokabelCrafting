@@ -261,6 +261,16 @@
     border:none; border-bottom:1px solid var(--papier-rand); background:none;
     font-size:14.5px; font-weight:700; color:var(--tinte); cursor:pointer; }
   .tm-eintrag:active{ background:var(--papier-tief); }
+  .tm-meine{ display:flex; flex-direction:column; gap:7px; margin-top:8px; }
+  .tm-mein{ display:flex; align-items:center; gap:7px; padding:9px 10px;
+    background:#f4eeff; border:2px solid #d9c9f0; border-radius:13px; }
+  .tm-mein-n{ flex:1; min-width:0; overflow-wrap:anywhere;
+    font-family:var(--font); font-weight:800; font-size:15px; color:var(--tinte); }
+  .tm-mein-ein, .tm-mein-raus{ flex:0 0 auto; width:34px; height:34px;
+    border-radius:11px; border:none; cursor:pointer; font-size:15px; line-height:1; }
+  .tm-mein-ein{ background:#7b5ea7; color:#fff; }
+  .tm-mein-raus{ background:#e8dcc9; color:#6b5a44; font-weight:800; }
+  .tm-mein-ein:active, .tm-mein-raus:active{ transform:translateY(1px); }
 
   /* ---------- Weiter im Plan ---------- */
   .pw-box{ border:3px solid #93b077; }
@@ -3285,9 +3295,20 @@ summary.mehr-knopf::after{ content:none; }
           avatarId: String(eintrag.avatarId || "steve").slice(0, 40),
           ts: Date.now()
         };
-        // Das Team wird fuer die Team-Ansicht gebraucht. In der
-        // Einzelliste wird es bewusst nicht angezeigt.
-        if(eintrag.team) daten.team = String(eintrag.team).slice(0, 40);
+        /* Die Teams werden fuer die Team-Ansicht gebraucht. In der
+           Einzelliste werden sie bewusst nicht angezeigt.
+
+           Mehrere Teams stehen als EIN Text mit "|" dazwischen - so
+           deckelt die Regel mit team.size() <= 210 auch jeden einzelnen
+           Namen. Als Liste ginge das nicht: Regeln koennen die Laenge
+           einzelner Listeneintraege nicht pruefen, und dieses Feld ist
+           oeffentlich lesbar.
+
+           Ohne Team wird das Feld WEGGELASSEN, nicht leer geschrieben:
+           setDoc ersetzt hier das ganze Dokument, damit ist ein
+           verlassenes Team wirklich weg. */
+        const tms = String(eintrag.team || "").slice(0, 210);
+        if(tms) daten.team = tms;
         await setDoc(ref, daten);
       }
 
@@ -3416,7 +3437,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "85.0 – Einladen";
+const APP_VERSION = "86.0 – Mehrere Teams";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -8231,7 +8252,8 @@ function loadSave(){
     if(Array.isArray(data.lingoraPlaene)) state.lingoraPlaene = data.lingoraPlaene;
     // Auch lokal gilt: nur zusammen ist die Antwort gueltig.
     if(Array.isArray(data.meineLinks)) state.meineLinks = data.meineLinks;
-    if(typeof data.team === "string") state.team = data.team;
+    // Bis 85 ein Name, ab 86 mehrere mit "|" dazwischen - derselbe Typ.
+    if(typeof data.team === "string" || Array.isArray(data.team)) state.team = data.team;
     if(typeof data.klasse === "number" && Array.isArray(data.gramDran)){
       state.klasse = data.klasse;
       state.gramDran = data.gramDran;
@@ -8274,7 +8296,7 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       lingoraPlan: state.lingoraPlan,
       lingoraPlaene: state.lingoraPlaene,
       meineLinks: state.meineLinks,
-      team: state.team,
+      team: meineTeams().join(TEAM_TRENNER),
       klasse: state.klasse || 0,
       gramDran: Array.isArray(state.gramDran) ? state.gramDran : null,
       lingoraPlanAktiv: state.lingoraPlanAktiv,
@@ -8599,7 +8621,7 @@ function applyPlayerToState(player){
      dann kommt die Frage beim naechsten Start eben nach. Seit 73.2
      schreibt die App beide Felder immer zusammen. */
   if(Array.isArray(player.meineLinks)) state.meineLinks = player.meineLinks;
-  if(typeof player.team === "string") state.team = player.team;
+  if(typeof player.team === "string" || Array.isArray(player.team)) state.team = player.team;
   if(typeof player.klasse === "number" && Array.isArray(player.gramDran)){
     state.klasse = player.klasse;
     state.gramDran = player.gramDran;
@@ -8904,7 +8926,11 @@ function syncToCloud(){
     if(Array.isArray(state.meineLinks) && state.meineLinks.length){
       payload.meineLinks = state.meineLinks.slice(-50);
     }
-    if(state.team){ payload.team = String(state.team).slice(0, 40); }
+    /* IMMER mitschicken, auch leer. savePlayer speichert mit
+       merge:true - ein weggelassenes Feld behielte den alten Wert, und
+       wer sein letztes Team verlaesst, waere auf dem naechsten Geraet
+       wieder drin. */
+    payload.team = meineTeams().join(TEAM_TRENNER);
     if(state.klasse){
       payload.klasse = state.klasse;
       payload.gramDran = Array.isArray(state.gramDran) ? state.gramDran : [];
@@ -8930,7 +8956,7 @@ function syncToCloud(){
            funktionieren. Fuer die Sortierung ist der Name egal. */
         await db.setRangliste(cloudId, {
           name: state.spitzname, coins: diamantenStand(), avatarId: state.avatarId,
-          team: state.team || ""
+          team: meineTeams().join(TEAM_TRENNER)
         });
       }
     }catch(e){ /* Rangliste ist Beiwerk - sie darf nie das Speichern kippen */ }
@@ -12324,6 +12350,8 @@ function renderStart(){
         ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
       </button><button class="btn secondary small" id="klasse-aendern" style="margin-top:10px;margin-left:8px;width:auto;">
         🎒 Klasse${state.klasse ? " (" + state.klasse + ".)" : ""}
+      </button><button class="btn secondary small" id="teams-btn" style="margin-top:10px;margin-left:8px;width:auto;">
+        🛡️ Teams${meineTeams().length ? " (" + meineTeams().length + ")" : ""}
       </button>
 
       ${state.showLoginForm ? `
@@ -12448,6 +12476,20 @@ function startVerdrahten(){
   /* Klasse neu waehlen. Beide Felder werden GEMEINSAM geleert, damit der
      Waechter in render() wieder greift - eine Klasse ohne gramDran gilt
      seit 73.2 als unbeantwortet. */
+  const teamsBtn = document.getElementById('teams-btn');
+  if(teamsBtn){
+    teamsBtn.addEventListener('click', ()=>{
+      if(!state.cloudId){
+        zeigeHinweis("Dafür brauchst du ein Konto",
+          "Im Testmodus gibt es keine Teams &ndash; sonst wüsste niemand, "
+          + "wem die Diamanten gehören.");
+        return;
+      }
+      state.teamZurueck = "start";
+      state.screen = "team"; render();
+    });
+  }
+
   const klasseBtn = document.getElementById('klasse-aendern');
   if(klasseBtn){
     klasseBtn.addEventListener('click', ()=>{
@@ -15504,6 +15546,64 @@ function renderShop(){
    identifizierender als ein Spitzname allein, und die Rangliste ist
    ohne Anmeldung lesbar.
 ================================================================== */
+/* Hoechstens fuenf. Ohne Grenze koennte ein Kind jedem Team
+   beitreten, nur um ueberall aufzutauchen. */
+const TEAM_MAX = 5;
+const TEAM_TRENNER = "|";
+const TEAM_FELD_MAX = 210;        // 5 x 40 Zeichen plus 4 Trenner
+
+/* WARUM EIN TEXT UND KEINE LISTE.
+
+   Firestore-Regeln koennen die Laenge eines Textes pruefen, aber nicht
+   die jedes einzelnen Eintrags in einer Liste - dafuer fehlt die
+   Schleife. Das Feld steht in der OEFFENTLICH lesbaren Rangliste. Als
+   Liste haette dort jeder einen beliebig langen Teamnamen unterbringen
+   koennen; jedes andere Feld dort ist gedeckelt, und dieses eine soll
+   keine Ausnahme sein.
+
+   Als Text mit Trennzeichen deckelt EINE Regel alles auf einmal:
+   team.size() <= 210. Nebenbei liest sich ein alter Einzelname damit
+   von selbst richtig - er ist ein Text mit null Trennzeichen.
+
+   Der Preis: ein "|" im Teamnamen wird zum Leerzeichen. Das faellt
+   niemandem auf, der einen Teamnamen ausdenkt. */
+function teamsAusText(roh){
+  const raus = [];
+  const dazu = (x)=>{
+    const s = String(x == null ? "" : x).trim().slice(0, 40);
+    if(s && raus.indexOf(s) < 0) raus.push(s);
+  };
+  if(typeof roh === "string") String(roh).split(TEAM_TRENNER).forEach(dazu);
+  else if(Array.isArray(roh)) roh.forEach(dazu);   // falls doch mal eine Liste kommt
+  return raus.slice(0, TEAM_MAX);
+}
+
+/* MEINE TEAMS - die einzige Stelle, die den eigenen Speicher deutet.
+   Auf Geraeten von vor Fassung 86 steht dort noch EIN Name. Wird der
+   nicht mitgelesen, waere ein Kind beim ersten Start der neuen Fassung
+   stillschweigend aus seinem Team geflogen. */
+function meineTeams(){ return teamsAusText(state.team); }
+
+function teamsSetzen(liste){
+  state.team = teamsAusText(liste).join(TEAM_TRENNER).slice(0, TEAM_FELD_MAX);
+}
+
+/* Verglichen wird ueber den Slug, nicht ueber den Text.
+
+   Beim Durchspielen aufgefallen: "Klasse 6b" und "klasse 6b" waren
+   zwei verschiedene Teams in derselben Liste - in der Rangliste
+   erschienen sie als zwei Zeilen, obwohl teams/{slug} in der Datenbank
+   nur EIN Dokument daraus macht. Mit einem einzelnen Team fiel das nie
+   auf; mit mehreren stuende es nebeneinander auf dem Bildschirm. */
+function inTeam(name){
+  const s = teamSlug(name);
+  if(!s) return false;
+  return meineTeams().some(t => teamSlug(t) === s);
+}
+
+/* Die Teams eines FREMDEN Ranglisteneintrags. */
+function teamsVonEintrag(p){ return teamsAusText(p && p.team); }
+
 function teamSlug(name){
   return String(name || "").toLowerCase().trim()
     .replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss")
@@ -15515,22 +15615,43 @@ function teamSlug(name){
 function teamsAusRangliste(){
   const nach = {};
   (state.leaderboardData || []).forEach(p=>{
-    const t = (p.team || "").trim();
-    if(!t) return;
-    if(!nach[t]) nach[t] = { name: t, diamanten: 0, leute: 0 };
-    nach[t].diamanten += Math.max(0, parseInt(p.coins, 10) || 0);
-    nach[t].leute += 1;
+    const diamanten = Math.max(0, parseInt(p.coins, 10) || 0);
+    // Wer in mehreren Teams ist, bringt jedem seine volle Zahl.
+    teamsVonEintrag(p).forEach(t=>{
+      if(!nach[t]) nach[t] = { name: t, diamanten: 0, leute: 0 };
+      nach[t].diamanten += diamanten;
+      nach[t].leute += 1;
+    });
   });
   return Object.values(nach).sort((a, b)=> b.diamanten - a.diamanten);
 }
 
 async function teamBeitreten(name){
-  const sauber = String(name || "").trim().slice(0, 40);
+  // Das Trennzeichen darf nicht im Namen stehen, sonst wuerde daraus
+  // beim naechsten Lesen aus einem Team zwei.
+  let sauber = String(name || "").split(TEAM_TRENNER).join(" ").trim().slice(0, 40);
+  /* Gibt es den Namen schon - womoeglich anders geschrieben -, wird die
+     vorhandene Schreibweise uebernommen. In der Datenbank ist
+     teams/{slug} ohnehin nur EIN Dokument; ohne diesen Schritt stuenden
+     "Klasse 6b" und "klasse 6b" als zwei Zeilen in der Rangliste. */
+  const schon = (state.teamListe || []).filter(t => teamSlug(t.name) === teamSlug(sauber))[0];
+  if(schon && schon.name) sauber = String(schon.name).slice(0, 40);
   if(sauber.length < 3){
     zeigeHinweis("Zu kurz", "Ein Teamname braucht mindestens drei Zeichen.");
     return;
   }
-  state.team = sauber;
+  if(inTeam(sauber)){
+    zeigeHinweis("Da bist du schon drin 🙂",
+      "<strong>" + escapeHtml(sauber) + "</strong> steht schon in deiner Liste.");
+    return;
+  }
+  if(meineTeams().length >= TEAM_MAX){
+    zeigeHinweis("Fünf sind genug",
+      "Mehr als " + TEAM_MAX + " Teams gehen nicht. Verlass erst eins, "
+      + "dann ist wieder Platz.");
+    return;
+  }
+  teamsSetzen(meineTeams().concat([sauber]));
   saveProgress(); syncToCloud();
   try{
     const db = await getVokabelDB();
@@ -15548,10 +15669,13 @@ async function teamBeitreten(name){
   render();
 }
 
-function teamVerlassen(){
-  showConfirmModal("Team wirklich verlassen?", ()=>{
-    state.team = "";
+function teamVerlassen(name){
+  const weg = String(name || "").trim();
+  if(!weg) return;
+  showConfirmModal("\u201e" + weg + "\u201c wirklich verlassen?", ()=>{
+    teamsSetzen(meineTeams().filter(t => t !== weg));
     saveProgress(); syncToCloud();
+    state.teamListe = null;
     ranglisteLaden();
     render();
   });
@@ -15569,19 +15693,29 @@ async function teamListeLaden(){
 
 function renderTeam(){
   teamListeLaden();
-  const liste = state.teamListe || [];
+  const alle    = state.teamListe || [];
+  const meine   = meineTeams();
+  const platz   = meine.length < TEAM_MAX;
+  // Teams, in denen ich schon bin, gehoeren nicht mehr in die Beitrittsliste.
+  const offen   = alle.filter(t => !inTeam(t.name));
+
   app.innerHTML = `
-    ${renderHeader("Dein Team", true)}
+    ${renderHeader(meine.length === 1 ? "Dein Team" : "Deine Teams", true)}
 
     <div class="panel">
-      ${state.team ? `
+      ${meine.length ? `
         <p class="tm-jetzt">🛡️ Du spielst für</p>
-        <p class="tm-name">${escapeHtml(state.team)}</p>
-        <button class="mv-einladen" id="tm-einladen" style="margin-top:12px;">💬 Jemanden einladen</button>
-        <p class="muted center-text" style="margin:7px 0 0;font-size:12px;">
-          Wer über deinen Link neu dazukommt, bringt dir
-          <strong>${NEUKONTO_DIAMANTEN} 💎</strong> &ndash; und landet gleich in eurem Team.</p>
-        <button class="btn ghost small" id="tm-raus" style="margin-top:12px;">Team verlassen</button>
+        <div class="tm-meine">
+          ${meine.map(n=>`
+            <div class="tm-mein">
+              <span class="tm-mein-n">${escapeHtml(n)}</span>
+              <button class="tm-mein-ein" data-einladen="${escapeHtml(n)}" title="Jemanden einladen">💬</button>
+              <button class="tm-mein-raus" data-verlassen="${escapeHtml(n)}" title="Verlassen">✕</button>
+            </div>`).join("")}
+        </div>
+        <p class="muted center-text" style="margin:10px 0 0;font-size:12px;">
+          Wer über deinen 💬-Link neu dazukommt, bringt dir
+          <strong>${NEUKONTO_DIAMANTEN} 💎</strong> &ndash; und landet gleich in dem Team.</p>
       ` : `
         ${lingoraKopfHtml("Zusammen macht es mehr Spaß. Such dir ein Team – oder gründe eins.", true)}
         <p class="muted center-text" style="margin:12px 0 0;font-size:13px;">
@@ -15590,7 +15724,7 @@ function renderTeam(){
       `}
     </div>
 
-    ${state.team ? "" : `
+    ${platz ? `
       <div class="panel">
         <div class="setting-label">Neues Team gründen</div>
         <input type="text" id="tm-neu" maxlength="40" placeholder="z. B. Die Wortjäger">
@@ -15602,29 +15736,43 @@ function renderTeam(){
 
       <div class="panel">
         <div class="setting-label">Einem Team beitreten</div>
-        ${liste.length ? `
+        ${offen.length ? `
           <div class="vocab-list" style="max-height:300px;">
-            ${liste.map(t=>`
+            ${offen.map(t=>`
               <button class="tm-eintrag" data-team="${escapeHtml(t.name)}">
                 <span>🛡️ ${escapeHtml(t.name)}</span>
               </button>`).join("")}
           </div>` : `<p class="muted center-text" style="margin:6px 0;">
-            ${state.teamListe ? "Noch kein Team da – gründe das erste!" : "Lade …"}</p>`}
+            ${state.teamListe
+              ? (alle.length ? "Du bist schon in allen Teams, die es gibt." : "Noch kein Team da – gründe das erste!")
+              : "Lade …"}</p>`}
+      </div>
+    ` : `
+      <div class="panel">
+        <p class="muted center-text" style="margin:0;font-size:13px;">
+          Du bist in ${TEAM_MAX} Teams &ndash; mehr gehen nicht.
+          Verlass eins mit ✕, dann ist wieder Platz.</p>
       </div>
     `}
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
 
   const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
-  an('tm-raus', teamVerlassen);
-  an('tm-einladen', einladungTeilen);
   an('tm-gruenden', ()=>{
     const feld = document.getElementById('tm-neu');
     teamBeitreten(feld ? feld.value : "");
   });
-  an('back-btn', ()=>{ state.screen = "leaderboard"; render(); });
+  // Woher man gekommen ist, dahin geht es zurueck - der Bildschirm ist
+  // jetzt auch von der Startseite aus erreichbar.
+  an('back-btn', ()=>{ state.screen = state.teamZurueck || "leaderboard"; state.teamZurueck = null; render(); });
   document.querySelectorAll('[data-team]').forEach(el=>{
     el.addEventListener('click', ()=>teamBeitreten(el.dataset.team));
+  });
+  document.querySelectorAll('[data-verlassen]').forEach(el=>{
+    el.addEventListener('click', ()=>teamVerlassen(el.dataset.verlassen));
+  });
+  document.querySelectorAll('[data-einladen]').forEach(el=>{
+    el.addEventListener('click', ()=>einladungTeilen(el.dataset.einladen));
   });
 }
 
@@ -15641,7 +15789,9 @@ function renderLeaderboard(){
       </div>
       ${state.lbTeams ? renderTeamlisteBody() : renderLeaderboardBody()}
       <button class="btn secondary small" id="lb-mein-team" style="margin-top:12px;">
-        ${state.team ? "🛡️ " + escapeHtml(state.team) : "🛡️ Team gründen oder beitreten"}
+        ${meineTeams().length === 1 ? "🛡️ " + escapeHtml(meineTeams()[0])
+          : (meineTeams().length ? "🛡️ Deine " + meineTeams().length + " Teams"
+                                 : "🛡️ Team gründen oder beitreten")}
       </button>
     </div>
 
@@ -15759,7 +15909,7 @@ function renderTeamlisteBody(){
     return `<p class="center-text muted">Noch keine Teams &ndash; gründe das erste!</p>`;
   }
   return `<div class="vocab-list" style="max-height:420px;">` + teams.map((t, i)=>`
-    <div class="tm-zeile ${t.name === state.team ? "meins" : ""}">
+    <div class="tm-zeile ${inTeam(t.name) ? "meins" : ""}">
       <span class="tm-platz">${i + 1}</span>
       <span class="tm-txt">
         <span class="tm-n">🛡️ ${escapeHtml(t.name)}</span>
@@ -17227,7 +17377,7 @@ async function neukontoMelden(){
   /* Die Einladung hat ein Team versprochen - also auch hineinlassen.
      Gefragt wird trotzdem: eingeladen zu sein heisst nicht, dass man
      schon zugesagt hat. */
-  if(w.team && !state.team){
+  if(w.team && !inTeam(w.team) && meineTeams().length < TEAM_MAX){
     setTimeout(()=>{
       showConfirmModal("Du wurdest ins Team \u201e" + w.team
         + "\u201c eingeladen. Mitmachen?", ()=>{ teamBeitreten(w.team); });
@@ -17326,8 +17476,22 @@ async function importMelden(token, von){
    funktioniert als Einladung weiterhin, bringt dann aber keine
    Belohnung - lieber so als gar kein Link.
 ================================================================== */
-function einladungTeilen(){
-  const team = String(state.team || "").trim();
+function einladungTeilen(welches){
+  /* Mit mehreren Teams waere "Komm in mein Team" mehrdeutig. Deshalb
+     nimmt die Einladung das Team entgegen, aus dem heraus sie
+     angestossen wurde. Kommt sie ohne (aus dem Fenster "Mehr
+     verdienen"), entscheidet die Lage: bei genau einem Team dieses,
+     bei mehreren fuehrt der Weg erst in die Teamliste, damit das Kind
+     waehlt statt zu raten.  */
+  const meine = meineTeams();
+  if(!welches && meine.length > 1){
+    state.teamZurueck = state.screen;
+    state.screen = "team"; render();
+    zeigeHinweis("Welches Team?",
+      "Tipp bei dem Team, in das du einladen willst, auf 💬.");
+    return;
+  }
+  const team = String(welches || meine[0] || "").trim();
   const name = String(state.playerName || "").trim();
   teilWarten();
   teilBildMalen(
