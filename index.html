@@ -276,8 +276,23 @@
   .pw-box{ border:3px solid #93b077; background:#f2f7ea; }
   .pw-plan{ margin:0 0 6px; text-align:center; font-size:12px; font-weight:800;
     letter-spacing:.04em; text-transform:uppercase; color:#4d6b33; }
-  .pw-gross{ font-size:17px; padding:16px 12px; box-shadow:0 4px 0 #3f5c2a,
-    0 7px 14px rgba(60,90,35,0.3); }
+  /* NICHT "pw-gross" nennen. Diesen Namen hat die PortraitWerkstatt
+     schon vergeben - fuer ein 170x170 grosses, blassgruenes
+     Vorschaukaestchen. Ihre Regel steht weiter hinten und gewinnt;
+     aus dem Knopf wurde dadurch ein Quadrat mit weisser Schrift auf
+     fast weissem Grund (1,08 : 1).
+
+     Der Knopf bringt seine Farben jetzt selbst mit, statt sie von
+     .btn zu erben - dann kann ihm keine fremde Regel den Grund unter
+     der Schrift wegziehen. Nachgerechnet: 5,3 : 1. */
+  .plan-weiter-los{
+    width:100%; display:block; font-family:var(--font); font-weight:800;
+    font-size:17px; line-height:1.25; padding:16px 12px;
+    color:#ffffff; background:#2f7a3c; border:none; border-radius:14px;
+    box-shadow:0 4px 0 #205229, 0 7px 14px rgba(30,70,35,0.32);
+    cursor:pointer; text-align:center;
+  }
+  .plan-weiter-los:active{ transform:translateY(2px); box-shadow:0 2px 0 #205229; }
 
   /* Das Band ganz oben - klebt am Rollkasten, nicht am Fenster. */
   .plan-band{
@@ -3463,7 +3478,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "87.1 – Weniger Knöpfe";
+const APP_VERSION = "87.2 – Lesbarer Weiter-Knopf";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -5664,7 +5679,7 @@ function planWeiterHtml(){
       <p class="pw-u">${wdh
         ? "Kurze Runde – nur die Wörter, die noch nicht sitzen"
         : escapeHtml(n.schritt.unter || "")}</p>
-      <button class="btn pw-gross" id="pw-weiter">▶ WEITER &nbsp;·&nbsp; SCHRITT ${n.nummer} VON ${n.gesamt}</button>
+      <button class="plan-weiter-los" id="pw-weiter" type="button">▶ WEITER &nbsp;·&nbsp; SCHRITT ${n.nummer} VON ${n.gesamt}</button>
       <button class="btn ghost small" id="pw-pause" style="margin-top:8px;">Später weitermachen</button>
     </div>`;
 }
