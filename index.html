@@ -225,16 +225,34 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .vg-band-pfeil{ flex:0 0 auto; font-size:20px; font-weight:800; color:#7d6223; }
 
-  .vg-kurz{ background:#2f3b2a; border-color:#2f3b2a; color:#f2f6ec; }
-  .vg-kurz p{ font-size:14.5px; line-height:1.5; margin:0 0 10px; }
-  .vg-kurz strong{ color:#ffffff; }
-  .vg-kurz-t{ font-family:var(--font); font-weight:800; font-size:17px;
-    color:#cfe3bb !important; margin:0 0 10px !important; }
+  /* ZWEI KLASSEN, NICHT EINE.
+
+     Der Fehler, den das behebt: ".vg-kurz" allein hat dieselbe
+     Spezifitaet wie ".panel" - und .panel steht 15 000 Zeichen weiter
+     hinten im Stylesheet. Bei Gleichstand gewinnt die spaetere Regel.
+     Der Kasten war dadurch papierfarben statt dunkelgruen, und die
+     weisse Schrift darauf unlesbar.
+
+     ".panel.vg-kurz" ist zwei Klassen stark und gewinnt unabhaengig
+     davon, wo es steht. */
+  .panel.vg-kurz{
+    background:#2f3b2a; border:2px solid #2f3b2a; color:#f2f6ec;
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+  }
+  .panel.vg-kurz p{ font-size:13.5px; line-height:1.55; margin:0 0 9px; color:#e4ecdb; }
+  .panel.vg-kurz p:last-child{ margin-bottom:0; }
+  .panel.vg-kurz strong{ color:#ffffff; font-weight:700; }
+  .panel.vg-kurz .vg-kurz-t{
+    font-family:var(--font); font-weight:800; font-size:16px;
+    color:#d3e7bd; margin:0 0 9px; letter-spacing:.01em;
+  }
 
   .vg-h{ font-size:16px; margin:0 0 10px; }
   .vg-rollen{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
   .vg-tab{ width:100%; border-collapse:collapse; font-size:13.5px; }
-  .vg-tab th, .vg-tab td{ padding:8px 6px; border-bottom:1px solid var(--papier-rand);
+  /* Mit .panel davor - siehe die Erklaerung bei .panel.vg-kurz. */
+  .panel .vg-tab th, .panel .vg-tab td{ padding:8px 6px;
+    border-bottom:1px solid var(--papier-rand);
     text-align:left; vertical-align:top; }
   .vg-tab th{ font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;
     color:var(--tinte-hell); font-weight:800; }
@@ -250,11 +268,11 @@
   .vg-preis{ padding:12px 8px; text-align:center; border-radius:13px;
     border:2px solid var(--papier-rand); background:#fff; }
   .vg-preis.vg-unser{ border-color:#9cc47e; background:#f2f8ec; }
-  .vg-p-was{ display:block; font-size:11.5px; font-weight:700; color:var(--tinte-hell); }
+  .vg-p-was{ display:block; font-size:11.5px; font-weight:700; color:#6f6354; }
   .vg-p-zahl{ display:block; font-family:var(--font); font-weight:800;
     font-size:23px; color:var(--tinte); margin:3px 0; }
   .vg-unser .vg-p-zahl{ color:#2f7a3c; }
-  .vg-p-klein{ display:block; font-size:10.5px; line-height:1.35; color:var(--tinte-hell); }
+  .vg-p-klein{ display:block; font-size:10.5px; line-height:1.35; color:#6f6354; }
 
   /* ---------- Mehr verdienen ---------- */
   /* Zweizeilig bei 9,5px. Einzeilig braeuchte "Mehr verdienen ›" 76px,
@@ -3525,7 +3543,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "88.0 – Vergleich";
+const APP_VERSION = "88.1 – Vergleich, lesbar";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -15684,12 +15702,12 @@ function renderVergleich(){
     <div class="panel vg-kurz">
       <p class="vg-kurz-t">Die kurze Antwort</p>
       <p><strong>Es sind keine Konkurrenten.</strong> Duolingo bringt jemandem eine
-      neue Sprache bei &ndash; von null, ohne Termin. LingoCrafter bringt
-      <strong>ein bestimmtes Kind durch die Klassenarbeit am Freitag</strong>,
-      mit genau den Wörtern, die im Heft stehen.</p>
-      <p style="margin-bottom:0;">Wer Englisch neu lernen will, nimmt Duolingo. Wer am
-      Mittwoch merkt, dass 46 Vokabeln bis Freitag sitzen müssen, kommt dort keinen
-      Schritt weiter: Man kann bei Duolingo <strong>keine eigenen Wörter eingeben</strong>.</p>
+      neue Sprache bei &ndash; von null, ohne Termin. LingoCrafter bringt ein
+      bestimmtes Kind durch die Klassenarbeit am Freitag, mit genau den Wörtern,
+      die im Heft stehen.</p>
+      <p>Wer am Mittwoch merkt, dass 46 Vokabeln bis Freitag sitzen müssen, kommt
+      bei Duolingo keinen Schritt weiter: Dort lassen sich <strong>keine eigenen
+      Wörter eingeben</strong>.</p>
     </div>
 
     <div class="panel">
