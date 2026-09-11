@@ -209,7 +209,7 @@
 
   .mz-plus{ color:#2f7a3c; font-size:12px; margin-left:2px; }
 
-  /* ---------- Vergleich mit Duolingo ---------- */
+  /* ---------- Wir und Duolingo ---------- */
   .vg-band{
     display:flex; align-items:center; gap:10px; width:100%;
     margin:0 0 14px; padding:12px 14px; text-align:left; cursor:pointer;
@@ -217,62 +217,44 @@
     box-shadow:0 2px 8px rgba(110,85,30,0.14);
   }
   .vg-band:active{ transform:translateY(1px); }
-  /* EINZEILIG, wie gewuenscht. Der volle Wortlaut braeuchte gemessene
-     419 px, Platz sind 326 - deshalb der kuerzere Text UND eine Schrift,
-     die auf schmalen Telefonen mitschrumpft statt umzubrechen. */
+  /* EINZEILIG. Der lange Wortlaut braeuchte gemessene 419 px, Platz
+     sind 326 - deshalb kurz, und eine Schrift, die auf schmalen
+     Telefonen mitschrumpft statt umzubrechen. */
   .vg-band-t{ flex:1; min-width:0; font-family:var(--font); font-weight:700;
     font-size:clamp(11px,3.4vw,13.5px); line-height:1.3; color:#5c4a1f;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .vg-band-pfeil{ flex:0 0 auto; font-size:20px; font-weight:800; color:#7d6223; }
 
-  /* ZWEI KLASSEN, NICHT EINE.
+  /* ZWEI KLASSEN, NICHT EINE. ".vg-karte" allein haette dieselbe
+     Spezifitaet wie ".panel" - und .panel steht weiter hinten im
+     Stylesheet und wuerde gewinnen. Genau so ist der dunkle Kasten in
+     Fassung 88.0 papierfarben geworden. */
+  .panel.vg-karte{ padding:14px 14px 12px; }
+  .panel.vg-wir{ background:#f1f8e9; border:2px solid #b7d89a; }
+  .panel.vg-die{ background:#eef5fb; border:2px solid #a9cbe6; }
 
-     Der Fehler, den das behebt: ".vg-kurz" allein hat dieselbe
-     Spezifitaet wie ".panel" - und .panel steht 15 000 Zeichen weiter
-     hinten im Stylesheet. Bei Gleichstand gewinnt die spaetere Regel.
-     Der Kasten war dadurch papierfarben statt dunkelgruen, und die
-     weisse Schrift darauf unlesbar.
+  .vg-titel{ margin:0 0 10px; font-family:var(--font); font-weight:800;
+    font-size:16px; color:var(--tinte); }
 
-     ".panel.vg-kurz" ist zwei Klassen stark und gewinnt unabhaengig
-     davon, wo es steht. */
-  .panel.vg-kurz{
-    background:#2f3b2a; border:2px solid #2f3b2a; color:#f2f6ec;
-    backdrop-filter:none; -webkit-backdrop-filter:none;
-  }
-  .panel.vg-kurz p{ font-size:13.5px; line-height:1.55; margin:0 0 9px; color:#e4ecdb; }
-  .panel.vg-kurz p:last-child{ margin-bottom:0; }
-  .panel.vg-kurz strong{ color:#ffffff; font-weight:700; }
-  .panel.vg-kurz .vg-kurz-t{
-    font-family:var(--font); font-weight:800; font-size:16px;
-    color:#d3e7bd; margin:0 0 9px; letter-spacing:.01em;
-  }
+  .vg-liste{ list-style:none; margin:0; padding:0; }
+  .vg-punkt{ display:flex; align-items:flex-start; gap:11px; padding:7px 0; }
+  .vg-punkt + .vg-punkt{ border-top:1px solid rgba(90,70,40,0.09); }
+  .vg-pi{ flex:0 0 auto; width:26px; text-align:center; font-size:19px; line-height:1.3; }
+  .vg-pt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+  .vg-pt b{ font-family:var(--font); font-weight:700; font-size:14.5px;
+    line-height:1.3; color:var(--tinte); }
+  .vg-pt span{ font-size:12px; line-height:1.35; color:#6f6354; }
 
-  .vg-h{ font-size:16px; margin:0 0 10px; }
-  .vg-rollen{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .vg-tab{ width:100%; border-collapse:collapse; font-size:13.5px; }
-  /* Mit .panel davor - siehe die Erklaerung bei .panel.vg-kurz. */
-  .panel .vg-tab th, .panel .vg-tab td{ padding:8px 6px;
-    border-bottom:1px solid var(--papier-rand);
-    text-align:left; vertical-align:top; }
-  .vg-tab th{ font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;
-    color:var(--tinte-hell); font-weight:800; }
-  .vg-tab tr:last-child td{ border-bottom:none; }
-  .vg-tab td small{ display:block; font-size:11px; color:var(--tinte-hell); margin-top:1px; }
-  .vg-mitte{ text-align:center !important; width:74px; }
-  .vg-ja{ color:#2f7a3c; font-weight:800; }
-  .vg-nein{ color:#b5352b; font-weight:800; }
-  .vg-halb{ color:#8a6710; font-weight:800; }
-  .vg-fair{ margin:12px 0 0; font-size:12.5px; line-height:1.5; color:var(--tinte-hell); }
-
-  .vg-preise{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-  .vg-preis{ padding:12px 8px; text-align:center; border-radius:13px;
+  .vg-geld{ display:flex; gap:9px; }
+  .vg-geld-z{ flex:1; padding:11px 8px; text-align:center; border-radius:13px;
     border:2px solid var(--papier-rand); background:#fff; }
-  .vg-preis.vg-unser{ border-color:#9cc47e; background:#f2f8ec; }
-  .vg-p-was{ display:block; font-size:11.5px; font-weight:700; color:#6f6354; }
-  .vg-p-zahl{ display:block; font-family:var(--font); font-weight:800;
-    font-size:23px; color:var(--tinte); margin:3px 0; }
-  .vg-unser .vg-p-zahl{ color:#2f7a3c; }
-  .vg-p-klein{ display:block; font-size:10.5px; line-height:1.35; color:#6f6354; }
+  .vg-geld-z.vg-geld-wir{ border-color:#9cc47e; background:#f2f8ec; }
+  .vg-geld-n{ display:block; font-size:11.5px; font-weight:700; color:#6f6354;
+    line-height:1.25; }
+  .vg-geld-p{ display:block; font-family:var(--font); font-weight:800;
+    font-size:25px; color:var(--tinte); margin:2px 0; }
+  .vg-geld-wir .vg-geld-p{ color:#2f7a3c; }
+  .vg-geld-k{ display:block; font-size:11px; color:#6f6354; }
 
   /* ---------- Mehr verdienen ---------- */
   /* Zweizeilig bei 9,5px. Einzeilig braeuchte "Mehr verdienen ›" 76px,
@@ -3543,7 +3525,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "88.1 – Vergleich, lesbar";
+const APP_VERSION = "88.2 – Vergleich für Kinder";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -15672,127 +15654,83 @@ function renderDatenschutz(){
 
 
 /* ==================================================================
-   LINGOCRAFTER NEBEN DUOLINGO
+   WIR UND DUOLINGO
 
-   Drei Bloecke: die kurze Antwort, die Tabelle, die Kosten.
+   Fuer ein Kind geschrieben, nicht fuer jemanden, der einkauft.
 
-   Der Ton ist bewusst nicht marktschreierisch. Auf der Seite steht
-   ausdruecklich, wo Duolingo besser ist - und genau das macht den Rest
-   glaubwuerdig. Ein Vergleich, der die andere Seite schlechtredet,
-   ueberzeugt niemanden, der beide kennt.
+   Die erste Fassung war eine Tabelle mit drei Spalten und ja/nein in
+   Woertern - die Sprache eines Testberichts. Jetzt sind es zwei kurze
+   Listen mit Symbolen, und Lingora erklaert es in einer Sprechblase.
+   Dieselbe Aussage, ein Drittel der Zeilen.
 
-   Alle Zahlen zu LingoCrafter sind aus dieser Datei ausgezaehlt.
-   Die Duolingo-Preise sind Richtwerte fuer Deutschland und aendern
-   sich haeufig - deshalb steht das Datum darunter.
+   Was bleibt: Es steht ausdruecklich da, was Duolingo besser kann.
+   Das ist nicht Bescheidenheit, das ist der Grund, warum man den
+   anderen Teil glaubt. Ein Kind merkt sofort, wenn jemand nur Gutes
+   ueber sich selbst erzaehlt.
 ================================================================== */
-function vgZeile(was, klein, lc, du){
-  const zelle = (w)=>{
-    const k = w === "ja" ? "ja" : (w === "nein" ? "nein" : "halb");
-    return '<td class="vg-mitte vg-' + k + '">' + w + '</td>';
-  };
-  return '<tr><td>' + escapeHtml(was)
-       + (klein ? '<small>' + escapeHtml(klein) + '</small>' : "")
-       + '</td>' + zelle(lc) + zelle(du) + '</tr>';
+/* Eine Zeile in einer der beiden Listen. Symbol, Satz, fertig -
+   keine Spalten, keine Haken zum Vergleichen. */
+function vgPunkt(icon, was, dazu){
+  return '<li class="vg-punkt"><span class="vg-pi">' + icon + '</span>'
+       + '<span class="vg-pt"><b>' + escapeHtml(was) + '</b>'
+       + (dazu ? '<span>' + escapeHtml(dazu) + '</span>' : "")
+       + '</span></li>';
 }
 
 function renderVergleich(){
   app.innerHTML = `
-    ${renderHeader("LingoCrafter neben Duolingo", true)}
-
-    <div class="panel vg-kurz">
-      <p class="vg-kurz-t">Die kurze Antwort</p>
-      <p><strong>Es sind keine Konkurrenten.</strong> Duolingo bringt jemandem eine
-      neue Sprache bei &ndash; von null, ohne Termin. LingoCrafter bringt ein
-      bestimmtes Kind durch die Klassenarbeit am Freitag, mit genau den Wörtern,
-      die im Heft stehen.</p>
-      <p>Wer am Mittwoch merkt, dass 46 Vokabeln bis Freitag sitzen müssen, kommt
-      bei Duolingo keinen Schritt weiter: Dort lassen sich <strong>keine eigenen
-      Wörter eingeben</strong>.</p>
-    </div>
+    ${renderHeader("Wir und Duolingo", true)}
 
     <div class="panel">
-      <h3 class="vg-h">Punkt für Punkt</h3>
-      <div class="vg-rollen">
-        <table class="vg-tab">
-          <thead>
-            <tr>
-              <th>Was ein Kind vor der Klassenarbeit braucht</th>
-              <th class="vg-mitte">Lingo&shy;Crafter</th>
-              <th class="vg-mitte">Duolingo</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${vgZeile("Eigene Vokabeln eingeben", "abtippen, fotografieren oder aus Excel", "ja", "nein")}
-            ${vgZeile("Grammatik nach deutschem Lehrplan", "49 Themen aus Klasse 5 und 6", "ja", "nein")}
-            ${vgZeile("Lernplan bis zu einem Termin", "aufgeteilt auf die Tage davor", "ja", "nein")}
-            ${vgZeile("Note wie in der Schule", "damit klar ist, wo man stünde", "ja", "nein")}
-            ${vgZeile("Prognose für die Klassenarbeit", "", "ja", "nein")}
-            ${vgZeile("Belohnungen, die die Eltern festlegen", "Münzen werden zu Hause eingelöst", "ja", "nein")}
-            ${vgZeile("Elternbereich mit PIN", "", "ja", "nein")}
-            ${vgZeile("Kostenlos ohne Grenzen", "keine Werbung, keine Herzen, kein Abo", "ja", "teils")}
-            ${vgZeile("Karteikasten-Wiederholung", "fünf Fächer, wachsende Abstände", "ja", "ja")}
-            ${vgZeile("Aussprache üben mit Mikrofon", "", "teils", "ja")}
-            ${vgZeile("Viele Sprachen", "", "nein", "ja")}
-            ${vgZeile("Profis, die alles einsprechen", "", "nein", "ja")}
-            ${vgZeile("Inhalte für Jahre", "vom Anfänger bis weit fortgeschritten", "nein", "ja")}
-            ${vgZeile("App im Store, Support, festes Team", "", "nein", "ja")}
-          </tbody>
-        </table>
-      </div>
-      <p class="vg-fair">Die letzten vier Zeilen stehen absichtlich da. Duolingo ist
-      in vielem die größere App &ndash; nur eben nicht für die Vokabeln aus deinem Heft.</p>
+      ${lingoraKopfHtml("Duolingo ist riesig und richtig gut. Wir sind klein &ndash; "
+        + "aber wir kennen dein Schulheft. Und das macht am Freitag den Unterschied.")}
     </div>
 
-    <div class="panel">
-      <h3 class="vg-h">Was es kostet</h3>
-      <div class="vg-preise">
-        <div class="vg-preis vg-unser">
-          <span class="vg-p-was">LingoCrafter</span>
-          <span class="vg-p-zahl">0 €</span>
-          <span class="vg-p-klein">Keine Werbung, kein Abo,<br>keine Begrenzung</span>
+    <div class="panel vg-karte vg-wir">
+      <p class="vg-titel">✨ Das können nur wir</p>
+      <ul class="vg-liste">
+        ${vgPunkt("✏️", "Deine eigenen Vokabeln", "Abtippen oder einfach fotografieren")}
+        ${vgPunkt("📅", "Ein Plan bis zur Klassenarbeit", "Aufgeteilt auf die Tage davor")}
+        ${vgPunkt("📝", "Eine Note wie in der Schule", "Damit du weißt, wo du stehst")}
+        ${vgPunkt("🎁", "Belohnungen von Mama und Papa", "Münzen sammeln, zu Hause einlösen")}
+        ${vgPunkt("💎", "Fehler kosten nichts", "Keine Herzen, keine Wartezeit")}
+      </ul>
+    </div>
+
+    <div class="panel vg-karte vg-die">
+      <p class="vg-titel">👍 Das kann Duolingo besser</p>
+      <ul class="vg-liste">
+        ${vgPunkt("🌍", "Über 40 Sprachen", "Wir können nur Englisch")}
+        ${vgPunkt("🎧", "Echte Stimmen", "Von Menschen eingesprochen")}
+        ${vgPunkt("📚", "Stoff für Jahre", "Wir haben ein Schuljahr")}
+      </ul>
+    </div>
+
+    <div class="panel vg-karte">
+      <p class="vg-titel">💰 Was es kostet</p>
+      <div class="vg-geld">
+        <div class="vg-geld-z vg-geld-wir">
+          <span class="vg-geld-n">Wir</span>
+          <span class="vg-geld-p">0 €</span>
+          <span class="vg-geld-k">für immer</span>
         </div>
-        <div class="vg-preis">
-          <span class="vg-p-was">Duolingo gratis</span>
-          <span class="vg-p-zahl">0 €</span>
-          <span class="vg-p-klein">Werbung nach jeder Lektion,<br>nach 5 Fehlern ist Schluss</span>
-        </div>
-        <div class="vg-preis">
-          <span class="vg-p-was">Duolingo Super</span>
-          <span class="vg-p-zahl">90 €</span>
-          <span class="vg-p-klein">im Jahr &middot; 7,49 €/Monat<br>monatlich kündbar: 16,49 €</span>
-        </div>
-        <div class="vg-preis">
-          <span class="vg-p-was">Duolingo Familie</span>
-          <span class="vg-p-zahl">123 €</span>
-          <span class="vg-p-klein">im Jahr, bis zu 6 Personen<br>10,25 €/Monat</span>
+        <div class="vg-geld-z">
+          <span class="vg-geld-n">Duolingo ohne Werbung</span>
+          <span class="vg-geld-p">90 €</span>
+          <span class="vg-geld-k">im Jahr</span>
         </div>
       </div>
-      <p class="vg-fair" style="margin-top:12px;">Das Herzen-Limit trifft ausgerechnet
-      das Kind, das gerade übt: Wer fünfmal danebenliegt, darf erst einmal nicht weiter.
-      Beim Lernen ist der Fehler aber genau der Moment, in dem es weitergehen sollte.
-      Hier kostet ein Fehler nichts &ndash; du siehst die richtige Antwort und machst weiter.</p>
     </div>
 
     <button class="btn" id="vg-los">▶ AUSPROBIEREN</button>
     <div style="height:10px;"></div>
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
-    <footer class="note">Zahlen zu LingoCrafter aus der App ausgezählt.
-      Duolingo-Preise: Richtwerte für Deutschland, Stand September 2026.</footer>
+    <footer class="note">Duolingo-Preis: Richtwert für Deutschland, September 2026.</footer>
   `;
   const zurueck = ()=>{ state.screen = "start"; render(); window.scrollTo(0, 0); };
   const los = document.getElementById('vg-los');
   if(los) los.addEventListener('click', zurueck);
   document.getElementById('back-btn').addEventListener('click', zurueck);
-}
-
-/* Das Band steht auf zwei Bildschirmen. Eine Verdrahtung fuer beide -
-   sonst wird garantiert eine davon vergessen. */
-function vgBandVerdrahten(){
-  const b = document.getElementById('vg-band');
-  if(b && !b.dataset.vgFertig){
-    b.dataset.vgFertig = "1";
-    b.addEventListener('click', vergleichOeffnen);
-  }
 }
 
 function vergleichOeffnen(){
