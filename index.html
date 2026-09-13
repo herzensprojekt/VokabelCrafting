@@ -209,6 +209,63 @@
 
   .mz-plus{ color:#2f7a3c; font-size:12px; margin-left:2px; }
 
+  /* ---------- Elternbereich, aufgeraeumt ---------- */
+  .ep-frage{ margin:0 0 8px; font-family:var(--font); font-weight:800;
+    font-size:16px; color:var(--tinte); }
+  .ep-antwort{ margin:0 0 14px; font-size:14px; line-height:1.45; color:#5a5245; }
+  .ep-nichts{ margin:0; font-size:13.5px; color:#6f6354; }
+
+  .ep-balken{ display:flex; align-items:flex-end; gap:5px; height:132px; }
+  .ep-tag{ flex:1; min-width:0; display:flex; flex-direction:column;
+    align-items:center; gap:3px; height:100%; padding:0; cursor:pointer;
+    background:none; border:none; border-radius:9px; }
+  .ep-tag.gewaehlt{ background:rgba(90,150,70,0.13); }
+  .ep-saeule{ flex:1; width:100%; display:flex; flex-direction:column;
+    justify-content:flex-end; gap:1px; min-height:0; }
+  .ep-saeule .ep-v, .ep-saeule .ep-g{ display:block; width:100%; border-radius:4px 4px 0 0; }
+  .ep-v{ background:#5b9c3f; }
+  .ep-g{ background:#7b5ea7; }
+  .ep-tag.leer .ep-saeule::after{ content:""; display:block; height:3px;
+    background:var(--papier-rand); border-radius:3px; }
+  .ep-zahl{ font-family:var(--font); font-weight:800; font-size:11.5px;
+    color:var(--tinte); min-height:14px; }
+  .ep-wt{ font-size:10.5px; color:#6f6354; }
+  .ep-tag.gewaehlt .ep-wt{ font-weight:800; color:#3b6d11; }
+
+  .ep-legende{ display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+    margin:10px 0 0; font-size:11.5px; color:#6f6354; }
+  .ep-legende i{ display:inline-block; width:9px; height:9px; border-radius:3px;
+    margin-right:4px; vertical-align:0; }
+  .ep-tipp{ margin-left:auto; font-style:italic; }
+
+  .ep-zeile{ display:flex; align-items:center; gap:11px; padding:9px 0; }
+  .ep-zeile + .ep-zeile{ border-top:1px solid rgba(90,70,40,0.09); }
+  .ep-z-ic{ flex:0 0 auto; font-size:21px; }
+  .ep-z-txt{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .ep-z-txt b{ font-family:var(--font); font-weight:700; font-size:14.5px; color:var(--tinte); }
+  .ep-z-txt span{ font-size:12px; color:#6f6354; }
+  .ep-quote{ flex:0 0 auto; font-family:var(--font); font-weight:800;
+    font-size:17px; padding:4px 10px; border-radius:10px;
+    background:var(--papier-tief); color:#5a5245; }
+  .ep-quote.gut{ background:#e6f2da; color:#2f6b24; }
+  .ep-quote.mittel{ background:#fbf1d8; color:#7a5a0d; }
+  .ep-quote.schwach{ background:#f7e2df; color:#9c2f24; }
+
+  .ep-sitzt{ display:flex; height:15px; border-radius:8px; overflow:hidden;
+    background:var(--papier-tief); }
+  .ep-s-teil{ height:100%; }
+  .ep-s-gut{ background:#5b9c3f; }
+  .ep-s-wack{ background:#d9b34a; }
+  .ep-s-text{ display:flex; justify-content:space-between; gap:10px;
+    margin:7px 0 0; font-size:13px; color:#5a5245; }
+
+  .ep-w-titel{ margin:14px 0 7px; font-size:12.5px; font-weight:700; color:#5a5245; }
+  .ep-woerter{ display:flex; flex-wrap:wrap; gap:6px; }
+  .ep-wort{ padding:5px 9px; border-radius:10px; font-size:12.5px;
+    background:#fdf6e6; border:1px solid #e6d5ad; color:var(--tinte); }
+  .ep-wort i{ font-style:normal; color:#7a6a52; }
+  .ep-note{ margin:13px 0 0; font-size:12.5px; color:#6f6354; }
+
   /* ---------- Wir und Duolingo ---------- */
   .vg-band{
     display:flex; align-items:center; gap:10px; width:100%;
@@ -3525,7 +3582,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "88.4 – Wir gegen die Großen";
+const APP_VERSION = "89.0 – Elternbereich aufgeräumt";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -14878,6 +14935,89 @@ async function kontoLoeschen(){
     });
 }
 
+/* ==================================================================
+   DER ELTERNBEREICH
+
+   Drei Fragen, drei Bloecke. Mehr braucht ein Elternteil, das abends
+   kurz nachsieht, nicht - und mehr liest auch niemand.
+
+       Hat es geuebt?   -> die Woche, sieben Balken
+       Was, und wie?    -> der angetippte Tag
+       Sitzt es?        -> was sitzt und was wackelt
+
+   Die sieben Tage sind keine Geschmacksentscheidung. Im Browser
+   gemessen, bei 390 px Bildschirmbreite: 30 Balken sind 7,1 px breit,
+   sieben sind 46,9. Apple nennt 44 px als Mindestmass fuer etwas, das
+   ein Finger treffen soll.
+================================================================== */
+const ELTERN_TAGE = 7;
+
+/* Die letzten Tage als Liste - aelteste zuerst, damit die Balken von
+   links nach rechts laufen wie ein Kalender. */
+function elternWoche(){
+  const log = (state.activityLog && typeof state.activityLog === "object") ? state.activityLog : {};
+  const raus = [];
+  const heute = new Date();
+  for(let i = ELTERN_TAGE - 1; i >= 0; i--){
+    const d = new Date(heute.getTime());
+    d.setDate(d.getDate() - i);
+    const k = dateKey(d);
+    const e = log[k] || {};
+    const v = Math.max(0, e.v || 0), g = Math.max(0, e.g || 0);
+    raus.push({
+      key: k, datum: d, v: v, g: g, gesamt: v + g,
+      vc: Math.max(0, e.vc || 0), gc: Math.max(0, e.gc || 0),
+      heute: i === 0
+    });
+  }
+  return raus;
+}
+
+function elternWochentag(d){
+  return ["So","Mo","Di","Mi","Do","Fr","Sa"][d.getDay()];
+}
+
+function elternProzent(richtig, gesamt){
+  return gesamt > 0 ? Math.round(richtig / gesamt * 100) : null;
+}
+
+/* Was sitzt, was wackelt. Box 4 und 5 heissen: sieben bzw. sechzehn
+   Tage Abstand - was dort angekommen ist, sitzt. */
+function elternWortstand(){
+  const alle = getAllVocab();
+  const stand = state.wortStand || {};
+  let sitzt = 0, wackelt = 0, neu = 0;
+  const wackler = [];
+  alle.forEach(w=>{
+    const st = stand[wortSchluessel(w)];
+    if(!st){ neu++; return; }
+    if((st.b || 1) >= 4){ sitzt++; }
+    else {
+      wackelt++;
+      wackler.push({ w: w, box: st.b || 1, fehler: st.f || 0 });
+    }
+  });
+  // Die haerteste Nuss zuerst: niedrigste Box, danach die meisten Fehler.
+  wackler.sort((a, b)=> (a.box - b.box) || (b.fehler - a.fehler));
+  return { sitzt: sitzt, wackelt: wackelt, neu: neu, geuebt: sitzt + wackelt,
+           wackler: wackler.slice(0, 6) };
+}
+
+/* Eine Zeile im Tages-Block: was, wie viele, wie gut. */
+function elternZeile(icon, was, anzahl, richtig){
+  const p = elternProzent(richtig, anzahl);
+  const farbe = p === null ? "" : (p >= 80 ? " gut" : (p >= 60 ? " mittel" : " schwach"));
+  return `
+    <div class="ep-zeile">
+      <span class="ep-z-ic">${icon}</span>
+      <span class="ep-z-txt">
+        <b>${was}</b>
+        <span>${anzahl} ${anzahl === 1 ? "Aufgabe" : "Aufgaben"}</span>
+      </span>
+      <span class="ep-quote${farbe}">${p === null ? "–" : p + " %"}</span>
+    </div>`;
+}
+
 function renderParents(){
   if(!state.parentUnlocked) return renderParentGate();
 
@@ -14890,51 +15030,76 @@ function renderParents(){
   const eigene = Array.isArray(state.customRewards) ? state.customRewards : [];
   const versteckt = Array.isArray(state.hiddenRewards) ? state.hiddenRewards : [];
 
+  const woche   = elternWoche();
+  const tage    = woche.filter(t=>t.gesamt > 0).length;
+  const summe   = woche.reduce((s,t)=>s + t.gesamt, 0);
+  const hoechst = Math.max(1, ...woche.map(t=>t.gesamt));
+  /* Welcher Tag ist aufgeklappt? Ohne Wahl der letzte, an dem etwas
+     passiert ist - ein leerer Tag als Startansicht waere sinnlos. */
+  const letzter = [...woche].reverse().find(t=>t.gesamt > 0);
+  const gewaehlt = woche.find(t=>t.key === state.elternTag) || letzter || woche[woche.length-1];
+  const stand = elternWortstand();
+  const anteilSitzt = stand.geuebt > 0 ? Math.round(stand.sitzt / stand.geuebt * 100) : 0;
+  const name = escapeHtml(state.playerName || "Dein Kind");
+
   const uebersicht = `
     <div class="panel">
-      <div class="kpi-grid">
-        <div class="kpi"><span class="kpi-ic">📚</span><span class="kpi-txt">
-          <span class="kpi-nr">${sum.gesamt}</span><span class="kpi-lb">Aufgaben insgesamt</span></span></div>
-        <div class="kpi"><span class="kpi-ic">🎯</span><span class="kpi-txt">
-          <span class="kpi-nr">${quote === null ? '–' : quote + ' %'}</span><span class="kpi-lb">davon richtig</span></span></div>
-        <div class="kpi"><span class="kpi-ic">💎</span><span class="kpi-txt">
-          <span class="kpi-nr">${schnitt === null ? '–' : schnitt.toFixed(2)}</span><span class="kpi-lb">Notenschnitt</span></span></div>
-        <div class="kpi"><span class="kpi-ic">🪙</span><span class="kpi-txt">
-          <span class="kpi-nr">${state.coins}</span><span class="kpi-lb">Münzen im Konto</span></span></div>
+      <p class="ep-frage">Hat ${name} geübt?</p>
+      <p class="ep-antwort">${tage === 0
+        ? `In den letzten ${ELTERN_TAGE} Tagen noch nicht.`
+        : `An <strong>${tage} von ${ELTERN_TAGE} Tagen</strong> &ndash; zusammen <strong>${summe}</strong> ${summe === 1 ? "Aufgabe" : "Aufgaben"}.`}</p>
+
+      <div class="ep-balken">
+        ${woche.map(t=>`
+          <button class="ep-tag ${t.key === gewaehlt.key ? "gewaehlt" : ""} ${t.gesamt ? "" : "leer"}"
+                  data-eltern-tag="${t.key}" type="button"
+                  title="${elternWochentag(t.datum)}, ${t.gesamt} Aufgaben">
+            <span class="ep-saeule">
+              ${t.g ? `<span class="ep-g" style="height:${Math.round(t.g / hoechst * 100)}%;"></span>` : ""}
+              ${t.v ? `<span class="ep-v" style="height:${Math.round(t.v / hoechst * 100)}%;"></span>` : ""}
+            </span>
+            <span class="ep-zahl">${t.gesamt || ""}</span>
+            <span class="ep-wt">${t.heute ? "heute" : elternWochentag(t.datum)}</span>
+          </button>`).join("")}
       </div>
-      <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
-        In den letzten 7 Tagen: <strong>${aufgaben7}</strong> Aufgaben an <strong>${tageAktiv}</strong> von 7 Tagen.
+      <p class="ep-legende">
+        <span><i class="ep-p ep-v"></i> Vokabeln</span>
+        <span><i class="ep-p ep-g"></i> Grammatik</span>
+        <span class="ep-tipp">Tag antippen</span>
       </p>
     </div>
 
     <div class="panel">
-      <h3 style="font-size:15px;margin-bottom:2px;">📊 AUFGABEN PRO TAG</h3>
-      <p class="muted" style="margin:0 0 4px;font-size:12.5px;">Die letzten 30 Tage.</p>
-      ${chartAktivitaet()}
-      <div class="legende">
-        <span class="leg"><span class="leg-dot" style="background:${FARBE_VOKABEL};"></span>Vokabeln</span>
-        <span class="leg"><span class="leg-dot" style="background:${FARBE_GRAMMATIK};"></span>Grammatik</span>
-      </div>
+      <p class="ep-frage">Was war am ${gewaehlt.heute ? "heutigen Tag" :
+        elternWochentag(gewaehlt.datum) + ", " + gewaehlt.datum.getDate() + "." + (gewaehlt.datum.getMonth()+1) + "."}?</p>
+      ${gewaehlt.gesamt === 0 ? `<p class="ep-nichts">An diesem Tag wurde nicht geübt.</p>` : `
+        ${gewaehlt.v ? elternZeile("📚", "Vokabeln", gewaehlt.v, gewaehlt.vc) : ""}
+        ${gewaehlt.g ? elternZeile("🧠", "Grammatik", gewaehlt.g, gewaehlt.gc) : ""}
+      `}
     </div>
 
     <div class="panel">
-      <h3 style="font-size:15px;margin-bottom:2px;">💎 NOTENVERLAUF</h3>
-      <p class="muted" style="margin:0 0 4px;font-size:12.5px;">Die letzten 20 benoteten Tests, 1 oben, 6 unten.</p>
-      ${chartNoten()}
-      <div class="legende">
-        <span class="leg"><span class="leg-dot" style="background:${FARBE_VOKABEL};"></span>Vokabeltest</span>
-        <span class="leg"><span class="leg-dot" style="background:${FARBE_GRAMMATIK};"></span>Grammatiktest</span>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h3 style="font-size:15px;margin-bottom:6px;">🧠 GRAMMATIK NACH UNITS</h3>
-      ${unitBalken()}
-    </div>
-
-    <div class="panel">
-      <h3 style="font-size:15px;margin-bottom:0;">⭐ STÄRKEN UND LÜCKEN</h3>
-      ${staerkenListe()}
+      <p class="ep-frage">Was sitzt?</p>
+      ${stand.geuebt === 0
+        ? `<p class="ep-nichts">Noch keine Wörter geübt.</p>`
+        : `
+        <div class="ep-sitzt">
+          <div class="ep-s-teil ep-s-gut" style="flex:${Math.max(1, stand.sitzt)};"></div>
+          <div class="ep-s-teil ep-s-wack" style="flex:${Math.max(1, stand.wackelt)};"></div>
+        </div>
+        <p class="ep-s-text">
+          <span><strong>${stand.sitzt}</strong> sitzen (${anteilSitzt} %)</span>
+          <span><strong>${stand.wackelt}</strong> wackeln noch</span>
+        </p>
+        ${stand.wackler.length ? `
+          <p class="ep-w-titel">Diese Wörter am ehesten abfragen:</p>
+          <div class="ep-woerter">
+            ${stand.wackler.map(x=>`<span class="ep-wort">${escapeHtml(cleanEn(x.w.en))}
+              <i>${escapeHtml(x.w.de)}</i></span>`).join("")}
+          </div>` : ""}
+        ${computeAvgGrade() !== null ? `<p class="ep-note">Notenschnitt der letzten Tests:
+          <strong>${String(computeAvgGrade().toFixed(1)).replace(".", ",")}</strong></p>` : ""}
+      `}
     </div>`;
 
   const belohnungen = `
@@ -15097,6 +15262,14 @@ function renderParents(){
   });
   const stimmenBtn = document.getElementById('stimmen-btn');
   if(stimmenBtn){ stimmenBtn.addEventListener('click', ()=>{ state.screen = "stimmenskript"; render(); }); }
+
+  /* Ein Balken ist antippbar - das ist der ganze Sinn der Woche. */
+  document.querySelectorAll('[data-eltern-tag]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.elternTag = el.dataset.elternTag;
+      render();
+    });
+  });
 
   document.querySelectorAll('[data-ptab]').forEach(el=>{
     el.addEventListener('click', ()=>{
