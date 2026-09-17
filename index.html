@@ -199,6 +199,24 @@
     padding:20px; z-index:1000;
     animation: feedback-in .15s ease;
   }
+  /* ZWEI KLASSEN, UND DAS IST NOETIG.
+
+     .panel steht in dieser Datei WEITER UNTEN als .modal-box. Bei
+     gleicher Spezifitaet gewinnt die spaetere Regel - ein einfaches
+     ".modal-box{background:...}" waere hier wirkungslos geblieben.
+     Mit zwei Klassen liegt die Spezifitaet hoeher und die Sache ist
+     entschieden, egal in welcher Reihenfolge die Regeln stehen.
+
+     Warum ueberhaupt: Seit v90.5 ist .panel durchscheinend, damit es
+     auf dem Blatt aufgedruckt wirkt. Ein Modalfenster liegt aber auf
+     einem schwarzen Overlay - 55 % Weiss darauf ergibt Grau. Ein
+     Fenster braucht Papier. */
+  .panel.modal-box{
+    max-width:340px; width:100%; margin:0;
+    background:var(--blatt);
+    border-color:rgba(170,150,115,0.55);
+    box-shadow:0 12px 34px rgba(0,0,0,0.32);
+  }
   .modal-box{ max-width:340px; width:100%; margin:0; }
   .paypal-badge{
     display:block; width:fit-content; margin:0 auto; padding:10px 20px;
@@ -645,7 +663,11 @@
     0%,100%{ box-shadow: 0 2px 10px rgba(31,184,212,0.5), 0 0 6px rgba(94,231,245,0.5); }
     50%{ box-shadow: 0 2px 14px rgba(31,184,212,0.7), 0 0 20px rgba(94,231,245,0.9); }
   }
-  .btn.small{ font-size:14px; padding:10px 12px; }
+  /* 14 px war zu klein. Im Browser gemessen: die Knoepfe der
+     Anmeldeseite stehen bei 16-17 px und voller Breite, die im
+     eingeloggten Bereich bei 14 px und 90-195 px. Markus hat genau
+     diesen Unterschied gesehen. */
+  .btn.small{ font-size:15.5px; padding:12px 14px; }
   .btn[disabled]{ opacity:0.4; pointer-events:none; }
 
   .row{ display:flex; gap:10px; }
@@ -2545,7 +2567,10 @@ summary.mehr-knopf::after{ content:none; }
 }
 
 /* --- Nebenwege unter Lingoras Vorschlag ----------------------------- */
-.lg-nebenwege{ display:flex; gap:8px; margin-top:8px; }
+/* Untereinander und ueber die ganze Breite - wie die Knoepfe auf der
+   Anmeldeseite. Nebeneinander waren sie 195 px breit und die
+   Beschriftung musste schrumpfen. */
+.lg-nebenwege{ display:grid; grid-template-columns:1fr; gap:8px; margin-top:10px; }
 .lg-nebenwege .btn{ flex:1; font-size:clamp(12px, 3.4vw, 15px); padding:12px 8px; }
 
 /* --- Grammatik ohne Unit-Ebene -------------------------------------- */
@@ -2775,6 +2800,7 @@ summary.mehr-knopf::after{ content:none; }
 }
 
 /* --- Die Kacheln unten ----------------------------------------------- */
+.profil-knoepfe{ display:grid; grid-template-columns:1fr; gap:8px; margin-top:12px; }
 .werk-gitter{ display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-top:10px; }
 .werk-karte.breit{ grid-column:1 / -1; }
 /* Sieben gesaettigte Farbbloecke nebeneinander sahen aus wie eine
@@ -3648,7 +3674,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "90.5 – Auf liniertem Blatt";
+const APP_VERSION = "90.6 – Termin geht vor";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -5007,23 +5033,29 @@ function gramFaelligeThemen(){
 ================================================================== */
 const HEUTE_ZIEL = 3;      // so viele Sachen - machbar, nicht abschreckend
 
-/* Steht heute ein Plan an?
+/* Hat ein Plan MIT TERMIN heute noch etwas offen?
 
-   NICHT einfach "gibt es einen Plan". lingoraTagVonPlan liefert zur Not
-   den LETZTEN Tag eines Plans zurueck - auch wenn der drei Wochen alt
-   ist. Die erste Fassung dieser Funktion hat das uebersehen; im Test
-   galt ein abgeschlossener Vokabeltest von vor fuenf Tagen als "laeuft
-   heute", und damit waeren auf Dauer alle anderen Vorschlaege
-   verstummt. Gefunden, weil der Fall durchgerechnet wurde.
+   Der Vorgaenger hiess planLaeuftHeute und fragte nach JEDEM Plan.
+   Das war der Fehler: Nokie hat einen Uebungsplan, und damit galt der
+   Bildschirm auf Dauer als belegt - faellige Vokabeln kamen nie zum
+   Zug, und wenn der Tag abgehakt war, standen dreimal
+   "Geschafft - noch einmal ueben?" untereinander.
 
-   Ein Plan ist dran, wenn sein Tag heute oder spaeter liegt - oder
-   wenn ein verpasster Tag noch offene Schritte hat. */
-function planLaeuftHeute(){
+   Ein Vokabeltest am Freitag laesst sich nicht verschieben, ein
+   Uebungsplan schon. Nur der Termin darf also alles andere
+   leiserstellen - und auch nur, solange er heute wirklich noch etwas
+   offen hat.
+
+   Der Tagesabgleich bleibt: lingoraTagVonPlan liefert zur Not den
+   LETZTEN Tag eines Plans zurueck, auch einen drei Wochen alten.
+   Deshalb zaehlt nur ein Tag, der heute oder frueher liegt. */
+function terminPlanOffenHeute(){
   const heute = dateKey(new Date());
   for(const p of lingoraPlaene()){
+    if(!lingoraMitTermin(p.art)) continue;
     const tag = lingoraTagVonPlan(p);
     if(!tag || !Array.isArray(tag.schritte) || !tag.schritte.length) continue;
-    if(tag.datum >= heute) return true;
+    if(tag.datum > heute) continue;
     if(tag.schritte.some(s => !s.fertig)) return true;
   }
   return false;
@@ -5043,50 +5075,39 @@ function heuteDran(){
     return true;
   };
 
-  // 1) Offene Planschritte
-  for(const p of lingoraPlaene()){
-    const tag = lingoraTagVonPlan(p);
-    if(!tag) continue;
-    for(const s of (tag.schritte || [])){
-      if(s.fertig) continue;
-      rein({
-        quelle: "plan", schrittId: s.id, planId: p.id,
-        titel: s.titel, unter: s.unter, icon: s.icon || "📘",
-        dauer: s.dauer || 5
-      }, "schritt:" + s.id);
-      if(liste.length >= HEUTE_ZIEL) break;
-    }
-    if(liste.length >= HEUTE_ZIEL) break;
-  }
+  /* 1) Offene Planschritte - ABER NACH DRINGLICHKEIT.
 
-  /* 1b) HIER WIRD ES EXKLUSIV.
+     Ein Vokabeltest am Freitag laesst sich nicht verschieben, ein
+     Uebungsplan schon. Also:
 
-     Vorher lief die Funktion einfach weiter: unter den Planschritten
-     standen dann faellige Grammatik und faellige Vokabeln, die mit dem
-     Plan nichts zu tun hatten. Auf dem Startbildschirm sah das aus wie
-     mehrere Auftraege nebeneinander.
+       Termin (Vokabeltest/Arbeit) -> darf die ganze Liste nehmen
+       Uebungsplan                 -> hoechstens EIN Platz
 
-     Ist heute ein Plan dran, endet die Liste hier. Und wenn alles vom
-     Plan geschafft ist, kommt NICHT etwas anderes, sondern dasselbe
-     noch einmal - freiwillig, als Angebot. */
-  if(planLaeuftHeute()){
-    if(!liste.length){
-      for(const p of lingoraPlaene()){
-        const tag = lingoraTagVonPlan(p);
-        if(!tag) continue;
-        for(const s of (tag.schritte || [])){
-          rein({
-            quelle: "plan", schrittId: s.id, planId: p.id, wdh: true, frei: true,
-            titel: s.titel, unter: "Geschafft – noch einmal üben?",
-            icon: "↻", dauer: s.dauer || 5
-          }, "wdh:" + s.id);
-          if(liste.length >= HEUTE_ZIEL) break;
-        }
-        if(liste.length >= HEUTE_ZIEL) break;
+     Bis v90.5 galt das Vorrecht fuer jeden Plan. Nokie hat einen
+     Uebungsplan, und damit sah er tagelang nur dessen Schritte - auch
+     als laengst Vokabeln faellig waren. */
+  const planSchritteRein = (plaene, grenze)=>{
+    let gesetzt = 0;
+    for(const p of plaene){
+      const tag = lingoraTagVonPlan(p);
+      if(!tag) continue;
+      for(const s of (tag.schritte || [])){
+        if(s.fertig) continue;
+        if(gesetzt >= grenze) return gesetzt;
+        if(rein({
+          quelle: "plan", schrittId: s.id, planId: p.id,
+          titel: s.titel, unter: s.unter, icon: s.icon || "📘",
+          dauer: s.dauer || 5
+        }, "schritt:" + s.id)) gesetzt++;
+        if(liste.length >= HEUTE_ZIEL) return gesetzt;
       }
     }
-    return liste;
-  }
+    return gesetzt;
+  };
+
+  planSchritteRein(lingoraPlaene().filter(p => lingoraMitTermin(p.art)), HEUTE_ZIEL);
+  if(liste.length) return liste;          // ein Termin laeuft: nur er
+  planSchritteRein(lingoraPlaene().filter(p => !lingoraMitTermin(p.art)), 1);
 
   // 2) Faellige Grammatik
   for(const t of gramFaelligeThemen()){
@@ -5128,7 +5149,28 @@ function heuteDran(){
     }
   }
 
-  // 4) Notnagel - es darf nie leer sein.
+  /* 4) Notnagel - es darf nie leer sein.
+
+     ZUERST die heutigen Planschritte zum Wiederholen. Wer seinen Plan
+     durchhat und sonst nichts faellig, bekommt lieber dasselbe noch
+     einmal angeboten als ein zufaelliges Thema. Freiwillig, deshalb
+     frei:true - die Zeile sagt dann "nochmal" statt einer Minutenzahl. */
+  if(!liste.length){
+    for(const p of lingoraPlaene()){
+      const tag = lingoraTagVonPlan(p);
+      if(!tag) continue;
+      for(const s of (tag.schritte || [])){
+        rein({
+          quelle: "plan", schrittId: s.id, planId: p.id, wdh: true, frei: true,
+          titel: s.titel, unter: "Geschafft – noch einmal üben?",
+          icon: "↻", dauer: s.dauer || 5
+        }, "wdh:" + s.id);
+        if(liste.length >= HEUTE_ZIEL) break;
+      }
+      if(liste.length >= HEUTE_ZIEL) break;
+    }
+  }
+
   if(!liste.length){
     const alle = themenFreigegeben();
     if(alle.length){
@@ -5695,7 +5737,7 @@ function renderLingoraPlan(){
       <button class="btn ghost" id="lg-weg" style="margin-top:8px;">🗑️ Plan verwerfen</button>
     </div>
 
-    ${planLaeuftHeute() ? "" : nochUebenHtml()}
+    ${terminPlanOffenHeute() ? "" : nochUebenHtml()}
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
@@ -6531,7 +6573,7 @@ function lingoraStartHtml(){
      Zwei Kaesten, die dasselbe sagen, sind genau die Doppelung, die weg
      soll - also wandert sie in diesen Satz, und die Kachel bleibt aus,
      solange ein Plan laeuft (siehe renderStart). */
-  const laeuft = planLaeuftHeute();
+  const laeuft = terminPlanOffenHeute();
   const frist  = zielPlanFrist(zielPlanOffen());
   const satz = offen
     ? ((frist ? frist + " &ndash; heute noch " : "Dein Plan läuft &ndash; noch ")
@@ -12376,9 +12418,9 @@ function hauptwahlHtml(){
      Ein roter Punkt mit "17 Wörter warten" neben einem Plan, in dem
      ganz andere Woerter stehen, ist eine zweite Forderung an dasselbe
      Kind. Die Karte bleibt erreichbar - sie ruft nur nicht mehr. */
-  const still = planLaeuftHeute();
+  const still = terminPlanOffenHeute();
   const unter = still
-    ? "Wenn du danach noch Lust hast"
+    ? "Erst der Test – danach gern"
     : (wiederholung > 0
         ? wiederholung + (wiederholung === 1 ? " Wort wartet" : " Wörter warten") + " auf die Wiederholung"
         : (neu > 0 ? "Neue Wörter entdecken" : "Alles sitzt \u2013 üben darfst du trotzdem"));
@@ -12896,7 +12938,7 @@ function renderStart(){
 
     ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""}${state.guest ? `<div class="guest-bar"><span class="guest-txt">&#128064; <strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">&#127381; Konto anlegen</button></div>` : ""}
 
-    ${planLaeuftHeute() ? "" : zielPlanHtml()}
+    ${terminPlanOffenHeute() ? "" : zielPlanHtml()}
 
     ${lingoraStartHtml()}
 
@@ -12914,13 +12956,17 @@ function renderStart(){
           <p class="muted" style="margin:1px 0 0;font-size:13px;">${state.guest ? "Testmodus &middot; nichts wird gespeichert" : "Angemeldet &middot; Fortschritt wird gesichert"}</p>
         </div>
       </div>
-      ${state.guest ? `<button class="btn gold small" id="signup-btn" style="margin-top:10px;width:auto;margin-right:8px;">🆕 Konto anlegen</button>` : ``}<button class="btn secondary small" id="toggle-login-form" style="margin-top:10px;width:auto;">
-        ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
-      </button><button class="btn secondary small" id="klasse-aendern" style="margin-top:10px;margin-left:8px;width:auto;">
-        🎒 Klasse${state.klasse ? " (" + state.klasse + ".)" : ""}
-      </button><button class="btn secondary small" id="teams-btn" style="margin-top:10px;margin-left:8px;width:auto;">
-        🛡️ Teams${meineTeams().length ? " (" + meineTeams().length + ")" : ""}
-      </button>
+      <!-- Ohne "width:auto" nehmen die Knoepfe die volle Breite aus
+           .btn - dieselbe Machart wie auf der Anmeldeseite. -->
+      <div class="profil-knoepfe">
+        ${state.guest ? `<button class="btn gold small" id="signup-btn">🆕 Konto anlegen</button>` : ``}<button class="btn secondary small" id="toggle-login-form">
+          ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
+        </button><button class="btn secondary small" id="klasse-aendern">
+          🎒 Klasse${state.klasse ? " (" + state.klasse + ".)" : ""}
+        </button><button class="btn secondary small" id="teams-btn">
+          🛡️ Teams${meineTeams().length ? " (" + meineTeams().length + ")" : ""}
+        </button>
+      </div>
 
       ${state.showLoginForm ? `
         <div class="setting-label" style="margin-top:14px;">Dein Avatar</div>
