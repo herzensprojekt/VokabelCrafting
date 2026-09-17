@@ -39,7 +39,11 @@
    ausdruecklich uebergangen.
 ===================================================================== */
 
-const CACHE = "lingocrafter-v3";
+/* v4: Die Symbole wurden ausgetauscht, ohne die Dateinamen zu
+   aendern. Ein neuer Speichername ist der einzige Weg, die alten
+   Bilder loszuwerden - der activate-Haken unten raeumt jeden Speicher
+   weg, der nicht so heisst. */
+const CACHE = "lingocrafter-v4";
 const MITNEHMEN = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./lingora.webp"];
 
 /* Holt etwas unter Umgehung des HTTP-Zwischenspeichers. Faellt auf den
@@ -95,10 +99,18 @@ self.addEventListener("fetch", (e)=>{
     return;
   }
 
-  // Bilder und Manifest: Zwischenspeicher zuerst, im Hintergrund auffrischen.
+  /* Bilder und Manifest: Zwischenspeicher zuerst, im Hintergrund
+     auffrischen.
+
+     Die Auffrischung geht ueber frischHolen und damit am
+     HTTP-Zwischenspeicher vorbei. Mit einem schlichten fetch() haette
+     GitHub Pages ("Cache-Control: max-age=600") bis zu zehn Minuten
+     lang die alten Bytes geliefert - und der Service Worker haette sie
+     sich brav erneut eingespeichert. Derselbe Fehler wie oben bei der
+     Seite, nur eine Zeile tiefer. */
   e.respondWith(
     caches.match(anfrage).then(treffer => {
-      const ausDemNetz = fetch(anfrage).then(antwort => {
+      const ausDemNetz = frischHolen(anfrage.url).then(antwort => {
         const kopie = antwort.clone();
         caches.open(CACHE).then(c => c.put(anfrage, kopie)).catch(()=>{});
         return antwort;

@@ -3219,7 +3219,7 @@ summary.mehr-knopf::after{ content:none; }
      ================================================================ -->
 <div id="app">
   <div style="max-width:640px;margin:0 auto;padding:22px 18px;font-family:Poppins,system-ui,Arial,sans-serif;color:#443a2c;line-height:1.55;">
-    <img src="logo.png" alt="LingoCrafter" width="320" height="224" style="max-width:100%;height:auto;display:block;margin:0 auto 14px;">
+    <img src="logo.png" alt="LingoCrafter" width="1200" height="630" style="max-width:100%;height:auto;display:block;margin:0 auto 14px;">
     <h1 style="font-size:23px;line-height:1.25;margin:0 0 10px;">Englisch-Vokabeln üben für Klasse 5 und 6 – kostenlos, im Minecraft-Look</h1>
     <p style="margin:0 0 14px;"><strong>LingoCrafter</strong> ist ein kostenloser Vokabeltrainer für Englisch.
       Er ist für Kinder gemacht, die lieber spielen als pauken: Vokabeln und Grammatik werden zu Runden,
@@ -3602,7 +3602,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "90.2 – Listen zum Hineinsehen";
+const APP_VERSION = "90.3 – Neue Symbole";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -11840,7 +11840,7 @@ function renderLogin(){
     <div class="login-topbar mit-bild">
       <img class="titelbild" src="logo-neu.webp"
            alt="LingoCrafter - Deine Lern-App. Lernen. Spielen. Wachsen."
-           width="900" height="901">
+           width="900" height="916">
       <button type="button" class="info-btn" id="info-btn" title="Was ist LingoCrafter?" aria-label="Was ist LingoCrafter?">i</button>
       <button type="button" class="zur-anmeldung" id="zur-anmeldung">Anmelden ↓</button>
     </div>
@@ -11863,12 +11863,12 @@ function renderLogin(){
 
       <div class="usp-gitter">
         <div class="usp">
-          <img class="usp-ic" src="ic-muenzen.webp" alt="" width="200" height="207" loading="lazy">
+          <img class="usp-ic" src="ic-muenzen.webp" alt="" width="200" height="200" loading="lazy">
           <span class="usp-t">Münzen verdienen</span>
           <span class="usp-s">Für jede richtige Antwort.</span>
         </div>
         <div class="usp">
-          <img class="usp-ic" src="ic-geschenk.webp" alt="" width="200" height="201" loading="lazy">
+          <img class="usp-ic" src="ic-geschenk.webp" alt="" width="200" height="200" loading="lazy">
           <span class="usp-t">Echte Belohnungen</span>
           <span class="usp-s">Mama und Papa legen fest, wofür.</span>
         </div>
@@ -11878,24 +11878,24 @@ function renderLogin(){
           <span class="usp-s">Wortschatz und Regeln, Thema für Thema.</span>
         </div>
         <div class="usp">
-          <img class="usp-ic" src="ic-spiele.webp" alt="" width="200" height="197" loading="lazy">
+          <img class="usp-ic" src="ic-spiele.webp" alt="" width="200" height="200" loading="lazy">
           <span class="usp-t">Lernspiele</span>
           <span class="usp-s">Auswahl, Tippen, Flutungsraum, Challenge.</span>
         </div>
         <div class="usp">
-          <img class="usp-ic" src="ic-plan.webp" alt="" width="200" height="186" loading="lazy">
+          <img class="usp-ic" src="ic-plan.webp" alt="" width="200" height="200" loading="lazy">
           <span class="usp-t">Plan bis zur Arbeit</span>
           <span class="usp-s">Lingora teilt die Tage bis zur Klassenarbeit ein.</span>
         </div>
         <div class="usp">
-          <img class="usp-ic" src="ic-avatar.webp" alt="" width="200" height="206" loading="lazy">
+          <img class="usp-ic" src="ic-avatar.webp" alt="" width="200" height="200" loading="lazy">
           <span class="usp-t">Eigener Avatar</span>
           <span class="usp-s">Gesicht bauen oder Blockfigur &ndash; wie du magst.</span>
         </div>
       </div>
 
       <div class="usp-herz">
-        <img src="ic-herz.webp" alt="" width="200" height="190" loading="lazy">
+        <img src="ic-herz.webp" alt="" width="200" height="200" loading="lazy">
         <span class="kachel-txt">
           <span class="kachel-t">Kostenlos und ohne Werbung.</span>
           <span class="kachel-s">Ein Familienprojekt &ndash; mit Unterstützung meiner Kinder.</span>
@@ -12270,7 +12270,7 @@ function fortschrittZeileHtml(){
   return `
     <div class="fort-zeile">
       <div class="fz-muenzen">
-        <img class="fz-m-bild" src="ic-muenzen.webp" alt="" width="200" height="207" loading="lazy">
+        <img class="fz-m-bild" src="ic-muenzen.webp" alt="" width="200" height="200" loading="lazy">
         <span class="fz-m-zahl">${state.coins}</span>
         <span class="fz-m-u">Münzen</span>
       </div>
@@ -12354,7 +12354,7 @@ function erwachsenenTuerHtml(){
      ansieht, dass er gewirkt hat, ist ein kaputter Knopf. */
   return `
     <button type="button" class="fe-knopf" id="eltern-btn">
-      <img class="fe-bild" src="ic-herz.webp" alt="" width="200" height="190" loading="lazy">
+      <img class="fe-bild" src="ic-herz.webp" alt="" width="200" height="200" loading="lazy">
       Für Eltern
     </button>`;
 }
@@ -17979,18 +17979,32 @@ function teilBildMalen(titel, marke, ueber, fertig, texte){
      Im Klassenchat entscheidet ein Kind in einer halben Sekunde, ob es
      hinsieht. In dieser halben Sekunde wirkt ein Bild, kein Text.
 
-     logo-emblem.webp ist das reine Emblem, aus logo-neu.webp
-     herausgeschnitten - jenes traegt oben noch den Slogan, und auf
-     einem Bild, das ohnehin Text hat, macht das nur alles kleiner. */
+     logo-emblem.webp ist das reine Emblem ohne das Spruchband - auf
+     einem Bild, das ohnehin Text hat, macht ein zweiter Spruch nur
+     alles kleiner.
+
+     EINGEPASST, NICHT AUFGEZOGEN. Frueher stand hier eine feste Breite
+     von 820 und die Hoehe wurde daraus gerechnet. Das ging gut, solange
+     das Emblem 900 x 621 war (Hoehe 566, endet bei y = 588, knapp ueber
+     dem Gras bei y = 600). Das neue ist 900 x 812 - dieselbe Rechnung
+     ergaebe 740 und das Logo laege ueber Wiese, Erde und der ersten
+     Textzeile.
+
+     Jetzt bekommt es einen Kasten von 820 x 566 und nimmt darin so
+     viel Platz, wie sein Seitenverhaeltnis zulaesst. Das haelt auch
+     beim naechsten Logo. */
   try{
     const logo = new Image();
     let gemalt = false;
     const zeichnen = ()=>{
       if(gemalt) return; gemalt = true;
       try{
-        const bw = 820;
-        const bh = bw * ((logo.height || 621) / (logo.width || 900));
-        g.drawImage(logo, 540 - bw / 2, 22, bw, bh);
+        const kastenB = 820, kastenH = 566;
+        const lb = logo.width  || 900;
+        const lh = logo.height || 812;
+        const f  = Math.min(kastenB / lb, kastenH / lh);
+        const bw = lb * f, bh = lh * f;
+        g.drawImage(logo, 540 - bw / 2, 22 + (kastenH - bh) / 2, bw, bh);
         schluss();
       }catch(e){ ersatz(); }
     };
@@ -19498,7 +19512,7 @@ function renderInventar(){
 
     <div class="fort-zeile" style="margin-bottom:14px;">
       <div class="fz-muenzen">
-        <img class="fz-m-bild" src="ic-muenzen.webp" alt="" width="200" height="207" loading="lazy">
+        <img class="fz-m-bild" src="ic-muenzen.webp" alt="" width="200" height="200" loading="lazy">
         <span class="fz-m-zahl">${state.coins}</span>
         <span class="fz-m-u">Münzen</span>
       </div>
