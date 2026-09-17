@@ -3697,7 +3697,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "90.8 – Testtag geschafft, Ruhe";
+const APP_VERSION = "90.9 – Nochmal üben";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -5761,6 +5761,10 @@ function renderLingoraPlan(){
       <div class="lg-balken"><div class="lg-balken-fuell" style="width:${f.gesamt ? Math.round(f.fertig/f.gesamt*100) : 0}%;"></div></div>
       <p class="lg-stand">${f.fertig} von ${f.gesamt} Schritten geschafft${
         lingoraMitTermin(p.art) ? ` &middot; ${p.art === "vokabeltest" ? "Test" : "Arbeit"} ${p.tageBis === 0 ? "heute" : "in " + p.tageBis + " Tag" + (p.tageBis === 1 ? "" : "en")}` : ""}</p>
+      ${heuteFertig ? `
+        <button class="btn secondary" id="lg-nochmal" style="margin-top:12px;">
+          🔁 NOCHMAL ÜBEN
+        </button>` : ""}
     </div>
 
     <div class="panel">
@@ -5839,6 +5843,7 @@ function renderLingoraPlan(){
       render();
     });
   });
+  anKnopf('lg-nochmal', ()=>{ planHeuteNochmal(lingoraPlan()); });
   anKnopf('lg-teilen', planTeilen);
   anKnopf('nu-los', ()=>{
     const offen = heuteDran().filter(e => !e.frei);
@@ -6020,7 +6025,31 @@ function zielPlanHtml(){
       <button class="btn" id="zp-los" style="margin-top:11px;">
         ${offen ? "▶ WEITERMACHEN" : "📅 PLAN ANSEHEN"}
       </button>
+      ${offen ? "" : `
+        <button class="btn secondary" id="zp-nochmal" style="margin-top:8px;">
+          🔁 ICH ÜBE DAS NOCHMAL
+        </button>`}
     </div>`;
+}
+
+/* Den heutigen Plan noch einmal ueben.
+
+   Genommen wird der ERSTE Schritt von heute. Die uebrigen stehen auf
+   dem Planbildschirm und sind dort einzeln antippbar - ein Knopf, der
+   erst eine Auswahl aufmacht, waere ein Klick mehr fuer den Fall, der
+   fast immer gemeint ist.
+
+   Dass ein abgehakter Schritt ueberhaupt wieder startet, kommt aus
+   v90.0; lingoraRundeBeendet zaehlt dabei weder einen Versuch noch
+   nimmt es das Haekchen zurueck. */
+function planHeuteNochmal(p){
+  const ziel = p || lingoraPlan();
+  if(!ziel) return false;
+  const tag = lingoraTagVonPlan(ziel);
+  if(!tag || !Array.isArray(tag.schritte) || !tag.schritte.length) return false;
+  state.lingoraPlanAktiv = ziel.id;
+  lingoraSchrittStarten(tag.schritte[0].id);
+  return true;
 }
 
 function planWeiterHtml(){
@@ -6802,6 +6831,8 @@ function lingoraStartVerdrahten(){
   const fzd = document.getElementById('fz-diamanten');
   if(fzd){ fzd.addEventListener('click', mehrVerdienenZeigen); }
 
+  const zpN = document.getElementById('zp-nochmal');
+  if(zpN){ zpN.addEventListener('click', ()=>{ planHeuteNochmal(zielPlanOffen()); }); }
   const zp = document.getElementById('zp-los');
   if(zp){
     zp.addEventListener('click', ()=>{
@@ -11423,8 +11454,15 @@ function playerBadgeHtml(compact){
 function showConfirmModal(message, onYes){
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
+  /* OHNE dirt-panel.
+
+     .dirt-panel ist der dunkelgruene Kasten und bringt color:#fff mit.
+     Seit v90.6 setzt .panel.modal-box den Grund auf Papier - die
+     Schriftfarbe blieb weiss, und damit war diese Frage nicht mehr zu
+     lesen. Auf einem Papierbildschirm ist ein dunkelgruenes Fenster
+     ohnehin ein Fremdkoerper; es war das einzige von sechs. */
   overlay.innerHTML = `
-    <div class="panel dirt-panel modal-box">
+    <div class="panel modal-box">
       <p>${escapeHtml(message)}</p>
       <div class="row">
         <button class="btn danger" id="modal-yes">JA</button>
