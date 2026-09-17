@@ -43,7 +43,11 @@
    aendern. Ein neuer Speichername ist der einzige Weg, die alten
    Bilder loszuwerden - der activate-Haken unten raeumt jeden Speicher
    weg, der nicht so heisst. */
-const CACHE = "lingocrafter-v4";
+/* v5: Die Symbole wurden noch einmal neu gerechnet (Freistellung,
+   Groesse) und logo.png durch vorschau.png ersetzt. Wieder gleiche
+   Dateinamen, also wieder ein neuer Speichername - sonst kaeme beim
+   ersten Oeffnen noch die Fassung von v90.3. */
+const CACHE = "lingocrafter-v5";
 const MITNEHMEN = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./lingora.webp"];
 
 /* Holt etwas unter Umgehung des HTTP-Zwischenspeichers. Faellt auf den
