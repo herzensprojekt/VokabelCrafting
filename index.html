@@ -1870,7 +1870,30 @@
     font-size:12px; font-weight:700; color:#fff6d0;
     background:rgba(0,0,0,0.45); text-shadow:1px 1px 0 rgba(0,0,0,0.8);
   }
-  .flood-danger-row{
+  /* LINGORAS ZURUF IM FLUTUNGSRAUM.
+
+   Fest am oberen Rand und nicht im Raum: floodBuehneAnpassen misst die
+   Hoehe des Raums auf den Pixel genau, um ihn passend zu verkleinern.
+   Ein Element innerhalb des Raums wuerde diese Messung verschieben und
+   die Buehne bei jedem Untergang neu springen lassen. */
+.flut-lingora{
+  position:fixed; left:50%; top:max(12px, env(safe-area-inset-top, 12px));
+  transform:translateX(-50%);
+  width:min(92vw, 420px); z-index:1200;
+  background:var(--blatt);
+  border:2px solid #d9cdf5; border-radius:16px;
+  padding:12px 14px 2px;
+  box-shadow:0 10px 28px rgba(40,25,70,0.30);
+  animation: flut-lingora-rein .22s ease;
+}
+.flut-lingora .lg-kopf{ margin-bottom:10px; }
+.flut-lingora.weg{ opacity:0; transition:opacity .55s ease; }
+@keyframes flut-lingora-rein{
+  from{ opacity:0; transform:translate(-50%, -14px); }
+  to{   opacity:1; transform:translate(-50%, 0); }
+}
+
+.flood-danger-row{
     position:absolute; top:26px; right:8px; z-index:6;
     display:flex; gap:3px; background:rgba(0,0,0,0.4);
     border-radius:10px; padding:3px 6px;
@@ -3674,7 +3697,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "90.6 – Termin geht vor";
+const APP_VERSION = "90.8 – Testtag geschafft, Ruhe";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -5049,10 +5072,50 @@ const HEUTE_ZIEL = 3;      // so viele Sachen - machbar, nicht abschreckend
    Der Tagesabgleich bleibt: lingoraTagVonPlan liefert zur Not den
    LETZTEN Tag eines Plans zurueck, auch einen drei Wochen alten.
    Deshalb zaehlt nur ein Tag, der heute oder frueher liegt. */
+/* Liegt der Termin noch vor uns?
+
+   DER FEHLER, DEN DAS VERHINDERT: lingoraTagVonPlan gibt notfalls den
+   LETZTEN Tag eines Plans zurueck - auch einen drei Wochen alten. Ohne
+   diesen Riegel haette ein laengst geschriebener, vollstaendig
+   abgehakter Vokabeltest terminTagGeschafft() auf Dauer wahr gemacht
+   und Lingora fuer immer stillgelegt.
+
+   Aufgefallen, weil der Testlauf aus v90.0 ("Plan ist abgelaufen")
+   nach dem Umbau rot wurde. Genau derselbe Fehler war mir dort schon
+   einmal unterlaufen - deshalb steht der Fall seitdem im Nachbau. */
+function terminNochAktuell(p){
+  const letzter = (p.tage || [])[(p.tage || []).length - 1];
+  return !!letzter && letzter.datum >= dateKey(new Date());
+}
+
+/* Ist ein Termin-Tag heute GESCHAFFT?
+
+   Nicht dasselbe wie "kein Termin offen": Es muss heute ueberhaupt
+   etwas angestanden haben, und alles davon muss abgehakt sein. Wer gar
+   keinen Vokabeltest geplant hat, faellt hier durch - fuer den gilt
+   der gewohnte Ablauf.
+
+   Darauf haengt, dass Lingora schweigt statt nachzulegen. */
+function terminTagGeschafft(){
+  const heute = dateKey(new Date());
+  let gabEtwas = false;
+  for(const p of lingoraPlaene()){
+    if(!lingoraMitTermin(p.art)) continue;
+    if(!terminNochAktuell(p)) continue;
+    const tag = lingoraTagVonPlan(p);
+    if(!tag || !Array.isArray(tag.schritte) || !tag.schritte.length) continue;
+    if(tag.datum > heute) continue;
+    if(tag.schritte.some(s => !s.fertig)) return false;   // noch offen
+    gabEtwas = true;
+  }
+  return gabEtwas;
+}
+
 function terminPlanOffenHeute(){
   const heute = dateKey(new Date());
   for(const p of lingoraPlaene()){
     if(!lingoraMitTermin(p.art)) continue;
+    if(!terminNochAktuell(p)) continue;
     const tag = lingoraTagVonPlan(p);
     if(!tag || !Array.isArray(tag.schritte) || !tag.schritte.length) continue;
     if(tag.datum > heute) continue;
@@ -5064,6 +5127,20 @@ function terminPlanOffenHeute(){
 function heuteDran(){
   const liste = [];
   const drin = new Set();
+
+  /* TESTTAG GESCHAFFT -> NICHTS MEHR.
+
+     Hier endet die alte Regel "die Tagesliste ist nie leer". Sie war
+     richtig, solange die Liste das einzige Angebot des Bildschirms
+     war. Inzwischen steht darueber die Zielkachel mit "PLAN ANSEHEN"
+     und darunter Vokabeln und Grammatik als grosse Karten - es ist
+     also nichts verloren.
+
+     Der Grund: Auf Markus' Bild stand "Heute alles geschafft - stark!"
+     und direkt darunter drei neue Grammatik-Vorschlaege. Damit wird
+     aus einem Erfolg sofort die naechste Forderung. Wer seinen Testtag
+     geschafft hat, darf fertig sein. */
+  if(terminTagGeschafft()) return liste;
 
   const rein = (eintrag, schluessel)=>{
     if(liste.length >= HEUTE_ZIEL) return false;
@@ -6566,24 +6643,27 @@ function lingoraStartHtml(){
   const schritt = lernwegNaechsterSchritt();
   lingoraJetzt = schritt;              // fuer den Klick aufbewahren
 
-  // Die Tagesliste. Sie ist nie leer - siehe heuteDran().
+  /* Die Tagesliste. Seit v90.8 KANN sie leer sein: wenn der Testtag
+     geschafft ist, schlaegt Lingora nichts mehr vor. */
   heuteListe = heuteDran();
   const minuten = heuteListe.reduce((s, e) => s + (e.dauer || 5), 0);
   /* Die Frist stand bis v89 in einer EIGENEN Kachel direkt darueber.
      Zwei Kaesten, die dasselbe sagen, sind genau die Doppelung, die weg
      soll - also wandert sie in diesen Satz, und die Kachel bleibt aus,
-     solange ein Plan laeuft (siehe renderStart). */
-  const laeuft = terminPlanOffenHeute();
-  const frist  = zielPlanFrist(zielPlanOffen());
-  const satz = offen
-    ? ((frist ? frist + " &ndash; heute noch " : "Dein Plan läuft &ndash; noch ")
-       + "<strong>" + offen + "</strong> " + (offen === 1 ? "Schritt" : "Schritte")
-       + (frist ? "." : " für heute."))
-    : (laeuft
-       ? ("Dein Plan für heute ist durch. Stark!" + (frist ? " " + frist + "." : ""))
-       : ("Heute dran: <strong>" + heuteListe.length + "</strong> "
-          + (heuteListe.length === 1 ? "Sache" : "Sachen")
-          + ", ungefähr <strong>" + minuten + "</strong> Minuten."));
+     solange ein Termin offen ist (siehe renderStart). */
+  const geschafft = terminTagGeschafft();
+  const laeuft    = terminPlanOffenHeute();
+  const frist     = zielPlanFrist(zielPlanOffen());
+  const satz = geschafft
+    ? ("Dein Testtag ist geschafft. Stark, " + escapeHtml(state.playerName || "du") + "!"
+       + (frist ? " " + frist + "." : ""))
+    : (offen
+      ? ((frist ? frist + " &ndash; heute noch " : "Dein Plan läuft &ndash; noch ")
+         + "<strong>" + offen + "</strong> " + (offen === 1 ? "Schritt" : "Schritte")
+         + (frist ? "." : " für heute."))
+      : ("Heute dran: <strong>" + heuteListe.length + "</strong> "
+         + (heuteListe.length === 1 ? "Sache" : "Sachen")
+         + ", ungefähr <strong>" + minuten + "</strong> Minuten."));
 
   return `
     <div class="panel lg-start jetzt">
@@ -6591,8 +6671,9 @@ function lingoraStartHtml(){
         <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
         <div class="lg-blase">${satz}</div>
       </div>
-      <p class="lw-jetzt-l">${laeuft && !offen ? "NOCHMAL ÜBEN" : "HEUTE DRAN"}</p>
-      ${heuteListeHtml(heuteListe)}
+      ${heuteListe.length ? `
+        <p class="lw-jetzt-l">${laeuft && !offen ? "NOCHMAL ÜBEN" : "HEUTE DRAN"}</p>
+        ${heuteListeHtml(heuteListe)}` : ""}
       ${rangZeileHtml()}
       ${zuletztHtml()}
       <div class="lg-nebenwege">
@@ -6658,6 +6739,17 @@ const HT_BEGRUESSUNG = [
 function heuteOverlayVielleicht(){
   if(!state.cloudId && !state.guest) return;
   if(state.screen !== "start") return;
+  /* NUR NOCH BEI TERMIN.
+
+     Markus: "Der Lernplan soll erstmal nicht mehr aufploppen, sondern
+     ein Test mit Zeitdruck oder eine Arbeit haben an der Stelle immer
+     Vorrang." Ein Fenster, das jeden Morgen aufgeht und irgendeine
+     Uebung vorschlaegt, wird nach zwei Tagen weggetippt, ohne gelesen
+     zu werden. Eins, das nur vor einem Test kommt, wird gelesen.
+
+     Die Pruefung steht VOR dem Merker heuteGezeigt - sonst gaelte der
+     Tag als abgehakt, obwohl nie etwas zu sehen war. */
+  if(!terminPlanOffenHeute()) return;
   const heute = dateKey(new Date());
   if(state.heuteGezeigt === heute) return;
   if(document.querySelector('.ht-overlay')) return;
@@ -12942,11 +13034,15 @@ function renderStart(){
 
     ${lingoraStartHtml()}
 
-    ${fortschrittZeileHtml()}
-
     ${hauptwahlHtml()}
 
     ${werkzeugGitterHtml()}
+
+    <!-- Muenzen, Diamanten, "heute geschafft", "Tage bis zur Arbeit":
+         Kontostand, nicht Aufgabe. Oben standen sie zwischen Lingoras
+         Vorschlag und den beiden grossen Karten und haben die zwei
+         Dinge auseinandergezogen, die zusammengehoeren. -->
+    ${fortschrittZeileHtml()}
 
     <div class="panel">
       <div class="row" style="align-items:center;">
@@ -13519,7 +13615,11 @@ function handleVocabFloodAnswer(btn, choice, word){
        Also: raus aus dem Wasser, wer immer es gemerkt hat, und weiter.
        Die Runde endet jetzt dort, wo sie enden soll - wenn die Woerter
        durch sind (renderVocabFlood ruft dann endSession("finished")). */
-    if(ertrunken || floodDrowned()){ floodRetten(); }
+    /* "ertrunken" stammt aus dem Moment der Antwort. Ist es wahr, war
+       die Antwort schuld. Steht die Figur sonst unter Wasser, hat das
+       Wasser waehrend der Rueckmeldung von allein aufgeholt - dann hat
+       niemand geantwortet, und Lingora fragt nach dem Einschlafen. */
+    if(ertrunken || floodDrowned()){ floodRetten(ertrunken ? "falsch" : "schlaf"); }
     floodBeendet = false;
     startFloodRise(floodZeitRettung);
     state.currentIndex++;
@@ -20021,7 +20121,39 @@ function resetFlood(hart){
 ------------------------------------------------------------------ */
 const FLUT_MAX_FRAGEN = 25;    // so lang wie RUNDE_UMFANG.flood
 
-function floodRetten(){
+/* WAS LINGORA SAGT, WENN DAS WASSER JEMANDEN EINHOLT.
+
+   Zwei Saetze, weil es zwei Ursachen gibt:
+
+     - Im schweren Modus steigt das Wasser von allein. Wer nicht
+       antwortet, geht nach gemessenen 30 Sekunden unter - da stimmt
+       "Bist du eingeschlafen?" wortwoertlich.
+     - Wer falsch geantwortet hat, war nicht eingeschlafen. Der hat
+       sich angestrengt und danebengelegen. Ihm dasselbe zu sagen waere
+       unfreundlich und obendrein unwahr.
+
+   Der zweite Teil - dass es als Fehler zaehlt - steht in beiden. */
+const FLUT_SCHLAEFT = "Bist du eingeschlafen? Wenn dich das Wasser einholt, zählt das hier als Fehler.";
+const FLUT_FALSCH   = "Das Wasser hat dich eingeholt – das zählt als Fehler. Ich zieh dich raus, weiter geht’s.";
+
+/* Kein Fenster mit Knopf: die Blase schwebt drei Sekunden und geht von
+   selbst. Etwas zum Wegklicken, alle dreissig Sekunden, waere im
+   schweren Modus eine Strafe fuer Langsamkeit. */
+function floodLingoraSagt(text){
+  try{
+    const alt = document.getElementById('flut-lingora');
+    if(alt && alt.parentNode) alt.parentNode.removeChild(alt);
+    const kasten = document.createElement('div');
+    kasten.id = 'flut-lingora';
+    kasten.className = 'flut-lingora';
+    kasten.innerHTML = lingoraKopfHtml(escapeHtml(text), true);
+    document.body.appendChild(kasten);
+    setTimeout(()=>{ kasten.classList.add('weg'); }, 3000);
+    setTimeout(()=>{ if(kasten.parentNode) kasten.parentNode.removeChild(kasten); }, 3600);
+  }catch(e){ /* eine fehlende Blase darf eine Runde nie kippen */ }
+}
+
+function floodRetten(grund){
   state.floodRettungen = (state.floodRettungen || 0) + 1;
   state.grammarWaterPx = 12;
   state.grammarWrongStreak = 0;          // der Tropfenzaehler im leichten Modus
@@ -20031,7 +20163,7 @@ function floodRetten(){
   if(a){ a.classList.remove('sink'); }
   const w = document.getElementById('flood-water');
   if(w){ w.style.height = state.grammarWaterPx + "px"; }
-  showGoodToast('<span class="item-pop">🛟</span> Lingora zieht dich raus!');
+  floodLingoraSagt(grund === "falsch" ? FLUT_FALSCH : FLUT_SCHLAEFT);
 }
 
 /* Das Wasser hat die Figur eingeholt, ohne dass gerade geantwortet
@@ -20043,7 +20175,8 @@ function floodRetten(){
    dieser Zeit geantwortet, hat die Antwortbehandlung schon gerettet -
    dann waere das hier eine zweite Rettung fuer denselben Untergang. */
 function floodZeitRettung(){
-  if(floodDrowned()) floodRetten();
+  // Hier hat niemand geantwortet - das Wasser ist von allein gestiegen.
+  if(floodDrowned()) floodRetten("schlaf");
   startFloodRise(floodZeitRettung);
 }
 
@@ -20470,7 +20603,8 @@ function handleGrammarAnswer(btn, choice, exercise){
     /* Der Ruecksprung bei floodBeendet ist weg - siehe die ausfuehrliche
        Begruendung in handleVocabFloodAnswer. Ohne Rundenende waere er
        eine Sackgasse. */
-    if(lost || floodDrowned()){ floodRetten(); }
+    // Dieselbe Unterscheidung wie in handleVocabFloodAnswer.
+    if(lost || floodDrowned()){ floodRetten(lost ? "falsch" : "schlaf"); }
     floodBeendet = false;
     startFloodRise(floodZeitRettung);
     /* OHNE ERTRINKEN BRAUCHT DIESE RUNDE EINE ANDERE GRENZE.
