@@ -1656,7 +1656,15 @@
     font-family:var(--font);
   }
   .lg-schritt:active{ transform:translateY(1px); }
-  .lg-schritt.fertig{ background:#eef6ef; border-color:#bfe0c4; opacity:0.75; pointer-events:none; }
+  /* BIS v89 STAND HIER "pointer-events:none". Zusammen mit dem
+     disabled-Attribut am Knopf war ein geschaffter Schritt doppelt
+     verriegelt - und damit war die Uebung von heute weg, sobald sie
+     einmal gelaufen war. Ein abgehakter Schritt ist jetzt ein Angebot:
+     gruen, aber anfassbar. Deshalb auch volle Deckkraft; 0.75 liess ihn
+     ausgegraut aussehen, und das ist er ja gerade nicht mehr. */
+  .lg-schritt.fertig{ background:#eef6ef; border-color:#bfe0c4; }
+  .lg-s-stand.nochmal{ color:#2c7a37; }
+  .lg-fertig-u{ display:block; font-weight:600; font-size:12.5px; color:#3f6b45; margin-top:3px; }
   /* Geuebt, aber noch nicht sitzend: bernstein statt gruen. Der
      Unterschied muss auf einen Blick erkennbar sein - sonst haelt das
      Kind "schon gemacht" wieder fuer "geschafft". */
@@ -2663,7 +2671,9 @@ summary.mehr-knopf::after{ content:none; }
   background:#f7fbf7; border:2px solid #dbe8d8; border-radius:14px;
   padding:10px 12px; margin-bottom:12px; max-height:300px; overflow-y:auto;
 }
-.pk-treffer-k{ margin:0 0 8px; font-size:11px; font-weight:800; letter-spacing:.06em; color:#6f8a72; }
+/* 11 px ist klein genug; da darf die Farbe nicht auch noch blass
+   sein. #6f8a72 kam auf 3,62:1, #556f58 auf 5,29:1. */
+.pk-treffer-k{ margin:0 0 8px; font-size:11px; font-weight:800; letter-spacing:.06em; color:#556f58; }
 .pk-wort{
   display:flex; align-items:center; gap:8px; width:100%; text-align:left;
   padding:8px 10px; margin-bottom:5px; min-height:0;
@@ -2671,10 +2681,20 @@ summary.mehr-knopf::after{ content:none; }
   cursor:pointer; font-family:inherit;
 }
 .pk-wort.drin{ border-color:#4db55c; background:#eef9f0; }
+/* Auf dem Listenbildschirm ist die Zeile das Bedienelement - sie muss
+   also treffbar sein. Apple nennt 44 px als kleinste Flaeche, die ein
+   Finger zuverlaessig erwischt; .pk-wort kam auf gemessene 36,6 px. */
+.pk-wort.li-zeile{ min-height:44px; margin-bottom:7px; }
+.li-korb{ position:sticky; bottom:8px; z-index:3; }
+.li-leer{ margin:6px 0; color:var(--tinte-hell); font-size:13.5px; }
 .pk-w-en{ font-weight:800; font-size:14.5px; color:#1e4515; flex:0 0 auto; }
 .pk-w-de{ font-size:13px; color:#5f6b5a; flex:1; min-width:0;
           overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pk-w-plus{ font-weight:800; color:#4db55c; font-size:16px; flex:0 0 auto; }
+/* #4db55c gemessen: 2,60:1 auf Weiss, 2,41:1 auf der gruenen Zeile.
+   Auf dem Listenbildschirm ist dieses Zeichen die einzige Auskunft
+   darueber, ob ein Wort ausgewaehlt ist - es muss lesbar sein.
+   #2c7a37: 5,32:1 und 4,93:1. */
+.pk-w-plus{ font-weight:800; color:#2c7a37; font-size:16px; flex:0 0 auto; }
 
 /* --- Die Paketkacheln ------------------------------------------------ */
 .pk-gitter{
@@ -3582,7 +3602,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "89.0 – Elternbereich aufgeräumt";
+const APP_VERSION = "90.2 – Listen zum Hineinsehen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4941,6 +4961,28 @@ function gramFaelligeThemen(){
 ================================================================== */
 const HEUTE_ZIEL = 3;      // so viele Sachen - machbar, nicht abschreckend
 
+/* Steht heute ein Plan an?
+
+   NICHT einfach "gibt es einen Plan". lingoraTagVonPlan liefert zur Not
+   den LETZTEN Tag eines Plans zurueck - auch wenn der drei Wochen alt
+   ist. Die erste Fassung dieser Funktion hat das uebersehen; im Test
+   galt ein abgeschlossener Vokabeltest von vor fuenf Tagen als "laeuft
+   heute", und damit waeren auf Dauer alle anderen Vorschlaege
+   verstummt. Gefunden, weil der Fall durchgerechnet wurde.
+
+   Ein Plan ist dran, wenn sein Tag heute oder spaeter liegt - oder
+   wenn ein verpasster Tag noch offene Schritte hat. */
+function planLaeuftHeute(){
+  const heute = dateKey(new Date());
+  for(const p of lingoraPlaene()){
+    const tag = lingoraTagVonPlan(p);
+    if(!tag || !Array.isArray(tag.schritte) || !tag.schritte.length) continue;
+    if(tag.datum >= heute) return true;
+    if(tag.schritte.some(s => !s.fertig)) return true;
+  }
+  return false;
+}
+
 function heuteDran(){
   const liste = [];
   const drin = new Set();
@@ -4969,6 +5011,35 @@ function heuteDran(){
       if(liste.length >= HEUTE_ZIEL) break;
     }
     if(liste.length >= HEUTE_ZIEL) break;
+  }
+
+  /* 1b) HIER WIRD ES EXKLUSIV.
+
+     Vorher lief die Funktion einfach weiter: unter den Planschritten
+     standen dann faellige Grammatik und faellige Vokabeln, die mit dem
+     Plan nichts zu tun hatten. Auf dem Startbildschirm sah das aus wie
+     mehrere Auftraege nebeneinander.
+
+     Ist heute ein Plan dran, endet die Liste hier. Und wenn alles vom
+     Plan geschafft ist, kommt NICHT etwas anderes, sondern dasselbe
+     noch einmal - freiwillig, als Angebot. */
+  if(planLaeuftHeute()){
+    if(!liste.length){
+      for(const p of lingoraPlaene()){
+        const tag = lingoraTagVonPlan(p);
+        if(!tag) continue;
+        for(const s of (tag.schritte || [])){
+          rein({
+            quelle: "plan", schrittId: s.id, planId: p.id, wdh: true, frei: true,
+            titel: s.titel, unter: "Geschafft – noch einmal üben?",
+            icon: "↻", dauer: s.dauer || 5
+          }, "wdh:" + s.id);
+          if(liste.length >= HEUTE_ZIEL) break;
+        }
+        if(liste.length >= HEUTE_ZIEL) break;
+      }
+    }
+    return liste;
   }
 
   // 2) Faellige Grammatik
@@ -5531,20 +5602,23 @@ function renderLingoraPlan(){
       <h3 class="abschnitt-h">📅 Heute &middot; ${phaseName[tag ? tag.phase : "aufbau"]}</h3>
       ${lingoraAblaufHtml(tag)}
       ${tag && tag.schritte.length ? tag.schritte.map(s=>`
-        <button class="lg-schritt ${s.fertig ? 'fertig' : ''} ${!s.fertig && s.versuche ? 'geuebt' : ''}" data-lgstart="${s.id}" ${s.fertig ? "disabled" : ""}>
+        <button class="lg-schritt ${s.fertig ? 'fertig' : ''} ${!s.fertig && s.versuche ? 'geuebt' : ''}" data-lgstart="${s.id}">
           <span class="lg-s-ic">${s.fertig ? "✓" : s.icon}</span>
           <span class="lg-s-txt">
             <span class="lg-s-t">${escapeHtml(s.titel)}</span>
             <span class="lg-s-u">${escapeHtml(s.unter)}</span>
+            ${s.fertig ? `
+              <span class="lg-s-stand nochmal">Geschafft &ndash; antippen und noch einmal üben</span>` : ""}
             ${!s.fertig && s.versuche ? `
               <span class="lg-s-stand">Beste Runde: ${Math.round((s.besteQuote||0)*100)} %
                 &middot; Ziel ${Math.round(LINGORA_ZIEL_QUOTE*100)} %
                 &middot; ${s.versuche === 1 ? "1 Versuch" : s.versuche + " Versuche"}</span>` : ""}
           </span>
-          <span class="lg-s-min">${s.dauer}′</span>
+          <span class="lg-s-min">${s.fertig ? "↻" : s.dauer + "′"}</span>
         </button>
       `).join("") : `<p class="muted">Für heute steht nichts an.</p>`}
-      ${heuteFertig ? `<p class="lg-fertig-hinweis">🎉 Für heute alles erledigt!</p>` : ""}
+      ${heuteFertig ? `<p class="lg-fertig-hinweis">🎉 Für heute alles erledigt!
+        <span class="lg-fertig-u">Willst du etwas noch einmal üben? Tipp einfach drauf.</span></p>` : ""}
     </div>
 
     ${restTage.length ? `
@@ -5575,7 +5649,7 @@ function renderLingoraPlan(){
       <button class="btn ghost" id="lg-weg" style="margin-top:8px;">🗑️ Plan verwerfen</button>
     </div>
 
-    ${nochUebenHtml()}
+    ${planLaeuftHeute() ? "" : nochUebenHtml()}
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
@@ -5617,9 +5691,12 @@ function lingoraDatumKurz(dk){
 }
 
 /* ------------------------------- Einen Schritt starten und abhaken ---- */
+/* "|| s.fertig" stand hier bis v89 - die zweite Sperre neben dem
+   Stilblatt. Ein Schritt darf jederzeit noch einmal laufen. Was sich
+   dabei NICHT aendert, steht in lingoraRundeBeendet. */
 function lingoraSchrittStarten(id){
   const s = lingoraSchrittFinden(id);
-  if(!s || s.fertig) return;
+  if(!s) return;
   const z = s.start || {};
   state.lingoraAktiv = id;
 
@@ -5727,6 +5804,21 @@ function zielPlanOffen(){
     return p;
   }
   return null;
+}
+
+/* "Vokabeltest in 3 Tagen" - einmal berechnet, zweimal gebraucht: in
+   der Zielkachel und in Lingoras Satz. Dieselbe Rechnung zweimal
+   hinzuschreiben ist die zuverlaessigste Art, sie auseinanderlaufen zu
+   lassen. */
+function zielPlanFrist(p){
+  if(!p) return "";
+  const heute = dateKey(new Date());
+  const letzter = (p.tage || [])[(p.tage || []).length - 1];
+  const tage = letzter
+    ? Math.max(0, Math.round((new Date(letzter.datum) - new Date(heute)) / 86400000)) : 0;
+  const titel = { vokabeltest:"Vokabeltest", arbeit:"Klassenarbeit" }[p.art] || "Test";
+  const wann = tage === 0 ? "heute" : (tage === 1 ? "morgen" : "in " + tage + " Tagen");
+  return (tage <= 1 ? "🔥 " : "🎯 ") + titel + " " + wann;
 }
 
 function zielPlanHtml(){
@@ -5891,6 +5983,28 @@ function lingoraRundeBeendet(log){
 
   const schritt = lingoraSchrittFinden(id);
   if(!schritt) return;
+
+  /* FREIWILLIGE WIEDERHOLUNG. Der Schritt ist schon abgehakt; hier wird
+     nur noch gelobt.
+
+     KEIN Versuch wird gezaehlt. Sonst triebe jedes freiwillige Ueben
+     den Schritt Richtung SCHRITT_MAX_VERSUCHE, und planNaechsterSchritt
+     wuerde ihn als "zaeh" beiseiteschieben - Fleiss wuerde bestraft.
+     Auch fertig bleibt fertig: ein schlechter Zweitdurchlauf darf ein
+     erreichtes Ziel nicht wieder aufreissen. */
+  if(schritt.fertig){
+    const wdh = lingoraQuoteAus(log);
+    if(wdh){
+      schritt.besteQuote = Math.max(schritt.besteQuote || 0, wdh.quote);
+      const pw = Math.round(wdh.quote * 100);
+      state.lgLetzterSpruch = pw >= Math.round(LINGORA_ZIEL_QUOTE * 100)
+        ? ("Nochmal " + pw + " % – das sitzt wirklich.")
+        : ("Diesmal " + pw + " %. Abgehakt bleibt abgehakt – aber schau da noch mal hin.");
+      saveProgress();
+      syncToCloud();
+    }
+    return;
+  }
 
   const erg = lingoraQuoteAus(log);
   /* Keine einzige Aufgabe beantwortet - z.B. sofort abgebrochen. Dann
@@ -6367,12 +6481,21 @@ function lingoraStartHtml(){
   // Die Tagesliste. Sie ist nie leer - siehe heuteDran().
   heuteListe = heuteDran();
   const minuten = heuteListe.reduce((s, e) => s + (e.dauer || 5), 0);
+  /* Die Frist stand bis v89 in einer EIGENEN Kachel direkt darueber.
+     Zwei Kaesten, die dasselbe sagen, sind genau die Doppelung, die weg
+     soll - also wandert sie in diesen Satz, und die Kachel bleibt aus,
+     solange ein Plan laeuft (siehe renderStart). */
+  const laeuft = planLaeuftHeute();
+  const frist  = zielPlanFrist(zielPlanOffen());
   const satz = offen
-    ? "Dein Plan läuft &ndash; noch <strong>" + offen + "</strong> "
-      + (offen === 1 ? "Schritt" : "Schritte") + " für heute."
-    : ("Heute dran: <strong>" + heuteListe.length + "</strong> "
-       + (heuteListe.length === 1 ? "Sache" : "Sachen")
-       + ", ungefähr <strong>" + minuten + "</strong> Minuten.");
+    ? ((frist ? frist + " &ndash; heute noch " : "Dein Plan läuft &ndash; noch ")
+       + "<strong>" + offen + "</strong> " + (offen === 1 ? "Schritt" : "Schritte")
+       + (frist ? "." : " für heute."))
+    : (laeuft
+       ? ("Dein Plan für heute ist durch. Stark!" + (frist ? " " + frist + "." : ""))
+       : ("Heute dran: <strong>" + heuteListe.length + "</strong> "
+          + (heuteListe.length === 1 ? "Sache" : "Sachen")
+          + ", ungefähr <strong>" + minuten + "</strong> Minuten."));
 
   return `
     <div class="panel lg-start jetzt">
@@ -6380,7 +6503,7 @@ function lingoraStartHtml(){
         <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
         <div class="lg-blase">${satz}</div>
       </div>
-      <p class="lw-jetzt-l">HEUTE DRAN</p>
+      <p class="lw-jetzt-l">${laeuft && !offen ? "NOCHMAL ÜBEN" : "HEUTE DRAN"}</p>
       ${heuteListeHtml(heuteListe)}
       ${rangZeileHtml()}
       ${zuletztHtml()}
@@ -6406,7 +6529,7 @@ function heuteListeHtml(liste){
             <span class="ht-t">${escapeHtml(e.titel)}</span>
             <span class="ht-u">${escapeHtml(e.unter)}</span>
           </span>
-          <span class="ht-min ${e.frei ? "frei" : ""}">${e.frei ? "freiwillig" : (e.dauer || 5) + "&thinsp;min"}</span>
+          <span class="ht-min ${e.frei ? "frei" : ""}">${e.wdh ? "nochmal" : (e.frei ? "freiwillig" : (e.dauer || 5) + "&thinsp;min")}</span>
         </button>`).join("")}
     </div>`;
 }
@@ -6991,6 +7114,10 @@ function lingoraNachrichtenFuer(screen){
     case "customvocab":
       return ["Eigene Wörter, gute Idee.",
               { text: "Genau die Wörter aus deinem Schulbuch üben &ndash; besser geht's nicht.", wichtig: true }];
+
+    case "liste":
+      return ["Deine Liste.",
+              { text: "Tipp Wörter an, wenn du sie rausnehmen oder eine neue Liste daraus machen willst.", wichtig: true }];
 
     case "certificate":
     case "grammarcertificate": {
@@ -11039,6 +11166,7 @@ function render(){
   if(state.screen==="leaderboard") return renderLeaderboard();
   if(state.screen==="team") return renderTeam();
   if(state.screen==="customvocab") return renderCustomVocab();
+  if(state.screen==="liste") return renderListe();
   if(state.screen==="lernweg") return renderLernweg();
   if(state.screen==="scan") return renderScan();
   if(state.screen==="challengeend") return renderChallengeRoundEnd();
@@ -12189,13 +12317,20 @@ function hauptwahlHtml(){
     wiederholung = Math.max(0, (u.faellig || 0) - neu);
   }catch(e){}
   const punkt = wiederholung > 99 ? "99+" : String(wiederholung);
-  const unter = wiederholung > 0
-    ? wiederholung + (wiederholung === 1 ? " Wort wartet" : " Wörter warten") + " auf die Wiederholung"
-    : (neu > 0 ? "Neue Wörter entdecken" : "Alles sitzt \u2013 üben darfst du trotzdem");
+  /* WAEHREND EIN PLAN LAEUFT SCHWEIGT DIESE KARTE.
+     Ein roter Punkt mit "17 Wörter warten" neben einem Plan, in dem
+     ganz andere Woerter stehen, ist eine zweite Forderung an dasselbe
+     Kind. Die Karte bleibt erreichbar - sie ruft nur nicht mehr. */
+  const still = planLaeuftHeute();
+  const unter = still
+    ? "Wenn du danach noch Lust hast"
+    : (wiederholung > 0
+        ? wiederholung + (wiederholung === 1 ? " Wort wartet" : " Wörter warten") + " auf die Wiederholung"
+        : (neu > 0 ? "Neue Wörter entdecken" : "Alles sitzt \u2013 üben darfst du trotzdem"));
   return `
     <div class="haupt-gitter">
       <button type="button" class="haupt-karte hk-vokabeln" id="hw-vokabeln">
-        ${wiederholung > 0 ? `<span class="hk-punkt">${punkt}</span>` : ""}
+        ${wiederholung > 0 && !still ? `<span class="hk-punkt">${punkt}</span>` : ""}
         <img class="hk-bild" src="ic-buch.webp" alt="" width="200" height="200" loading="lazy">
         <span class="hk-t">Vokabeln</span>
         <span class="hk-u">${unter}</span>
@@ -12706,7 +12841,7 @@ function renderStart(){
 
     ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""}${state.guest ? `<div class="guest-bar"><span class="guest-txt">&#128064; <strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">&#127381; Konto anlegen</button></div>` : ""}
 
-    ${zielPlanHtml()}
+    ${planLaeuftHeute() ? "" : zielPlanHtml()}
 
     ${lingoraStartHtml()}
 
@@ -13111,7 +13246,7 @@ function startGame(){
   }
   state.screen = "quiz";
   if(state.floodHard){
-    startFloodRise(()=>{ stopFloodRise(); endSession("drowned"); });
+    startFloodRise(floodZeitRettung);
   }
   nextQuestion();
 }
@@ -13268,19 +13403,35 @@ function handleVocabFloodAnswer(btn, choice, word){
   if(gewonnen || ertrunken){ floodBeendet = true; stopFloodRise(); }
 
   const weiter = ()=>{
-    // Wer waehrend der Korrekturmeldung ertrunken ist, spielt nicht weiter.
-    if(floodBeendet && !gewonnen && !ertrunken){ return; }
     state.answered = false;
-    if(gewonnen){ stopFloodRise(); endSession("finished"); }
-    else if(ertrunken){ stopFloodRise(); endSession("drowned"); }
-    else { state.currentIndex++; render(); }
+    if(gewonnen){ stopFloodRise(); endSession("finished"); return; }
+    /* HIER STAND EIN RUECKSPRUNG:
+         if(floodBeendet && !gewonnen && !ertrunken){ return; }
+       Er sollte verhindern, dass nach einer beendeten Runde noch
+       weitergespielt wird - "wer waehrend der Korrekturmeldung
+       ertrunken ist, spielt nicht weiter". Ohne Rundenende ist das aber
+       kein Schutz mehr, sondern eine Sackgasse: Das Wasser kann die
+       Figur waehrend der 700 ms Rueckmeldung einholen, floodBeendet
+       steht dann auf true, und weiter() haette ab da nichts mehr getan.
+       Gefunden beim Durchtakten des Zeitgebers im Nachbau.
+
+       Also: raus aus dem Wasser, wer immer es gemerkt hat, und weiter.
+       Die Runde endet jetzt dort, wo sie enden soll - wenn die Woerter
+       durch sind (renderVocabFlood ruft dann endSession("finished")). */
+    if(ertrunken || floodDrowned()){ floodRetten(); }
+    floodBeendet = false;
+    startFloodRise(floodZeitRettung);
+    state.currentIndex++;
+    render();
   };
   if(richtig){ planeWeiter(weiter, 700); }
   else {
     setTimeout(()=>{
       fb.className = 'feedback show bad';
     rueckmeldungInsBild(fb);
-      fb.innerHTML = `<div>❌ Leider falsch. ${state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!"}</div>` +
+      fb.innerHTML = `<div>${ertrunken
+          ? "🌊 Untergegangen! Zählt als Fehler &ndash; und weiter geht&rsquo;s."
+          : ("❌ Leider falsch. " + (state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!"))}</div>` +
         `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(ans.answerDisplay)}</strong></div>`;
       if(ertrunken){ scrollFeedbackIntoView(fb); planeWeiter(weiter, 1600); }
       else { grammarWeiterKnopf(fb, weiter); }
@@ -14592,7 +14743,10 @@ function renderCertificate(){
   const mistakes = state.sessionLog.filter(l=>l.result!=="correct");
   const quote = state.sessionQuote || pickRandom(MINECRAFT_QUOTES);
   const won = state.lastReason === "finished";
-  const ertrunken = state.lastReason === "drowned";
+  /* "drowned" kann es seit v90.1 nicht mehr geben - Untergehen beendet
+     keine Runde. Was bleibt, ist die Zahl der Rettungen; sie steht
+     unten in der Zeile mit den Zaehlern. */
+  const rettungen = state.floodRettungen || 0;
   const schoolGrade = state.mode === "type" ? calculateSchoolGrade(correctCount, almostCount, total) : null;
 
   app.innerHTML = `
@@ -14601,7 +14755,7 @@ function renderCertificate(){
     ${playerBadgeHtml()}
 
     <div class="certificate">
-      <h2>${ertrunken ? "🌊 UNTERGEGANGEN – NOCHMAL VERSUCHEN!" : (won ? "🏆 URKUNDE DER VOKABEL-MEISTERSCHAFT" : "📜 URKUNDE DER ÜBUNG")}</h2>
+      <h2>${won ? "🏆 URKUNDE DER VOKABEL-MEISTERSCHAFT" : "📜 URKUNDE DER ÜBUNG"}</h2>
       <p style="text-align:center;font-family:var(--font);font-weight:500;font-size:19px;margin:10px 0;line-height:1.5;">
         ${won ? `Herzlichen Glückwunsch, <strong>${escapeHtml(state.playerName||"Spieler")}</strong>!` : `Gut geübt, <strong>${escapeHtml(state.playerName||"Spieler")}</strong> &ndash; weiter so!`}
       </p>
@@ -14617,6 +14771,7 @@ function renderCertificate(){
         <div>✅<span>${correctCount}</span></div>
         <div>🟡<span>${almostCount}</span></div>
         <div>❌<span>${wrongCount}</span></div>
+        ${rettungen ? `<div>🛟<span>${rettungen}</span></div>` : ""}
         <div>🪙<span>${state.sessionCoins}</span></div>
       </div>
 
@@ -18526,7 +18681,16 @@ function woerterFuerAuswahl(){
 function suchNormal(t){
   return String(t || "").toLowerCase()
     .replace(/ä/g,"a").replace(/ö/g,"o").replace(/ü/g,"u").replace(/ß/g,"ss")
-    .replace(/[^a-z0-9 ]/g,"");
+    .replace(/[^a-z0-9 ]/g,"")
+    /* "gruen" soll "grün" finden. Die Faltung trifft beide Seiten, also
+       bleibt sie in sich stimmig - "Museum" wird hier wie dort zu
+       "musum". Ein paar zusaetzliche Treffer nimmt man dafuer gern in
+       Kauf; ein Kind, das nichts findet, sucht nicht noch einmal. */
+    .replace(/ae/g,"a").replace(/oe/g,"o").replace(/ue/g,"u")
+    /* Und: nur Leerzeichen sind KEINE Suche. Ohne dieses trim() gab
+       suchNormal("   ") ein wahres "   " zurueck, und jede der drei
+       Listen filterte sich auf null Treffer leer. */
+    .trim();
 }
 function woerterSuchen(text, grenze){
   const q = suchNormal(text);
@@ -18822,6 +18986,11 @@ function evListenbauVerdrahten(){
            die Auswahl haengt am Namen, nicht an einer Nummer. */
         if(state.category === LISTEN_ZEICHEN + alt) state.category = LISTEN_ZEICHEN + neu;
         if(state.offenesPaket === LISTEN_ZEICHEN + alt) state.offenesPaket = LISTEN_ZEICHEN + neu;
+        /* Der Listenbildschirm merkt sich, welche Liste offen ist -
+           auch das haengt am Namen. Ohne diese Zeile stuende man nach
+           dem Umbenennen vor einer Liste, die es nicht mehr gibt, und
+           renderListe schickte einen wortlos zurueck. */
+        if(state.listeOffen === LISTEN_ZEICHEN + alt) state.listeOffen = LISTEN_ZEICHEN + neu;
         saveProgress(); syncToCloud(); render();
       }, alt);
     });
@@ -18858,6 +19027,238 @@ function evListenbauVerdrahten(){
       }, 320);
     });
   }
+}
+
+/* ==================================================================
+   EIN BILDSCHIRM FUER EINE LISTE
+
+   Bis v90.1 konnte man eine Liste bauen, umbenennen, loeschen und
+   teilen - aber nicht hineinsehen. Deshalb fehlten Suchen, Entfernen
+   und "neue Liste aus einer alten" alle drei: sie brauchen denselben
+   Ort, und den gab es nicht.
+
+   Derselbe Bildschirm traegt zwei Faelle:
+     - eine gespeicherte Liste (state.listen) - entfernen heisst dann
+       "aus dieser Zusammenstellung nehmen", das Wort bleibt im
+       Wortschatz
+     - die eigenen Woerter (state.customVocab) - dort heisst entfernen
+       wirklich loeschen, denn ausser hier stehen sie nirgends
+   Der Unterschied steht in listeIstEigene() und sonst nirgends.
+================================================================== */
+function listeIstEigene(){
+  return state.listeOffen === CUSTOM_CATEGORY_NAME;
+}
+
+function listeOffeneWoerter(){
+  if(listeIstEigene()) return (state.customVocab || []).slice();
+  return woerterVonQuelle(state.listeOffen);
+}
+
+function listeOeffnen(quelle){
+  state.listeOffen = quelle;
+  state.listeSuche = "";
+  state.listeWahl  = [];
+  state.screen = "liste";
+  render();
+}
+
+/* woerterSuchen() durchsucht den GANZEN Wortschatz und sortiert nach
+   Trefferguete. Hier soll nur diese eine Liste durchsucht werden -
+   dieselbe Normalisierung, aber ohne Rangfolge: in einer Liste von
+   zwanzig Woertern hilft keine Sortierung, sondern die vertraute
+   Reihenfolge. */
+function listeFiltern(woerter, suchtext){
+  const q = suchNormal(suchtext);
+  if(!q) return woerter;
+  return woerter.filter(w =>
+    suchNormal(w.en).indexOf(q) >= 0 || suchNormal(w.de).indexOf(q) >= 0);
+}
+
+function listeWahl(){
+  if(!Array.isArray(state.listeWahl)) state.listeWahl = [];
+  return state.listeWahl;
+}
+
+/* Ab wann lohnt ein Suchfeld? Unter acht Woertern sieht man alles auf
+   einen Blick, und ein Feld, das nie gebraucht wird, ist auch nur
+   Unordnung. */
+const LISTE_SUCHE_AB = 8;
+
+function renderListe(){
+  const eigene = listeIstEigene();
+  const name   = eigene ? CUSTOM_CATEGORY_NAME
+                        : String(state.listeOffen || "").replace(LISTEN_ZEICHEN, "");
+  const l      = eigene ? true : listeFinden(name);
+
+  /* Die Liste kann unter einem weggeloescht worden sein - der
+     Loeschknopf unten zeichnet danach einfach neu. */
+  if(!l){ state.screen = "customvocab"; render(); return; }
+
+  const alle   = listeOffeneWoerter();
+  const suche  = state.listeSuche || "";
+  const zeigen = listeFiltern(alle, suche);
+  const wahl   = listeWahl();
+
+  app.innerHTML = `
+    ${renderHeader(eigene ? "Meine eigenen Wörter" : name, true)}
+
+    <div class="panel">
+      <button class="btn" id="li-ueben">▶ DIESE LISTE ÜBEN</button>
+      <p class="muted center-text" style="margin:8px 0 0;font-size:12.5px;">
+        ${alle.length} ${alle.length === 1 ? "Wort" : "Wörter"} drin</p>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:8px;">DIE WÖRTER</h3>
+
+      ${alle.length >= LISTE_SUCHE_AB ? `
+        <div class="pk-suchfeld">
+          <span class="pk-lupe">🔎</span>
+          <input type="search" id="li-suche" placeholder="In dieser Liste suchen …"
+                 value="${escapeHtml(suche)}" autocomplete="off">
+          ${suche ? `<button type="button" class="pk-leeren" id="li-leeren" aria-label="Suche löschen">✕</button>` : ""}
+        </div>` : ""}
+
+      ${zeigen.length ? `
+        <div class="pk-treffer" style="max-height:none;">
+          ${suche ? `<p class="pk-treffer-k">${zeigen.length} von ${alle.length}</p>` : ""}
+          ${zeigen.map(w=>{
+            const k = wortSchluessel(w);
+            const drin = wahl.indexOf(k) >= 0;
+            return `<button type="button" class="pk-wort li-zeile ${drin?'drin':''}" data-li-wort="${escapeHtml(k)}">
+              <span class="pk-w-en">${escapeHtml(w.en)}</span>
+              <span class="pk-w-de">${escapeHtml(w.de)}</span>
+              <span class="pk-w-plus">${drin ? "✓" : "○"}</span>
+            </button>`;
+          }).join("")}
+        </div>`
+        : `<p class="li-leer">${suche
+            ? "Kein Wort passt zu deiner Suche."
+            : "Hier ist noch nichts drin."}</p>`}
+
+      ${wahl.length ? `
+        <div class="ev-korb li-korb">
+          <span class="ev-korb-z">${wahl.length} ausgewählt</span>
+          <button class="btn small" id="li-neu" style="width:auto;margin:0;">⭐ Neue Liste daraus</button>
+          <button class="btn danger small" id="li-weg" style="width:auto;margin:0;">🗑️ ${eigene ? "Löschen" : "Rausnehmen"}</button>
+          <button class="btn secondary small" id="li-keine" style="width:auto;margin:0;">Auswahl aufheben</button>
+        </div>`
+        : (alle.length ? `
+        <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
+          Tipp Wörter an. Dann kannst du daraus eine neue Liste machen &ndash;
+          oder sie ${eigene ? "löschen" : "aus dieser Liste nehmen"}.</p>` : "")}
+    </div>
+
+    ${eigene ? "" : `
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:8px;">DIESE LISTE</h3>
+      <button class="btn teilen-btn" data-liste-teilen="${escapeHtml(name)}">
+        💬 PER WHATSAPP TEILEN
+      </button>
+      <p class="teilen-hinweis">Schick sie zum Beispiel in euren Klassenchat &ndash;
+        dann haben alle die Vokabeln sofort und ihr könnt zusammen üben.</p>
+      <div class="row" style="gap:8px;margin-top:12px;">
+        <button class="btn secondary col einzeilig" data-liste-um="${escapeHtml(name)}">✏️ Umbenennen</button>
+        <button class="btn danger col einzeilig" data-liste-weg="${escapeHtml(name)}">🗑️ Liste löschen</button>
+      </div>
+    </div>`}
+
+    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+  `;
+
+  const anLi = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+
+  anLi('li-ueben', ()=>{
+    state.category     = state.listeOffen;
+    state.offenesPaket = state.listeOffen;
+    state.wahl         = [];
+    state.screen = "uebenvokabeln";
+    saveProgress();
+    render();
+  });
+
+  document.querySelectorAll('[data-li-wort]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const k = el.dataset.liWort;
+      const w = listeWahl();
+      const i = w.indexOf(k);
+      if(i >= 0) w.splice(i, 1); else w.push(k);
+      render();
+    });
+  });
+
+  anLi('li-keine', ()=>{ state.listeWahl = []; render(); });
+
+  anLi('li-neu', ()=>{
+    const gewaehlt = listeWahl().slice();
+    if(!gewaehlt.length) return;
+    showPromptModal("Wie soll die neue Liste heißen?", "z.B. Die schweren Wörter", (nm)=>{
+      nm = (nm || "").trim().slice(0, 30);
+      if(nm.length < 2) return;
+      const vorhanden = listeFinden(nm);
+      if(vorhanden) vorhanden.woerter = gewaehlt;
+      else listenAlle().push({ name: nm, woerter: gewaehlt });
+      state.listeWahl = [];
+      saveProgress();
+      syncToCloud();
+      listeOeffnen(LISTEN_ZEICHEN + nm);      // gleich hineinsehen
+    });
+  });
+
+  anLi('li-weg', ()=>{
+    const gewaehlt = listeWahl().slice();
+    if(!gewaehlt.length) return;
+    const viele = gewaehlt.length > 1;
+    /* Der Unterschied muss in der Frage stehen, nicht nur im Knopf:
+       aus einer Liste nehmen ist harmlos, ein eigenes Wort loeschen
+       ist endgueltig. */
+    const frage = eigene
+      ? (viele ? gewaehlt.length + " Wörter wirklich löschen? Die sind dann ganz weg."
+               : "Dieses Wort wirklich löschen? Es ist dann ganz weg.")
+      : (viele ? gewaehlt.length + " Wörter aus dieser Liste nehmen? Im Wortschatz bleiben sie."
+               : "Das Wort aus dieser Liste nehmen? Im Wortschatz bleibt es.");
+    showConfirmModal(frage, ()=>{
+      if(eigene){
+        state.customVocab = (state.customVocab || [])
+          .filter(w => gewaehlt.indexOf(wortSchluessel(w)) < 0);
+        vokabelCacheLeeren();
+      } else {
+        const ziel = listeFinden(name);
+        if(ziel) ziel.woerter = (ziel.woerter || []).filter(k => gewaehlt.indexOf(k) < 0);
+      }
+      state.listeWahl = [];
+      saveProgress();
+      syncToCloud();
+      render();
+    });
+  });
+
+  // Umbenennen, Loeschen und Teilen sind dieselben Zuhoerer wie bisher -
+  // sie haengen an data-liste-um / -weg / -teilen.
+  try{ evListenbauVerdrahten(); }catch(e){ console.error("Listenpflege:", e); }
+
+  /* Nicht bei jedem Zeichen neu zeichnen - sonst verliert das Feld den
+     Fokus und die Tastatur klappt weg. Dieselbe Pause wie bei den
+     beiden anderen Suchfeldern. */
+  const feld = document.getElementById('li-suche');
+  if(feld){
+    let timer = null;
+    feld.addEventListener('input', ()=>{
+      clearTimeout(timer);
+      timer = setTimeout(()=>{
+        state.listeSuche = feld.value;
+        render();
+        const neu = document.getElementById('li-suche');
+        if(neu){ neu.focus(); neu.setSelectionRange(neu.value.length, neu.value.length); }
+      }, 320);
+    });
+  }
+  anLi('li-leeren', ()=>{ state.listeSuche = ""; render(); });
+
+  document.getElementById('back-btn').addEventListener('click', ()=>{
+    state.screen = "customvocab";
+    render();
+  });
 }
 
 function renderCustomVocab(){
@@ -18905,31 +19306,14 @@ function renderCustomVocab(){
               <span class="pk-z">${(l.woerter || []).length}</span>
             </button>`).join("")}
         </div>
-        <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Tippe eine Liste an, um sie zu üben.</p>
-        ${listen.length ? `
-          <div class="setting-label" style="margin-top:16px;">Listen verwalten</div>
-          <div class="ev-listen">
-            ${listen.map(l => `
-              <div class="ev-listenkarte">
-                <span class="ev-liste">
-                  <b>${escapeHtml(l.name)}</b>
-                  <span class="muted">${(l.woerter||[]).length}</span>
-                  <button type="button" data-liste-um="${escapeHtml(l.name)}" aria-label="Liste umbenennen" title="Umbenennen">✏️</button>
-                  <button type="button" data-liste-weg="${escapeHtml(l.name)}" aria-label="Liste löschen" title="Löschen">✕</button>
-                </span>
-                <button class="btn teilen-btn" data-liste-teilen="${escapeHtml(l.name)}">
-                  💬 PER WHATSAPP TEILEN
-                </button>
-                <p class="teilen-hinweis">Schick sie zum Beispiel in euren Klassenchat &ndash;
-                  dann haben alle die Vokabeln sofort und ihr könnt zusammen üben.</p>
-              </div>`).join("")}
-          </div>` : ""}
+        <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Tippe eine Liste an:
+        dort siehst du die Wörter, kannst suchen, welche rausnehmen &ndash; und üben.</p>
       ` : `<p class="muted center-text" style="margin:6px 0;">Noch keine eigene Liste.
            Such dir unten Wörter zusammen oder tipp welche ein.</p>`}
     </div>
 
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:8px;">NEUE WÖRTER DAZU</h3>
+      <h3 style="font-size:16px;margin-bottom:8px;">WÖRTER SUCHEN UND DAZUTUN</h3>
       <div class="ev-wege">
         ${wegKachel("suche",  "⭐", "Aus dem Wortschatz")}
         ${wegKachel("tippen", "✍️", "Selbst eintippen")}
@@ -18978,21 +19362,6 @@ function renderCustomVocab(){
       </div>` : ""}
     </div>
 
-    ${eigene.length ? `
-    <details class="panel ev-alle">
-      <summary style="cursor:pointer;font-weight:800;font-size:15px;color:var(--tinte);">
-        Alle ${eigene.length} eigenen Wörter ansehen
-      </summary>
-      <div class="vocab-list" style="max-height:280px;margin-top:10px;">
-        ${eigene.map((w, i) => `
-          <div class="vocab-row" style="align-items:center;">
-            <span style="flex:1;text-align:left;">${escapeHtml(w.de)}</span>
-            <span style="flex:1;text-align:left;">${escapeHtml(w.en)}</span>
-            <button class="btn danger small" data-remove-idx="${i}" style="width:auto;padding:6px 10px;min-height:auto;">✕</button>
-          </div>`).join("")}
-      </div>
-    </details>` : ""}
-
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
 
@@ -19027,14 +19396,7 @@ function renderCustomVocab(){
   });
 
   document.querySelectorAll('[data-ev-ueben]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      state.category      = el.dataset.evUeben;
-      state.offenesPaket  = el.dataset.evUeben;
-      state.wahl          = [];
-      state.screen = "uebenvokabeln";
-      saveProgress();
-      render();
-    });
+    el.addEventListener('click', ()=>listeOeffnen(el.dataset.evUeben));
   });
 
   const scanBtn = document.getElementById('scan-start-btn');
@@ -19093,16 +19455,6 @@ function renderCustomVocab(){
   if(excelFeld) excelFeld.addEventListener('change', (e)=>{
     const file = e.target.files && e.target.files[0];
     if(file){ handleExcelFile(file); }
-  });
-
-  document.querySelectorAll('[data-remove-idx]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const idx = parseInt(btn.dataset.removeIdx, 10);
-      state.customVocab.splice(idx, 1);
-      saveProgress();
-      syncToCloud();
-      render();
-    });
   });
 
   document.getElementById('back-btn').addEventListener('click', ()=>{
@@ -19347,7 +19699,7 @@ function renderGrammarIntro(){
         </button>
         <button class="gm-card flood" id="grammar-flood-btn">
           <span class="gm-title">🌊 Der Flutungsraum <span class="gm-badge">ZUSATZ-SPIEL</span></span>
-          <span class="gm-sub">Klettere mit richtigen Antworten nach oben. Das Wasser steigt bei jedem Fehler und sinkt nie wieder &ndash; nach ${GRAMMAR_MAX_WRONG_STREAK} Fehlern holt es dich ein!</span>
+          <span class="gm-sub">Klettere mit richtigen Antworten nach oben. Das Wasser steigt bei jedem Fehler &ndash; nach ${GRAMMAR_MAX_WRONG_STREAK} Fehlern holt es dich ein. Dann zieht Lingora dich raus und es geht weiter.</span>
         </button>
         <button class="gm-card flood" id="grammar-floodhard-btn">
           <span class="gm-title">🌊 Flutungsraum &ndash; Schwer <span class="gm-badge">FÜR PROFIS</span></span>
@@ -19450,7 +19802,7 @@ function startGrammarQuiz(hart){
   state.screen = "grammarquiz";
   render();
   if(state.floodHard){
-    startFloodRise(()=>{ stopFloodRise(); finishGrammarSession("lost"); });
+    startFloodRise(floodZeitRettung);
   }
 }
 
@@ -19537,6 +19889,47 @@ function resetFlood(hart){
   state.floodPos = 0;
   state.floodFacing = 1;
   state.grammarWaterPx = 12;
+  state.floodRettungen = 0;
+}
+
+/* ------------------------------------------------------------------
+   UNTERGEHEN IST EIN FEHLER, KEIN ENDE
+
+   Bis v90.0 hat das Wasser die Runde beendet. Bei zwanzig Woertern in
+   der Warteschlange und fuenf Fehlern hintereinander waren die
+   restlichen fuenfzehn weg - nicht falsch, nicht richtig, ungeuebt.
+   Der Leitner-Stand hat sie nie zu Gesicht bekommen.
+
+   Der Fehler selbst ist laengst gezaehlt: die falsche Antwort steht im
+   Protokoll, bevor das Wasser sie einholt. Hier wird also nichts
+   nachgetragen, nur weitergemacht.
+------------------------------------------------------------------ */
+const FLUT_MAX_FRAGEN = 25;    // so lang wie RUNDE_UMFANG.flood
+
+function floodRetten(){
+  state.floodRettungen = (state.floodRettungen || 0) + 1;
+  state.grammarWaterPx = 12;
+  state.grammarWrongStreak = 0;          // der Tropfenzaehler im leichten Modus
+  if(state.floodHard){ setFloodPos(Math.max(0, state.floodPos - 1)); }
+  floodBeendet = false;
+  const a = document.getElementById('flood-avatar');
+  if(a){ a.classList.remove('sink'); }
+  const w = document.getElementById('flood-water');
+  if(w){ w.style.height = state.grammarWaterPx + "px"; }
+  showGoodToast('<span class="item-pop">🛟</span> Lingora zieht dich raus!');
+}
+
+/* Das Wasser hat die Figur eingeholt, ohne dass gerade geantwortet
+   wurde - im schweren Modus steigt es von allein. Retten und den
+   Zeitgeber neu aufziehen; startFloodRise raeumt den alten selbst weg.
+
+   Die Ruecksicherung "nur wenn noch untergegangen": zwischen dem
+   Untergehen und diesem Aufruf liegen 900 ms Sink-Bild. Hat das Kind in
+   dieser Zeit geantwortet, hat die Antwortbehandlung schon gerettet -
+   dann waere das hier eine zweite Rettung fuer denselben Untergang. */
+function floodZeitRettung(){
+  if(floodDrowned()) floodRetten();
+  startFloodRise(floodZeitRettung);
 }
 
 // Wird NUR bei einer falschen Antwort aufgerufen. Der Stand kann dadurch
@@ -19957,25 +20350,34 @@ function handleGrammarAnswer(btn, choice, exercise){
   if(won || lost){ floodBeendet = true; stopFloodRise(); }
 
   const weiter = ()=>{
-    if(floodBeendet && !won && !lost){ return; }
     state.grammarAnswered = false;
-    if(won){
+    if(won){ stopFloodRise(); finishGrammarSession("won"); return; }
+    /* Der Ruecksprung bei floodBeendet ist weg - siehe die ausfuehrliche
+       Begruendung in handleVocabFloodAnswer. Ohne Rundenende waere er
+       eine Sackgasse. */
+    if(lost || floodDrowned()){ floodRetten(); }
+    floodBeendet = false;
+    startFloodRise(floodZeitRettung);
+    /* OHNE ERTRINKEN BRAUCHT DIESE RUNDE EINE ANDERE GRENZE.
+       Sie hat keine Warteschlange - pickGrammarExercise wuerfelt
+       unendlich weiter. Bisher endete sie durch Sieg ODER Ertrinken;
+       faellt das Ertrinken weg, liefe sie endlos. */
+    if((state.grammarSessionLog || []).length >= FLUT_MAX_FRAGEN){
       stopFloodRise();
-      finishGrammarSession("won");
-    } else if(lost){
-      stopFloodRise();
-      finishGrammarSession("lost");
-    } else {
-      state.grammarCurrentExercise = pickGrammarExercise(grammarTopicById(state.grammarTopicId));
-      render();
+      finishGrammarSession("durch");
+      return;
     }
+    state.grammarCurrentExercise = pickGrammarExercise(grammarTopicById(state.grammarTopicId));
+    render();
   };
   if(correct){ planeWeiter(weiter, 1200); }
   else {
     setTimeout(()=>{
       fb.className = 'feedback show bad';
     rueckmeldungInsBild(fb);
-      fb.innerHTML = `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. ${state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!"} ${escapeHtml(exercise.de)}</div>`;
+      fb.innerHTML = `<div>${lost
+          ? "🌊 Untergegangen! Zählt als Fehler &ndash; und weiter geht&rsquo;s. "
+          : ""}❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. ${lost ? "" : (state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!")} ${escapeHtml(exercise.de)}</div>`;
       if(lost){ scrollFeedbackIntoView(fb); planeWeiter(weiter, 1600); }
       else { grammarWeiterKnopf(fb, weiter); }
     }, FLOOD_MSG_DELAY);
@@ -20638,7 +21040,11 @@ function renderGrammarCertificate(){
   } else if(practice){
     headline = "📘 ÜBUNGSRUNDE GESCHAFFT!";
   } else {
-    headline = result === "won" ? "🚁 GERETTET! GRAMMATIK GEMEISTERT!" : "🌊 UNTERGEGANGEN – NOCHMAL VERSUCHEN!";
+    /* "lost" gibt es seit v90.1 nicht mehr - die Runde endet durch Sieg
+       oder nach FLUT_MAX_FRAGEN Fragen. */
+    headline = result === "won"
+      ? "🚁 GERETTET! GRAMMATIK GEMEISTERT!"
+      : "🌊 RUNDE DURCH – " + correctCount + " RICHTIG!";
   }
 
   app.innerHTML = `
@@ -20665,6 +21071,7 @@ function renderGrammarCertificate(){
       <div class="stat-row">
         <div>✅<span>${correctCount}</span></div>
         <div>❌<span>${total-correctCount}</span></div>
+        ${state.floodRettungen ? `<div>🛟<span>${state.floodRettungen}</span></div>` : ""}
         <div>🪙<span>${state.grammarSessionCoins}</span></div>
       </div>
 
