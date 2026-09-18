@@ -1917,7 +1917,8 @@
    statt 629; zusammen mit Kopfzeile, Abbrechen-Leiste und Zaehlern
    bleibt sie unter der sichtbaren Hoehe, und die Buchstaben sind ohne
    Scrollen erreichbar. */
-.hm-bild{ display:block; margin:6px auto 2px; height:min(160px, 21svh); width:auto; }
+.hm-bild{ display:block; margin:6px auto 2px; height:min(160px, 21svh); width:auto;
+          overflow:visible; }
 .hm-leben{ text-align:center; font-size:13px; color:var(--tinte-hell); margin:0 0 8px; }
 
 /* Die Luecken. Ein Unterstrich je Buchstabe, Bindestriche bleiben
@@ -1973,6 +1974,74 @@
 .hm-taste.daneben{ background:#f6e4e0; border-color:#d9a99f; color:#8a3323; }
 .hm-taste:disabled{ cursor:default; opacity:1; }
 
+/* ---------- Der Galgen lebt --------------------------------------
+   Was am Seil haengt, pendelt sacht um den Punkt, an dem das Seil am
+   Balken befestigt ist: 146/22 in den Koordinaten der Zeichnung. Das
+   Gestell selbst - Boden, Pfosten, Balken, Strebe - steht still.
+   Bewegte sich beides, saehe man keine Bewegung, sondern ein
+   wackelndes Blatt.
+
+   Die Drehung steht als verschieben-drehen-zurueckschieben in den
+   Keyframes, und transform-origin ausdruecklich auf 0 0: Sonst
+   rechnet der Browser den Bezugspunkt des Kastens obendrauf, und das
+   Maennchen schwaenge um eine ganz andere Stelle. */
+.hm-schaukel{
+  transform-box:view-box; transform-origin:0 0;
+  animation:hm-schaukeln 3.4s ease-in-out infinite;
+}
+@keyframes hm-schaukeln{
+  0%,100%{ transform:translate(146px,22px) rotate(-3.2deg) translate(-146px,-22px); }
+  50%    { transform:translate(146px,22px) rotate(3.2deg)  translate(-146px,-22px); }
+}
+/* Das Teil, das gerade dazugekommen ist, wird kurz hingekritzelt:
+   klein anfangen, ueber das Ziel hinaus, einrasten. Nur nach einem
+   Fehler - siehe hangmanSvg. */
+.hm-teil.hm-frisch{
+  transform-box:fill-box; transform-origin:50% 50%;
+  animation:hm-kritzeln 420ms ease-out 1;
+}
+@keyframes hm-kritzeln{
+  0%  { opacity:0; transform:scale(0.72) rotate(-4deg); }
+  60% { opacity:1; transform:scale(1.06) rotate(1.5deg); }
+  100%{ opacity:1; transform:scale(1)    rotate(0deg); }
+}
+
+/* ---------- Der Tipp-Knopf ----------------------------------------
+   Steht UNTER der Buchstabenreihe, mit Abstand: Beim Suchen eines
+   Buchstabens tippt ein Kind schnell mal daneben, und daneben soll
+   nicht "zehn Muenzen" heissen. Gefragt wird ohnehin vorher.
+
+   EINE ZEILE, KEINE ZWEITE. Erst stand unter dem Knopf noch ein Satz
+   ("Noch 2 Tipps fuer dieses Wort"). Gemessen war die Spielkarte damit
+   673 px hoch statt 597 - und genau das war der Grund, warum die
+   Zeichnung ueberhaupt auf 160 px begrenzt ist: Die Buchstaben muessen
+   ohne Scrollen erreichbar bleiben, man braucht sie bei jedem Zug.
+   Also steht der Grund jetzt IM Knopf, und die zweite Zeile ist
+   weg.
+
+   LEISER ALS DIE BUCHSTABEN. Als voller blauer Balken war der Knopf
+   das Auffaelligste auf der Karte - ein Kaufknopf, den ein Kind
+   zuerst sieht. Jetzt traegt er denselben Grund und dieselbe Schrift
+   wie die Buchstabentasten, nur mit gestricheltem Rand: sichtbar,
+   aber erkennbar das Nebengleis.
+
+   Zwei Klassen im Selektor, weil .btn.secondary auch zwei hat -
+   mit nur .hm-tipp gewaenne die Farbe von dort.
+
+   Der Rand ist ausdruecklich NICHT --papier-rand wie bei den
+   Buchstabentasten: gemessen 1,35:1 gegen das Papier. Bei einem
+   Gitter aus 26 Tasten traegt die Anordnung, bei einem einzelnen
+   Knopf auf Papier traegt nur der Rand - und dann muss er sichtbar
+   sein. --tinte-hell liegt bei 4,62:1, die Schrift darin bei
+   10,67:1. Beides gemessen im Browser. */
+.btn.hm-tipp{
+  margin-top:10px; font-size:14px; padding:10px 12px; min-height:42px;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  background:var(--papier); color:var(--tinte);
+  border:2px dashed var(--tinte-hell); box-shadow:none;
+}
+.btn.hm-tipp:disabled{ opacity:0.5; cursor:default; }
+
 /* ---------- Der Jubelsprung ----------------------------------------
    Bewegt wird die innere Gruppe, nicht das ganze Bild: der Boden
    muss liegen bleiben, sonst sieht man keinen Sprung, sondern ein
@@ -2019,6 +2088,8 @@
 @media (prefers-reduced-motion: reduce){
   .hm-jubel .hm-huepfer{ animation:none; }
   .hm-jubel .hm-funken { animation:none; opacity:0.95; }
+  .hm-schaukel{ animation:none; }
+  .hm-teil.hm-frisch{ animation:none; }
 }
 
 .hm-loesung{
@@ -3831,7 +3902,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "92.2 – Jubelsprung";
+const APP_VERSION = "92.3 – Hangman: Schaukeln und Tipps";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -13030,9 +13101,9 @@ function renderSpielart(){
            ["mc","🎯","Multiple Choice","4 Antworten zur Auswahl"],
            ["type","📝","Vokabeltest","Selbst schreiben, mit Schulnote"],
            ["mix","🔀","Gemischt","Mal Auswahl, mal Eintippen"],
+           ["hangman","✏️","Hangman","Buchstaben raten, 5 Fehler sind erlaubt"],
            ["challenge","⚔️","Die Challenge","10 Sekunden gegen den Bösewicht"],
            ["flood","🌊","Der Flutungsraum","Klettere dem Wasser davon"],
-           ["hangman","✏️","Hangman","Buchstaben raten, 5 Fehler sind erlaubt"],
            ["aussprache","🗣️","Aussprache","Echte Stimmen zum Nachsprechen"]
           ].map(([m, ic, name, unter])=>`
           <button type="button" class="mode-btn game-tile ${state.mode===m?'active':''}" data-mode="${m}">
@@ -13874,9 +13945,16 @@ function handleVocabFloodAnswer(btn, choice, word){
 ================================================================== */
 const HANGMAN_FARBE = "#ef624a";     // aus Markus' Zeichnung ausgelesen
 
-function hangmanSvg(stufe){
+function hangmanSvg(stufe, frisch){
   const s = Math.max(0, Math.min(5, stufe | 0));
   const an = n => s >= n ? "" : ' opacity="0"';
+  /* Eingekritzelt wird nur das Teil, das GERADE dazugekommen ist -
+     also das mit der Nummer der aktuellen Fehlerzahl, und nur wenn
+     der Aufrufer sagt, dass eben ein Fehler passiert ist. Ohne diese
+     zweite Bedingung zuckte dasselbe Teil auch bei jedem richtigen
+     Buchstaben noch einmal, weil die Karte dabei neu gezeichnet
+     wird. */
+  const neu = n => (frisch && n === s) ? " hm-frisch" : "";
   return `
   <svg class="hm-bild" viewBox="0 0 200 230" role="img"
        aria-label="Galgenmännchen, ${s} von 5 Teilen gezeichnet">
@@ -13889,31 +13967,39 @@ function hangmanSvg(stufe){
     </defs>
     <g filter="url(#hm-kritzel)" fill="none" stroke="${HANGMAN_FARBE}"
        stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
-      <g${an(1)}>
+      <!-- Das Gestell steht still. -->
+      <g${an(1)} class="hm-teil${neu(1)}">
         <path d="M18 212 q26 -6 44 -2 q20 4 60 2"/>
         <path d="M62 210 L62 24"/>
       </g>
-      <g${an(2)}>
+      <g${an(2)} class="hm-teil${neu(2)}">
         <path d="M62 24 L146 22"/>
         <path d="M62 52 L88 26"/>
-        <path d="M146 22 L146 46"/>
-        <path d="M146 46 q-7 5 0 9 q7 4 0 9 q-7 5 0 9"/>
       </g>
-      <g${an(3)}>
-        <rect x="120" y="73" width="52" height="46" rx="2"/>
-        <path d="M132 90 q5 -6 10 0"/>
-        <path d="M152 90 q5 -6 10 0"/>
-        <path d="M138 103 q9 7 18 0"/>
-        <path d="M146 104 q-3 9 4 9 q5 0 3 -8"/>
-      </g>
-      <g${an(4)}>
-        <rect x="126" y="126" width="40" height="58" rx="2"/>
-        <rect x="100" y="128" width="20" height="46" rx="2"/>
-        <rect x="172" y="128" width="20" height="46" rx="2"/>
-      </g>
-      <g${an(5)}>
-        <rect x="128" y="186" width="17" height="42" rx="2"/>
-        <rect x="150" y="186" width="17" height="42" rx="2"/>
+
+      <!-- Alles, was am Seil haengt, pendelt gemeinsam. Deshalb ist
+           das Seil hier drin und nicht mehr oben beim Balken. -->
+      <g class="hm-schaukel">
+        <g${an(2)}>
+          <path d="M146 22 L146 46"/>
+          <path d="M146 46 q-7 5 0 9 q7 4 0 9 q-7 5 0 9"/>
+        </g>
+        <g${an(3)} class="hm-teil${neu(3)}">
+          <rect x="120" y="73" width="52" height="46" rx="2"/>
+          <path d="M132 90 q5 -6 10 0"/>
+          <path d="M152 90 q5 -6 10 0"/>
+          <path d="M138 103 q9 7 18 0"/>
+          <path d="M146 104 q-3 9 4 9 q5 0 3 -8"/>
+        </g>
+        <g${an(4)} class="hm-teil${neu(4)}">
+          <rect x="126" y="126" width="40" height="58" rx="2"/>
+          <rect x="100" y="128" width="20" height="46" rx="2"/>
+          <rect x="172" y="128" width="20" height="46" rx="2"/>
+        </g>
+        <g${an(5)} class="hm-teil${neu(5)}">
+          <rect x="128" y="186" width="17" height="42" rx="2"/>
+          <rect x="150" y="186" width="17" height="42" rx="2"/>
+        </g>
       </g>
     </g>
   </svg>`;
@@ -13992,6 +14078,15 @@ function hangmanJubelSvg(){
 ================================================================== */
 const HANGMAN_LEBEN   = 5;    // Markus' Zahl - nachgerechnet die richtige
 const HANGMAN_MUENZEN = 5;    // fuer ein geloestes Wort
+
+/* Zwei Tipps je Wort, je zwei Buchstaben, je zehn Muenzen.
+
+   Zehn kosten bei fuenf Gewinn heisst: Ein gekauftes Wort ist ein
+   Verlustgeschaeft. Genau so soll es sein - sonst kauft man sich
+   durch die Runde, statt zu raten. */
+const HANGMAN_TIPPS        = 2;
+const HANGMAN_TIPP_PREIS   = 10;
+const HANGMAN_TIPP_LETTERN = 2;
 const HANGMAN_ABC     = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 /* Welche Woerter taugen? Gezaehlt: 353 von 448. Mehrwortwendungen und
@@ -14024,6 +14119,90 @@ function hangmanNeuesWort(){
   state.hmGeraten = [];
   state.hmFehler  = 0;
   state.hmFertig  = null;
+  state.hmTipps   = 0;       // gekaufte Tipps, gelten nur fuer DIESES Wort
+  state.hmFrisch  = false;   // wurde gerade ein Teil dazugemalt?
+}
+
+/* Was gerade zur Verfuegung steht. Waehrend einer Runde ist noch
+   nichts gutgeschrieben - die Anzeige oben zeigt Konto plus Runde,
+   und genau das ist auch der Betrag, ueber den verfuegt werden darf. */
+function hangmanKasse(){
+  return (state.coins || 0) + (state.sessionCoins || 0);
+}
+
+/* Welche Buchstaben stehen noch offen? Jeder nur einmal - ein Tipp
+   soll zwei VERSCHIEDENE Buchstaben aufdecken, nicht zweimal
+   denselben. */
+function hangmanOffeneBuchstaben(){
+  const g = hangmanGeraten();
+  const offen = [];
+  hangmanWort().split("").forEach(c=>{
+    if(/[A-Z]/.test(c) && g.indexOf(c) < 0 && offen.indexOf(c) < 0) offen.push(c);
+  });
+  return offen;
+}
+
+/* Darf gerade ein Tipp gekauft werden? Vier Gruende sprechen dagegen,
+   und der Knopf nennt sie einzeln - abgeschaltet mit Begruendung ist
+   besser als ein Knopf, der nichts tut. */
+function hangmanTippLage(){
+  const uebrig = HANGMAN_TIPPS - (state.hmTipps || 0);
+  if(state.hmFertig)                  return { geht:false, text:"" };
+  if(uebrig <= 0)                     return { geht:false, text:"BEIDE TIPPS VERBRAUCHT" };
+  if(!hangmanOffeneBuchstaben().length) return { geht:false, text:"DA IST NICHTS MEHR ZU HOLEN" };
+  if(hangmanKasse() < HANGMAN_TIPP_PREIS)
+    return { geht:false, text:"DAFÜR BRAUCHST DU " + HANGMAN_TIPP_PREIS + " 🪙 &ndash; DU HAST " + hangmanKasse() };
+  return { geht:true, text:HANGMAN_TIPP_LETTERN + " BUCHSTABEN FÜR " + HANGMAN_TIPP_PREIS
+                          + " 🪙" + (uebrig === 1 ? " (letzter Tipp)" : "") };
+}
+
+/* Gefragt wird VORHER - Markus' Bedingung. Und nach der Rueckfrage
+   noch einmal geprueft: Zwischen Frage und Antwort kann sich der
+   Stand geaendert haben. */
+function hangmanTippKaufen(){
+  if(!hangmanTippLage().geht) return;
+  showConfirmModal(
+    HANGMAN_TIPP_LETTERN + " Buchstaben aufdecken? Das kostet " + HANGMAN_TIPP_PREIS
+    + " Münzen. Du hast gerade " + hangmanKasse() + ".",
+    ()=>{
+      if(!hangmanTippLage().geht) return;
+      const frei = hangmanOffeneBuchstaben();
+      const g = hangmanGeraten();
+      const geholt = [];
+      for(let i = 0; i < HANGMAN_TIPP_LETTERN && frei.length; i++){
+        const b = frei.splice(Math.floor(Math.random() * frei.length), 1)[0];
+        g.push(b); geholt.push(b);
+      }
+      state.hmTipps = (state.hmTipps || 0) + 1;
+      state.sessionCoins -= HANGMAN_TIPP_PREIS;
+      showGoodToast('<span class="item-pop">💡</span> ' + geholt.join(" und ")
+                    + ' &ndash; ' + HANGMAN_TIPP_PREIS + ' Münzen.');
+      if(hangmanGeloest()) hangmanGewonnen();
+      render();
+    });
+}
+
+/* Ein Wort ist geschafft - egal ob geraten oder zum Teil gekauft.
+   Beide Wege muessen hier durch, sonst laufen sie auseinander.
+
+   MIT TIPP WIRD DER LERNSTAND NICHT HOCHGESTUFT. Muenzen und Serie
+   gibt es, die Leitner-Box bleibt stehen. Denn das Klassenarbeits-
+   Radar rechnet aus diesen Boxen die Prognose: Wuerde ein gekaufter
+   Buchstabe das Wort hochstufen, verschwaende es fuer Tage aus der
+   Wiederholung und die Vorhersage saehe besser aus als die Lage ist.
+   Beim Kaufen haben wir ja gerade NICHT erfahren, ob das Kind das
+   Wort kann. Nichts zu tun ist da ehrlicher als hochzustufen. */
+function hangmanGewonnen(){
+  const word = currentWord();
+  const mitTipp = (state.hmTipps || 0) > 0;
+  state.hmFertig = "gewonnen";
+  state.sessionCoins += HANGMAN_MUENZEN;
+  state.streak += 1;
+  state.bestStreak = Math.max(state.bestStreak, state.streak);
+  state.sessionLog.push({ prompt: word.de, correct: cleanEn(word.en),
+                          result: "correct", tipp: mitTipp, word: word });
+  if(!mitTipp) wortGelernt(word, "correct");
+  showGoodToast('<span class="item-pop">🎉</span> Geschafft! +' + HANGMAN_MUENZEN + ' Münzen.');
 }
 
 function renderHangman(){
@@ -14033,6 +14212,10 @@ function renderHangman(){
   const g      = hangmanGeraten();
   const fehler = state.hmFehler || 0;
   const fertig = state.hmFertig;          // null | "gewonnen" | "verloren"
+  /* Einmalig abholen und gleich wieder abraeumen: Das Hinkritzeln
+     gehoert zu DIESEM Zeichnen, nicht zu allen folgenden. */
+  const frisch = !!state.hmFrisch; state.hmFrisch = false;
+  const tipp   = hangmanTippLage();
   const total  = state.queue.length;
 
   const felder = wort.split("").map(c=>{
@@ -14057,7 +14240,7 @@ function renderHangman(){
     <div class="panel">
       <span class="hm-eyebrow">SCHREIB DAS ENGLISCHE WORT</span>
       <p class="hm-deutsch">${escapeHtml(word.de)}</p>
-      ${fertig === "gewonnen" ? hangmanJubelSvg() : hangmanSvg(fehler)}
+      ${fertig === "gewonnen" ? hangmanJubelSvg() : hangmanSvg(fehler, frisch)}
       <p class="hm-leben">${fertig
         ? (fertig === "gewonnen"
             ? "🎉 Geschafft &ndash; <strong>+" + HANGMAN_MUENZEN + "</strong> Münzen!"
@@ -14081,7 +14264,10 @@ function renderHangman(){
             return `<button type="button" class="hm-taste ${schon ? (treffer ? "treffer" : "daneben") : ""}"
                       data-hm="${b}"${schon ? " disabled" : ""}>${b}</button>`;
           }).join("")}
-        </div>`}
+        </div>
+        <button type="button" class="btn secondary hm-tipp" id="hm-tipp"${tipp.geht ? "" : " disabled"}>
+          💡 ${tipp.text}
+        </button>`}
     </div>
   `;
 
@@ -14089,6 +14275,8 @@ function renderHangman(){
     el.addEventListener('click', ()=>hangmanRaten(el.dataset.hm));
   });
   hangmanFelderMessen();
+  const tp = document.getElementById('hm-tipp');
+  if(tp && !tp.disabled){ tp.addEventListener('click', hangmanTippKaufen); }
   const w = document.getElementById('hm-weiter');
   if(w){ w.addEventListener('click', hangmanWeiter); }
   const ab = document.getElementById('cancel-btn');
@@ -14124,18 +14312,10 @@ function hangmanRaten(buchstabe){
   const wort = hangmanWort();
 
   if(wort.indexOf(b) >= 0){
-    if(hangmanGeloest()){
-      state.hmFertig = "gewonnen";
-      state.sessionCoins += HANGMAN_MUENZEN;
-      state.streak += 1;
-      state.bestStreak = Math.max(state.bestStreak, state.streak);
-      state.sessionLog.push({ prompt: word.de, correct: cleanEn(word.en),
-                              result: "correct", word: word });
-      wortGelernt(word, "correct");
-      showGoodToast('<span class="item-pop">🎉</span> Geschafft! +' + HANGMAN_MUENZEN + ' Münzen.');
-    }
+    if(hangmanGeloest()){ hangmanGewonnen(); }
   } else {
     state.hmFehler = (state.hmFehler || 0) + 1;
+    state.hmFrisch = true;        // das neue Teil darf sich hinkritzeln
     if(state.hmFehler >= HANGMAN_LEBEN){
       state.hmFertig = "verloren";
       state.streak = 0;
@@ -14925,9 +15105,16 @@ function muenzenAbrechnen(bereich){
   const offen = (bereich === "grammar")
     ? (state.grammarSessionCoins || 0)
     : (state.sessionCoins || 0);
-  if(offen > 0){
+  /* Seit den Hangman-Tipps kann der Rundenzaehler auch NEGATIV sein -
+     dann wurde in der Runde mehr ausgegeben als verdient. Stand hier
+     weiterhin "nur wenn mehr als null", waere der gekaufte Tipp am
+     Rundenende stillschweigend geschenkt gewesen.
+
+     Die Diamanten bekommen weiterhin nur Zuwachs: Sie sind das
+     Zeugnis, keine Waehrung, und werden nie ausgegeben. */
+  if(offen !== 0){
     state.coins = Math.max(0, (state.coins || 0) + offen);
-    diamantenDazu(offen);          // Zeugnis, nicht Waehrung
+    if(offen > 0) diamantenDazu(offen);
   }
   return offen;
 }
