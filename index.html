@@ -1893,6 +1893,76 @@
   to{   opacity:1; transform:translate(-50%, 0); }
 }
 
+/* ---------- Hangman -------------------------------------------------
+   Die Farbe stammt aus Markus' Zeichnung: #ef624a ist der kraeftigste
+   Ton seiner Filzstiftstriche, aus dem Bild ausgelesen. */
+.hm-deutsch{
+  font-family:var(--font); font-weight:800; font-size:clamp(22px,7vw,30px);
+  text-align:center; color:var(--tinte); margin:2px 0 4px; line-height:1.2;
+  overflow-wrap:anywhere;
+}
+.hm-eyebrow{
+  display:block; text-align:center; font-family:var(--font); font-weight:800;
+  font-size:11.5px; letter-spacing:.08em; color:var(--tinte-hell); margin-bottom:2px;
+}
+/* Ueber die HOEHE bemessen, nicht ueber die Breite - und an die
+   Bildschirmhoehe gekoppelt. Bei fester Breite war die Karte auf einem
+   390er Telefon 607 px hoch; zusammen mit Kopfzeile, Abbrechen-Leiste
+   und Zaehlern haette das Kind zu den Buchstaben scrollen muessen, und
+   die braucht es bei jedem Zug. Das SVG hat ein viewBox, also folgt die
+   Breite der Hoehe von selbst - nachgemessen 139 x 160 bei einem
+   Seitenverhaeltnis von 0,87, also unverzerrt.
+
+   Gemessen auf 390 px Breite: die Spielkarte ist damit 597 px hoch
+   statt 629; zusammen mit Kopfzeile, Abbrechen-Leiste und Zaehlern
+   bleibt sie unter der sichtbaren Hoehe, und die Buchstaben sind ohne
+   Scrollen erreichbar. */
+.hm-bild{ display:block; margin:6px auto 2px; height:min(160px, 21svh); width:auto; }
+.hm-leben{ text-align:center; font-size:13px; color:var(--tinte-hell); margin:0 0 8px; }
+
+/* Die Luecken. Ein Unterstrich je Buchstabe, Bindestriche bleiben
+   sichtbar - sonst raet ein Kind an der falschen Stelle. */
+.hm-wort{
+  display:flex; flex-wrap:wrap; justify-content:center; gap:6px;
+  margin:10px 0 4px; min-height:40px;
+}
+.hm-feld{
+  width:30px; height:38px; display:flex; align-items:flex-end; justify-content:center;
+  font-family:var(--font); font-weight:800; font-size:24px; color:var(--tinte);
+  border-bottom:3px solid rgba(120,100,70,0.45);
+}
+.hm-feld.frei{ border-bottom-color:rgba(120,100,70,0.22); }
+.hm-feld.strich{ border-bottom:none; color:var(--tinte-hell); align-items:center; }
+.hm-feld.spaet{ color:#b3402c; }
+
+/* Die Buchstabentastatur.
+
+   ERST SIEBEN SPALTEN GEHABT, DANN NACHGEMESSEN: auf einem 390er
+   Telefon blieben 41,1 px je Taste - unter Apples 44. Mit auto-fill
+   und minmax(44px, 1fr) entscheidet der Browser selbst, wie viele
+   Spalten passen: sechs auf dem Telefon, acht auf einem breiten
+   Bildschirm, und nie eine Taste unter 44 px. */
+.hm-tasten{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(44px, 1fr));
+  gap:6px; margin-top:12px; justify-content:center;
+}
+.hm-taste{
+  min-height:46px; padding:0; border-radius:10px; cursor:pointer;
+  font-family:var(--font); font-weight:800; font-size:18px;
+  background:var(--papier); color:var(--tinte);
+  border:2px solid var(--papier-rand);
+}
+.hm-taste:active{ transform:translateY(1px); }
+.hm-taste.treffer{ background:#e4f3e2; border-color:#7bb36e; color:#1e5c28; }
+.hm-taste.daneben{ background:#f6e4e0; border-color:#d9a99f; color:#8a3323; }
+.hm-taste:disabled{ cursor:default; opacity:1; }
+
+.hm-loesung{
+  text-align:center; font-family:var(--font); font-weight:800;
+  font-size:17px; margin:10px 0 0; color:var(--tinte);
+}
+.hm-loesung small{ display:block; font-weight:400; font-size:13.5px; color:var(--tinte-hell); margin-top:3px; }
+
 .flood-danger-row{
     position:absolute; top:26px; right:8px; z-index:6;
     display:flex; gap:3px; background:rgba(0,0,0,0.4);
@@ -3697,7 +3767,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "91.0 – Neue Symbole, zweiter Satz";
+const APP_VERSION = "92.0 – Hangman";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4587,12 +4657,14 @@ const LINGORA_WEG = {
     {stufe:1, mode:"mc",      art:"vokabel_mc",     t:"Multiple Choice", u:"Vier Antworten – erst mal erkennen",  ic:"🎯"},
     {stufe:2, mode:"flood",   art:"vokabel_spiel",  t:"Flutungsraum",  u:"Kletter dem Wasser davon",              ic:"🌊"},
     {stufe:2, mode:"challenge", art:"vokabel_spiel", t:"Challenge",    u:"Zehn Sekunden pro Wort",                ic:"⚔️"},
+    {stufe:2, mode:"hangman", art:"vokabel_spiel",   t:"Hangman",      u:"Buchstaben raten, fünf Fehler frei",    ic:"✏️"},
     {stufe:3, mode:"mix",     art:"vokabel_mix",    t:"Gemischt",      u:"Mal Auswahl, mal Tippen",               ic:"🔀"},
     {stufe:4, mode:"type",    art:"vokabel_tippen", t:"Selbst tippen", u:"Ohne Hilfe schreiben – das sitzt am besten", ic:"✍️"}
   ],
   spiel: [
     {stufe:2, mode:"challenge", art:"vokabel_spiel", t:"Challenge",    u:"Zehn Sekunden pro Wort",   ic:"⚔️"},
-    {stufe:2, mode:"flood",     art:"vokabel_spiel", t:"Flutungsraum", u:"Kletter dem Wasser davon", ic:"🌊"}
+    {stufe:2, mode:"flood",     art:"vokabel_spiel", t:"Flutungsraum", u:"Kletter dem Wasser davon", ic:"🌊"},
+    {stufe:2, mode:"hangman",   art:"vokabel_spiel", t:"Hangman",      u:"Buchstaben raten",         ic:"✏️"}
   ]
 };
 
@@ -4602,6 +4674,7 @@ const LINGORA_WEG = {
 const LINGORA_KURZ = {
   mc:"Auswahl", type:"Tippen", mix:"Gemischt", faellig:"Fällig", wackel:"Wackler",
   flood:"Flut", floodhard:"Flut", challenge:"Duell", aussprache:"Sprechen",
+  hangman:"Hangman",
   intro:"Regel", practice:"Üben", test:"Test"
 };
 function lingoraKurzname(schritt){
@@ -9841,7 +9914,11 @@ function shuffle(arr){
    genauso falsch wie einer, der ermuedet. */
 const RUNDE_UMFANG = {
   mc: 30, faellig: 30, mix: 25, type: 20,
-  flood: 25, floodhard: 25, wackel: 15, aussprache: 12
+  flood: 25, floodhard: 25, wackel: 15, aussprache: 12,
+  /* Hangman: gerechnet 3,2 Minuten fuer zehn Woerter (4,7 verschiedene
+     Buchstaben im Schnitt, gut zwei Sekunden je Tipp). Damit passt es
+     in die fuenf Minuten, die Lingora fuer ein Spiel einplant. */
+  hangman: 10
 };
 const RUNDE_STANDARD = 25;
 
@@ -9892,6 +9969,16 @@ function buildQueue(){
     const stand = state.wortStand || {};
     const bekannt = pool.filter(w => stand[wortSchluessel(w)]);
     if(bekannt.length) pool = shuffle(bekannt).slice(0, 15);
+  }
+
+  /* Hangman braucht Woerter, die man buchstabieren kann. Von 448
+     taugen 353; der Rest sind Mehrwortwendungen ("good morning") und
+     ganze Saetze. Bleibt in einem Paket nichts uebrig, behalten wir
+     den vollen Vorrat - lieber ein paar schwierige Woerter als ein
+     leerer Bildschirm. */
+  if(state.mode === "hangman"){
+    const tauglich = pool.filter(hangmanTauglich);
+    if(tauglich.length) pool = tauglich;
   }
 
   // Dringend zuerst: neue und ueberfaellige Woerter, dann die wackeligen,
@@ -12854,6 +12941,7 @@ function renderSpielart(){
            ["mix","🔀","Gemischt","Mal Auswahl, mal Eintippen"],
            ["challenge","⚔️","Die Challenge","10 Sekunden gegen den Bösewicht"],
            ["flood","🌊","Der Flutungsraum","Klettere dem Wasser davon"],
+           ["hangman","✏️","Hangman","Buchstaben raten, 5 Fehler sind erlaubt"],
            ["aussprache","🗣️","Aussprache","Echte Stimmen zum Nachsprechen"]
           ].map(([m, ic, name, unter])=>`
           <button type="button" class="mode-btn game-tile ${state.mode===m?'active':''}" data-mode="${m}">
@@ -13444,7 +13532,7 @@ function startGame(){
     const namen = {faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
                    mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
                    floodhard:"Flutungsraum", aussprache:"Aussprache",
-                   wackel:"Wackelkandidaten"};
+                   wackel:"Wackelkandidaten", hangman:"Hangman"};
     zuletztMerken({bereich:"vocab", mode:state.mode, category:state.category,
                    titel:(namen[state.mode] || "Üben")});
   }
@@ -13455,6 +13543,7 @@ function startGame(){
   state.streak = 0;
   state.bestStreak = 0;
   state.sessionLog = [];
+  hangmanNeuesWort();
   if(state.mode === "challenge"){
     buildChallengeQueue();
   } else {
@@ -13678,9 +13767,247 @@ function handleVocabFloodAnswer(btn, choice, word){
   }
 }
 
+/* ==================================================================
+   HANGMAN - DIE ZEICHNUNG
+
+   Kein Bild, sondern SVG mit einem feTurbulence-Filter: der verzieht
+   jede Linie leicht, so dass sie aussieht wie mit Filzstift
+   hingekritzelt. Das hat drei Vorteile gegenueber einer Bilddatei -
+   null Bytes zusaetzlich, auf jedem Bildschirm scharf, und die fuenf
+   Stufen sind einfach fuenf Gruppen, die nacheinander sichtbar werden.
+
+   Die Aufteilung ist so gewaehlt, dass in jedem Schritt etwas
+   Erkennbares dazukommt:
+
+     1  Boden und Pfosten
+     2  Querbalken, Strebe und Seil
+     3  der Kopf mit dem frechen Gesicht aus Markus' Vorlage
+     4  Koerper und Arme
+     5  Beine
+================================================================== */
+const HANGMAN_FARBE = "#ef624a";     // aus Markus' Zeichnung ausgelesen
+
+function hangmanSvg(stufe){
+  const s = Math.max(0, Math.min(5, stufe | 0));
+  const an = n => s >= n ? "" : ' opacity="0"';
+  return `
+  <svg class="hm-bild" viewBox="0 0 200 230" role="img"
+       aria-label="Galgenmännchen, ${s} von 5 Teilen gezeichnet">
+    <defs>
+      <filter id="hm-kritzel" x="-12%" y="-12%" width="124%" height="124%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="rauschen"/>
+        <feDisplacementMap in="SourceGraphic" in2="rauschen" scale="2.6"
+                           xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+    <g filter="url(#hm-kritzel)" fill="none" stroke="${HANGMAN_FARBE}"
+       stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+      <g${an(1)}>
+        <path d="M18 212 q26 -6 44 -2 q20 4 60 2"/>
+        <path d="M62 210 L62 24"/>
+      </g>
+      <g${an(2)}>
+        <path d="M62 24 L146 22"/>
+        <path d="M62 52 L88 26"/>
+        <path d="M146 22 L146 46"/>
+        <path d="M146 46 q-7 5 0 9 q7 4 0 9 q-7 5 0 9"/>
+      </g>
+      <g${an(3)}>
+        <rect x="120" y="73" width="52" height="46" rx="2"/>
+        <path d="M132 90 q5 -6 10 0"/>
+        <path d="M152 90 q5 -6 10 0"/>
+        <path d="M138 103 q9 7 18 0"/>
+        <path d="M146 104 q-3 9 4 9 q5 0 3 -8"/>
+      </g>
+      <g${an(4)}>
+        <rect x="126" y="126" width="40" height="58" rx="2"/>
+        <rect x="100" y="128" width="20" height="46" rx="2"/>
+        <rect x="172" y="128" width="20" height="46" rx="2"/>
+      </g>
+      <g${an(5)}>
+        <rect x="128" y="186" width="17" height="42" rx="2"/>
+        <rect x="150" y="186" width="17" height="42" rx="2"/>
+      </g>
+    </g>
+  </svg>`;
+}
+
+
+/* ==================================================================
+   HANGMAN - DAS SPIEL
+
+   Die Richtung ist hier FEST auf Deutsch -> Englisch. Andersherum
+   gaebe es nichts zu raten, was mit Englischlernen zu tun haette:
+   die deutschen Buchstaben kennt das Kind ohnehin.
+================================================================== */
+const HANGMAN_LEBEN   = 5;    // Markus' Zahl - nachgerechnet die richtige
+const HANGMAN_MUENZEN = 5;    // fuer ein geloestes Wort
+const HANGMAN_ABC     = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+/* Welche Woerter taugen? Gezaehlt: 353 von 448. Mehrwortwendungen und
+   alles mit Satzzeichen bleiben draussen - ein Galgenmaennchen mit
+   "Excuse me, how do I get to the station?" waere keine Uebung,
+   sondern eine Strafarbeit. */
+function hangmanTauglich(w){
+  const e = cleanEn((w && w.en) || "");
+  return /^[A-Za-z][A-Za-z'-]*$/.test(e) && e.length >= 3 && e.length <= 12;
+}
+
+function hangmanWort(){
+  return cleanEn((currentWord() || {}).en || "").toUpperCase();
+}
+
+function hangmanGeraten(){
+  if(!Array.isArray(state.hmGeraten)) state.hmGeraten = [];
+  return state.hmGeraten;
+}
+
+/* Alle Buchstaben gefunden? Nur Buchstaben zaehlen - Bindestrich und
+   Apostroph stehen von Anfang an da. */
+function hangmanGeloest(){
+  const w = hangmanWort();
+  const g = hangmanGeraten();
+  return w.length > 0 && w.split("").every(c => !/[A-Z]/.test(c) || g.indexOf(c) >= 0);
+}
+
+function hangmanNeuesWort(){
+  state.hmGeraten = [];
+  state.hmFehler  = 0;
+  state.hmFertig  = null;
+}
+
+function renderHangman(){
+  const word = currentWord();
+  if(!word){ endSession("finished"); return; }
+  const wort   = hangmanWort();
+  const g      = hangmanGeraten();
+  const fehler = state.hmFehler || 0;
+  const fertig = state.hmFertig;          // null | "gewonnen" | "verloren"
+  const total  = state.queue.length;
+
+  const felder = wort.split("").map(c=>{
+    if(!/[A-Z]/.test(c)) return `<span class="hm-feld strich">${escapeHtml(c)}</span>`;
+    const da = g.indexOf(c) >= 0;
+    if(da) return `<span class="hm-feld">${c}</span>`;
+    // Verloren? Dann die fehlenden Buchstaben zeigen, aber in Rot -
+    // sonst geht das Kind ohne die Antwort aus der Runde.
+    if(fertig === "verloren") return `<span class="hm-feld spaet">${c}</span>`;
+    return `<span class="hm-feld frei"></span>`;
+  }).join("");
+
+  app.innerHTML = `
+    ${renderHeader(state.category, true)}
+    ${topBarHtml("cancel-btn")}
+    <div class="hud">
+      <span class="score-badge">📖 ${state.currentIndex + 1}/${total}</span>
+      ${muenzBadge(state.sessionCoins)}
+      <span class="score-badge">🔥 ${state.streak}</span>
+    </div>
+
+    <div class="panel">
+      <span class="hm-eyebrow">SCHREIB DAS ENGLISCHE WORT</span>
+      <p class="hm-deutsch">${escapeHtml(word.de)}</p>
+      ${hangmanSvg(fehler)}
+      <p class="hm-leben">${fertig
+        ? (fertig === "gewonnen"
+            ? "🎉 Geschafft &ndash; <strong>+" + HANGMAN_MUENZEN + "</strong> Münzen!"
+            : "Diesmal nicht. Das Wort steht jetzt da.")
+        : ("Noch <strong>" + (HANGMAN_LEBEN - fehler) + "</strong> von "
+           + HANGMAN_LEBEN + " Versuchen")}</p>
+
+      <div class="hm-wort">${felder}</div>
+
+      ${fertig ? `
+        <p class="hm-loesung">${escapeHtml(cleanEn(word.en))}
+          <small>${escapeHtml(word.de)}</small></p>
+        <button class="btn" id="hm-weiter" style="margin-top:12px;">
+          ${state.currentIndex + 1 >= total ? "🏁 RUNDE BEENDEN" : "▶ NÄCHSTES WORT"}
+        </button>`
+      : `
+        <div class="hm-tasten">
+          ${HANGMAN_ABC.map(b=>{
+            const schon = g.indexOf(b) >= 0;
+            const treffer = schon && wort.indexOf(b) >= 0;
+            return `<button type="button" class="hm-taste ${schon ? (treffer ? "treffer" : "daneben") : ""}"
+                      data-hm="${b}"${schon ? " disabled" : ""}>${b}</button>`;
+          }).join("")}
+        </div>`}
+    </div>
+  `;
+
+  document.querySelectorAll('[data-hm]').forEach(el=>{
+    el.addEventListener('click', ()=>hangmanRaten(el.dataset.hm));
+  });
+  const w = document.getElementById('hm-weiter');
+  if(w){ w.addEventListener('click', hangmanWeiter); }
+  const ab = document.getElementById('cancel-btn');
+  if(ab){ ab.addEventListener('click', ()=>{
+    showConfirmModal('Runde abbrechen und zum Menü zurückkehren?', ()=>{ endSession("abgebrochen"); });
+  }); }
+}
+
+/* Auch ueber die richtige Tastatur - am Rechner tippt man lieber, als
+   26 Knoepfe zu suchen. Markus schrieb "eingetippter Buchstabe"; auf
+   dem Telefon ist die Knopfreihe der einzige brauchbare Weg, am
+   Rechner die Tastatur der schnellere. Also beides. */
+function hangmanTastatur(e){
+  if(state.screen !== "quiz" || state.mode !== "hangman") return;
+  if(e.metaKey || e.ctrlKey || e.altKey) return;
+  const b = String(e.key || "").toUpperCase();
+  if(state.hmFertig){
+    if(e.key === "Enter"){ e.preventDefault(); hangmanWeiter(); }
+    return;
+  }
+  if(/^[A-Z]$/.test(b)){ e.preventDefault(); hangmanRaten(b); }
+}
+
+function hangmanRaten(buchstabe){
+  if(state.hmFertig) return;
+  const b = String(buchstabe || "").toUpperCase();
+  if(!/^[A-Z]$/.test(b)) return;
+  const g = hangmanGeraten();
+  if(g.indexOf(b) >= 0) return;          // schon dran gewesen
+  g.push(b);
+
+  const word = currentWord();
+  const wort = hangmanWort();
+
+  if(wort.indexOf(b) >= 0){
+    if(hangmanGeloest()){
+      state.hmFertig = "gewonnen";
+      state.sessionCoins += HANGMAN_MUENZEN;
+      state.streak += 1;
+      state.bestStreak = Math.max(state.bestStreak, state.streak);
+      state.sessionLog.push({ prompt: word.de, correct: cleanEn(word.en),
+                              result: "correct", word: word });
+      wortGelernt(word, "correct");
+      showGoodToast('<span class="item-pop">🎉</span> Geschafft! +' + HANGMAN_MUENZEN + ' Münzen.');
+    }
+  } else {
+    state.hmFehler = (state.hmFehler || 0) + 1;
+    if(state.hmFehler >= HANGMAN_LEBEN){
+      state.hmFertig = "verloren";
+      state.streak = 0;
+      state.sessionLog.push({ prompt: word.de, correct: cleanEn(word.en),
+                              result: "wrong", userInput: g.join(""), word: word });
+      wortGelernt(word, "wrong");
+    }
+  }
+  render();
+}
+
+function hangmanWeiter(){
+  state.currentIndex++;
+  hangmanNeuesWort();
+  if(state.currentIndex >= state.queue.length){ endSession("finished"); return; }
+  render();
+}
+
+
 function renderQuiz(){
   if(state.mode === "flood" || state.mode === "floodhard") return renderVocabFlood();
   if(state.mode === "challenge"){ return renderChallengeQuiz(); }
+  if(state.mode === "hangman"){ return renderHangman(); }
 
   const word = currentWord();
   const ans = getAnswerData(word);
@@ -14377,6 +14704,7 @@ function startMistakeReview(){
   state.streak = 0;
   state.bestStreak = 0;
   state.sessionLog = [];
+  hangmanNeuesWort();
   if(state.mode === "challenge"){
     state.challengeMaxHP = Math.max(1, state.queue.length);
     state.challengePlayerHP = state.challengeMaxHP;
@@ -21433,6 +21761,11 @@ if(!HINTERGRUND_BLATT){
   if(blatt){ blatt.style.background = "none"; blatt.style.boxShadow = "none";
              blatt.style.padding = "0"; blatt.style.minHeight = "0"; }
 }
+
+/* Hangman laesst sich auch ueber die echte Tastatur spielen. Der
+   Zuhoerer haengt am Fenster und prueft selbst, ob er gerade zustaendig
+   ist - so gibt es keine Verdrahtung, die beim Neuzeichnen verlorengeht. */
+try{ window.addEventListener("keydown", hangmanTastatur); }catch(e){}
 
 preloadAvatarImages();
 if(!checkForParentConfirmLink()){
