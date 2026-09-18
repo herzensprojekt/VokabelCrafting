@@ -3767,7 +3767,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "92.0 – Hangman";
+const APP_VERSION = "92.1 – Spielnamen aus einer Liste";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -9912,6 +9912,33 @@ function shuffle(arr){
    mit 20/12 zu knapp: Ein Tag, der 15 Minuten verspricht, lieferte
    gemessene 4. Ein Plan, der weniger haelt als er ankuendigt, ist
    genauso falsch wie einer, der ermuedet. */
+/* WIE EINE SPIELART HEISST - EINMAL, FUER ALLE.
+
+   Bis v92.0 stand das doppelt: einmal in renderUebenVokabeln fuer die
+   Leiste unten, einmal in startGame fuer "zuletzt geuebt". Als Hangman
+   dazukam, habe ich die eine gepflegt und die andere uebersehen - und
+   weil dort "|| Multiple Choice" als Rueckfall steht, zeigte die App
+   nicht etwa nichts an, sondern etwas Falsches.
+
+   Beim Aufraeumen kamen zwei weitere Luecken zum Vorschein, beide
+   aelter als Hangman: "wackel" und "wiederholen" standen dort ebenfalls
+   als Multiple Choice. Genau dafuer taugen zwei Listen nicht.
+
+   Die Kurzform fuer Lingoras Plankette steht bewusst weiter getrennt in
+   LINGORA_KURZ - dort sind die Woerter kuerzer ("Auswahl" statt
+   "Multiple Choice"), weil sie in eine Zeile mit Pfeilen passen. */
+const SPIEL_NAMEN = {
+  faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
+  mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
+  floodhard:"Flutungsraum", aussprache:"Aussprache",
+  wackel:"Nur die Wackler", wiederholen:"Auffrischen", hangman:"Hangman"
+};
+const SPIEL_ICONS = {
+  faellig:"⏰", mc:"🎯", type:"✍️", mix:"🎲", challenge:"⚡",
+  flood:"🌊", floodhard:"🌊", aussprache:"🎤",
+  wackel:"🩹", wiederholen:"🔁", hangman:"✏️"
+};
+
 const RUNDE_UMFANG = {
   mc: 30, faellig: 30, mix: 25, type: 20,
   flood: 25, floodhard: 25, wackel: 15, aussprache: 12,
@@ -12726,11 +12753,8 @@ function renderUebenVokabeln(){
   const wahl   = wahlListe();
   const klassen = klassenVorhanden();
 
-  const spielNamen = {faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
-                      mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
-                      floodhard:"Flutungsraum", aussprache:"Aussprache"};
-  const spielIcons = {faellig:"⏰", mc:"🎯", type:"✍️", mix:"🎲", challenge:"⚡",
-                      flood:"🌊", floodhard:"🌊", aussprache:"🎤"};
+  const spielNamen = SPIEL_NAMEN;
+  const spielIcons = SPIEL_ICONS;
 
   /* Was steht im Startknopf? Immer die Zahl, die auch wirklich geuebt
      wird - sonst verspricht der Knopf etwas anderes, als er tut. */
@@ -12829,7 +12853,10 @@ function renderUebenVokabeln(){
         <span class="sl-art-ic">${spielIcons[state.mode] || "🎯"}</span>
         <span class="sl-art-txt">
           <span class="sl-art-l">Spiel ändern ▾</span>
-          <span class="sl-art-w">${spielNamen[state.mode] || "Multiple Choice"}</span>
+          <!-- Rueckfall bewusst NICHT "Multiple Choice": ein fehlender
+               Eintrag soll auffallen, nicht wie eine richtige Antwort
+               aussehen. Genau daran lag Markus' Fund. -->
+          <span class="sl-art-w">${spielNamen[state.mode] || "Üben"}</span>
         </span>
       </button>
       <button type="button" class="btn sl-start" id="start-btn">
@@ -13529,12 +13556,8 @@ function startGame(){
   resetFlood(state.mode === "floodhard");
   state.playerName = (state.playerName||"").trim() || "Spieler";
   if(state.mainMode !== "grammar"){
-    const namen = {faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
-                   mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
-                   floodhard:"Flutungsraum", aussprache:"Aussprache",
-                   wackel:"Wackelkandidaten", hangman:"Hangman"};
     zuletztMerken({bereich:"vocab", mode:state.mode, category:state.category,
-                   titel:(namen[state.mode] || "Üben")});
+                   titel:(SPIEL_NAMEN[state.mode] || "Üben")});
   }
   saveProgress();
   attemptCloudLogin();
