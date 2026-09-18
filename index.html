@@ -1921,14 +1921,30 @@
 .hm-leben{ text-align:center; font-size:13px; color:var(--tinte-hell); margin:0 0 8px; }
 
 /* Die Luecken. Ein Unterstrich je Buchstabe, Bindestriche bleiben
-   sichtbar - sonst raet ein Kind an der falschen Stelle. */
+   sichtbar - sonst raet ein Kind an der falschen Stelle.
+
+   IMMER EINE ZEILE. Zwoelf Felder zu 30 px mit 6 px Fuge waeren
+   426 px; auf einem 390er Telefon stehen innen 324 px zur Verfuegung,
+   auf einem 320er nur 254. Feste Breiten muessen da umbrechen. Also
+   schrumpfen Felder UND Schrift mit der Wortlaenge.
+
+   Die Zahlen kommen aus hangmanFelderMessen() - dort wird die
+   tatsaechliche Breite gemessen, nicht aus vw und Raendern gerechnet.
+   Was hier steht, ist nur der Rueckfall fuer den Fall, dass das
+   Messen ausfaellt: die alten 30 px, also genau das heutige Bild fuer
+   kurze Woerter. */
 .hm-wort{
-  display:flex; flex-wrap:wrap; justify-content:center; gap:6px;
-  margin:10px 0 4px; min-height:40px;
+  display:flex; flex-wrap:nowrap; justify-content:center;
+  gap:var(--hm-fuge, 6px); margin:10px 0 4px; min-height:40px;
 }
 .hm-feld{
-  width:30px; height:38px; display:flex; align-items:flex-end; justify-content:center;
-  font-family:var(--font); font-weight:800; font-size:24px; color:var(--tinte);
+  flex:0 0 auto;
+  width:var(--hm-feld, 30px);
+  height:calc(var(--hm-feld, 30px) * 1.27);
+  display:flex; align-items:flex-end; justify-content:center;
+  font-family:var(--font); font-weight:800;
+  font-size:max(13px, calc(var(--hm-feld, 30px) * 0.8));
+  color:var(--tinte);
   border-bottom:3px solid rgba(120,100,70,0.45);
 }
 .hm-feld.frei{ border-bottom-color:rgba(120,100,70,0.22); }
@@ -1956,6 +1972,54 @@
 .hm-taste.treffer{ background:#e4f3e2; border-color:#7bb36e; color:#1e5c28; }
 .hm-taste.daneben{ background:#f6e4e0; border-color:#d9a99f; color:#8a3323; }
 .hm-taste:disabled{ cursor:default; opacity:1; }
+
+/* ---------- Der Jubelsprung ----------------------------------------
+   Bewegt wird die innere Gruppe, nicht das ganze Bild: der Boden
+   muss liegen bleiben, sonst sieht man keinen Sprung, sondern ein
+   wackelndes Blatt. transform-box:fill-box gibt der Gruppe ihren
+   eigenen Bezugsrahmen, transform-origin unten die Fuesse - nur so
+   staucht das Maennchen bei der Landung nach unten und nicht um
+   seine Mitte.
+
+   Zeitplan (2 s): Ausholen, hoch, Landung, kleiner Nachhopser, dann
+   0,5 s Ruhe. Ohne die Ruhepause flackert es neben dem Weiter-Knopf.
+
+   overflow:visible, weil der Sprung oben aus dem Bildfeld ragt: im
+   hoechsten Punkt steht das Maennchen 5,8 px ueber dem SVG-Rahmen -
+   gemessen, nicht vermutet. Ohne overflow:visible waeren ihm dort die
+   Haende abgeschnitten.
+
+   Und 14 px Luft nach oben, weil der Sprung 17 px hoch ist: mit den
+   6 px von .hm-bild blieben zwischen den Haenden und dem deutschen
+   Wort darueber 0,2 px. Jetzt sind es 8,2 px. Zwei Klassen im
+   Selektor, damit die Reihenfolge im Stylesheet egal ist - an genau
+   dieser Stelle bin ich in dieser App schon dreimal hereingefallen. */
+.hm-bild.hm-jubel{ overflow:visible; margin-top:14px; }
+.hm-jubel .hm-huepfer{
+  transform-box:fill-box; transform-origin:50% 100%;
+  animation:hm-huepf 2s cubic-bezier(.32,.72,.36,1) infinite;
+}
+.hm-jubel .hm-funken{ opacity:0; animation:hm-funkeln 2s linear infinite; }
+@keyframes hm-huepf{
+  0%      { transform:translateY(0)     scale(1,1); }
+  7%      { transform:translateY(3px)   scale(1.07,0.9); }
+  24%     { transform:translateY(-26px) scale(0.96,1.06); }
+  41%     { transform:translateY(0)     scale(1.06,0.92); }
+  53%     { transform:translateY(-11px) scale(0.98,1.03); }
+  66%     { transform:translateY(0)     scale(1.03,0.97); }
+  74%,100%{ transform:translateY(0)     scale(1,1); }
+}
+@keyframes hm-funkeln{
+  0%,10%  { opacity:0; }
+  20%,44% { opacity:0.95; }
+  58%,100%{ opacity:0; }
+}
+/* Wer Bewegung abgestellt hat, bekommt trotzdem das freie, lachende
+   Maennchen - nur eben stehend. */
+@media (prefers-reduced-motion: reduce){
+  .hm-jubel .hm-huepfer{ animation:none; }
+  .hm-jubel .hm-funken { animation:none; opacity:0.95; }
+}
 
 .hm-loesung{
   text-align:center; font-family:var(--font); font-weight:800;
@@ -3767,7 +3831,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "92.1 – Spielnamen aus einer Liste";
+const APP_VERSION = "92.2 – Jubelsprung";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -13857,6 +13921,69 @@ function hangmanSvg(stufe){
 
 
 /* ==================================================================
+   HANGMAN - DER JUBELSPRUNG
+
+   Eine EIGENE Zeichnung, nicht die letzte Stufe des Galgens. Denn wer
+   fehlerfrei loest, hat vom Galgenmaennchen nie etwas gesehen - dort
+   entsteht ja erst aus Fehlern ein Bild. Waere der Jubel die fuenfte
+   Stufe, bekaeme das beste Kind die kleinste Belohnung.
+
+   Darum steht es hier frei in der Mitte: kein Pfosten, kein Balken,
+   kein Seil. Das ist die Aufloesung des Spiels - es ist davongekommen.
+   Arme im V, breites Lachen, Beine leicht gegraetscht wie mitten im
+   Sprung, und vier Freudenstriche links und rechts neben dem Kopf.
+
+   Die Geometrie ist gerechnet, nicht geschaetzt: Der Koerper steht
+   mittig um x = 100, die Arme sind 58 lang und um 20 Grad aus der
+   Senkrechten gedreht, so dass die Haende bei y = 62 stehen - knapp
+   ueber dem Kopfdach bei y = 58. Das liest sich als "Arme hoch" und
+   nicht als "Arme seitlich".
+================================================================== */
+function hangmanJubelSvg(){
+  return `
+  <svg class="hm-bild hm-jubel" viewBox="0 0 200 230" role="img"
+       aria-label="Geschafft! Das Männchen ist frei und hüpft vor Freude in die Luft.">
+    <defs>
+      <filter id="hm-kritzel-jubel" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="rauschen"/>
+        <feDisplacementMap in="SourceGraphic" in2="rauschen" scale="2.6"
+                           xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+    <g filter="url(#hm-kritzel-jubel)" fill="none" stroke="${HANGMAN_FARBE}"
+       stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+
+      <!-- Der Boden bleibt liegen. Er ist der Bezugspunkt, an dem man
+           ueberhaupt erkennt, dass da einer abhebt. -->
+      <path d="M40 216 q30 -5 52 -2 q24 3 68 1"/>
+
+      <g class="hm-huepfer">
+        <g class="hm-funken" stroke-width="4">
+          <path d="M30 60 L17 50"/>
+          <path d="M38 42 L32 28"/>
+          <path d="M170 60 L183 50"/>
+          <path d="M162 42 L168 28"/>
+        </g>
+
+        <rect x="62"  y="60" width="20" height="58" rx="2" transform="rotate(-20 78 118)"/>
+        <rect x="118" y="60" width="20" height="58" rx="2" transform="rotate(20 122 118)"/>
+
+        <rect x="74" y="58" width="52" height="46" rx="2"/>
+        <path d="M86 75 q5 -6 10 0"/>
+        <path d="M106 75 q5 -6 10 0"/>
+        <path d="M88 86 q12 14 24 0"/>
+
+        <rect x="80" y="111" width="40" height="58" rx="2"/>
+
+        <rect x="82"  y="169" width="17" height="40" rx="2" transform="rotate(14 90 172)"/>
+        <rect x="101" y="169" width="17" height="40" rx="2" transform="rotate(-14 109 172)"/>
+      </g>
+    </g>
+  </svg>`;
+}
+
+
+/* ==================================================================
    HANGMAN - DAS SPIEL
 
    Die Richtung ist hier FEST auf Deutsch -> Englisch. Andersherum
@@ -13930,7 +14057,7 @@ function renderHangman(){
     <div class="panel">
       <span class="hm-eyebrow">SCHREIB DAS ENGLISCHE WORT</span>
       <p class="hm-deutsch">${escapeHtml(word.de)}</p>
-      ${hangmanSvg(fehler)}
+      ${fertig === "gewonnen" ? hangmanJubelSvg() : hangmanSvg(fehler)}
       <p class="hm-leben">${fertig
         ? (fertig === "gewonnen"
             ? "🎉 Geschafft &ndash; <strong>+" + HANGMAN_MUENZEN + "</strong> Münzen!"
@@ -13938,7 +14065,7 @@ function renderHangman(){
         : ("Noch <strong>" + (HANGMAN_LEBEN - fehler) + "</strong> von "
            + HANGMAN_LEBEN + " Versuchen")}</p>
 
-      <div class="hm-wort">${felder}</div>
+      <div class="hm-wort" data-hm-n="${wort.length}">${felder}</div>
 
       ${fertig ? `
         <p class="hm-loesung">${escapeHtml(cleanEn(word.en))}
@@ -13961,6 +14088,7 @@ function renderHangman(){
   document.querySelectorAll('[data-hm]').forEach(el=>{
     el.addEventListener('click', ()=>hangmanRaten(el.dataset.hm));
   });
+  hangmanFelderMessen();
   const w = document.getElementById('hm-weiter');
   if(w){ w.addEventListener('click', hangmanWeiter); }
   const ab = document.getElementById('cancel-btn');
@@ -14017,6 +14145,27 @@ function hangmanRaten(buchstabe){
     }
   }
   render();
+}
+
+/* Wie breit darf ein Feld sein, damit alle nebeneinander passen?
+
+   GEMESSEN, NICHT GERECHNET. Die Alternative waere eine Formel aus
+   100vw minus Aussenrand minus Innenrand minus Linienbreite gewesen -
+   also drei abgeschriebene Zahlen, die beim naechsten Umbau still
+   falsch werden. clientWidth kann das nicht passieren.
+
+   Der Rueckfall nach oben sind die alten 30 px: Bei kurzen Woertern
+   sieht die Reihe damit genau aus wie bisher. */
+function hangmanFelderMessen(){
+  const reihe = document.querySelector('.hm-wort');
+  if(!reihe) return;
+  const n = Number(reihe.dataset.hmN) || 1;
+  const platz = reihe.clientWidth;
+  if(!platz) return;                       // noch nicht im Bild
+  const fuge = Math.max(2, Math.min(6, Math.floor(platz / n * 0.2)));
+  const feld = Math.max(12, Math.min(30, Math.floor((platz - fuge * (n - 1)) / n)));
+  reihe.style.setProperty('--hm-fuge', fuge + 'px');
+  reihe.style.setProperty('--hm-feld', feld + 'px');
 }
 
 function hangmanWeiter(){
@@ -21789,6 +21938,10 @@ if(!HINTERGRUND_BLATT){
    Zuhoerer haengt am Fenster und prueft selbst, ob er gerade zustaendig
    ist - so gibt es keine Verdrahtung, die beim Neuzeichnen verlorengeht. */
 try{ window.addEventListener("keydown", hangmanTastatur); }catch(e){}
+
+/* Quer- statt Hochformat aendert die Breite. Ohne das bliebe die
+   Reihe in der Breite von vorhin stehen - zu schmal oder zu breit. */
+try{ window.addEventListener("resize", hangmanFelderMessen); }catch(e){}
 
 preloadAvatarImages();
 if(!checkForParentConfirmLink()){
