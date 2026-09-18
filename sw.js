@@ -47,7 +47,8 @@
    Groesse) und logo.png durch vorschau.png ersetzt. Wieder gleiche
    Dateinamen, also wieder ein neuer Speichername - sonst kaeme beim
    ersten Oeffnen noch die Fassung von v90.3. */
-const CACHE = "lingocrafter-v5";
+/* v6: zweiter Satz Symbole, wieder unter denselben Dateinamen. */
+const CACHE = "lingocrafter-v6";
 const MITNEHMEN = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./lingora.webp"];
 
 /* Holt etwas unter Umgehung des HTTP-Zwischenspeichers. Faellt auf den
