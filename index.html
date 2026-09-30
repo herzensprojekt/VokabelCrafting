@@ -2057,6 +2057,17 @@
   text-align:center; font-size:12.5px; color:var(--tinte-hell); margin:8px 0 0;
 }
 
+/* "12 Karten aus Unit 3" - die Zeile ueber dem Startknopf. Sie ist
+   die einzige Rueckmeldung darauf, dass ein Antippen im Gitter
+   angekommen ist, also darf sie nicht klein und grau sein. */
+.vk-stapel{
+  text-align:center; font-size:15.5px; color:var(--tinte); margin:2px 0 12px;
+}
+.vk-stapel strong{ font-weight:800; }
+.vk-stapel small{
+  display:block; font-size:12.5px; color:var(--tinte-hell); margin-top:3px;
+}
+
 /* Der Zwischenbildschirm nach je zehn Karten */
 .vk-bilanz{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0 4px; }
 .vk-zahl{
@@ -4021,7 +4032,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "92.5 – Offline";
+const APP_VERSION = "92.6 – Karten: Liste wählen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -11783,6 +11794,7 @@ function render(){
   if(state.screen==="uebenvokabeln") return renderUebenVokabeln();
   if(state.screen==="uebengrammatik") return renderUebenGrammatik();
   if(state.screen==="spielart") return renderSpielart();
+  if(state.screen==="kartenwahl") return renderKartenWahl();
   if(state.screen==="eltern") return renderEltern();
   if(state.screen==="quiz") return renderQuiz();
   if(state.screen==="milestone") return renderMilestone();
@@ -13744,15 +13756,21 @@ function startVerdrahten(){
     state.screen = "uebenvokabeln"; render();
   });
   zu('hw-grammatik', ()=>{ state.screen = "uebengrammatik"; render(); });
-  /* Die Karten gehen sofort los, ohne den Umweg ueber die Paketwahl -
-     Markus wollte sie "zusaetzlich immer" verfuegbar haben. Ohne
-     Auswahl heisst: alle Woerter, dringendste zuerst. */
+  /* Erst fragen, WELCHE Woerter. Vorher ging es sofort mit "Alle" los -
+     und wer fuer einen Vokabeltest genau seine Liste ueben wollte,
+     stand vor 448 Karten.
+
+     Die letzte Auswahl bleibt stehen; nur einzeln angetippte Woerter
+     ("✓ Meine Auswahl") faellt auf "Alle" zurueck. Die sind fluechtig
+     gemeint, und ein Stapel aus sieben Woertern von vorletzter Woche
+     waere ein Raetsel statt einer Auswahl. */
   zu('karten-btn', ()=>{
     state.mainMode = "vocab";
-    state.offenesPaket = ""; state.wahl = []; state.category = "Alle";
-    state.spielZurueck = "start";
-    state.mode = "karten";
-    startGame();
+    state.offenesPaket = "";
+    if(state.category === AUSWAHL_ZEICHEN){ state.wahl = []; state.category = "Alle"; }
+    state.paketSuche = "";
+    state.screen = "kartenwahl";
+    render();
   });
   // Den Zurueck-Knopf gibt es nur auf den drei Uebungsbildschirmen.
   zu('eltern-btn',   ()=>{ state.screen = "eltern";         render(); });
@@ -14675,6 +14693,55 @@ function kartenWoerter(schluessel){
   const map = {};
   (state.queue || []).forEach(w => { map[wortSchluessel(w)] = w; });
   return schluessel.map(k => map[k]).filter(Boolean);
+}
+
+/* Welche Woerter kommen auf die Karten?
+
+   Gebaut aus den Bausteinen, die es schon gibt: paketAuswahlHtml()
+   zeichnet Klassenreiter, Suchfeld, eigene Listen, "Alle Woerter" und
+   die Pakete; paketAuswahlVerdrahten() haengt die Klicks daran und
+   setzt state.category. Einen zweiten Auswaehler danebenzustellen
+   waere genau die doppelte Liste, die mir bei den Spielnamen schon
+   einmal auf die Fuesse gefallen ist. */
+function kartenAuswahlName(){
+  const c = state.category || "Alle";
+  if(c === "Alle") return "Alle Wörter";
+  if(c === AUSWAHL_ZEICHEN) return "deine angetippten Wörter";
+  return c.replace(LISTEN_ZEICHEN, "");
+}
+
+function renderKartenWahl(){
+  const vorrat = woerterFuerAuswahl();
+  const bloecke = Math.ceil(vorrat.length / KARTEN_BLOCK);
+
+  app.innerHTML = `
+    ${renderHeader("Vokabelkarten", true)}
+
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:2px;">WELCHE WÖRTER?</h3>
+      <p class="muted" style="margin-bottom:8px;">Such dir eine Liste oder ein Paket aus &ndash;
+        die Karten kommen dann genau daraus.</p>
+      ${paketAuswahlHtml()}
+    </div>
+
+    <div class="panel">
+      <p class="vk-stapel">🗂️ <strong>${vorrat.length}</strong> Karten aus
+        <strong>${escapeHtml(kartenAuswahlName())}</strong>
+        <small>${bloecke === 1 ? "ein Zehnerblock" : bloecke + " Zehnerblöcke – du kannst nach jedem aufhören"}</small></p>
+      <button class="btn" id="vkw-los" style="font-size:18px;padding:16px;">🗂️ KARTEN LEGEN</button>
+      <button class="btn secondary" id="vkw-zurueck" style="margin-top:8px;">Zurück</button>
+    </div>
+  `;
+  paketAuswahlVerdrahten();
+  document.getElementById('vkw-los').addEventListener('click', ()=>{
+    state.spielZurueck = "kartenwahl";   // nach der Runde wieder hierher
+    state.mode = "karten";
+    saveProgress();
+    startGame();
+  });
+  document.getElementById('vkw-zurueck').addEventListener('click', ()=>{
+    state.screen = "start"; render();
+  });
 }
 
 function renderKartenSpiel(){
