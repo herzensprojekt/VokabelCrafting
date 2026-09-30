@@ -3140,6 +3140,30 @@ summary.mehr-knopf::after{ content:none; }
 }
 .pk-kachel.eigene{ background:#fffdf4; border-color:#ecdfae; }
 .pk-kachel.eigene.aktiv{ border-color:#4db55c; }
+
+/* Die zuletzt angelegte oder hochgeladene Liste.
+
+   IN OCKER, NICHT IN GRUEN: Gruen ist in diesem Gitter schon vergeben -
+   die AUSGEWAEHLTE Kachel traegt gruenen Rand und gruenen Schein.
+   Zweimal Gruen auf einem Bildschirm hiesse zwei Dinge mit derselben
+   Farbe. Faellt beides zusammen, gewinnt die Auswahl den Rahmen
+   (.aktiv steht spaeter und hat mit zwei Klassen dieselbe Staerke) -
+   und das Sternchen im Symbol bleibt trotzdem stehen.
+
+   #a86d08 ist gemessen, nicht gegriffen: 4,14:1 gegen die eigene
+   Fuellung und 3,24:1 gegen den blassgoldenen Rand, den alle eigenen
+   Listen ohnehin tragen. Die erste Wahl (#e0b43f) lag bei 1,87 und
+   1,46 - man sah sie schlicht nicht.
+
+   KEIN SCHILD "NEU" DANEBEN. Das stand im ersten Entwurf da und
+   kostete gemessen 45 von 81 Pixeln Namensbreite: Aus "Vokabeltest
+   Freitag" wurde "Vo... Frei...". Die zweite, nicht farbige Spur ist
+   deshalb das Symbol - Funkeln statt Stern. */
+.pk-kachel.frisch{
+  border-color:#a86d08;
+  background:linear-gradient(180deg,#fffaea 0%, #fffdf4 70%);
+  box-shadow:0 0 0 2px rgba(168,109,8,0.16);
+}
 .pk-kachel.dazu{ background:#f3f6fb; border-color:#dbe3ef; }
 .pk-ic{ font-size:19px; flex:0 0 auto; }
 .pk-n{ flex:1; min-width:0; font-weight:800; font-size:13.5px; color:var(--tinte);
@@ -4052,7 +4076,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "92.7 – Symbol für die Vokabelkarten";
+const APP_VERSION = "92.8 – Letzte Liste vorgewählt, neueste markiert";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -9284,6 +9308,10 @@ const state = {
   kartenKann: [],          // Schluessel der Woerter mit "Kann ich"
   kartenUeben: [],         // Schluessel der Woerter mit "Sitzt noch nicht"
   kartenPhase: "karte",    // "karte" | "pause" | "ende"
+  /* Womit zuletzt Karten gelegt wurden. EIGENES Feld, nicht
+     state.category: die gehoert der ganzen App und wird von Lingora
+     und jedem Planschritt ueberschrieben. */
+  kartenQuelle: "",
   kartenBlockStart: 0,     // bei welcher Karte der laufende Zehner begann
   lingoraPlan: null,          // alt: EIN Plan - wird beim Laden umgezogen
   lingoraPlaene: [],          // alle Plaene, nebeneinander
@@ -13259,9 +13287,7 @@ function renderUebenVokabeln(){
     showPromptModal("Wie soll deine Liste heißen?", "z.B. Vokabeltest Freitag", (name)=>{
       name = (name || "").trim().slice(0, 30);
       if(name.length < 2) return;
-      const vorhanden = listeFinden(name);
-      if(vorhanden) vorhanden.woerter = woerter;
-      else listenAlle().push({ name: name, woerter: woerter });
+      listeSichern(name, woerter);
       saveProgress(); syncToCloud(); render();
     });
   });
@@ -13787,7 +13813,7 @@ function startVerdrahten(){
   zu('karten-btn', ()=>{
     state.mainMode = "vocab";
     state.offenesPaket = "";
-    if(state.category === AUSWAHL_ZEICHEN){ state.wahl = []; state.category = "Alle"; }
+    state.category = kartenQuelleGueltig();
     state.paketSuche = "";
     state.screen = "kartenwahl";
     render();
@@ -14723,6 +14749,25 @@ function kartenWoerter(schluessel){
    setzt state.category. Einen zweiten Auswaehler danebenzustellen
    waere genau die doppelte Liste, die mir bei den Spielnamen schon
    einmal auf die Fuesse gefallen ist. */
+/* Die zuletzt gelegte Quelle - aber nur, wenn es sie noch gibt.
+
+   Eine geloeschte Liste stuende sonst als Auswahl da und die Runde
+   bestuende aus dem Rueckfall "alles" - also aus etwas anderem, als
+   auf dem Bildschirm steht. Und eine einzeln angetippte Wortauswahl
+   ist fluechtig gemeint; die kommt hier nie wieder hoch. */
+function kartenQuelleGueltig(){
+  const q = state.kartenQuelle;
+  if(!q || q === AUSWAHL_ZEICHEN) return "Alle";
+  if(q === "Alle") return "Alle";
+  if(q.indexOf(LISTEN_ZEICHEN) === 0){
+    const l = listeFinden(q.slice(LISTEN_ZEICHEN.length));
+    if(!l || !(l.woerter || []).length) return "Alle";
+  } else if(!woerterVonQuelle(q).length){
+    return "Alle";
+  }
+  return q;
+}
+
 function kartenAuswahlName(){
   const c = state.category || "Alle";
   if(c === "Alle") return "Alle Wörter";
@@ -14755,6 +14800,8 @@ function renderKartenWahl(){
   paketAuswahlVerdrahten();
   document.getElementById('vkw-los').addEventListener('click', ()=>{
     state.spielZurueck = "kartenwahl";   // nach der Runde wieder hierher
+    /* JETZT ist die Wahl getroffen - nicht beim blossen Ansehen. */
+    state.kartenQuelle = state.category || "Alle";
     state.mode = "karten";
     saveProgress();
     startGame();
@@ -19883,7 +19930,7 @@ function listeUebernehmen(paket){
   vokabelCacheLeeren();          // die neuen Woerter sollen sofort zaehlen
   let name = paket.name, n = 2;
   while(listeFinden(name)){ name = paket.name + " (" + n + ")"; n++; }
-  listenAlle().push({ name: name, woerter: schluessel });
+  listeSichern(name, schluessel);     // hochgeladen zaehlt auch als "erstellt"
   saveProgress(); syncToCloud();
   return schluessel.length;
 }
@@ -20149,6 +20196,39 @@ function listeFinden(name){
   return listenAlle().find(l => l.name === name) || null;
 }
 
+/* Eine Liste anlegen oder ueberschreiben - und dabei festhalten, WANN.
+
+   Bis v92.7 standen diese drei Zeilen an fuenf Stellen einzeln:
+   Auswahl merken, Excel-/Foto-Import, Liste bauen, aus dem Wortschatz
+   zusammenstellen, frisch hinzugefuegte Woerter. Fuenfmal dasselbe ist
+   viermal zu viel - und ein Zeitstempel, den man an fuenf Stellen
+   einbauen muss, ist ein Zeitstempel, den die sechste vergisst. */
+function listeSichern(name, woerter){
+  const vorhanden = listeFinden(name);
+  if(vorhanden){
+    vorhanden.woerter = woerter;
+    vorhanden.zuletzt = Date.now();
+    return vorhanden;
+  }
+  const neu = { name: name, woerter: woerter, zuletzt: Date.now() };
+  listenAlle().push(neu);
+  return neu;
+}
+
+/* Welche Liste ist die neueste?
+
+   Listen aus der Zeit vor dem Zeitstempel haben keinen. Fuer die gilt:
+   die zuletzt angelegte steht hinten im Feld - alle fuenf Schreiber
+   haengen neue Listen hinten an. Sobald EINE Liste einen Zeitstempel
+   traegt, entscheidet der; sonst die Reihenfolge. */
+function listeNeueste(){
+  const alle = listenAlle();
+  if(!alle.length) return null;
+  const mit = alle.filter(l => typeof l.zuletzt === "number");
+  if(mit.length) return mit.reduce((a, b) => (b.zuletzt > a.zuletzt ? b : a));
+  return alle[alle.length - 1];
+}
+
 /* Die Woerter einer Quelle: ein Paket, eine eigene Liste oder alles. */
 function woerterVonQuelle(name){
   const alle = getAllVocab();
@@ -20247,6 +20327,10 @@ function paketAuswahlHtml(){
   const pakete  = alle.filter(p => p.name !== CUSTOM_CATEGORY_NAME)
                       .filter(p => !q || suchNormal(p.name).indexOf(q) >= 0);
   const listen  = listenAlle().filter(l => !q || suchNormal(l.name).indexOf(q) >= 0);
+  /* Die zuletzt hochgeladene oder gebaute Liste - die sucht man nach
+     dem Anlegen als erstes, und genau dann steht sie irgendwo
+     zwischen zwanzig Kacheln. */
+  const neueste = listeNeueste();
   const gesamt  = getAllVocab().length;
 
   return `
@@ -20282,9 +20366,9 @@ function paketAuswahlHtml(){
           <span class="pk-z">${eigenes.anzahl}</span>
         </button>` : ""}
       ${listen.map(l=>`
-        <button type="button" class="pk-kachel eigene ${state.category===LISTEN_ZEICHEN+l.name?'aktiv':''}"
+        <button type="button" class="pk-kachel eigene ${state.category===LISTEN_ZEICHEN+l.name?'aktiv':''}${neueste && l.name===neueste.name?' frisch':''}"
                 data-paket="${escapeHtml(LISTEN_ZEICHEN + l.name)}">
-          <span class="pk-ic">⭐</span>
+          <span class="pk-ic">${neueste && l.name === neueste.name ? "✨" : "⭐"}</span>
           <span class="pk-n">${escapeHtml(l.name)}</span>
           <span class="pk-z">${(l.woerter||[]).length}</span>
         </button>`).join("")}
@@ -20465,9 +20549,7 @@ function evListenbauVerdrahten(){
     showPromptModal("Wie soll deine Liste heißen?", "z.B. Vokabeltest Freitag", (name)=>{
       name = (name || "").trim().slice(0, 30);
       if(name.length < 2) return;
-      const vorhanden = listeFinden(name);
-      if(vorhanden) vorhanden.woerter = state.listeBau.slice();
-      else listenAlle().push({ name: name, woerter: state.listeBau.slice() });
+      listeSichern(name, state.listeBau.slice());
       state.category = LISTEN_ZEICHEN + name;
       state.listeBau = [];
       state.evSuche  = "";
@@ -20499,6 +20581,8 @@ function evListenbauVerdrahten(){
            die Auswahl haengt am Namen, nicht an einer Nummer. */
         if(state.category === LISTEN_ZEICHEN + alt) state.category = LISTEN_ZEICHEN + neu;
         if(state.offenesPaket === LISTEN_ZEICHEN + alt) state.offenesPaket = LISTEN_ZEICHEN + neu;
+        /* Auch das Gedaechtnis der Vokabelkarten haengt am Namen. */
+        if(state.kartenQuelle === LISTEN_ZEICHEN + alt) state.kartenQuelle = LISTEN_ZEICHEN + neu;
         /* Der Listenbildschirm merkt sich, welche Liste offen ist -
            auch das haengt am Namen. Ohne diese Zeile stuende man nach
            dem Umbenennen vor einer Liste, die es nicht mehr gibt, und
@@ -20708,9 +20792,7 @@ function renderListe(){
     showPromptModal("Wie soll die neue Liste heißen?", "z.B. Die schweren Wörter", (nm)=>{
       nm = (nm || "").trim().slice(0, 30);
       if(nm.length < 2) return;
-      const vorhanden = listeFinden(nm);
-      if(vorhanden) vorhanden.woerter = gewaehlt;
-      else listenAlle().push({ name: nm, woerter: gewaehlt });
+      listeSichern(nm, gewaehlt);
       state.listeWahl = [];
       saveProgress();
       syncToCloud();
@@ -20737,6 +20819,12 @@ function renderListe(){
         vokabelCacheLeeren();
       } else {
         const ziel = listeFinden(name);
+        /* ABSICHTLICH NICHT ueber listeSichern: Das setzt den
+           Zeitstempel neu, und der bedeutet "zuletzt angelegt oder
+           hochgeladen". Ein Wort aus einer alten Liste zu nehmen
+           macht sie nicht zur neuesten - sonst truege nach dem
+           Aufraeumen einer Liste von Januar plotzlich sie das Schild
+           "neu". */
         if(ziel) ziel.woerter = (ziel.woerter || []).filter(k => gewaehlt.indexOf(k) < 0);
       }
       state.listeWahl = [];
@@ -20887,9 +20975,7 @@ function renderCustomVocab(){
     showPromptModal("Wie soll die Liste heißen?", "z.B. Vokabeln vom Foto", (name)=>{
       name = (name || "").trim().slice(0, 30);
       if(name.length < 2) return;
-      const vorhanden = listeFinden(name);
-      if(vorhanden) vorhanden.woerter = woerter;
-      else listenAlle().push({ name: name, woerter: woerter });
+      listeSichern(name, woerter);
       state.category   = LISTEN_ZEICHEN + name;
       state.frischDazu = [];
       state.evWeg      = "";
