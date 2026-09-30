@@ -61,7 +61,10 @@
    Jetzt steht hier alles drin, was die App zum Anzeigen braucht.
    Nicht dabei: logo.png (wird nirgends mehr aufgerufen) und
    vorschau.png (nur das Bild fuer geteilte Links, nie im Bild). */
-const CACHE = "lingocrafter-v7";
+/* v8: ic-karten.webp ist dazugekommen. Ein neuer Speichername ist
+   der Weg, die Liste von v7 loszuwerden - sonst fehlte das neue
+   Symbol genau denen, die schon offline gespeichert haben. */
+const CACHE = "lingocrafter-v8";
 const MITNEHMEN = [
   "./",
   "./index.html",
@@ -72,6 +75,7 @@ const MITNEHMEN = [
   "./ic-geschenk.webp",
   "./ic-grammatik.webp",
   "./ic-herz.webp",
+  "./ic-karten.webp",
   "./ic-muenzen.webp",
   "./ic-plan.webp",
   "./ic-rangliste.webp",

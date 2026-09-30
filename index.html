@@ -3376,6 +3376,26 @@ summary.mehr-knopf::after{ content:none; }
 .werk-karte.wk-blau{    border-bottom-color:#a9bed1; }
 .werk-karte{ border-bottom-width:4px; }
 
+/* EINE Kachel darf ein bisschen naeher stehen als die anderen sieben.
+   Nicht durch einen Farbklecks - die Regel oben sagt ausdruecklich,
+   dass die Farbe hier nur ein Hauch am unteren Rand sein soll, und
+   dagegen zu arbeiten waere unordentlich. Sondern durch drei kleine
+   Dinge, die zusammen "ein wenig" ergeben:
+
+     der feine Rahmen laeuft RINGSUM statt nur unten
+     das Papier ist ein paar Grad waermer
+     es liegt etwas mehr Hoehe darunter
+
+   Aus zwei Metern sieht man nur, dass eine Kachel ein Stueck weiter
+   vorn steht. Zwei Klassen im Selektor, weil .werk-karte.wk-* auch
+   zwei hat. */
+.werk-karte.wk-karten{
+  border-color:#c3aad8;
+  border-bottom-color:#9a76bd;
+  background:linear-gradient(180deg, rgba(252,249,255,0.98), rgba(244,237,228,0.92));
+  box-shadow:0 4px 14px rgba(84,58,120,0.17);
+}
+
 /* --- Gezeichnete Symbole in den Kacheln ------------------------------
    Sie ersetzen die Emoji. Groesse und Schlagschatten sind von den
    USP-Karten der Anmeldeseite uebernommen - dort wirken sie. */
@@ -4032,7 +4052,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "92.6 – Karten: Liste wählen";
+const APP_VERSION = "92.7 – Symbol für die Vokabelkarten";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -12800,7 +12820,7 @@ function werkzeugGitterHtml(){
     <div class="panel">
       <h3 style="font-size:14px;margin-bottom:2px;opacity:.75;">AUSSERDEM</h3>
       <div class="werk-gitter">
-        ${kachel("karten-btn", "ic-buch", "Vokabelkarten", false, "wk-tuerkis")}
+        ${kachel("karten-btn", "ic-karten", "Vokabelkarten", false, "wk-karten")}
         ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
         ${kachel("custom-vocab-btn", "ic-eigene", "Eigene Vokabeln", !state.cloudId, "wk-gruen")}
         ${kachel("grammar-stats-btn", "ic-skills", "Grammatik-Skills", false, "wk-violett")}
