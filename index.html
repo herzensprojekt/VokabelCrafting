@@ -110,6 +110,11 @@
     --pflaume-a:#ad8fae; --pflaume-b:#6b4c6c;  /* Grammatik */
     --terra-a:#d99263;  --terra-b:#a25c33;    /* Spiele */
     --ocker-a:#ebcb7c;  --ocker-b:#bb8f2e;    /* Muenzen */
+  /* Handschrift fuer die Vokabelkarten. Bewusst nur Schriften, die auf
+     dem Geraet liegen - eine nachgeladene Datei waere ausgerechnet
+     offline nicht da. */
+  --handschrift:"Bradley Hand","Noteworthy","Chalkboard SE","Segoe Print",
+                "Comic Sans MS",cursive;
     /* --- Das linierte Blatt -----------------------------------------
        Die App steht seit v90.5 nicht mehr auf einem Foto, sondern auf
        einem Schulblatt. Die Linien sind CSS-Verlaeufe, kein Bild: null
@@ -1973,6 +1978,120 @@
 .hm-taste.treffer{ background:#e4f3e2; border-color:#7bb36e; color:#1e5c28; }
 .hm-taste.daneben{ background:#f6e4e0; border-color:#d9a99f; color:#8a3323; }
 .hm-taste:disabled{ cursor:default; opacity:1; }
+
+/* ---------- Offline-Streifen --------------------------------------
+   Fuer ein Kind sieht "offline" erst einmal aus wie "kaputt". Also
+   sagt die App es selbst - unten, ruhig, und mit der einzigen
+   Auskunft, die wirklich zaehlt: Ueben geht trotzdem, und nichts
+   geht verloren. */
+.offline-banner{
+  position:fixed; left:10px; right:10px; bottom:10px; z-index:9400;
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; border-radius:14px;
+  background:#f4efe1; border:2px solid #c9b78e; color:#4a3f2c;
+  font-family:var(--font); font-size:13px; line-height:1.35;
+  box-shadow:0 6px 18px rgba(60,48,28,0.22);
+}
+.offline-banner .ob-ic{ font-size:19px; flex:0 0 auto; }
+
+/* ---------- Klassische Vokabelkarten ------------------------------
+   Eine Karteikarte, wie sie in jedem Schulranzen liegt: heller Karton,
+   ein roter Rand links, feine Linien, und darauf Handschrift.
+
+   Die Handschrift kommt aus dem Geraet, nicht aus dem Netz. Eine
+   Schriftdatei nachzuladen hiesse: ohne Netz keine Handschrift - und
+   genau offline soll die App ja taugen. Die Liste geht von Apple ueber
+   Windows zu Android; findet ein Geraet keine davon, bleibt "cursive",
+   und das ist immer irgendetwas Geschriebenes. */
+.vk-buehne{ perspective:1400px; margin:4px auto 0; max-width:340px; }
+.vk-karte{
+  position:relative; width:100%; aspect-ratio:8/5;
+  transform-style:preserve-3d; cursor:pointer;
+  /* Die Kurve schiesst am Ende leicht ueber 1 hinaus. Das ist der
+     ganze Unterschied zwischen "dreht sich" und "schnippt um". */
+  transition:transform 660ms cubic-bezier(.3,.85,.35,1.12);
+}
+.vk-karte.gedreht{ transform:rotateY(180deg); }
+.vk-seite{
+  position:absolute; inset:0; backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border-radius:10px; padding:14px 18px 14px 34px;
+  background:#fffdf6; border:1px solid #e3d7bd;
+  box-shadow:0 2px 0 rgba(120,100,70,0.18), 0 8px 18px rgba(80,66,44,0.13);
+  /* Der rote Rand links und die Linien - beides gemalt, keine Bilder:
+     null zusaetzliche Bytes und offline immer da. */
+  background-image:
+    linear-gradient(to right, transparent 0 25px, #e0796d 25px 27px, transparent 27px),
+    repeating-linear-gradient(to bottom, transparent 0 31px, rgba(140,120,90,0.16) 31px 32px);
+}
+.vk-hinten{ transform:rotateY(180deg); }
+.vk-ecke{
+  position:absolute; top:8px; right:12px;
+  font-family:var(--font); font-weight:800; font-size:10.5px;
+  letter-spacing:.09em; color:#7c6d57;   /* gemessen 4,9:1 auf dem Karton */
+}
+.vk-wort{
+  font-family:var(--handschrift);
+  font-size:clamp(26px,8.5vw,38px); line-height:1.15; text-align:center;
+  color:#2f3d66; margin:0; overflow-wrap:anywhere;
+}
+.vk-fuss{
+  position:absolute; bottom:8px; left:34px;
+  font-family:var(--font); font-size:11px; color:#7a6e5b;  /* 4,8:1 - 11 px ist kleine Schrift */
+}
+.vk-wort .hoer-knopf{ vertical-align:middle; margin-left:8px; }
+
+.vk-dreh{ margin-top:14px; }
+/* Die beiden Urteilsknoepfe. "Sitzt noch nicht" brach auf einem 390er
+   Telefon in zwei Zeilen um und machte die Knopfreihe ungleich hoch -
+   gemessen, nicht vermutet. Kleinere Schrift, weniger Innenrand und
+   kein Umbruch: jetzt steht beides einzeilig nebeneinander. */
+.vk-urteil{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+.btn.vk-kann, .btn.vk-ueben{
+  font-size:14px; padding:14px 6px; white-space:nowrap; min-height:52px;
+}
+.btn.vk-kann{ background:#3f7d43; }
+.btn.vk-ueben{ background:#a6552f; }
+.vk-hinweis{
+  text-align:center; font-size:12.5px; color:var(--tinte-hell); margin:8px 0 0;
+}
+
+/* Der Zwischenbildschirm nach je zehn Karten */
+.vk-bilanz{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0 4px; }
+.vk-zahl{
+  background:var(--papier); border:2px solid var(--papier-rand); border-radius:12px;
+  padding:12px 8px; text-align:center;
+}
+.vk-zahl b{ display:block; font-family:var(--font); font-size:30px; line-height:1.1; }
+.vk-zahl.kann b{ color:#2c7a37; }
+.vk-zahl.ueben b{ color:#9c4a22; }
+.vk-zahl span{ font-size:12.5px; color:var(--tinte-hell); }
+.vk-spruch{
+  font-family:var(--handschrift); font-size:20px; line-height:1.3;
+  text-align:center; color:#2f3d66; margin:14px 0 4px;
+}
+.vk-balken{
+  height:14px; border-radius:20px; overflow:hidden; display:flex;
+  background:rgba(120,100,70,0.16); margin:10px 0 2px;
+}
+.vk-balken i{ display:block; height:100%; }
+/* Der Balken ist eine Grafik, die etwas AUSSAGT - also mindestens
+   3:1 gegen seinen eigenen Grund. Die hellen Toene aus dem ersten
+   Entwurf lagen bei 2,55 und 2,69; jetzt sind es dieselben Farben wie
+   auf den beiden Knoepfen. */
+.vk-balken .b-kann{ background:#3f7d43; }
+.vk-balken .b-ueben{ background:#a6552f; }
+
+/* Die Schlussliste */
+.vk-liste{ list-style:none; padding:0; margin:6px 0 0; }
+.vk-liste li{
+  display:flex; align-items:baseline; gap:8px; padding:7px 2px;
+  border-bottom:1px solid rgba(120,100,70,0.16); font-size:15px;
+}
+.vk-liste li:last-child{ border-bottom:none; }
+.vk-liste .vk-en{ font-weight:800; color:var(--tinte); }
+.vk-liste .vk-de{ color:var(--tinte-hell); font-size:13.5px; }
 
 /* ---------- Der Galgen lebt --------------------------------------
    Was am Seil haengt, pendelt sacht um den Punkt, an dem das Seil am
@@ -3902,7 +4021,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "92.3 – Hangman: Schaukeln und Tipps";
+const APP_VERSION = "92.5 – Offline";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -7270,6 +7389,35 @@ function versionsBannerAuffrischen(){
   });
 }
 
+/* Ohne Netz ist LingoCrafter nicht kaputt, sondern nur allein. Das
+   muss dastehen, sonst haelt ein Kind das eine fuer das andere.
+
+   navigator.onLine ist keine Garantie - der Browser weiss nur, ob ein
+   Netz ANGESTECKT ist, nicht ob es irgendwohin fuehrt. Fuer diese
+   Auskunft reicht das: Falsch-positiv ist hier harmlos (es steht kein
+   Streifen da, obwohl es keiner braeuchte), falsch-negativ auch (es
+   steht einer da, und alles geht trotzdem). */
+function offlineBannerAuffrischen(){
+  const da = document.getElementById('offline-banner');
+  if(navigator.onLine === false){
+    if(da) return;
+    const b = document.createElement('div');
+    b.id = 'offline-banner';
+    b.className = 'offline-banner';
+    b.innerHTML = '<span class="ob-ic">📴</span><span>Gerade kein Netz &ndash; '
+                + 'üben geht trotzdem. Dein Fortschritt liegt auf dem Gerät und '
+                + 'wandert in die Cloud, sobald du wieder online bist.</span>';
+    document.body.appendChild(b);
+  } else if(da && da.parentNode){
+    da.parentNode.removeChild(da);
+  }
+}
+try{
+  window.addEventListener("online",  offlineBannerAuffrischen);
+  window.addEventListener("offline", offlineBannerAuffrischen);
+  offlineBannerAuffrischen();
+}catch(e){}
+
 /* Beim Start und immer, wenn die App wieder in den Vordergrund kommt.
    Genau dann ist der Moment guenstig: Das Kind faengt gerade an. */
 setTimeout(()=> pruefeAufNeueVersion(true), 4000);
@@ -9098,6 +9246,14 @@ const state = {
   ausspracheStand: {},     // was gerade im Aussprache-Modus passiert
   ausspracheVorrat: [],    // Wörter, unter denen nach Aufnahmen gesucht wird
   flutGewaehlt: false,     // Schwierigkeit im Flutungsraum schon gewählt?
+
+  /* Vokabelkarten. Stehen hier und nicht nur in kartenNeuStarten,
+     damit ein Spielstand aus einer aelteren Fassung nicht ueber ein
+     fehlendes Feld stolpert. */
+  kartenKann: [],          // Schluessel der Woerter mit "Kann ich"
+  kartenUeben: [],         // Schluessel der Woerter mit "Sitzt noch nicht"
+  kartenPhase: "karte",    // "karte" | "pause" | "ende"
+  kartenBlockStart: 0,     // bei welcher Karte der laufende Zehner begann
   lingoraPlan: null,          // alt: EIN Plan - wird beim Laden umgezogen
   lingoraPlaene: [],          // alle Plaene, nebeneinander
   lingoraPlanAktiv: "",       // welcher gerade offen ist       // Lingoras Lernplan
@@ -10066,17 +10222,19 @@ const SPIEL_NAMEN = {
   faellig:"Fällig heute", mc:"Multiple Choice", type:"Vokabeltest",
   mix:"Gemischt", challenge:"Challenge", flood:"Flutungsraum",
   floodhard:"Flutungsraum", aussprache:"Aussprache",
-  wackel:"Nur die Wackler", wiederholen:"Auffrischen", hangman:"Hangman"
+  wackel:"Nur die Wackler", wiederholen:"Auffrischen", hangman:"Hangman",
+  karten:"Vokabelkarten"
 };
 const SPIEL_ICONS = {
   faellig:"⏰", mc:"🎯", type:"✍️", mix:"🎲", challenge:"⚡",
   flood:"🌊", floodhard:"🌊", aussprache:"🎤",
-  wackel:"🩹", wiederholen:"🔁", hangman:"✏️"
+  wackel:"🩹", wiederholen:"🔁", hangman:"✏️", karten:"🗂️"
 };
 
 const RUNDE_UMFANG = {
   mc: 30, faellig: 30, mix: 25, type: 20,
   flood: 25, floodhard: 25, wackel: 15, aussprache: 12,
+  karten: 0,        // ohne Grenze - siehe rundenUmfangVerbrauchen
   /* Hangman: gerechnet 3,2 Minuten fuer zehn Woerter (4,7 verschiedene
      Buchstaben im Schnitt, gut zwei Sekunden je Tipp). Damit passt es
      in die fuenf Minuten, die Lingora fuer ein Spiel einplant. */
@@ -10094,7 +10252,14 @@ function rundenUmfangVerbrauchen(){
   state.rundenUmfang = null;
   if(alle) return 0;                                  // 0 = ohne Grenze
   if(typeof eigen === "number" && eigen > 0) return eigen;
-  return RUNDE_UMFANG[state.mode] || RUNDE_STANDARD;
+  /* Eine 0 in RUNDE_UMFANG heisst jetzt ebenfalls "ohne Grenze" und
+     faellt nicht mehr durch das ODER auf die 25. Gebraucht wird das
+     von den Vokabelkarten: Die laufen ueber die ganze Auswahl und
+     hoeren dort auf, wo das Kind nach einem Zehnerblock aufhoeren
+     will - nicht dort, wo eine Zahl im Quelltext es sagt.
+     Nachgesehen: kein anderer Modus hat eine 0 stehen. */
+  const fest = RUNDE_UMFANG[state.mode];
+  return (typeof fest === "number") ? fest : RUNDE_STANDARD;
 }
 
 /* Was wackelt noch? Box 1 bis 3 - und alles, was noch nie geuebt wurde.
@@ -12623,6 +12788,7 @@ function werkzeugGitterHtml(){
     <div class="panel">
       <h3 style="font-size:14px;margin-bottom:2px;opacity:.75;">AUSSERDEM</h3>
       <div class="werk-gitter">
+        ${kachel("karten-btn", "ic-buch", "Vokabelkarten", false, "wk-tuerkis")}
         ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
         ${kachel("custom-vocab-btn", "ic-eigene", "Eigene Vokabeln", !state.cloudId, "wk-gruen")}
         ${kachel("grammar-stats-btn", "ic-skills", "Grammatik-Skills", false, "wk-violett")}
@@ -13097,7 +13263,8 @@ function renderSpielart(){
 
       <div class="setting-label">Spiel</div>
       <div class="game-grid">
-        ${[["faellig", lernUeberblick().faellig > 0 ? "🔁" : "🌟", "Fällig heute", "Genau die Wörter, die jetzt dran sind"],
+        ${[["karten","🗂️","Vokabelkarten","Umdrehen und selbst sagen, ob es sitzt"],
+           ["faellig", lernUeberblick().faellig > 0 ? "🔁" : "🌟", "Fällig heute", "Genau die Wörter, die jetzt dran sind"],
            ["mc","🎯","Multiple Choice","4 Antworten zur Auswahl"],
            ["type","📝","Vokabeltest","Selbst schreiben, mit Schulnote"],
            ["mix","🔀","Gemischt","Mal Auswahl, mal Eintippen"],
@@ -13577,6 +13744,16 @@ function startVerdrahten(){
     state.screen = "uebenvokabeln"; render();
   });
   zu('hw-grammatik', ()=>{ state.screen = "uebengrammatik"; render(); });
+  /* Die Karten gehen sofort los, ohne den Umweg ueber die Paketwahl -
+     Markus wollte sie "zusaetzlich immer" verfuegbar haben. Ohne
+     Auswahl heisst: alle Woerter, dringendste zuerst. */
+  zu('karten-btn', ()=>{
+    state.mainMode = "vocab";
+    state.offenesPaket = ""; state.wahl = []; state.category = "Alle";
+    state.spielZurueck = "start";
+    state.mode = "karten";
+    startGame();
+  });
   // Den Zurueck-Knopf gibt es nur auf den drei Uebungsbildschirmen.
   zu('eltern-btn',   ()=>{ state.screen = "eltern";         render(); });
   zu('back-btn',     ()=>{ state.screen = "start";          render(); });
@@ -13702,6 +13879,7 @@ function startGame(){
   state.bestStreak = 0;
   state.sessionLog = [];
   hangmanNeuesWort();
+  kartenNeuStarten();
   if(state.mode === "challenge"){
     buildChallengeQueue();
   } else {
@@ -14356,7 +14534,314 @@ function hangmanWeiter(){
 }
 
 
+/* ==================================================================
+   KLASSISCHE VOKABELKARTEN
+
+   Das aelteste Lernwerkzeug der Welt, und immer noch eines der besten:
+   Wort ansehen, selbst antworten, umdrehen, ehrlich sein.
+
+   Der Unterschied zu allen anderen Spielarten hier ist, dass die App
+   NICHT weiss, ob die Antwort stimmte. Das Kind sagt es. Was daraus
+   folgt, steht bei kartenAntwort.
+================================================================== */
+const KARTEN_BLOCK   = 10;   // Markus: "immer in 10er Schritten"
+const KARTEN_MUENZEN = 10;   // fuer einen geschafften Block - fuers Durchhalten
+
+/* Der Spruch richtet sich nach dem Ergebnis. Ein festes "Super!" nach
+   zwei von zehn waere eine Luege, und Kinder merken so etwas sofort. */
+const KARTEN_SPRUECHE = {
+  stark: [
+    "Das saß. So sieht Können aus.",
+    "Stark. Die Karten kannst du bald blind.",
+    "Fast alles gewusst – weiter so!",
+    "Da hat jemand geübt. Man merkt es."
+  ],
+  mittel: [
+    "Guter Schnitt. Der Rest kommt gleich wieder.",
+    "Die Hälfte sitzt schon – die andere wird.",
+    "Ordentlich. Dranbleiben lohnt sich hier am meisten.",
+    "Solide Runde. Die Wackler kennst du jetzt beim Namen."
+  ],
+  schwach: [
+    "Genau dafür sind die Karten da. Jetzt weißt du, was dran ist.",
+    "Ehrlich abgehakt ist mehr wert als geraten.",
+    "Noch neu, das Meiste. Das wird – Karte für Karte.",
+    "Kein Grund zum Ärgern: Du hast gerade herausgefunden, was fehlt."
+  ]
+};
+
+function kartenNeuStarten(){
+  state.kartenKann  = [];
+  state.kartenUeben = [];
+  state.kartenPhase = "karte";
+  state.kartenBlockStart = 0;
+}
+
+/* "Sitzt noch nicht" - zurueck auf Box 1, sofort wieder faellig.
+
+   AUSDRUECKLICH NICHT ueber wortGelernt(): Das zaehlt ueber
+   boxTrefferZaehlen mit, wie oft eine Antwort aus einer Box richtig
+   war, und daraus rechnet das Klassenarbeits-Radar seine Prognose.
+   Eine Selbstauskunft gehoert dort nicht hinein - sie sagt etwas
+   ueber das Gefuehl des Kindes, nicht ueber eine Antwort.
+
+   Der Fehlerzaehler st.f bleibt aus demselben Grund unangetastet. */
+function kartenNochNicht(w){
+  const k = wortSchluessel(w);
+  if(!k || k === "|") return;
+  if(!state.wortStand) state.wortStand = {};
+  const heute = lernTagHeute();
+  const st = state.wortStand[k] || {b:1, d:heute, r:0, f:0};
+  st.b = 1;
+  st.d = heute;
+  st.z = heute;
+  state.wortStand[k] = st;
+}
+
+function kartenAntwort(kann){
+  const w = currentWord();
+  if(!w) return;
+  const k = wortSchluessel(w);
+  if(kann){
+    /* "Kann ich" aendert am Lernstand NICHTS. Sonst koennte man sich
+       mit zehnmal Tippen durch alle Boxen nach oben klicken - und das
+       Radar sagte eine Note voraus, die auf nichts beruht. */
+    if(state.kartenKann.indexOf(k) < 0) state.kartenKann.push(k);
+  } else {
+    if(state.kartenUeben.indexOf(k) < 0) state.kartenUeben.push(k);
+    kartenNochNicht(w);
+  }
+  state.currentIndex++;
+
+  const fertig = state.currentIndex >= state.queue.length;
+  const blockVoll = (state.currentIndex - (state.kartenBlockStart || 0)) >= KARTEN_BLOCK;
+  if(blockVoll){
+    /* Muenzen fuer den GESCHAFFTEN Block, nicht fuer das Urteil.
+       Belohnt wird das Durchhalten - alles andere waere hier
+       kaeuflich. */
+    state.sessionCoins += KARTEN_MUENZEN;
+  }
+  if(fertig){ kartenBeenden(); return; }      // rechnet ab und zeichnet selbst
+  if(blockVoll){ state.kartenPhase = "pause"; }
+  saveProgress();
+  render();
+}
+
+/* Was ist im laufenden Block passiert? Fuer den Zwischenbildschirm. */
+function kartenBlockBilanz(){
+  const von = state.kartenBlockStart || 0;
+  const bis = state.currentIndex;
+  let kann = 0, ueben = 0;
+  for(let i = von; i < bis && i < state.queue.length; i++){
+    const k = wortSchluessel(state.queue[i]);
+    if(state.kartenKann.indexOf(k) >= 0) kann++;
+    else if(state.kartenUeben.indexOf(k) >= 0) ueben++;
+  }
+  return { kann: kann, ueben: ueben, gesamt: kann + ueben };
+}
+
+function kartenSpruch(kann, gesamt){
+  const q = gesamt > 0 ? kann / gesamt : 0;
+  const topf = q >= 0.8 ? KARTEN_SPRUECHE.stark
+             : q >= 0.4 ? KARTEN_SPRUECHE.mittel
+             :            KARTEN_SPRUECHE.schwach;
+  return pickRandom(topf);
+}
+
+function kartenWeiter(){
+  state.kartenBlockStart = state.currentIndex;
+  state.kartenPhase = "karte";
+  render();
+}
+
+/* Schluss. Die Buchhaltung laeuft wie bei jeder Runde, nur der letzte
+   Schritt nicht: Statt der Urkunde kommt die Liste, nach der Markus
+   gefragt hat. */
+function kartenBeenden(){
+  bricheWeiterAb();
+  /* Der Tag zaehlt als geuebt - sonst reisst die Serie, obwohl das
+     Kind gearbeitet hat. Aber mit null Treffern: Das Elterndiagramm
+     zeigt Trefferquoten, und eine Selbstauskunft hat dort nichts
+     verloren. */
+  if(state.currentIndex > 0) recordActivity("vocab", state.currentIndex, 0);
+  muenzenAbrechnen("vocab");
+  state.kartenPhase = "ende";
+  saveProgress();
+  syncToCloud();
+  render();
+}
+
+function kartenWoerter(schluessel){
+  const map = {};
+  (state.queue || []).forEach(w => { map[wortSchluessel(w)] = w; });
+  return schluessel.map(k => map[k]).filter(Boolean);
+}
+
+function renderKartenSpiel(){
+  if(state.kartenPhase === "pause") return renderKartenPause();
+  if(state.kartenPhase === "ende")  return renderKartenEnde();
+  return renderKartenKarte();
+}
+
+function renderKartenKarte(){
+  const word = currentWord();
+  if(!word){ state.kartenPhase = "ende"; return renderKartenEnde(); }
+  const nr = state.currentIndex + 1;
+  const imBlock = (state.currentIndex - (state.kartenBlockStart || 0)) + 1;
+
+  app.innerHTML = `
+    ${renderHeader(state.category, true)}
+    ${topBarHtml("cancel-btn")}
+    <div class="hud">
+      <span class="score-badge">🗂️ ${imBlock}/${KARTEN_BLOCK}</span>
+      ${muenzBadge(state.sessionCoins)}
+      <span class="score-badge">✓ ${state.kartenKann.length}</span>
+    </div>
+
+    <div class="panel">
+      <div class="vk-buehne">
+        <div class="vk-karte" id="vk-karte">
+          <div class="vk-seite vk-vorn">
+            <span class="vk-ecke">DEUTSCH</span>
+            <p class="vk-wort">${escapeHtml(word.de)}</p>
+            <span class="vk-fuss">Karte ${nr}</span>
+          </div>
+          <div class="vk-seite vk-hinten" aria-hidden="true">
+            <span class="vk-ecke">ENGLISH</span>
+            <p class="vk-wort">${escapeHtml(cleanEn(word.en))}${hoerKnopfHtml(word.en)}</p>
+            <span class="vk-fuss">Karte ${nr}</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn vk-dreh" id="vk-dreh">🔄 KARTE DREHEN</button>
+      <div class="vk-urteil" id="vk-urteil" hidden>
+        <button class="btn vk-kann" id="vk-kann">✓ Kann ich</button>
+        <button class="btn vk-ueben" id="vk-ueben">↻ Sitzt noch nicht</button>
+      </div>
+      <p class="vk-hinweis" id="vk-hinweis">Erst selbst überlegen &ndash; dann umdrehen.</p>
+    </div>
+  `;
+
+  /* Die Drehung laeuft OHNE Neuzeichnen. Wuerde render() dazwischen
+     laufen, saesse die Klasse "gedreht" von Anfang an am frischen
+     Element - und ein transition, der schon am Ziel beginnt, bewegt
+     gar nichts. */
+  const karte = document.getElementById('vk-karte');
+  const drehen = ()=>{
+    const hin = !karte.classList.contains('gedreht');
+    karte.classList.toggle('gedreht', hin);
+    karte.querySelector('.vk-vorn').setAttribute('aria-hidden', hin ? "true" : "false");
+    karte.querySelector('.vk-hinten').setAttribute('aria-hidden', hin ? "false" : "true");
+    if(hin){
+      const d = document.getElementById('vk-dreh');
+      const u = document.getElementById('vk-urteil');
+      const h = document.getElementById('vk-hinweis');
+      if(d) d.hidden = true;
+      if(u) u.hidden = false;
+      if(h) h.textContent = "Und? Wusstest du es?";
+    }
+  };
+  const d = document.getElementById('vk-dreh');
+  if(d) d.addEventListener('click', drehen);
+  karte.addEventListener('click', (e)=>{ if(!e.target.closest('.hoer-knopf')) drehen(); });
+
+  const kann = document.getElementById('vk-kann');
+  if(kann) kann.addEventListener('click', ()=>kartenAntwort(true));
+  const ueben = document.getElementById('vk-ueben');
+  if(ueben) ueben.addEventListener('click', ()=>kartenAntwort(false));
+  const ab = document.getElementById('cancel-btn');
+  if(ab){ ab.addEventListener('click', ()=>{
+    showConfirmModal('Karten beenden und die Liste ansehen?', ()=>{ kartenBeenden(); });
+  }); }
+  hoerKnoepfeVerdrahten();
+}
+
+function renderKartenPause(){
+  const b = kartenBlockBilanz();
+  const rest = state.queue.length - state.currentIndex;
+  const kannPct = b.gesamt ? Math.round(b.kann / b.gesamt * 100) : 0;
+
+  app.innerHTML = `
+    ${renderHeader("Zwischenstand", true)}
+    <div class="panel">
+      <h3 style="text-align:center;margin:0 0 2px;">${state.currentIndex} Karten geschafft</h3>
+      <div class="vk-balken">
+        <i class="b-kann" style="width:${kannPct}%"></i>
+        <i class="b-ueben" style="width:${100 - kannPct}%"></i>
+      </div>
+      <div class="vk-bilanz">
+        <div class="vk-zahl kann"><b>${b.kann}</b><span>kann ich</span></div>
+        <div class="vk-zahl ueben"><b>${b.ueben}</b><span>üb ich noch</span></div>
+      </div>
+      <p class="vk-spruch">${escapeHtml(kartenSpruch(b.kann, b.gesamt))}</p>
+      <p class="vk-hinweis">+${KARTEN_MUENZEN} Münzen für diesen Zehner.
+        ${rest > 0 ? "Noch " + rest + " Karten im Stapel." : ""}</p>
+      ${rest > 0 ? `<button class="btn" id="vk-weiter" style="margin-top:14px;">▶ NÄCHSTE ${Math.min(KARTEN_BLOCK, rest)} KARTEN</button>` : ""}
+      <button class="btn secondary" id="vk-schluss" style="margin-top:8px;">
+        ${rest > 0 ? "Fertig für heute" : "Zur Übersicht"}
+      </button>
+    </div>
+  `;
+  const w = document.getElementById('vk-weiter');
+  if(w) w.addEventListener('click', kartenWeiter);
+  document.getElementById('vk-schluss').addEventListener('click', kartenBeenden);
+}
+
+function renderKartenEnde(){
+  const kann  = kartenWoerter(state.kartenKann);
+  const ueben = kartenWoerter(state.kartenUeben);
+  const zeile = (w)=>`<li><span class="vk-en">${escapeHtml(cleanEn(w.en))}</span>${hoerKnopfHtml(w.en)}<span class="vk-de">${escapeHtml(w.de)}</span></li>`;
+
+  app.innerHTML = `
+    ${renderHeader("Deine Karten", true)}
+    <div class="panel">
+      <h3 style="text-align:center;margin:0 0 2px;">${kann.length + ueben.length} Karten durch</h3>
+      <div class="vk-bilanz">
+        <div class="vk-zahl kann"><b>${kann.length}</b><span>kann ich</span></div>
+        <div class="vk-zahl ueben"><b>${ueben.length}</b><span>üb ich noch</span></div>
+      </div>
+      <p class="vk-spruch">${escapeHtml(kartenSpruch(kann.length, kann.length + ueben.length))}</p>
+    </div>
+
+    ${ueben.length ? `
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:2px;">↻ DAS ÜBE ICH NOCH</h3>
+      <p class="muted" style="margin-bottom:4px;">Diese Wörter sind ab sofort wieder fällig.</p>
+      <ul class="vk-liste">${ueben.map(zeile).join("")}</ul>
+      <button class="btn" id="vk-nochmal" style="margin-top:12px;">🗂️ NUR DIESE NOCHMAL</button>
+    </div>` : ""}
+
+    ${kann.length ? `
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:6px;">✓ DAS KANN ICH</h3>
+      <ul class="vk-liste">${kann.map(zeile).join("")}</ul>
+    </div>` : ""}
+
+    <button class="btn secondary" id="vk-heim" style="margin-top:8px;">Zurück</button>
+  `;
+  const n = document.getElementById('vk-nochmal');
+  if(n) n.addEventListener('click', ()=>{
+    /* Genau die Wackler noch einmal - ohne Umweg ueber ein Menue.
+       Die Warteschlange wird direkt gesetzt, damit die Auswahl exakt
+       diese Woerter sind und nicht ungefaehr diese. */
+    const noch = kartenWoerter(state.kartenUeben);
+    state.sessionCoins = 0; state.muenzenAbgerechnet = false;
+    kartenNeuStarten();
+    state.queue = shuffle(noch);
+    state.currentIndex = 0;
+    state.screen = "quiz";
+    render();
+  });
+  document.getElementById('vk-heim').addEventListener('click', ()=>{
+    state.screen = state.spielZurueck || "start";
+    render();
+  });
+  hoerKnoepfeVerdrahten();
+}
+
 function renderQuiz(){
+  if(state.mode === "karten"){ return renderKartenSpiel(); }
   if(state.mode === "flood" || state.mode === "floodhard") return renderVocabFlood();
   if(state.mode === "challenge"){ return renderChallengeQuiz(); }
   if(state.mode === "hangman"){ return renderHangman(); }
@@ -15057,6 +15542,7 @@ function startMistakeReview(){
   state.bestStreak = 0;
   state.sessionLog = [];
   hangmanNeuesWort();
+  kartenNeuStarten();
   if(state.mode === "challenge"){
     state.challengeMaxHP = Math.max(1, state.queue.length);
     state.challengePlayerHP = state.challengeMaxHP;

@@ -48,8 +48,43 @@
    Dateinamen, also wieder ein neuer Speichername - sonst kaeme beim
    ersten Oeffnen noch die Fassung von v90.3. */
 /* v6: zweiter Satz Symbole, wieder unter denselben Dateinamen. */
-const CACHE = "lingocrafter-v6";
-const MITNEHMEN = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./lingora.webp"];
+/* v7: DIE LISTE WAR ZU KURZ - und das war der Offline-Fehler.
+
+   Am laufenden Browser nachgesehen, nach einem normalen Besuch: neun
+   Dateien im Speicher, vierzehn fehlten - darunter JEDES Symbol und
+   das grosse Lingora-Bild. Bilder kommen zwar "Zwischenspeicher
+   zuerst", landen dort aber erst, nachdem sie einmal geladen wurden.
+   Und die meisten tragen loading="lazy": Wer nie zu ihnen gescrollt
+   ist, hat sie nie geladen. Ohne Netz war die App damit eine Seite
+   voller leerer Rahmen.
+
+   Jetzt steht hier alles drin, was die App zum Anzeigen braucht.
+   Nicht dabei: logo.png (wird nirgends mehr aufgerufen) und
+   vorschau.png (nur das Bild fuer geteilte Links, nie im Bild). */
+const CACHE = "lingocrafter-v7";
+const MITNEHMEN = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./ic-avatar.webp",
+  "./ic-buch.webp",
+  "./ic-eigene.webp",
+  "./ic-geschenk.webp",
+  "./ic-grammatik.webp",
+  "./ic-herz.webp",
+  "./ic-muenzen.webp",
+  "./ic-plan.webp",
+  "./ic-rangliste.webp",
+  "./ic-skills.webp",
+  "./ic-speicher.webp",
+  "./ic-spiele.webp",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./lingora-gross.webp",
+  "./lingora.webp",
+  "./logo-emblem.webp",
+  "./logo-neu.webp"
+];
 
 /* Holt etwas unter Umgehung des HTTP-Zwischenspeichers. Faellt auf den
    gewoehnlichen Weg zurueck, falls ein Browser "reload" nicht mag -
@@ -73,6 +108,12 @@ self.addEventListener("activate", (e)=>{
   e.waitUntil(
     caches.keys()
       .then(namen => Promise.all(namen.filter(n => n !== CACHE).map(n => caches.delete(n))))
+      /* Und den alten Muell aus dem eigenen Speicher: die
+         version.json-Eintraege mit Zeitstempel, die sich dort ueber
+         Monate angesammelt haben. */
+      .then(()=> caches.open(CACHE))
+      .then(c => c.keys().then(alle => Promise.all(
+        alle.filter(r => r.url.indexOf("version.json") >= 0).map(r => c.delete(r)))))
       .then(()=> self.clients.claim())
   );
 });
@@ -83,6 +124,13 @@ self.addEventListener("fetch", (e)=>{
 
   const url = new URL(anfrage.url);
   if(url.origin !== self.location.origin) return;      // Firebase & Co. nie anfassen
+
+  /* version.json ist die Frage "gibt es etwas Neues?" und haengt dafuer
+     einen Zeitstempel an. Fuer den Service Worker sah jede dieser
+     Adressen wie eine eigene Datei aus - er speicherte sie und las sie
+     nie wieder. Gemessen: vier solcher Leichen bei dreizehn
+     Eintraegen. Hier wird sie durchgereicht und nicht angefasst. */
+  if(url.pathname.endsWith("version.json")) return;
 
   const istSeite = anfrage.mode === "navigate" ||
                    url.pathname.endsWith("/") ||
