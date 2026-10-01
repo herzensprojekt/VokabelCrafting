@@ -2057,6 +2057,59 @@
   text-align:center; font-size:12.5px; color:var(--tinte-hell); margin:8px 0 0;
 }
 
+/* Die eine Zeile, die zeigt, was gewaehlt ist. Sie ist ein Knopf und
+   muss auch so aussehen - deshalb Pfeil, Innenschatten und ein
+   Hinweis, der das Antippen ausspricht. */
+.vk-quelle{
+  display:flex; align-items:center; gap:11px; width:100%; cursor:pointer;
+  padding:13px 14px; border-radius:16px; text-align:left;
+  background:var(--papier); border:2px solid var(--papier-rand);
+  font-family:var(--font); color:var(--tinte);
+}
+.vk-quelle:hover{ background:var(--papier-tief); }
+.vkq-ic{ font-size:26px; flex:0 0 auto; }
+.vkq-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.vkq-n{ font-weight:800; font-size:16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vkq-txt small{ font-size:12.5px; color:var(--tinte-hell); }
+.vkq-pfeil{ flex:0 0 auto; font-size:19px; color:var(--tinte-hell); }
+
+/* Das Fenster mit den Listen. UNTEREINANDER, nicht in zwei Spalten:
+   So hat der Name die ganze Breite - im Gitter wurde aus "Vokabeltest
+   Freitag" ein "Vokabelt... Freitag" - und darunter ist noch Platz
+   fuer eine Vorschau. */
+.vkm-box{ max-width:420px; width:100%; padding:16px 14px 14px; }
+.vkm-kopf{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.vkm-kopf h3{ flex:1; font-size:17px; margin:0; }
+.vkm-zu{
+  flex:0 0 auto; width:44px; height:44px; border-radius:12px; cursor:pointer;
+  background:var(--papier); border:2px solid var(--papier-rand);
+  font-size:16px; color:var(--tinte); line-height:1;
+}
+.vkm-liste{ max-height:min(62vh, 460px); overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.vkm-trenner{
+  margin:10px 2px 5px; font-family:var(--font); font-weight:800;
+  font-size:11.5px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--tinte-hell);
+}
+.vkm-zeile{
+  display:flex; align-items:center; gap:11px; width:100%; min-height:56px;
+  padding:9px 11px; margin-bottom:6px; cursor:pointer; text-align:left;
+  background:var(--papier); border:2px solid var(--papier-rand);
+  border-radius:14px; font-family:var(--font); color:var(--tinte);
+}
+.vkm-zeile:hover{ background:var(--papier-tief); }
+.vkm-zeile.aktiv{ border-color:var(--salbei-b); background:#eef4e6;
+                  box-shadow:0 0 0 2px rgba(92,122,69,0.22); }
+.vkm-zeile.frisch{ border-color:#a86d08; background:linear-gradient(180deg,#fffaea 0%, var(--papier) 70%); }
+.vkm-ic{ font-size:22px; flex:0 0 auto; }
+.vkm-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.vkm-n{ font-weight:800; font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vkm-txt small{
+  font-size:12px; color:var(--tinte-hell);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.vkm-z{ flex:0 0 auto; font-size:12.5px; font-weight:800; color:var(--tinte-hell); }
+
 /* "12 Karten aus Unit 3" - die Zeile ueber dem Startknopf. Sie ist
    die einzige Rueckmeldung darauf, dass ein Antippen im Gitter
    angekommen ist, also darf sie nicht klein und grau sein. */
@@ -4076,7 +4129,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "92.8 – Letzte Liste vorgewählt, neueste markiert";
+const APP_VERSION = "92.9 – Karten: Richtung und Listenmenü";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -9312,6 +9365,7 @@ const state = {
      state.category: die gehoert der ganzen App und wird von Lingora
      und jedem Planschritt ueberschrieben. */
   kartenQuelle: "",
+  kartenMenueSuche: "",    // Suchtext im Listenfenster der Karten
   kartenBlockStart: 0,     // bei welcher Karte der laufende Zehner begann
   lingoraPlan: null,          // alt: EIN Plan - wird beim Laden umgezogen
   lingoraPlaene: [],          // alle Plaene, nebeneinander
@@ -14775,18 +14829,143 @@ function kartenAuswahlName(){
   return c.replace(LISTEN_ZEICHEN, "");
 }
 
+/* Alles, woraus Karten werden koennen - eigene Listen zuerst.
+
+   EINE Liste, aus der sowohl die Zeile oben als auch das Fenster
+   gebaut werden. Zwei Listen waeren zwei Wahrheiten. */
+function kartenQuellen(){
+  const neueste = listeNeueste();
+  const eigene = listenAlle().map(l => ({
+    wert: LISTEN_ZEICHEN + l.name,
+    name: l.name,
+    anzahl: (l.woerter || []).length,
+    symbol: (neueste && l.name === neueste.name) ? "✨" : "⭐",
+    frisch: !!(neueste && l.name === neueste.name),
+    vorschau: woerterVonQuelle(LISTEN_ZEICHEN + l.name).slice(0, 3)
+                .map(w => cleanEn(w.en)).join(", ")
+  }));
+  const alle = { wert:"Alle", name:"Alle Wörter", anzahl:getAllVocab().length,
+                 symbol:"🌍", frisch:false, vorschau:"der ganze Wortschatz" };
+  const pakete = paketeDerKlasse(state.klasse || 5).map(p => ({
+    wert: p.name, name: p.name, anzahl: p.anzahl, symbol: p.icon, frisch:false,
+    vorschau: woerterVonQuelle(p.name).slice(0, 3).map(w => cleanEn(w.en)).join(", ")
+  }));
+  return { eigene: eigene, alle: alle, pakete: pakete };
+}
+
+function kartenQuelleJetzt(){
+  const q = kartenQuellen();
+  const alles = [].concat(q.eigene, [q.alle], q.pakete);
+  return alles.find(e => e.wert === state.category) || q.alle;
+}
+
+/* Das Fenster. Eine Zeile je Quelle, untereinander - nicht in zwei
+   schmalen Spalten. Dadurch hat der Name die ganze Breite und wird
+   nicht mehr abgeschnitten, und darunter passt noch eine Vorschau auf
+   das, was drin ist. Das ist das "einsehen" aus Markus' Wunsch. */
+function kartenListenMenue(){
+  const q = kartenQuellen();
+  const gesamt = q.eigene.length + 1 + q.pakete.length;
+  const suche = state.kartenMenueSuche || "";
+  const passt = (e)=> !suche || suchNormal(e.name).indexOf(suchNormal(suche)) >= 0;
+
+  const zeile = (e)=>`
+    <button type="button" class="vkm-zeile${e.frisch ? " frisch" : ""}${state.category === e.wert ? " aktiv" : ""}"
+            data-vkm="${escapeHtml(e.wert)}">
+      <span class="vkm-ic">${e.symbol}</span>
+      <span class="vkm-txt">
+        <span class="vkm-n">${escapeHtml(e.name)}</span>
+        ${e.vorschau ? `<small>${escapeHtml(e.vorschau)}${e.anzahl > 3 && e.wert !== "Alle" ? " …" : ""}</small>` : ""}
+      </span>
+      <span class="vkm-z">${e.anzahl}</span>
+    </button>`;
+
+  const hg = document.createElement('div');
+  hg.className = 'modal-overlay';
+  hg.innerHTML = `
+    <div class="panel modal-box vkm-box">
+      <div class="vkm-kopf">
+        <h3>Was willst du lernen?</h3>
+        <button type="button" class="vkm-zu" id="vkm-zu" aria-label="Schließen">✕</button>
+      </div>
+      ${gesamt > 8 ? `
+        <div class="pk-suchfeld">
+          <span class="pk-lupe">🔎</span>
+          <input type="search" id="vkm-suche" placeholder="Liste oder Paket suchen …"
+                 value="${escapeHtml(suche)}" autocomplete="off">
+        </div>` : ""}
+      <div class="vkm-liste">
+        ${q.eigene.filter(passt).length ? `<p class="vkm-trenner">Meine Listen</p>
+          ${q.eigene.filter(passt).map(zeile).join("")}` : ""}
+        ${passt(q.alle) ? `<p class="vkm-trenner">Der ganze Wortschatz</p>${zeile(q.alle)}` : ""}
+        ${q.pakete.filter(passt).length ? `<p class="vkm-trenner">Pakete</p>
+          ${q.pakete.filter(passt).map(zeile).join("")}` : ""}
+        ${!q.eigene.filter(passt).length && !q.pakete.filter(passt).length && !passt(q.alle)
+          ? `<p class="muted" style="padding:14px 2px;">Dazu habe ich nichts gefunden.</p>` : ""}
+      </div>
+    </div>`;
+  document.body.appendChild(hg);
+
+  const zu = ()=>{ state.kartenMenueSuche = ""; if(hg.parentNode) hg.parentNode.removeChild(hg); };
+  hg.querySelector('#vkm-zu').addEventListener('click', zu);
+  hg.addEventListener('click', (e)=>{ if(e.target === hg) zu(); });
+  hg.querySelectorAll('[data-vkm]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.category = el.dataset.vkm;
+      state.wahl = [];               // eine angetippte Wortauswahl gilt nicht mehr
+      zu();
+      saveProgress();
+      render();
+    });
+  });
+  /* Wie bei der Paketsuche: nicht bei jedem Zeichen neu bauen, sonst
+     verliert das Feld den Fokus und die Tastatur klappt weg. */
+  const feld = hg.querySelector('#vkm-suche');
+  if(feld){
+    let timer = null;
+    feld.addEventListener('input', ()=>{
+      clearTimeout(timer);
+      timer = setTimeout(()=>{
+        state.kartenMenueSuche = feld.value;
+        zu();
+        kartenListenMenue();
+        const neu = document.getElementById('vkm-suche');
+        if(neu){ neu.focus(); neu.setSelectionRange(neu.value.length, neu.value.length); }
+      }, 320);
+    });
+  }
+}
+
 function renderKartenWahl(){
   const vorrat = woerterFuerAuswahl();
   const bloecke = Math.ceil(vorrat.length / KARTEN_BLOCK);
+  const jetzt = kartenQuelleJetzt();
 
   app.innerHTML = `
     ${renderHeader("Vokabelkarten", true)}
 
     <div class="panel">
       <h3 style="font-size:16px;margin-bottom:2px;">WELCHE WÖRTER?</h3>
-      <p class="muted" style="margin-bottom:8px;">Such dir eine Liste oder ein Paket aus &ndash;
-        die Karten kommen dann genau daraus.</p>
-      ${paketAuswahlHtml()}
+      <p class="muted" style="margin-bottom:10px;">Tipp auf die Liste, wenn du etwas anderes üben willst.</p>
+
+      <button type="button" class="vk-quelle" id="vkw-quelle">
+        <span class="vkq-ic">${jetzt.symbol}</span>
+        <span class="vkq-txt">
+          <span class="vkq-n">${escapeHtml(jetzt.name)}</span>
+          <small>${vorrat.length} Wörter &middot; tippen zum Ändern</small>
+        </span>
+        <span class="vkq-pfeil">▸</span>
+      </button>
+
+      <div class="setting-label" style="margin-top:14px;">Was steht vorn auf der Karte?</div>
+      <div class="seg-row">
+        <button type="button" class="mode-btn seg ${state.direction==='de-en'?'active':''}" data-vkr="de-en">
+          Deutsch zuerst
+        </button>
+        <button type="button" class="mode-btn seg ${state.direction==='en-de'?'active':''}" data-vkr="en-de">
+          Englisch zuerst
+        </button>
+      </div>
     </div>
 
     <div class="panel">
@@ -14797,7 +14976,14 @@ function renderKartenWahl(){
       <button class="btn secondary" id="vkw-zurueck" style="margin-top:8px;">Zurück</button>
     </div>
   `;
-  paketAuswahlVerdrahten();
+  document.getElementById('vkw-quelle').addEventListener('click', kartenListenMenue);
+  document.querySelectorAll('[data-vkr]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.direction = el.dataset.vkr;
+      saveProgress();
+      render();
+    });
+  });
   document.getElementById('vkw-los').addEventListener('click', ()=>{
     state.spielZurueck = "kartenwahl";   // nach der Runde wieder hierher
     /* JETZT ist die Wahl getroffen - nicht beim blossen Ansehen. */
@@ -14823,6 +15009,24 @@ function renderKartenKarte(){
   const nr = state.currentIndex + 1;
   const imBlock = (state.currentIndex - (state.kartenBlockStart || 0)) + 1;
 
+  /* DIE RICHTUNG KOMMT AUS DERSELBEN QUELLE WIE ueberall sonst.
+
+     Die Karten waren der einzige Bildschirm, der state.direction
+     ignoriert hat - sie standen fest auf Deutsch vorn. Und sie sind
+     zugleich der einzige, der die Seite BESCHRIFTET: Ueberall sonst
+     steht nur ein Wort da, hier steht "DEUTSCH" darueber. Deshalb ist
+     hier aufgefallen, was anderswo niemandem auffiel.
+
+     Der Lautsprecher haengt am englischen Wort, nicht an einer Seite -
+     er wandert also mit. */
+  const rueckwaerts = state.direction === "en-de";
+  const vorn   = rueckwaerts ? cleanEn(word.en) : word.de;
+  const hinten = rueckwaerts ? word.de : cleanEn(word.en);
+  const vornSchild   = rueckwaerts ? "ENGLISH" : "DEUTSCH";
+  const hintenSchild = rueckwaerts ? "DEUTSCH" : "ENGLISH";
+  const vornHoer   = rueckwaerts ? hoerKnopfHtml(word.en) : "";
+  const hintenHoer = rueckwaerts ? "" : hoerKnopfHtml(word.en);
+
   app.innerHTML = `
     ${renderHeader(state.category, true)}
     ${topBarHtml("cancel-btn")}
@@ -14836,13 +15040,13 @@ function renderKartenKarte(){
       <div class="vk-buehne">
         <div class="vk-karte" id="vk-karte">
           <div class="vk-seite vk-vorn">
-            <span class="vk-ecke">DEUTSCH</span>
-            <p class="vk-wort">${escapeHtml(word.de)}</p>
+            <span class="vk-ecke">${vornSchild}</span>
+            <p class="vk-wort">${escapeHtml(vorn)}${vornHoer}</p>
             <span class="vk-fuss">Karte ${nr}</span>
           </div>
           <div class="vk-seite vk-hinten" aria-hidden="true">
-            <span class="vk-ecke">ENGLISH</span>
-            <p class="vk-wort">${escapeHtml(cleanEn(word.en))}${hoerKnopfHtml(word.en)}</p>
+            <span class="vk-ecke">${hintenSchild}</span>
+            <p class="vk-wort">${escapeHtml(hinten)}${hintenHoer}</p>
             <span class="vk-fuss">Karte ${nr}</span>
           </div>
         </div>
@@ -20225,7 +20429,11 @@ function listeNeueste(){
   const alle = listenAlle();
   if(!alle.length) return null;
   const mit = alle.filter(l => typeof l.zuletzt === "number");
-  if(mit.length) return mit.reduce((a, b) => (b.zuletzt > a.zuletzt ? b : a));
+  /* ">=", nicht ">": Date.now() loest in Millisekunden auf, und zwei
+     Listen hintereinander anzulegen dauert weniger. Bei Gleichstand
+     muss die SPAETER angelegte gewinnen - sie steht hinten im Feld,
+     also die, auf die reduce zuletzt trifft. */
+  if(mit.length) return mit.reduce((a, b) => (b.zuletzt >= a.zuletzt ? b : a));
   return alle[alle.length - 1];
 }
 
