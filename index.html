@@ -2057,6 +2057,25 @@
   text-align:center; font-size:12.5px; color:var(--tinte-hell); margin:8px 0 0;
 }
 
+/* Der Warnstreifen ueber der Karte. Er muss auffallen, ohne nach
+   Fehlermeldung auszusehen - ein Kind soll nicht denken, es habe
+   etwas kaputtgemacht. Deshalb Papierton mit warmem Rand statt Rot,
+   und der Knopf sagt, was passiert, nicht was schiefging. */
+.vk-verdreht{
+  display:grid; grid-template-columns:auto 1fr; gap:4px 10px; align-items:start;
+  margin:0 0 10px; padding:11px 13px; border-radius:14px;
+  background:#fdf4e0; border:2px solid #a07d2d;
+  font-family:var(--font); font-size:13px; line-height:1.35; color:#4a3a14;
+}
+.vkv-ic{ grid-column:1; grid-row:1; font-size:19px; }
+.vkv-txt{ grid-column:2; grid-row:1; min-width:0; }
+/* Der Knopf bekommt eine eigene Zeile. Neben dem Text stehend liess er
+   ihm gemessen 140 px und drueckte ihn auf sechs Zeilen; so sind es
+   300 px und drei. */
+.btn.small.vkv-knopf{
+  grid-column:1 / -1; width:100%; margin:6px 0 0; min-height:44px;
+}
+
 /* Die eine Zeile, die zeigt, was gewaehlt ist. Sie ist ein Knopf und
    muss auch so aussehen - deshalb Pfeil, Innenschatten und ein
    Hinweis, der das Antippen ausspricht. */
@@ -4162,7 +4181,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "93.1 – Vokabeln hinzufügen";
+const APP_VERSION = "93.2 – Verdrehte Liste wird erkannt";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -15052,6 +15071,11 @@ function renderKartenKarte(){
 
      Der Lautsprecher haengt am englischen Wort, nicht an einer Seite -
      er wandert also mit. */
+  /* Wenn die Liste seitenverkehrt eingelesen wurde, faellt es GENAU
+     HIER auf - die Karte ist der einzige Bildschirm, der die Seiten
+     beschriftet. Also steht die Meldung auch hier und nicht drei
+     Menues weiter. */
+  const verdreht = kartenListeVerdreht();
   const rueckwaerts = state.direction === "en-de";
   const vorn   = rueckwaerts ? cleanEn(word.en) : word.de;
   const hinten = rueckwaerts ? word.de : cleanEn(word.en);
@@ -15068,6 +15092,14 @@ function renderKartenKarte(){
       ${muenzBadge(state.sessionCoins)}
       <span class="score-badge">✓ ${state.kartenKann.length}</span>
     </div>
+
+    ${verdreht ? `
+    <div class="vk-verdreht">
+      <span class="vkv-ic">⚠️</span>
+      <span class="vkv-txt">In dieser Liste steht Englisch auf der deutschen Seite &ndash;
+        sie wurde seitenverkehrt eingelesen.</span>
+      <button type="button" class="btn small vkv-knopf" id="vk-umdrehen">🔄 Umdrehen</button>
+    </div>` : ""}
 
     <div class="panel">
       <div class="vk-buehne">
@@ -15116,6 +15148,22 @@ function renderKartenKarte(){
   const d = document.getElementById('vk-dreh');
   if(d) d.addEventListener('click', drehen);
   karte.addEventListener('click', (e)=>{ if(!e.target.closest('.hoer-knopf')) drehen(); });
+
+  const um = document.getElementById('vk-umdrehen');
+  if(um){ um.addEventListener('click', ()=>{
+    const b = listeTauschBeispiel(verdreht);
+    showConfirmModal(
+      'Die ganze Liste "' + verdreht + '" umdrehen?'
+      + (b ? ' Danach ist "' + b.de + '" das englische Wort und "' + b.en + '" das deutsche.' : ''),
+      ()=>{
+        const e = listeSpaltenTauschen(verdreht);
+        saveProgress();
+        syncToCloud();
+        render();
+        showGoodToast('<span class="item-pop">🔄</span> ' + e.getauscht
+          + (e.getauscht === 1 ? ' Wort gedreht.' : ' Wörter gedreht.'));
+      });
+  }); }
 
   const kann = document.getElementById('vk-kann');
   if(kann) kann.addEventListener('click', ()=>kartenAntwort(true));
@@ -20513,6 +20561,48 @@ function listeSpaltenTauschen(name){
 
 /* Ein Wort aus dieser Liste, an dem sich das Tauschen zeigen laesst.
    Eine Rueckfrage ohne Beispiel zwingt zum Raten. */
+/* Steht diese Liste seitenverkehrt?
+
+   Gemessen mit scanIstDeutscher() - derselben Funktion, mit der der
+   Foto-Import entscheidet, welche Spalte deutsch ist. Sie zaehlt
+   Punkte fuer Umlaute, Artikel und grossgeschriebene Hauptwoerter und
+   zieht welche ab fuer "to", "the", "a", "of".
+
+   DIE SCHWELLE IST NACHGEMESSEN, NICHT GEGRIFFEN. Ueber alle 17
+   Pakete des echten Wortschatzes:
+
+       15 Pakete   deutsche Spalte deutlich deutscher
+        1 Paket    knapp (+12 bei 33 Woertern)
+        1 Paket    Abstand genau 0 - kein Signal
+       eine absichtlich verdrehte Liste aus 20 Woertern:  -24
+
+   Deshalb: nur bei DEUTLICH negativem Abstand melden - mindestens -4
+   und mindestens ein Viertel der Wortzahl. Ein Gleichstand heisst
+   "weiss ich nicht" und fuehrt zu keiner Meldung. Mit dieser Schwelle
+   schlaegt keines der 17 Pakete faelschlich an.
+
+   Lieber einmal zu wenig warnen als einmal zu viel: Eine falsche
+   Warnung verleitet dazu, eine RICHTIGE Liste umzudrehen. */
+function listeVerdreht(name){
+  if(typeof scanIstDeutscher !== "function") return false;
+  const woerter = woerterVonQuelle(name);
+  if(woerter.length < 4) return false;           // zu wenig fuer ein Urteil
+  const deutschImDe = scanIstDeutscher(woerter.map(w => w.de));
+  const deutschImEn = scanIstDeutscher(woerter.map(w => w.en));
+  const abstand = deutschImDe - deutschImEn;
+  return abstand <= -4 && abstand <= -(woerter.length / 4);
+}
+
+/* Nur eigene Listen lassen sich umdrehen - der feste Wortschatz ist
+   richtig herum und gehoert allen Kindern gemeinsam. */
+function kartenListeVerdreht(){
+  const q = state.category || "";
+  if(q.indexOf(LISTEN_ZEICHEN) !== 0) return "";
+  const name = q.slice(LISTEN_ZEICHEN.length);
+  if(!listeFinden(name)) return "";
+  return listeVerdreht(q) ? name : "";
+}
+
 function listeTauschBeispiel(name){
   const l = listeFinden(name);
   if(!l) return null;
