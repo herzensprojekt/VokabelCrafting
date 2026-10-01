@@ -3466,11 +3466,44 @@ summary.mehr-knopf::after{ content:none; }
    Aus zwei Metern sieht man nur, dass eine Kachel ein Stueck weiter
    vorn steht. Zwei Klassen im Selektor, weil .werk-karte.wk-* auch
    zwei hat. */
+/* ZWEI Kacheln duerfen mehr als die anderen sechs - und sie sollen
+   sich auch voneinander unterscheiden. Nicht ueber die Lautstaerke
+   allein (dann saehen sie aus wie zweimal dasselbe), sondern ueber den
+   Farbton: Violett fuehrt, Gruen begleitet.
+
+   "Deutlich" heisst hier weiterhin: der feine Rahmen laeuft ringsum
+   statt nur unten, das Papier ist ein paar Grad waermer, und es liegt
+   etwas mehr Hoehe darunter. Keine Flaeche in Vollfarbe - die Regel
+   darueber sagt ausdruecklich, dass Farbe hier nur ein Hauch am Rand
+   sein soll, und dagegen zu arbeiten waere unordentlich. */
 .werk-karte.wk-karten{
-  border-color:#c3aad8;
-  border-bottom-color:#9a76bd;
-  background:linear-gradient(180deg, rgba(252,249,255,0.98), rgba(244,237,228,0.92));
-  box-shadow:0 4px 14px rgba(84,58,120,0.17);
+  border-color:#987cb6;   /* gemessen 3,32:1 gegen die eigene Fuellung */
+  border-bottom-color:#7d57a8;
+  background:linear-gradient(180deg, rgba(250,245,255,0.99), rgba(243,235,228,0.93));
+  box-shadow:0 5px 17px rgba(84,58,120,0.22);
+}
+.werk-karte.wk-dazu{
+  border-color:#739263;   /* gemessen 3,35:1 */
+  border-bottom-color:#55893f;
+  background:linear-gradient(180deg, rgba(247,252,243,0.99), rgba(244,238,226,0.93));
+  box-shadow:0 4px 14px rgba(58,94,38,0.17);
+}
+
+/* ALLE ACHT KACHELN GLEICH HOCH.
+
+   Gemessen waren es zwei Hoehen, 150 und 167: "Klassenarbeits-Radar"
+   bricht auf zwei Zeilen um, "Vokabeln hinzufuegen" jetzt auch. Zwei
+   Zeilen Platz fuer die Beschriftung macht alle acht gleich - 167 px,
+   nachgemessen.
+
+   Zwei Angaben: 2lh ist genau zwei Zeilenhoehen und damit unabhaengig
+   von Schriftgroesse und Zeilenabstand. Browser, die die Einheit nicht
+   kennen, lassen die Zeile fallen und behalten die 2,6em darueber -
+   dasselbe Ergebnis, nur gerechnet statt gemessen. */
+.wk-t{
+  min-height:2.6em;
+  min-height:2lh;
+  display:flex; align-items:center; justify-content:center; text-align:center;
 }
 
 /* --- Gezeichnete Symbole in den Kacheln ------------------------------
@@ -4129,7 +4162,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "92.9 – Karten: Richtung und Listenmenü";
+const APP_VERSION = "93.1 – Vokabeln hinzufügen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -12904,7 +12937,7 @@ function werkzeugGitterHtml(){
       <div class="werk-gitter">
         ${kachel("karten-btn", "ic-karten", "Vokabelkarten", false, "wk-karten")}
         ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
-        ${kachel("custom-vocab-btn", "ic-eigene", "Eigene Vokabeln", !state.cloudId, "wk-gruen")}
+        ${kachel("custom-vocab-btn", "ic-eigene", "Vokabeln hinzufügen", !state.cloudId, "wk-dazu")}
         ${kachel("grammar-stats-btn", "ic-skills", "Grammatik-Skills", false, "wk-violett")}
         ${kachel("vokabel-stats-btn", "ic-speicher", "Vokabel-Skills", false, "wk-tuerkis")}
         ${kachel("shop-btn", "ic-muenzen", "Shop", g, "wk-gold")}
@@ -13232,8 +13265,8 @@ function renderUebenVokabeln(){
         <div class="pk-gitter">
           <button type="button" class="pk-kachel dazu" id="pk-eigene">
             <span class="pk-ic">➕</span>
-            <span class="pk-n">Eigene Vokabeln</span>
-            <span class="pk-z">Listen bauen</span>
+            <span class="pk-n">Vokabeln hinzufügen</span>
+            <span class="pk-z">Tippen, Foto, Excel</span>
           </button>
           ${listenAlle().map(l=>`
             <button type="button" class="pk-kachel eigene" data-vw-oeffnen="${escapeHtml(LISTEN_ZEICHEN + l.name)}">
@@ -20425,6 +20458,72 @@ function listeSichern(name, woerter){
    die zuletzt angelegte steht hinten im Feld - alle fuenf Schreiber
    haengen neue Listen hinten an. Sobald EINE Liste einen Zeitstempel
    traegt, entscheidet der; sonst die Reihenfolge. */
+/* Englisch und Deutsch in EINER Liste vertauschen.
+
+   Gebraucht, wenn eine Liste verkehrt herum eingelesen wurde - der
+   Foto-Import raet, welche Spalte deutsch ist, und bei Woertern ohne
+   Umlaute und ohne Artikel ist das eine knappe Entscheidung.
+
+   Drei Dinge haengen am Wort und muessen mitwandern:
+
+     der Schluessel      "englisch|deutsch" - durch das Tauschen ein
+                         anderer, und ANDERE Listen zeigen womoeglich
+                         auf dasselbe Wort
+     der Lernstand       state.wortStand haengt ebenfalls am
+                         Schluessel. Ohne Umhaengen waere die
+                         Leitner-Box weg und das Kind finge bei etwas
+                         von vorn an, das es laengst kann
+     der Zwischenspeicher
+
+   Woerter aus dem festen Wortschatz bleiben unberuehrt: Die sind
+   richtig herum und gehoeren allen Kindern gemeinsam. Eine Liste darf
+   nicht den Wortschatz der App umbauen. */
+function listeSpaltenTauschen(name){
+  const l = listeFinden(name);
+  if(!l) return { getauscht:0, fremd:0 };
+
+  const eigene = {};
+  (state.customVocab || []).forEach(w => { eigene[wortSchluessel(w)] = w; });
+
+  const umhaengen = {};                 // alter Schluessel -> neuer
+  let getauscht = 0, fremd = 0;
+  (l.woerter || []).forEach(k => {
+    const w = eigene[k];
+    if(!w){ fremd++; return; }          // aus dem festen Wortschatz
+    const alt = wortSchluessel(w);
+    const h = w.en; w.en = w.de; w.de = h;
+    umhaengen[alt] = wortSchluessel(w);
+    getauscht++;
+  });
+
+  /* ALLE Listen, nicht nur diese: Ein Wort kann in mehreren stehen,
+     und eine Liste mit alten Schluesseln zeigt danach ins Leere. */
+  listenAlle().forEach(x => {
+    x.woerter = (x.woerter || []).map(k => umhaengen[k] || k);
+  });
+
+  const stand = state.wortStand || {};
+  Object.keys(umhaengen).forEach(alt => {
+    if(stand[alt]){ stand[umhaengen[alt]] = stand[alt]; delete stand[alt]; }
+  });
+
+  vokabelCacheLeeren();
+  return { getauscht: getauscht, fremd: fremd };
+}
+
+/* Ein Wort aus dieser Liste, an dem sich das Tauschen zeigen laesst.
+   Eine Rueckfrage ohne Beispiel zwingt zum Raten. */
+function listeTauschBeispiel(name){
+  const l = listeFinden(name);
+  if(!l) return null;
+  const eigene = {};
+  (state.customVocab || []).forEach(w => { eigene[wortSchluessel(w)] = w; });
+  for(const k of (l.woerter || [])){
+    if(eigene[k]) return eigene[k];
+  }
+  return null;
+}
+
 function listeNeueste(){
   const alle = listenAlle();
   if(!alle.length) return null;
@@ -20563,8 +20662,8 @@ function paketAuswahlHtml(){
     <div class="pk-gitter">
       <button type="button" class="pk-kachel dazu" id="pk-eigene">
         <span class="pk-ic">➕</span>
-        <span class="pk-n">Eigene Vokabeln</span>
-        <span class="pk-z">Listen bauen</span>
+        <span class="pk-n">Vokabeln hinzufügen</span>
+        <span class="pk-z">Tippen, Foto, Excel</span>
       </button>
       ${eigenes && (!q || suchNormal(eigenes.name).indexOf(q) >= 0) ? `
         <button type="button" class="pk-kachel eigene ${state.category===eigenes.name?'aktiv':''}"
@@ -20595,7 +20694,7 @@ function paketAuswahlHtml(){
     </div>
     ${q && !pakete.length && !listen.length ? `
       <p class="muted" style="margin:10px 0 0;">Dazu habe ich kein Paket gefunden.
-      Einzelne Wörter suchst du oben unter <strong>➕ Eigene Vokabeln</strong>.</p>` : ""}`;
+      Einzelne Wörter suchst du oben unter <strong>➕ Vokabeln hinzufügen</strong>.</p>` : ""}`;
 }
 
 function paketAuswahlVerdrahten(){
@@ -20801,6 +20900,26 @@ function evListenbauVerdrahten(){
     });
   });
 
+  document.querySelectorAll('[data-liste-tausch]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const name = el.dataset.listeTausch;
+      const b = listeTauschBeispiel(name);
+      if(!b) return;
+      showConfirmModal(
+        'Englisch und Deutsch in "' + name + '" vertauschen? Danach ist "'
+        + b.de + '" das englische Wort und "' + b.en + '" das deutsche.',
+        ()=>{
+          const e = listeSpaltenTauschen(name);
+          saveProgress();
+          syncToCloud();
+          render();
+          showGoodToast('<span class="item-pop">🔄</span> ' + e.getauscht
+            + (e.getauscht === 1 ? ' Wort gedreht.' : ' Wörter gedreht.')
+            + (e.fremd ? ' ' + e.fremd + ' aus dem festen Wortschatz blieben, wie sie sind.' : ''));
+        });
+    });
+  });
+
   document.querySelectorAll('[data-liste-weg]').forEach(el=>{
     el.addEventListener('click', ()=>{
       const name = el.dataset.listeWeg;
@@ -20966,6 +21085,13 @@ function renderListe(){
         <button class="btn secondary col einzeilig" data-liste-um="${escapeHtml(name)}">✏️ Umbenennen</button>
         <button class="btn danger col einzeilig" data-liste-weg="${escapeHtml(name)}">🗑️ Liste löschen</button>
       </div>
+      ${listeTauschBeispiel(name) ? `
+      <button class="btn secondary" data-liste-tausch="${escapeHtml(name)}" style="margin-top:8px;">
+        🔄 Englisch und Deutsch tauschen
+      </button>
+      <p class="muted" style="margin:6px 0 0;font-size:12.5px;">
+        Steht in dieser Liste alles seitenverkehrt? Beim Abfotografieren rät die App,
+        welche Spalte deutsch ist &ndash; manchmal daneben. Hier drehst du es um.</p>` : ""}
     </div>`}
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
@@ -21087,7 +21213,7 @@ function renderCustomVocab(){
   const frisch = Array.isArray(state.frischDazu) ? state.frischDazu : [];
 
   app.innerHTML = `
-    ${renderHeader("Meine Vokabeln", true)}
+    ${renderHeader("Vokabeln hinzufügen", true)}
 
     ${frisch.length >= 2 ? `
     <div class="ev-frisch">
@@ -21099,30 +21225,8 @@ function renderCustomVocab(){
     </div>` : ""}
 
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:8px;">DEINE WORTLISTEN</h3>
-      ${(listen.length || eigene.length) ? `
-        <div class="pk-gitter">
-          ${eigene.length ? `
-            <button type="button" class="pk-kachel eigene" data-ev-ueben="${escapeHtml(CUSTOM_CATEGORY_NAME)}">
-              <span class="pk-ic">✏️</span>
-              <span class="pk-n">Meine eigenen Wörter</span>
-              <span class="pk-z">${eigene.length}</span>
-            </button>` : ""}
-          ${listen.map(l => `
-            <button type="button" class="pk-kachel eigene" data-ev-ueben="${escapeHtml(LISTEN_ZEICHEN + l.name)}">
-              <span class="pk-ic">⭐</span>
-              <span class="pk-n">${escapeHtml(l.name)}</span>
-              <span class="pk-z">${(l.woerter || []).length}</span>
-            </button>`).join("")}
-        </div>
-        <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Tippe eine Liste an:
-        dort siehst du die Wörter, kannst suchen, welche rausnehmen &ndash; und üben.</p>
-      ` : `<p class="muted center-text" style="margin:6px 0;">Noch keine eigene Liste.
-           Such dir unten Wörter zusammen oder tipp welche ein.</p>`}
-    </div>
-
-    <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:8px;">WÖRTER SUCHEN UND DAZUTUN</h3>
+      <h3 style="font-size:16px;margin-bottom:2px;">WIE WILLST DU WÖRTER DAZUTUN?</h3>
+      <p class="muted" style="margin-bottom:9px;">Vier Wege &ndash; such dir einen aus.</p>
       <div class="ev-wege">
         ${wegKachel("suche",  "⭐", "Aus dem Wortschatz")}
         ${wegKachel("tippen", "✍️", "Selbst eintippen")}
@@ -21169,6 +21273,29 @@ function renderCustomVocab(){
         <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="margin-top:10px;width:100%;">
         <p id="excel-status" class="muted" style="margin-top:8px;"></p>
       </div>` : ""}
+    </div>
+
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:8px;">DEINE WORTLISTEN</h3>
+      ${(listen.length || eigene.length) ? `
+        <div class="pk-gitter">
+          ${eigene.length ? `
+            <button type="button" class="pk-kachel eigene" data-ev-ueben="${escapeHtml(CUSTOM_CATEGORY_NAME)}">
+              <span class="pk-ic">✏️</span>
+              <span class="pk-n">Meine eigenen Wörter</span>
+              <span class="pk-z">${eigene.length}</span>
+            </button>` : ""}
+          ${listen.map(l => `
+            <button type="button" class="pk-kachel eigene" data-ev-ueben="${escapeHtml(LISTEN_ZEICHEN + l.name)}">
+              <span class="pk-ic">⭐</span>
+              <span class="pk-n">${escapeHtml(l.name)}</span>
+              <span class="pk-z">${(l.woerter || []).length}</span>
+            </button>`).join("")}
+        </div>
+        <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Tippe eine Liste an:
+        dort siehst du die Wörter, kannst suchen, welche rausnehmen &ndash; und üben.</p>
+      ` : `<p class="muted center-text" style="margin:6px 0;">Noch keine eigene Liste.
+           Nimm dir oben einen der vier Wege und fang an.</p>`}
     </div>
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
