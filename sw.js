@@ -61,6 +61,11 @@
    Jetzt steht hier alles drin, was die App zum Anzeigen braucht.
    Nicht dabei: logo.png (wird nirgends mehr aufgerufen) und
    vorschau.png (nur das Bild fuer geteilte Links, nie im Bild). */
+/* v9: Der Service Worker beantwortet jetzt Fragen der Seite
+   ("offline-pruefen", "offline-fuellen"). Ein neuer Speichername
+   ist nicht noetig - die Dateien sind dieselben -, aber ein neuer
+   Service Worker schon, und den erkennt der Browser an jeder
+   Aenderung in dieser Datei. */
 /* v8: ic-karten.webp ist dazugekommen. Ein neuer Speichername ist
    der Weg, die Liste von v7 loszuwerden - sonst fehlte das neue
    Symbol genau denen, die schon offline gespeichert haben. */
@@ -120,6 +125,67 @@ self.addEventListener("activate", (e)=>{
         alle.filter(r => r.url.indexOf("version.json") >= 0).map(r => c.delete(r)))))
       .then(()=> self.clients.claim())
   );
+});
+
+/* =====================================================================
+   AUSKUNFT UND AUFTRAG
+
+   Die Seite soll zeigen koennen, ob LingoCrafter wirklich offline
+   bereit ist - und es auf Knopfdruck herstellen. Dafuer fragt sie
+   NICHT selbst den Zwischenspeicher ab.
+
+   Der Grund: Die Dateiliste MITNEHMEN und der Name des Speichers
+   stehen hier. Haette die Seite ihre eigene Liste, waeren es zwei -
+   und die eine wuerde irgendwann vergessen, wenn ein Bild dazukommt.
+   Sie meldete dann "fertig", und offline fehlte trotzdem etwas.
+
+   Geantwortet wird ueber den Port, den die Seite mitschickt
+   (MessageChannel). Dadurch bekommt genau das fragende Fenster die
+   Antwort - und nicht alle offenen gleichzeitig.
+===================================================================== */
+self.addEventListener("message", (e)=>{
+  const auftrag = (e.data || {}).lc;
+  const sagen = (o)=>{ try{ if(e.ports && e.ports[0]) e.ports[0].postMessage(o); }catch(x){} };
+
+  if(auftrag === "offline-pruefen"){
+    e.waitUntil((async ()=>{
+      try{
+        const c = await caches.open(CACHE);
+        const da = await Promise.all(MITNEHMEN.map(u => c.match(u).then(t => !!t)));
+        sagen({ lc:"stand", da: da.filter(Boolean).length, gesamt: MITNEHMEN.length });
+      }catch(x){
+        sagen({ lc:"stand", da: 0, gesamt: MITNEHMEN.length });
+      }
+    })());
+    return;
+  }
+
+  if(auftrag === "offline-fuellen"){
+    e.waitUntil((async ()=>{
+      const c = await caches.open(CACHE);
+      let fertig = 0, bytes = 0;
+      const fehlen = [];
+      for(const u of MITNEHMEN){
+        try{
+          const a = await frischHolen(u);
+          if(a && a.ok){
+            /* Erst den Zwilling wegschreiben, dann den Koerper lesen -
+               ein Response laesst sich nur EINMAL auslesen. */
+            const kopie = a.clone();
+            await c.put(u, kopie);
+            bytes += (await a.blob()).size;
+          } else {
+            fehlen.push(u);
+          }
+        }catch(x){ fehlen.push(u); }
+        fertig++;
+        sagen({ lc:"fortschritt", fertig: fertig, gesamt: MITNEHMEN.length });
+      }
+      sagen({ lc:"fertig", da: MITNEHMEN.length - fehlen.length,
+              gesamt: MITNEHMEN.length, bytes: bytes, fehlen: fehlen });
+    })());
+    return;
+  }
 });
 
 self.addEventListener("fetch", (e)=>{

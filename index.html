@@ -2057,6 +2057,35 @@
   text-align:center; font-size:12.5px; color:var(--tinte-hell); margin:8px 0 0;
 }
 
+/* ---------- Das Offline-Fenster ----------------------------------- */
+.off-box{ max-width:420px; width:100%; }
+.off-stand{
+  display:flex; align-items:flex-start; gap:10px;
+  padding:12px 13px; border-radius:14px;
+  background:var(--papier); border:2px solid var(--papier-rand);
+  font-size:13.5px; line-height:1.4; color:var(--tinte);
+}
+.off-stand.gut{  background:#eef4e6; border-color:#5c7a45; }
+.off-stand.offen{ background:#fdf4e0; border-color:#a07d2d; }
+.off-ic{ font-size:20px; flex:0 0 auto; line-height:1.2; }
+.off-txt{ flex:1; min-width:0; }
+.off-balken{
+  height:12px; margin-top:10px; border-radius:20px; overflow:hidden;
+  background:rgba(120,100,70,0.16);
+}
+.off-balken i{ display:block; height:100%; width:0; background:#3f7d43; transition:width .25s; }
+/* ZWEI SELEKTOREN, UND DAS IST NOETIG.
+
+   .modal-box p setzt 19 px und zentriert - gedacht fuer die eine kurze
+   Frage in einem Bestaetigungsfenster. Ein schlichtes .off-hinweis
+   hat dieselbe Staerke und verliert, weil .modal-box p weiter unten
+   steht: Der Hinweis stand in Riesenschrift mitten im Fenster und
+   machte es 95 px hoeher. Im Browser gesehen, nicht im Kopf. */
+.off-box .off-hinweis{
+  margin:14px 0 0; padding-top:11px; border-top:1px solid rgba(120,100,70,0.2);
+  font-size:12px; line-height:1.45; text-align:left; color:var(--tinte-hell);
+}
+
 /* Der Warnstreifen ueber der Karte. Er muss auffallen, ohne nach
    Fehlermeldung auszusehen - ein Kind soll nicht denken, es habe
    etwas kaputtgemacht. Deshalb Papierton mit warmem Rand statt Rot,
@@ -4181,7 +4210,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "93.2 – Verdrehte Liste wird erkannt";
+const APP_VERSION = "93.3 – Offline herunterladen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -7358,6 +7387,132 @@ function lingoraStartVerdrahten(){
 let stimmeBegruesstDiesenBesuch = false;
 
 
+
+/* =====================================================================
+   OFFLINE: NACHSEHEN UND HERUNTERLADEN
+
+   Beides macht der Service Worker, nicht diese Seite - dort steht die
+   Dateiliste. Hier wird nur gefragt und angezeigt.
+
+   Die Antwort kommt ueber einen eigenen Kanal zurueck. Ein globaler
+   Empfaenger waere einfacher gewesen und haette zwei offene Fenster
+   durcheinandergebracht: Beide bekaemen jede Antwort.
+===================================================================== */
+function swFragen(nachricht, beiFortschritt){
+  return new Promise((fertig, fehler)=>{
+    const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+    if(!sw){ fehler(new Error("kein-dienst")); return; }
+    const kanal = new MessageChannel();
+    /* Nicht ewig warten: Wenn der Dienst nicht antwortet, soll das
+       Fenster das sagen und nicht stumm hängen bleiben. */
+    const uhr = setTimeout(()=> fehler(new Error("keine-antwort")), 120000);
+    kanal.port1.onmessage = (e)=>{
+      const d = e.data || {};
+      if(d.lc === "fortschritt"){ if(beiFortschritt) beiFortschritt(d); return; }
+      clearTimeout(uhr);
+      fertig(d);
+    };
+    try{ sw.postMessage(nachricht, [kanal.port2]); }
+    catch(x){ clearTimeout(uhr); fehler(x); }
+  });
+}
+
+/* Das Fenster. Drei Dinge an einer Stelle: wie es steht, es
+   herstellen, und der Weg auf den Startbildschirm. */
+function zeigeOfflineFenster(){
+  const hg = document.createElement('div');
+  hg.className = 'modal-overlay';
+  hg.innerHTML = `
+    <div class="panel modal-box off-box">
+      <div class="vkm-kopf">
+        <h3>LingoCrafter offline nutzen</h3>
+        <button type="button" class="vkm-zu" id="off-zu" aria-label="Schließen">✕</button>
+      </div>
+
+      <div class="off-stand" id="off-stand">
+        <span class="off-ic">⏳</span>
+        <span class="off-txt">Sehe nach, was schon gespeichert ist …</span>
+      </div>
+
+      <div class="off-balken" id="off-balken" hidden><i id="off-balken-i"></i></div>
+
+      <button class="btn" id="off-laden" style="margin-top:12px;" disabled>
+        📥 JETZT HERUNTERLADEN
+      </button>
+      <p class="muted" style="margin:8px 0 0;font-size:12.5px;line-height:1.45;">
+        Damit liegen alle Bilder und die ganze App auf deinem Gerät &ndash;
+        danach kannst du im Zug, im Ferienhaus oder im Funkloch üben.
+      </p>
+
+      <button class="btn secondary" id="off-install" style="margin-top:14px;">
+        📲 Auf den Startbildschirm legen
+      </button>
+      <p class="muted" style="margin:8px 0 0;font-size:12.5px;line-height:1.45;">
+        Dann startet LingoCrafter ohne Browserleiste, wie eine richtige App.
+      </p>
+
+      <p class="off-hinweis">Auf dem iPhone räumt iOS den Speicher nach etwa einer Woche
+        ohne Besuch wieder weg. Wenn du die App länger nicht aufmachst, lade sie vorher
+        noch einmal herunter.</p>
+    </div>`;
+  document.body.appendChild(hg);
+
+  const zu = ()=>{ if(hg.parentNode) hg.parentNode.removeChild(hg); };
+  hg.querySelector('#off-zu').addEventListener('click', zu);
+  hg.addEventListener('click', (e)=>{ if(e.target === hg) zu(); });
+  hg.querySelector('#off-install').addEventListener('click', ()=>{ zu(); installAnstupsen(); });
+
+  const standEl  = hg.querySelector('#off-stand');
+  const ladenBtn = hg.querySelector('#off-laden');
+  const balken   = hg.querySelector('#off-balken');
+  const balkenI  = hg.querySelector('#off-balken-i');
+
+  const zeigen = (ic, txt, klasse)=>{
+    standEl.className = "off-stand" + (klasse ? " " + klasse : "");
+    standEl.innerHTML = '<span class="off-ic">' + ic + '</span><span class="off-txt">' + txt + '</span>';
+  };
+
+  swFragen({ lc:"offline-pruefen" }).then(d=>{
+    if(d.da >= d.gesamt){
+      zeigen("✅", "Alles da: <strong>" + d.gesamt + " von " + d.gesamt
+                 + "</strong> Dateien sind gespeichert. LingoCrafter läuft ohne Internet.", "gut");
+      ladenBtn.textContent = "🔄 Noch einmal herunterladen";
+    } else {
+      zeigen("📥", "<strong>" + d.da + " von " + d.gesamt + "</strong> Dateien sind gespeichert. "
+                 + "Für den Betrieb ohne Internet fehlt noch etwas.", "offen");
+    }
+    ladenBtn.disabled = false;
+  }).catch(()=>{
+    zeigen("ℹ️", "Der Offline-Dienst ist noch nicht bereit. Lade die Seite einmal neu &ndash; "
+               + "danach kannst du hier herunterladen.", "offen");
+  });
+
+  ladenBtn.addEventListener('click', ()=>{
+    ladenBtn.disabled = true;
+    balken.hidden = false;
+    balkenI.style.width = "0%";
+    zeigen("⏬", "Lade herunter …");
+    swFragen({ lc:"offline-fuellen" }, (p)=>{
+      balkenI.style.width = Math.round(p.fertig / p.gesamt * 100) + "%";
+      zeigen("⏬", "Lade herunter &ndash; <strong>" + p.fertig + " von " + p.gesamt + "</strong>");
+    }).then(d=>{
+      balkenI.style.width = "100%";
+      if(d.fehlen && d.fehlen.length){
+        zeigen("⚠️", "<strong>" + d.da + " von " + d.gesamt + "</strong> gespeichert. "
+                   + "Der Rest ging gerade nicht &ndash; versuch es noch einmal mit besserem Netz.", "offen");
+      } else {
+        zeigen("✅", "Fertig: <strong>" + d.gesamt + " Dateien</strong> ("
+                   + Math.round((d.bytes || 0) / 104857.6) / 10 + " MB) liegen jetzt auf deinem Gerät. "
+                   + "Du kannst LingoCrafter ohne Internet benutzen.", "gut");
+        ladenBtn.textContent = "🔄 Noch einmal herunterladen";
+      }
+      ladenBtn.disabled = false;
+    }).catch(()=>{
+      zeigen("⚠️", "Das hat gerade nicht geklappt. Prüf die Verbindung und versuch es noch einmal.", "offen");
+      ladenBtn.disabled = false;
+    });
+  });
+}
 
 /* =====================================================================
    "AUFS HANDY HOLEN"
@@ -12748,6 +12903,9 @@ function renderLogin(){
         <button class="btn secondary" id="install-anstupsen">
           📲 LINGOCRAFTER INSTALLIEREN
         </button>
+        <button class="btn secondary" id="offline-anstupsen" style="margin-top:8px;">
+          📥 FÜR OFFLINE HERUNTERLADEN
+        </button>
         <p class="muted center-text" style="margin:9px 0 0;font-size:12.5px;line-height:1.45;">
           Dann startet die App vom Startbildschirm &ndash; ohne Browserleiste und auch ohne Internet.
         </p>
@@ -12845,6 +13003,8 @@ function renderLogin(){
   if(infoLogin){ infoLogin.addEventListener('click', oeffneInfo); }
   const instBtn = document.getElementById('install-anstupsen');
   if(instBtn){ instBtn.addEventListener('click', installAnstupsen); }
+  const offBtn = document.getElementById('offline-anstupsen');
+  if(offBtn){ offBtn.addEventListener('click', zeigeOfflineFenster); }
   const nameInput = document.getElementById('player-name-input');
   const pinInput = document.getElementById('player-pin-input');
 
@@ -12963,6 +13123,14 @@ function werkzeugGitterHtml(){
         ${kachel("inventar-btn", "ic-geschenk", "Inventar (" + anzahlImInventar() + ")", false, "wk-braun")}
         ${kachel("radar-btn", "ic-plan", "Klassenarbeits-Radar", false, "wk-rot")}
       </div>
+      <!-- Als Zeile unter dem Gitter statt als neunte Kachel: Fuer eine
+           Kachel braeuchte es ein gezeichnetes Symbol, und zwei Kacheln
+           mit demselben Bild waren schon einmal ein Fehler. -->
+      <button class="btn secondary" id="offline-btn" style="margin-top:10px;">
+        📥 Offline nutzen
+      </button>
+      <p class="muted center-text" style="margin:7px 0 0;font-size:12.5px;">
+        App herunterladen und auf den Startbildschirm legen</p>
     </div>
 `;
 }
@@ -13916,6 +14084,7 @@ function startVerdrahten(){
      ("✓ Meine Auswahl") faellt auf "Alle" zurueck. Die sind fluechtig
      gemeint, und ein Stapel aus sieben Woertern von vorletzter Woche
      waere ein Raetsel statt einer Auswahl. */
+  zu('offline-btn', zeigeOfflineFenster);
   zu('karten-btn', ()=>{
     state.mainMode = "vocab";
     state.offenesPaket = "";
