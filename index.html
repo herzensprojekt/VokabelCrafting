@@ -2057,6 +2057,74 @@
   text-align:center; font-size:12.5px; color:var(--tinte-hell); margin:8px 0 0;
 }
 
+/* ---------- Elternbereich ---------------------------------------- */
+.el-oben{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.el-wer{ flex:1; min-width:140px; margin:0; font-size:13.5px; color:var(--tinte); }
+.el-oben .btn{ width:auto; margin:0; flex:0 0 auto; }
+.el-fehler{
+  margin:10px 0 0; padding:9px 11px; border-radius:12px;
+  background:#fbeae6; border:2px solid #b3402c; color:#5e1f13;
+  font-size:13px; line-height:1.4;
+}
+.el-hinweis{
+  margin:10px 0 0; padding:9px 11px; border-radius:12px;
+  background:#eef4e6; border:2px solid #5c7a45; color:#294016;
+  font-size:13px; line-height:1.4;
+}
+.linkbtn.el-vergessen{ display:block; margin:10px auto 0; font-size:13px; }
+.el-linkbox{
+  padding:10px 12px; border-radius:12px;
+  background:var(--papier-tief); border:2px dashed var(--tinte-hell);
+}
+.el-link{
+  display:block; font-size:12px; line-height:1.5; color:var(--tinte);
+  overflow-wrap:anywhere; font-family:ui-monospace,Menlo,Consolas,monospace;
+}
+.el-kind{ padding-top:14px; }
+.el-k-kopf{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+.el-k-name{ flex:1; font-family:var(--font); font-weight:800; font-size:18px; color:var(--tinte); }
+.el-k-weg{
+  flex:0 0 auto; width:36px; height:36px; border-radius:10px; cursor:pointer;
+  background:var(--papier); border:2px solid var(--papier-rand);
+  font-size:14px; color:var(--tinte-hell); line-height:1;
+}
+.el-k-satz{ margin:0 0 10px; font-size:13.5px; line-height:1.4; color:var(--tinte); }
+.el-zahlen{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:12px; }
+.el-zahl{
+  background:var(--papier); border:2px solid var(--papier-rand); border-radius:12px;
+  padding:10px 6px; text-align:center;
+}
+.el-zahl b{ display:block; font-family:var(--font); font-size:20px; line-height:1.15; color:var(--tinte); }
+.el-zahl span{ font-size:11.5px; color:var(--tinte-hell); }
+
+/* ---------- Die Wege zum Plan ------------------------------------
+   Zwei breite Karten statt zweier schmaler Knopfzeilen: Symbol, eine
+   Zeile in Klartext, darunter klein, was dahinter passiert. Gross
+   genug, dass sie das Erste sind, was man sieht - genau darum ging
+   es. */
+.plw-wege{ display:flex; flex-direction:column; gap:8px; margin:0 0 14px; }
+.plw-oben .plw-weg + .plw-weg{ margin-top:8px; }
+.plw-weg{
+  display:flex; align-items:center; gap:12px; width:100%; cursor:pointer;
+  padding:13px 14px; border-radius:16px; text-align:left;
+  background:var(--papier); border:2px solid var(--papier-rand);
+  font-family:var(--font); color:var(--tinte);
+}
+.plw-weg:hover{ background:var(--papier-tief); }
+/* Der obere traegt die Hauptabsicht - er darf lauter sein. Dieselbe
+   Machart wie die hervorgehobenen Werkzeugkacheln: Rahmen ringsum,
+   waermeres Papier, etwas mehr Hoehe. Keine Vollfarbe. */
+.plw-weg.haupt{
+  border-color:#5c7a45;
+  background:linear-gradient(180deg, rgba(243,249,237,0.99), var(--papier));
+  box-shadow:0 4px 13px rgba(58,94,38,0.15);
+}
+.plw-ic{ font-size:25px; flex:0 0 auto; }
+.plw-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.plw-t{ font-weight:800; font-size:15.5px; line-height:1.25; }
+.plw-txt small{ font-size:12.5px; line-height:1.3; color:var(--tinte-hell); }
+.plw-pfeil{ flex:0 0 auto; font-size:18px; color:var(--tinte-hell); }
+
 /* ---------- Das Offline-Fenster ----------------------------------- */
 .off-box{ max-width:420px; width:100%; }
 .off-stand{
@@ -3912,7 +3980,7 @@ summary.mehr-knopf::after{ content:none; }
       const {
         getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
         onAuthStateChanged, signOut, setPersistence, browserLocalPersistence,
-        deleteUser
+        deleteUser, sendPasswordResetEmail
       } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
       const {
         getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, increment, collection,
@@ -4188,8 +4256,118 @@ summary.mehr-knopf::after{ content:none; }
         return { ok:true };
       }
 
+      /* ==================================================================
+         DER ELTERNBEREICH LEBT IN EINER EIGENEN INSTANZ
+
+         Firebase Auth kennt pro App-Instanz genau EINE Anmeldung. Ohne
+         zweite Instanz wuerde eine Elternanmeldung das Kind auf
+         demselben Geraet hinauswerfen - und umgekehrt. Auf einem
+         Familien-Tablet waere das jedes Mal ein Drama.
+
+         Zweite Instanz, zweiter Name, zweiter Speicher: Kind und Eltern
+         koennen gleichzeitig angemeldet sein, ohne voneinander zu
+         wissen. Dasselbe Projekt, dieselbe Datenbank.
+      ================================================================== */
+      const appEltern  = initializeApp(firebaseConfig, "eltern");
+      const authEltern = getAuth(appEltern);
+      const dbEltern   = getFirestore(appEltern);
+      try{ await setPersistence(authEltern, browserLocalPersistence); }catch(e){}
+      const elternStart = await new Promise(resolve=>{
+        const unsub = onAuthStateChanged(authEltern, u=>{ unsub(); resolve(u); });
+      });
+
+      function elternUid(){  return authEltern.currentUser ? authEltern.currentUser.uid : null; }
+      function elternMail(){ return authEltern.currentUser ? authEltern.currentUser.email : null; }
+
+      /* Die Fehlermeldungen von Firebase sind englisch und technisch.
+         Hier werden sie zu Saetzen, die ein Elternteil versteht. */
+      function elternFehler(e){
+        const c = (e && e.code) || "";
+        if(c === "auth/invalid-email")        return "Diese E-Mail-Adresse sieht nicht richtig aus.";
+        if(c === "auth/missing-password")     return "Bitte ein Passwort eingeben.";
+        if(c === "auth/weak-password")        return "Das Passwort ist zu kurz – mindestens sechs Zeichen.";
+        if(c === "auth/email-already-in-use") return "Zu dieser Adresse gibt es schon ein Konto. Melde dich damit an.";
+        if(c === "auth/invalid-credential" || c === "auth/wrong-password"
+           || c === "auth/user-not-found")    return "E-Mail oder Passwort stimmt nicht.";
+        if(c === "auth/too-many-requests")    return "Zu viele Versuche. Warte einen Moment.";
+        if(c === "auth/network-request-failed") return "Keine Verbindung. Bist du online?";
+        return "Das hat gerade nicht geklappt.";
+      }
+
+      async function elternAnmelden(mail, pw){
+        try{
+          const res = await signInWithEmailAndPassword(authEltern, String(mail).trim(), String(pw));
+          return { ok:true, uid: res.user.uid };
+        }catch(e){ return { ok:false, fehler: elternFehler(e) }; }
+      }
+      async function elternRegistrieren(mail, pw){
+        try{
+          const res = await createUserWithEmailAndPassword(authEltern, String(mail).trim(), String(pw));
+          return { ok:true, uid: res.user.uid };
+        }catch(e){ return { ok:false, fehler: elternFehler(e) }; }
+      }
+      async function elternAbmelden(){
+        try{ await signOut(authEltern); return { ok:true }; }
+        catch(e){ return { ok:false, fehler: elternFehler(e) }; }
+      }
+      async function elternPasswortMail(mail){
+        try{ await sendPasswordResetEmail(authEltern, String(mail).trim()); return { ok:true }; }
+        catch(e){ return { ok:false, fehler: elternFehler(e) }; }
+      }
+
+      /* Das Elternkonto: nur die Liste der Kinder. Mehr steht da nicht,
+         und mehr laesst die Regel auch gar nicht zu. */
+      async function elternKinderLesen(){
+        const uid = elternUid();
+        if(!uid) return [];
+        try{
+          const snap = await getDoc(doc(dbEltern, "eltern", uid));
+          const d = snap.exists() ? snap.data() : null;
+          return (d && Array.isArray(d.kinder)) ? d.kinder : [];
+        }catch(e){ return []; }
+      }
+      async function elternKinderSchreiben(kinder){
+        const uid = elternUid();
+        if(!uid) return { ok:false, fehler:"nicht angemeldet" };
+        try{
+          await setDoc(doc(dbEltern, "eltern", uid),
+                       { kinder: kinder.slice(0, 20), updatedAt: Date.now() });
+          return { ok:true };
+        }catch(e){ return { ok:false, fehler: elternFehler(e) }; }
+      }
+
+      /* Der Einladungszettel wird vom KIND angelegt - die Regel verlangt
+         playerId == request.auth.uid. Also ueber die Kind-Instanz. */
+      async function einladungAnlegen(token, bis){
+        const uid = currentUid();
+        if(!uid) return { ok:false, fehler:"nicht angemeldet" };
+        try{
+          await setDoc(doc(db, "elternEinladung", token), { playerId: uid, bis: bis });
+          return { ok:true };
+        }catch(e){ return { ok:false, fehler:String(e) }; }
+      }
+      async function einladungLesen(token){
+        try{
+          const snap = await getDoc(doc(dbEltern, "elternEinladung", String(token)));
+          return snap.exists() ? snap.data() : null;
+        }catch(e){ return null; }
+      }
+      /* Das Kind, gelesen mit der Eltern-Instanz. Bei players ist "get"
+         offen - deshalb braucht es dafuer keine neue Regel. */
+      async function kindLesen(id){
+        try{
+          const snap = await getDoc(doc(dbEltern, "players", String(id)));
+          return snap.exists() ? Object.assign({ id: snap.id }, snap.data()) : null;
+        }catch(e){ return null; }
+      }
+
       return {
         available:true, initialUid: initialUser ? initialUser.uid : null,
+        elternStartUid: elternStart ? elternStart.uid : null,
+        elternUid, elternMail, elternAnmelden, elternRegistrieren,
+        elternAbmelden, elternPasswortMail,
+        elternKinderLesen, elternKinderSchreiben,
+        einladungAnlegen, einladungLesen, kindLesen,
         currentUid, signInWithPin, registerWithPin, signOutUser,
         savePlayer, getRangliste, setRangliste, getPlayerById,
         adjustCoinsAndInventory, appendRedeemLogEntry, confirmRedeemEntry,
@@ -4210,7 +4388,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "93.3 – Offline herunterladen";
+const APP_VERSION = "94.1 – Elternbereich angeschlossen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6272,6 +6450,30 @@ function renderLingoraPlan(){
   app.innerHTML = `
     ${renderHeader("Lingoras Plan", true)}
 
+    <!-- GANZ OBEN, nicht unter dem Teilen-Block: Wer auf "Ich schreibe
+         bald einen Test" tippt und schon einen Plan hat, landet hier -
+         und sucht dann genau diese beiden Knoepfe. Vorher standen sie
+         als blasse Geisterknoepfe hinter dem heutigen Tag, der
+         Vorschau und Lingoras Spruch. -->
+    <div class="panel plw-oben">
+      <button type="button" class="plw-weg haupt" id="lg-neu">
+        <span class="plw-ic">🔄</span>
+        <span class="plw-txt">
+          <span class="plw-t">Neuen Plan machen</span>
+          <small>Lingora fragt dich ein paar Sachen &ndash; der alte bleibt</small>
+        </span>
+        <span class="plw-pfeil">▸</span>
+      </button>
+      <button type="button" class="plw-weg" id="lg-weg">
+        <span class="plw-ic">🗑️</span>
+        <span class="plw-txt">
+          <span class="plw-t">Plan verwerfen</span>
+          <small>Nur diesen einen &ndash; deine anderen bleiben</small>
+        </span>
+        <span class="plw-pfeil">▸</span>
+      </button>
+    </div>
+
     <div class="panel">
       ${lingoraKopfHtml(escapeHtml(spruch))}
       <div class="lg-balken"><div class="lg-balken-fuell" style="width:${f.gesamt ? Math.round(f.fertig/f.gesamt*100) : 0}%;"></div></div>
@@ -6330,8 +6532,6 @@ function renderLingoraPlan(){
       </button>
       <p class="teilen-hinweis">Schick ihn zum Beispiel in euren Klassenchat &ndash;
         dann weiß die ganze Klasse, was bis wann dran ist.</p>
-      <button class="btn ghost" id="lg-neu" style="margin-top:12px;">🔄 Neuen Plan machen</button>
-      <button class="btn ghost" id="lg-weg" style="margin-top:8px;">🗑️ Plan verwerfen</button>
     </div>
 
     ${terminPlanOffenHeute() ? "" : nochUebenHtml()}
@@ -7216,15 +7416,48 @@ function lingoraStartHtml(){
         <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
         <div class="lg-blase">${satz}</div>
       </div>
+      ${planWegeHtml()}
       ${heuteListe.length ? `
         <p class="lw-jetzt-l">${laeuft && !offen ? "NOCHMAL ÜBEN" : "HEUTE DRAN"}</p>
         ${heuteListeHtml(heuteListe)}` : ""}
       ${rangZeileHtml()}
       ${zuletztHtml()}
-      <div class="lg-nebenwege">
-        <button class="btn secondary einzeilig" id="lg-start-plan">📅 PLAN MACHEN</button>
-        <button class="btn secondary einzeilig" id="lg-lernweg">🧭 MEIN LERNWEG</button>
-      </div>
+    </div>`;
+}
+
+/* Die zwei Wege zum Plan - das Erste in Lingoras Kasten.
+
+   Bis v93.3 standen sie als schmales Knopfpaar GANZ UNTEN, nach der
+   Tagesliste, der Rangzeile und "zuletzt geuebt". Wer einen Plan
+   machen wollte, musste an allem vorbei, was die App statt dessen
+   anbot.
+
+   Und sie heissen jetzt nach dem ANLASS, nicht nach dem Werkzeug:
+   Ein Kind denkt nicht "ich mache einen Plan", es denkt "ich schreibe
+   bald was". Die Unterzeile sagt, was dann passiert. */
+function planWegeHtml(){
+  const anzahl = (typeof lingoraPlaene === "function" ? lingoraPlaene() : []).length;
+  return `
+    <div class="plw-wege">
+      <button type="button" class="plw-weg haupt" id="lg-start-plan">
+        <span class="plw-ic">📅</span>
+        <span class="plw-txt">
+          <span class="plw-t">Ich schreibe bald einen Test</span>
+          <small>Lingora plant bis dahin</small>
+        </span>
+        <span class="plw-pfeil">▸</span>
+      </button>
+      <button type="button" class="plw-weg" id="lg-lernweg">
+        <span class="plw-ic">🗺️</span>
+        <span class="plw-txt">
+          <span class="plw-t">Meine Pläne</span>
+          <small>${anzahl
+            ? (anzahl === 1 ? "1 Plan läuft" : anzahl + " Pläne laufen")
+              + " &middot; und was schon sitzt"
+            : "Noch kein Plan &middot; hier siehst du, was schon sitzt"}</small>
+        </span>
+        <span class="plw-pfeil">▸</span>
+      </button>
     </div>`;
 }
 
@@ -10097,9 +10330,10 @@ function diamantenStand(){
   return state.diamanten;
 }
 
-function computeAvgGrade(){
-  if(!state.gradeEntries || state.gradeEntries.length === 0) return null;
-  const letzte = state.gradeEntries.slice(0, GRADE_WINDOW);
+function computeAvgGrade(q){
+  const s = q || state;
+  if(!s.gradeEntries || s.gradeEntries.length === 0) return null;
+  const letzte = s.gradeEntries.slice(0, GRADE_WINDOW);
   const sum = letzte.reduce((s,e)=>s+e.grade, 0);
   return Math.round((sum / letzte.length) * 100) / 100;
 }
@@ -12084,6 +12318,7 @@ function render(){
   // Diese drei Seiten sind bewusst ohne Anmeldung erreichbar: der
   // Eltern-Bestaetigungslink sowie Impressum und Datenschutz - letztere
   // muessen von jeder Seite aus zugaenglich sein, auch vom Anmeldebildschirm.
+  if(state.screen==="elternkonto") return renderElternkonto();
   if(state.screen==="parentconfirm") return renderParentConfirm();
   if(state.screen==="lingorainfo") return renderLingoraInfo();
   if(state.screen==="impressum") return renderImpressum();
@@ -12532,6 +12767,18 @@ function showSetParentPinModal(onDone){
 function checkForParentConfirmLink(){
   const params = new URLSearchParams(window.location.search);
 
+  /* Der Elternzugang. Wird hier geprueft und nicht an einer eigenen
+     Stelle: Alle Links, die ohne Kind-Anmeldung hereinfuehren, gehoeren
+     an EINEN Ort - sonst fragt die naechste Fassung an einer dritten
+     Stelle noch einmal und die drei laufen auseinander. */
+  const elternToken = params.get("eltern");
+  if(elternToken && /^[0-9a-f]{32}$/.test(elternToken)){
+    state.elternToken = elternToken;
+    state.screen = "elternkonto";
+    render();
+    return true;
+  }
+
   // Neuer Weg: nur ein Token, kein Profilzugriff.
   const token = params.get("bestaetigen");
   if(token){
@@ -12584,6 +12831,248 @@ function checkForParentConfirmLink(){
     render();
   });
   return true;
+}
+
+/* ==================================================================
+   DER ELTERNBEREICH
+
+   Erreichbar ohne Kind-Anmeldung: ueber ?eltern=<token> und ueber den
+   Knopf auf der Startseite. Er lebt in der zweiten Firebase-Instanz
+   (siehe Modul oben) und sieht die Kind-Anmeldung nicht - und sie ihn
+   nicht.
+================================================================== */
+function elternStand(){
+  if(!state.elternStand) state.elternStand = {
+    uid:null, mail:"", eingabeMail:"", eingabePw:"", modus:"anmelden",
+    fehler:"", hinweis:"", laeuft:false, kinder:[], geladen:[], offenesKind:null
+  };
+  return state.elternStand;
+}
+
+/* Kinder laden: erst die Kennungen aus dem Elternkonto, dann die
+   Profile. Reihenfolge bleibt die des Kontos. */
+function elternKinderLaden(){
+  const s = elternStand();
+  s.laeuft = true; render();
+  getVokabelDB().then(async db=>{
+    if(!db.available){ s.laeuft = false; s.fehler = "Keine Verbindung."; render(); return; }
+    s.kinder  = await db.elternKinderLesen();
+    const roh = await Promise.all(s.kinder.map(id => db.kindLesen(id)));
+    s.geladen = roh.filter(Boolean);
+    s.laeuft  = false;
+    render();
+  });
+}
+
+/* Ein Kind ueber den Einladungszettel dazunehmen. */
+function elternKindDazu(token){
+  const s = elternStand();
+  s.laeuft = true; s.fehler = ""; render();
+  getVokabelDB().then(async db=>{
+    const z = await db.einladungLesen(token);
+    if(!z){ s.laeuft = false; s.fehler = "Dieser Link gilt nicht mehr."; render(); return; }
+    if(z.bis && z.bis < Date.now()){
+      s.laeuft = false; s.fehler = "Dieser Link ist abgelaufen. Lass dir im Elternbereich der App einen neuen geben.";
+      render(); return;
+    }
+    const alle = await db.elternKinderLesen();
+    if(alle.indexOf(z.playerId) < 0) alle.push(z.playerId);
+    await db.elternKinderSchreiben(alle);
+    /* Den Token aus der Adresse nehmen - sonst haengt er dort und wird
+       beim naechsten Oeffnen noch einmal verarbeitet. */
+    try{ history.replaceState(null, "", location.pathname); }catch(e){}
+    state.elternToken = "";
+    elternKinderLaden();
+  });
+}
+
+function elternAnmeldeHtml(){
+  const s = elternStand();
+  const neu = s.modus === "neu";
+  return `
+    <div class="panel">
+      <h3 style="font-size:17px;margin-bottom:2px;">${neu ? "Elternkonto anlegen" : "Als Elternteil anmelden"}</h3>
+      <p class="muted" style="margin-bottom:12px;">${neu
+        ? "Eine E-Mail-Adresse und ein Passwort – mehr braucht es nicht."
+        : "Mit der Adresse, die du beim Anlegen benutzt hast."}</p>
+
+      <label class="muted" style="display:block;font-size:13px;margin-bottom:4px;">E-Mail</label>
+      <input type="email" id="el-mail" autocomplete="username" inputmode="email"
+             placeholder="name@beispiel.de" value="${escapeHtml(s.eingabeMail)}">
+
+      <label class="muted" style="display:block;font-size:13px;margin:10px 0 4px;">Passwort</label>
+      <input type="password" id="el-pw" autocomplete="${neu ? "new-password" : "current-password"}"
+             placeholder="${neu ? "mindestens 6 Zeichen" : "dein Passwort"}">
+
+      ${s.fehler ? `<p class="el-fehler">⚠️ ${escapeHtml(s.fehler)}</p>` : ""}
+      ${s.hinweis ? `<p class="el-hinweis">✉️ ${escapeHtml(s.hinweis)}</p>` : ""}
+
+      <button class="btn" id="el-los" style="margin-top:12px;"${s.laeuft ? " disabled" : ""}>
+        ${s.laeuft ? "Einen Moment …" : (neu ? "✅ KONTO ANLEGEN" : "▶ ANMELDEN")}
+      </button>
+      <button class="btn secondary" id="el-wechsel" style="margin-top:8px;">
+        ${neu ? "Ich habe schon ein Konto" : "Noch kein Konto? Hier anlegen"}
+      </button>
+      ${neu ? "" : `<button type="button" class="linkbtn el-vergessen" id="el-vergessen">Passwort vergessen</button>`}
+    </div>`;
+}
+
+function elternKindKachelHtml(k){
+  const woche = elternWoche(k);
+  const tage  = woche.filter(t => t.gesamt > 0).length;
+  const summe = woche.reduce((s, t) => s + t.gesamt, 0);
+  const sum   = aktivitaetSumme(k);
+  const quote = sum.gesamt > 0 ? Math.round(sum.richtig / sum.gesamt * 100) : null;
+  const note  = computeAvgGrade(k);
+  const stand = elternWortstand(k);
+  const sitzt = stand.geuebt > 0 ? Math.round(stand.sitzt / stand.geuebt * 100) : 0;
+  const hoechst = Math.max(1, ...woche.map(t => t.gesamt));
+  return `
+    <div class="panel el-kind">
+      <div class="el-k-kopf">
+        <span class="el-k-name">${escapeHtml(k.name || "Kind")}</span>
+        <button type="button" class="el-k-weg" data-el-weg="${escapeHtml(k.id)}"
+                aria-label="Dieses Kind aus der Liste nehmen">✕</button>
+      </div>
+      <p class="el-k-satz">${tage === 0
+        ? "In den letzten " + ELTERN_TAGE + " Tagen noch nicht geübt."
+        : "An <strong>" + tage + " von " + ELTERN_TAGE + " Tagen</strong> geübt &ndash; zusammen <strong>" + summe + "</strong> " + (summe === 1 ? "Aufgabe" : "Aufgaben") + "."}</p>
+      <div class="ep-balken">
+        ${woche.map(t=>`
+          <span class="ep-tag ${t.gesamt ? "" : "leer"}">
+            <span class="ep-saeule">
+              ${t.g ? `<span class="ep-g" style="height:${Math.round(t.g / hoechst * 100)}%;"></span>` : ""}
+              ${t.v ? `<span class="ep-v" style="height:${Math.round(t.v / hoechst * 100)}%;"></span>` : ""}
+            </span>
+            <span class="ep-zahl">${t.gesamt || ""}</span>
+            <span class="ep-wt">${t.heute ? "heute" : elternWochentag(t.datum)}</span>
+          </span>`).join("")}
+      </div>
+      <div class="el-zahlen">
+        <div class="el-zahl"><b>${quote === null ? "–" : quote + " %"}</b><span>richtig</span></div>
+        <div class="el-zahl"><b>${note === null ? "–" : String(note).replace(".", ",")}</b><span>Notenschnitt</span></div>
+        <div class="el-zahl"><b>${sitzt} %</b><span>sitzt</span></div>
+      </div>
+    </div>`;
+}
+
+function renderElternkonto(){
+  const s = elternStand();
+
+  /* Firebase hat die Sitzung laengst - aber dieser Bildschirm weiss
+     noch nichts davon. Einmal nachfragen, dann merken. Ohne das stuende
+     ein Elternteil bei jedem Oeffnen wieder vor dem Anmeldeformular. */
+  if(!s.geprueft){
+    s.geprueft = true;
+    getVokabelDB().then(db=>{
+      if(!db.available || !db.elternUid) return;
+      const uid = db.elternUid();
+      if(uid && !s.uid){
+        s.uid = uid;
+        s.mail = db.elternMail() || "";
+        elternKinderLaden();
+      }
+    });
+  }
+  app.innerHTML = `
+    ${renderHeader("Elternbereich", true)}
+
+    ${s.uid ? `
+      <div class="panel el-oben">
+        <p class="el-wer">Angemeldet als <strong>${escapeHtml(s.mail || "")}</strong></p>
+        <button class="btn secondary" id="el-raus">Abmelden</button>
+      </div>
+
+      ${state.elternToken ? `
+        <div class="panel el-dazu">
+          <p style="margin:0 0 10px;">Du hast einen Aktivierungslink geöffnet.
+            Soll dieses Kind zu deinem Elternbereich dazukommen?</p>
+          <button class="btn" id="el-dazu-ja"${s.laeuft ? " disabled" : ""}>
+            ${s.laeuft ? "Einen Moment …" : "➕ Kind hinzufügen"}</button>
+        </div>` : ""}
+
+      ${s.fehler ? `<div class="panel"><p class="el-fehler">⚠️ ${escapeHtml(s.fehler)}</p></div>` : ""}
+
+      ${s.laeuft && !s.geladen.length ? `<div class="panel"><p class="muted center-text">Lade …</p></div>` : ""}
+
+      ${s.geladen.length
+        ? s.geladen.map(elternKindKachelHtml).join("")
+        : (s.laeuft ? "" : `
+          <div class="panel">
+            <h3 style="font-size:16px;margin-bottom:6px;">Noch kein Kind verknüpft</h3>
+            <p class="muted" style="margin:0;">Öffne in der App deines Kindes den Elternbereich
+              (mit dem Eltern-PIN) und tippe dort auf <strong>Elternzugang einrichten</strong>.
+              Den Link schickst du dir selbst &ndash; und öffnest ihn hier.</p>
+          </div>`)}
+    ` : elternAnmeldeHtml()}
+
+    <button class="btn danger" id="el-zurueck" style="margin-top:8px;">✕ ZURÜCK ZUR APP</button>
+  `;
+
+  const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+
+  an('el-zurueck', ()=>{ state.screen = "start"; render(); });
+
+  an('el-wechsel', ()=>{
+    s.modus = s.modus === "neu" ? "anmelden" : "neu";
+    s.fehler = ""; s.hinweis = ""; render();
+  });
+
+  const merken = ()=>{
+    const m = document.getElementById('el-mail'), p = document.getElementById('el-pw');
+    s.eingabeMail = m ? m.value : "";
+    return { mail: s.eingabeMail, pw: p ? p.value : "" };
+  };
+
+  an('el-los', ()=>{
+    const { mail, pw } = merken();
+    if(!mail || !pw){ s.fehler = "Bitte E-Mail und Passwort eingeben."; render(); return; }
+    s.laeuft = true; s.fehler = ""; s.hinweis = ""; render();
+    getVokabelDB().then(async db=>{
+      if(!db.available){ s.laeuft = false; s.fehler = "Keine Verbindung."; render(); return; }
+      const r = s.modus === "neu" ? await db.elternRegistrieren(mail, pw)
+                                  : await db.elternAnmelden(mail, pw);
+      s.laeuft = false;
+      if(!r.ok){ s.fehler = r.fehler; render(); return; }
+      s.uid = r.uid; s.mail = db.elternMail(); s.fehler = "";
+      elternKinderLaden();
+    });
+  });
+
+  an('el-vergessen', ()=>{
+    const { mail } = merken();
+    if(!mail){ s.fehler = "Trag zuerst deine E-Mail-Adresse ein."; render(); return; }
+    getVokabelDB().then(async db=>{
+      const r = await db.elternPasswortMail(mail);
+      s.fehler = r.ok ? "" : r.fehler;
+      s.hinweis = r.ok ? "Wir haben dir eine E-Mail geschickt. Schau auch im Spam-Ordner." : "";
+      render();
+    });
+  });
+
+  an('el-raus', ()=>{
+    getVokabelDB().then(async db=>{
+      await db.elternAbmelden();
+      state.elternStand = null;
+      render();
+    });
+  });
+
+  an('el-dazu-ja', ()=>{ elternKindDazu(state.elternToken); });
+
+  document.querySelectorAll('[data-el-weg]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.dataset.elWeg;
+      showConfirmModal('Dieses Kind aus deinem Elternbereich nehmen? Am Spielstand des Kindes ändert sich nichts.',
+        ()=>{
+          getVokabelDB().then(async db=>{
+            const alle = (await db.elternKinderLesen()).filter(x => x !== id);
+            await db.elternKinderSchreiben(alle);
+            elternKinderLaden();
+          });
+        });
+    });
+  });
 }
 
 function renderParentConfirm(){
@@ -12906,6 +13395,9 @@ function renderLogin(){
         <button class="btn secondary" id="offline-anstupsen" style="margin-top:8px;">
           📥 FÜR OFFLINE HERUNTERLADEN
         </button>
+        <button class="btn secondary" id="eltern-anstupsen" style="margin-top:8px;">
+          👨‍👩‍👧 FÜR ELTERN
+        </button>
         <p class="muted center-text" style="margin:9px 0 0;font-size:12.5px;line-height:1.45;">
           Dann startet die App vom Startbildschirm &ndash; ohne Browserleiste und auch ohne Internet.
         </p>
@@ -13005,6 +13497,10 @@ function renderLogin(){
   if(instBtn){ instBtn.addEventListener('click', installAnstupsen); }
   const offBtn = document.getElementById('offline-anstupsen');
   if(offBtn){ offBtn.addEventListener('click', zeigeOfflineFenster); }
+  const elBtn = document.getElementById('eltern-anstupsen');
+  if(elBtn){ elBtn.addEventListener('click', ()=>{
+    state.elternToken = ""; state.screen = "elternkonto"; render();
+  }); }
   const nameInput = document.getElementById('player-name-input');
   const pinInput = document.getElementById('player-pin-input');
 
@@ -14154,6 +14650,26 @@ function startVerdrahten(){
   if(impStart){ impStart.addEventListener('click', ()=>oeffneImpressum("start")); }
   const dsStart = document.getElementById('datenschutz-start');
   if(dsStart){ dsStart.addEventListener('click', ()=>oeffneDatenschutz("start")); }
+  const elZugang = document.getElementById('el-zugang');
+  if(elZugang){ elZugang.addEventListener('click', elternLinkErzeugen); }
+  const elKop = document.getElementById('el-link-kopieren');
+  if(elKop){ elKop.addEventListener('click', ()=>{
+    const l = (state.elternLinkStand || {}).link || "";
+    if(!l) return;
+    try{
+      navigator.clipboard.writeText(l);
+      showGoodToast('<span class="item-pop">📋</span> Link kopiert.');
+    }catch(e){ /* dann eben von Hand markieren */ }
+  }); }
+  const elTeil = document.getElementById('el-link-teilen');
+  if(elTeil){ elTeil.addEventListener('click', ()=>{
+    const l = (state.elternLinkStand || {}).link || "";
+    if(!l) return;
+    const txt = "Mein Elternzugang für LingoCrafter: " + l;
+    if(navigator.share){ navigator.share({ text: txt }).catch(()=>{}); }
+    else { window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank", "noopener"); }
+  }); }
+
   const parentsBtn = document.getElementById('parents-btn');
   if(parentsBtn){
     parentsBtn.addEventListener('click', ()=>{
@@ -16858,8 +17374,15 @@ function letzteTageStat(anzahl){
   return out;
 }
 
-function aktivitaetSumme(){
-  const l = state.activityLog || {};
+/* Alle vier Rechnungen lesen seit v94.0 WAHLWEISE aus einem anderen
+   Spielstand - dem Kind, das ein Elternteil gerade ansieht. Ohne
+   Parameter verhalten sie sich Zeichen fuer Zeichen wie vorher.
+
+   Der Alternativweg waere gewesen, sie fuer den Elternbildschirm ein
+   zweites Mal zu schreiben. Genau das ist mir in dieser App schon
+   dreimal auf die Fuesse gefallen - zuletzt bei den Spielnamen. */
+function aktivitaetSumme(q){
+  const l = (q || state).activityLog || {};
   let v = 0, vc = 0, g = 0, gc = 0;
   Object.keys(l).forEach(k=>{
     const e = l[k] || {};
@@ -17109,8 +17632,9 @@ const ELTERN_TAGE = 7;
 
 /* Die letzten Tage als Liste - aelteste zuerst, damit die Balken von
    links nach rechts laufen wie ein Kalender. */
-function elternWoche(){
-  const log = (state.activityLog && typeof state.activityLog === "object") ? state.activityLog : {};
+function elternWoche(q){
+  const s = q || state;
+  const log = (s.activityLog && typeof s.activityLog === "object") ? s.activityLog : {};
   const raus = [];
   const heute = new Date();
   for(let i = ELTERN_TAGE - 1; i >= 0; i--){
@@ -17138,9 +17662,9 @@ function elternProzent(richtig, gesamt){
 
 /* Was sitzt, was wackelt. Box 4 und 5 heissen: sieben bzw. sechzehn
    Tage Abstand - was dort angekommen ist, sitzt. */
-function elternWortstand(){
+function elternWortstand(q){
   const alle = getAllVocab();
-  const stand = state.wortStand || {};
+  const stand = (q || state).wortStand || {};
   let sitzt = 0, wackelt = 0, neu = 0;
   const wackler = [];
   alle.forEach(w=>{
@@ -17173,8 +17697,36 @@ function elternZeile(icon, was, anzahl, richtig){
     </div>`;
 }
 
+/* Einen Aktivierungslink erzeugen und zeigen.
+
+   Der Token ist 32 Hexzeichen aus crypto.getRandomValues - nicht aus
+   Math.random. Er ist das einzige, was zwischen dem Link und dem
+   Profil steht, und raten soll ihn niemand koennen. */
+function elternLinkErzeugen(){
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  const token = Array.from(b).map(x => x.toString(16).padStart(2, "0")).join("");
+  const bis = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  state.elternLinkStand = { laeuft: true, link: "", fehler: "" };
+  render();
+  getVokabelDB().then(db=>{
+    if(!db.available || !db.einladungAnlegen){
+      state.elternLinkStand = { laeuft:false, link:"", fehler:"Dafür muss die App online sein." };
+      render(); return;
+    }
+    db.einladungAnlegen(token, bis).then(r=>{
+      state.elternLinkStand = r.ok
+        ? { laeuft:false, fehler:"",
+            link: location.origin + location.pathname + "?eltern=" + token }
+        : { laeuft:false, link:"", fehler:"Das hat nicht geklappt. Noch einmal versuchen?" };
+      render();
+    });
+  });
+}
+
 function renderParents(){
   if(!state.parentUnlocked) return renderParentGate();
+  const elStand = state.elternLinkStand || {};
 
   const sum = aktivitaetSumme();
   const quote = sum.gesamt > 0 ? Math.round((sum.richtig / sum.gesamt) * 100) : null;
@@ -17197,7 +17749,35 @@ function renderParents(){
   const anteilSitzt = stand.geuebt > 0 ? Math.round(stand.sitzt / stand.geuebt * 100) : 0;
   const name = escapeHtml(state.playerName || "Dein Kind");
 
+  /* Der Elternzugang. Steht im Elternbereich und damit hinter dem
+     Eltern-PIN - der Link ist ein Schluessel zu den Zahlen des Kindes,
+     und ein Schluessel gehoert nicht auf den Kinderbildschirm. */
+  const zugang = `
+    <div class="panel">
+      <h3 style="font-size:16px;margin-bottom:2px;">👨‍👩‍👧 ELTERNZUGANG</h3>
+      <p class="muted" style="margin-bottom:10px;">Mit einem eigenen Konto siehst du diese Zahlen
+        auf deinem eigenen Handy &ndash; und mehrere Kinder an einer Stelle.
+        Ohne dich jedes Mal über ${name} anzumelden.</p>
+      ${elStand.link ? `
+        <div class="el-linkbox">
+          <code class="el-link">${escapeHtml(elStand.link)}</code>
+        </div>
+        <div class="row" style="gap:8px;margin-top:10px;">
+          <button class="btn col einzeilig" id="el-link-kopieren">📋 Link kopieren</button>
+          <button class="btn secondary col einzeilig" id="el-link-teilen">💬 Teilen</button>
+        </div>
+        <p class="muted" style="margin:9px 0 0;font-size:12.5px;line-height:1.45;">
+          Schick ihn dir selbst &ndash; per Mail oder Nachricht an dich. Er gilt eine Woche.
+          <strong>Gib ihn niemandem sonst:</strong> Wer ihn hat, kann ${name}s Zahlen sehen.</p>
+      ` : `
+        <button class="btn" id="el-zugang"${elStand.laeuft ? " disabled" : ""}>
+          ${elStand.laeuft ? "Einen Moment …" : "🔑 Elternzugang einrichten"}
+        </button>
+        ${elStand.fehler ? `<p class="el-fehler">⚠️ ${escapeHtml(elStand.fehler)}</p>` : ""}`}
+    </div>`;
+
   const uebersicht = `
+    ${zugang}
     <div class="panel">
       <p class="ep-frage">Hat ${name} geübt?</p>
       <p class="ep-antwort">${tage === 0
@@ -19658,8 +20238,13 @@ function renderLernweg(){
 
   /* Muss NACH dem Zeichnen verdrahtet werden - siehe unten. */
   app.innerHTML = `
-    ${renderHeader("Mein Lernweg", true)}
+    ${renderHeader("Meine Pläne", true)}
     ${playerBadgeHtml(true)}
+
+    <!-- Erst die Plaene, dann alles andere. Der Knopf, der hierher
+         fuehrt, heisst "Meine Plaene" - also muessen sie das Erste
+         sein, was man sieht. -->
+    ${lernwegPlaeneHtml()}
 
     <div class="panel lw-jetzt">
       <div class="lg-kopf klein" style="margin-bottom:10px;">
@@ -19671,8 +20256,6 @@ function renderLernweg(){
       <p class="lw-jetzt-g">${escapeHtml(schritt.grund)}</p>
       <button class="btn" id="lw-los">${schritt.knopf}</button>
     </div>
-
-    ${lernwegPlaeneHtml()}
 
     ${besser && (besser.themen > 0 || besser.woerter > 0) ? `
     <div class="panel lw-besser">
