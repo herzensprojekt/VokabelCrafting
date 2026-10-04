@@ -3923,22 +3923,8 @@ summary.mehr-knopf::after{ content:none; }
   margin:4px 0 0; font-size:13.5px; line-height:1.45; color:#6b4f08;
 }
 
-/* v94.6 - die Auswahlliste statt des Kachelfelds */
-.vw-wahl-l{
-  display:block; margin:0 0 6px; font-weight:800; font-size:15px;
-  color:var(--tinte);
-}
-.vw-quelle{
-  display:block; width:100%; box-sizing:border-box;
-  padding:14px 34px 14px 12px; margin:0 0 10px;
-  font-family:var(--font); font-size:17px; font-weight:800;
-  color:var(--tinte); line-height:1.3;
-  border:2px solid var(--papier-rand); border-radius:14px;
-  background:var(--papier) no-repeat right 11px center;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='10'><path d='M1 1l7 7 7-7' fill='none' stroke='%235a4628' stroke-width='2.5' stroke-linecap='round'/></svg>");
-  -webkit-appearance:none; appearance:none;
-}
-.vw-quelle:focus{ outline:3px solid #8a6a1c; outline-offset:2px; }
+/* v95.1 - der Quellenknopf (die Systemliste von 94.6 ist raus) */
+#vw-quelle{ margin-bottom:10px; }
 .vw-dazu{ width:100%; margin:0 0 4px; }
 .vw-dazu small{ display:block; font-weight:600; opacity:.85; margin-top:2px; }
 
@@ -4468,7 +4454,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "95.0 – Grundprüfung: zwei Lücken geschlossen";
+const APP_VERSION = "95.1 – Ein Fenster für alle Listen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -14298,35 +14284,26 @@ function renderUebenVokabeln(){
               &ndash; aus so vielen Sammlungen, wie du magst.</span>
             <button type="button" class="vw-mini" id="vw-korb-leeren">Leeren</button>
           </div>` : ""}
-        <p class="muted" style="margin:2px 0 12px;">Tippe an, woraus du üben willst.
-        ${wahl.length ? "Deine Auswahl bleibt erhalten." : ""}</p>
-        <!-- Statt eines Kachelfelds, das mit jeder neuen Liste laenger
-             wurde: EINE grosse Auswahlliste. Auf dem Handy oeffnet das
-             Geraet dafuer sein eigenes grosses Rad - das ist fuer Kinder
-             die bequemste Bedienung, die es gibt, und sie kennen sie
-             schon aus anderen Apps. -->
-        <label class="vw-wahl-l" for="vw-quelle">Woraus möchtest du üben?</label>
-        <select class="vw-quelle" id="vw-quelle">
-          <option value="">&mdash; aussuchen &mdash;</option>
-          ${listenAlle().length ? `<optgroup label="Meine Listen">
-            ${listenAlle().map(l=>`
-              <option value="${escapeHtml(LISTEN_ZEICHEN + l.name)}">⭐ ${escapeHtml(l.name)}</option>`).join("")}
-          </optgroup>` : ""}
-          <optgroup label="Aus dem Buch">
-            ${paketeDerKlasse(state.klasse || klassen[0] || 5).map(p=>{
-              /* Wie viele aus DIESEM Paket liegen schon im Korb? Ohne die
-                 Zahl weiss ein Kind nach dem dritten Paket nicht mehr, wo
-                 es ueberall etwas ausgesucht hat. */
-              const drin = woerterVonQuelle(p.name)
-                            .filter(w => wahl.indexOf(wortSchluessel(w)) >= 0).length;
-              return `
-              <option value="${escapeHtml(p.name)}">${p.icon} ${escapeHtml(p.name)}${drin ? " \u2713" + drin : ""}</option>`;
-            }).join("")}
-          </optgroup>
-          <optgroup label="Alles zusammen">
-            <option value="Alle">🌍 Alle Wörter</option>
-          </optgroup>
-        </select>
+        <h3 style="font-size:16px;margin:0 0 2px;">WELCHE WÖRTER?</h3>
+        <p class="muted" style="margin:0 0 10px;">Tipp auf die Liste, wenn du etwas
+        anderes üben willst.${wahl.length ? " Deine Auswahl bleibt erhalten." : ""}</p>
+        <!-- DIE SYSTEMLISTE IST RAUS.
+
+             In 94.6 stand hier ein <select>. Android zeichnet so eine
+             Liste selbst - als nackte Radioknopf-Liste, an der sich
+             weder Groesse noch Farbe noch Umbruch aendern laesst. Fuer
+             Kinder war das unbrauchbar.
+
+             Dasselbe Fenster wie bei den Vokabelkarten: eine Zeile je
+             Quelle ueber die volle Breite, mit Vorschau und Anzahl. -->
+        <button type="button" class="vk-quelle" id="vw-quelle">
+          <span class="vkq-ic">${kartenQuelleJetzt().symbol}</span>
+          <span class="vkq-txt">
+            <span class="vkq-n">${escapeHtml(kartenQuelleJetzt().name)}</span>
+            <small>${kartenQuelleJetzt().anzahl} Wörter &middot; tippen zum Ändern</small>
+          </span>
+          <span class="vkq-pfeil">▸</span>
+        </button>
         <button type="button" class="btn secondary vw-dazu" id="pk-eigene">
           ➕ Vokabeln hinzufügen
           <small>Tippen, Foto oder Excel</small>
@@ -14356,16 +14333,16 @@ function renderUebenVokabeln(){
 
   const quelleWahl = document.getElementById('vw-quelle');
   if(quelleWahl){
-    quelleWahl.addEventListener('change', ()=>{
-      const wert = quelleWahl.value;
-      if(!wert) return;
-      state.offenesPaket = wert;
-      /* Wortgleich zum frueheren Kachelklick: die gruenen Woerter
-         bleiben stehen, sonst kann man nicht aus zwei Sammlungen
-         zusammenstellen. */
-      state.category = wahlListe().length ? AUSWAHL_ZEICHEN : state.offenesPaket;
-      saveProgress();
-      render();
+    quelleWahl.addEventListener('click', ()=>{
+      kartenListenMenue((wert)=>{
+        state.offenesPaket = wert;
+        /* Wortgleich zum frueheren Kachelklick: die gruenen Woerter
+           bleiben stehen, sonst kann man nicht aus zwei Sammlungen
+           zusammenstellen. */
+        state.category = wahlListe().length ? AUSWAHL_ZEICHEN : state.offenesPaket;
+        saveProgress();
+        render();
+      });
     });
   }
 
@@ -15950,7 +15927,7 @@ function kartenQuelleJetzt(){
    schmalen Spalten. Dadurch hat der Name die ganze Breite und wird
    nicht mehr abgeschnitten, und darunter passt noch eine Vorschau auf
    das, was drin ist. Das ist das "einsehen" aus Markus' Wunsch. */
-function kartenListenMenue(){
+function kartenListenMenue(beiWahl){
   const q = kartenQuellen();
   const gesamt = q.eigene.length + 1 + q.pakete.length;
   const suche = state.kartenMenueSuche || "";
@@ -15998,9 +15975,14 @@ function kartenListenMenue(){
   hg.addEventListener('click', (e)=>{ if(e.target === hg) zu(); });
   hg.querySelectorAll('[data-vkm]').forEach(el=>{
     el.addEventListener('click', ()=>{
-      state.category = el.dataset.vkm;
-      state.wahl = [];               // eine angetippte Wortauswahl gilt nicht mehr
+      const wert = el.dataset.vkm;
       zu();
+      /* Der Uebe-Bildschirm braucht denselben Griff, aber einen
+         anderen Nachsatz - deshalb der Ruecklauf statt einer zweiten
+         Abschrift dieses Fensters. */
+      if(typeof beiWahl === "function"){ beiWahl(wert); return; }
+      state.category = wert;
+      state.wahl = [];               // eine angetippte Wortauswahl gilt nicht mehr
       saveProgress();
       render();
     });
@@ -16015,7 +15997,7 @@ function kartenListenMenue(){
       timer = setTimeout(()=>{
         state.kartenMenueSuche = feld.value;
         zu();
-        kartenListenMenue();
+        kartenListenMenue(beiWahl);
         const neu = document.getElementById('vkm-suche');
         if(neu){ neu.focus(); neu.setSelectionRange(neu.value.length, neu.value.length); }
       }, 320);
