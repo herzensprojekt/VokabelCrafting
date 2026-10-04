@@ -3923,6 +3923,14 @@ summary.mehr-knopf::after{ content:none; }
   margin:4px 0 0; font-size:13.5px; line-height:1.45; color:#6b4f08;
 }
 
+/* v95.2 - der Hinweis auf fehlende Woerter einer Liste */
+.vw-fehlt{
+  margin:0 0 10px; padding:10px 11px;
+  border:2px solid #d9b38c; border-radius:13px;
+  background:#fdf1e4; color:#6b3f08;
+  font-size:13.5px; line-height:1.45;
+}
+
 /* v95.1 - der Quellenknopf (die Systemliste von 94.6 ist raus) */
 #vw-quelle{ margin-bottom:10px; }
 .vw-dazu{ width:100%; margin:0 0 4px; }
@@ -4454,7 +4462,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "95.1 – Ein Fenster für alle Listen";
+const APP_VERSION = "95.2 – Listen bringen ihre Wörter mit";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -13956,7 +13964,6 @@ function werkzeugGitterHtml(){
     <div class="panel">
       <h3 style="font-size:14px;margin-bottom:2px;opacity:.75;">AUSSERDEM</h3>
       <div class="werk-gitter">
-        ${kachel("karten-btn", "ic-karten", "Vokabelkarten", false, "wk-karten")}
         ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
         ${kachel("custom-vocab-btn", "ic-eigene", "Vokabeln hinzufügen", !state.cloudId, "wk-dazu")}
         ${kachel("grammar-stats-btn", "ic-skills", "Grammatik-Skills", false, "wk-violett")}
@@ -13964,6 +13971,7 @@ function werkzeugGitterHtml(){
         ${kachel("shop-btn", "ic-muenzen", "Shop", g, "wk-gold")}
         ${kachel("inventar-btn", "ic-geschenk", "Inventar (" + anzahlImInventar() + ")", false, "wk-braun")}
         ${kachel("radar-btn", "ic-plan", "Klassenarbeits-Radar", false, "wk-rot")}
+        ${kachel("karten-btn", "ic-karten", "Vokabelkarten", false, "wk-karten")}
       </div>
       <!-- Als Zeile unter dem Gitter statt als neunte Kachel: Fuer eine
            Kachel braeuchte es ein gezeichnetes Symbol, und zwei Kacheln
@@ -14256,6 +14264,22 @@ function renderUebenVokabeln(){
             <button type="button" class="vw-mini" id="vw-keins">Keins</button>
           </span>
         </div>
+        ${(()=>{
+          /* Eine Liste zaehlt ihre Verweise, zeigen kann sie nur, was
+             sie auch findet. Gehen die beiden Zahlen auseinander,
+             gehoert das auf den Bildschirm - vorher ist die Liste
+             einfach stillschweigend kuerzer geworden. */
+          if(offen.indexOf(LISTEN_ZEICHEN) !== 0) return "";
+          const l = listeFinden(offen.slice(LISTEN_ZEICHEN.length));
+          if(!l) return "";
+          const soll = (l.woerter || []).length;
+          const ist  = woerterVonQuelle(offen).length;
+          if(ist >= soll) return "";
+          return `<p class="vw-fehlt">⚠️ <strong>${soll - ist} von ${soll} Wörtern</strong>
+            dieser Liste sind nicht mehr im Wortschatz und können darum nicht
+            angezeigt werden. Lade die Liste noch einmal hoch, dann ist sie
+            wieder vollständig.</p>`;
+        })()}
         <div class="vw-gitter">
           ${woerterVonQuelle(offen).map(w=>{
             const k = wortSchluessel(w);
@@ -14664,9 +14688,12 @@ function renderStart(){
 
     ${terminPlanOffenHeute() ? "" : zielPlanHtml()}
 
-    ${lingoraStartHtml()}
-
+    <!-- Die Kacheln stehen seit 95.2 VOR Lingora: zuerst die vier Wege,
+         dann alles Weitere zum Antippen, und erst darunter der
+         Vorschlag fuer heute. -->
     ${werkzeugGitterHtml()}
+
+    ${lingoraStartHtml()}
 
     <!-- Muenzen, Diamanten, "heute geschafft", "Tage bis zur Arbeit":
          Kontostand, nicht Aufgabe. Oben standen sie zwischen Lingoras
@@ -21609,14 +21636,48 @@ function listeFinden(name){
    zusammenstellen, frisch hinzugefuegte Woerter. Fuenfmal dasselbe ist
    viermal zu viel - und ein Zeitstempel, den man an fuenf Stellen
    einbauen muss, ist ein Zeitstempel, den die sechste vergisst. */
+/* Die Woerter, die diese Liste NICHT aus den eingebauten Paketen
+   bekommt - also alles aus Excel, Foto oder Tippen. Davon legt die
+   Liste ein eigenes Exemplar an.
+
+   WARUM: Eine Liste speichert nur Verweise. Zeigt ein Verweis auf ein
+   Wort, das nur in customVocab stand, und customVocab verliert es,
+   dann zeigt die Liste stillschweigend weniger an, als sie zaehlt -
+   genau der gemeldete Fehler. Mit dem eigenen Exemplar kann ein
+   Verweis nicht mehr ins Leere gehen. */
+function listePaareBauen(woerter){
+  const ausPaket = {};
+  (typeof VOCAB !== "undefined" ? VOCAB : []).forEach(w=>{
+    const k = wortSchluessel(w);
+    if(k && k !== "|") ausPaket[k] = true;
+  });
+  const nachSchluessel = {};
+  getAllVocab().forEach(w=>{
+    const k = wortSchluessel(w);
+    if(k && k !== "|") nachSchluessel[k] = w;
+  });
+  const paare = {};
+  (woerter || []).forEach(k=>{
+    if(ausPaket[k]) return;              // steht ohnehin fest in der App
+    const w = nachSchluessel[k];
+    if(w) paare[k] = { en: w.en, de: w.de };
+  });
+  return paare;
+}
+
 function listeSichern(name, woerter){
+  const paare = listePaareBauen(woerter);
   const vorhanden = listeFinden(name);
   if(vorhanden){
     vorhanden.woerter = woerter;
+    /* Was wir diesmal nicht aufloesen konnten, aber frueher schon
+       einmal wussten, bleibt stehen - sonst wuerde ein Speichern bei
+       lueckenhaftem Wortschatz das Exemplar ausduennen. */
+    vorhanden.paare = Object.assign({}, vorhanden.paare || {}, paare);
     vorhanden.zuletzt = Date.now();
     return vorhanden;
   }
-  const neu = { name: name, woerter: woerter, zuletzt: Date.now() };
+  const neu = { name: name, woerter: woerter, paare: paare, zuletzt: Date.now() };
   listenAlle().push(neu);
   return neu;
 }
@@ -21754,9 +21815,18 @@ function woerterVonQuelle(name){
   if(name.indexOf(LISTEN_ZEICHEN) === 0){
     const liste = listeFinden(name.slice(LISTEN_ZEICHEN.length));
     if(!liste) return [];
-    const drin = {};
-    (liste.woerter || []).forEach(k => drin[k] = true);
-    return alle.filter(v => drin[wortSchluessel(v)]);
+    const nachSchluessel = {};
+    alle.forEach(v=>{ const k = wortSchluessel(v); if(k) nachSchluessel[k] = v; });
+    const paare = liste.paare || {};
+    const raus = [];
+    /* In der Reihenfolge der LISTE, nicht in der des Wortschatzes -
+       und wenn der Wortschatz ein Wort nicht kennt, nimmt die Liste
+       ihr eigenes Exemplar. */
+    (liste.woerter || []).forEach(k=>{
+      const w = nachSchluessel[k] || paare[k];
+      if(w) raus.push(w);
+    });
+    return raus;
   }
   return alle.filter(v => v.cat === name);
 }
