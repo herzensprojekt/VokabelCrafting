@@ -3883,6 +3883,15 @@ summary.mehr-knopf::after{ content:none; }
 /* --- Rang in der Rangliste ------------------------------------------- */
 .lb-rang{ font-family:var(--font); font-weight:800; font-size:12px; white-space:nowrap; }
 .lb-dia{ font-family:var(--font); font-weight:800; font-size:13px; color:#7a5c8f; }
+
+/* v94.3 - die Frage ueber den vier Wegen */
+.wwd{ padding-top:14px; }
+.wwd-frage{
+  margin:0 0 12px; font-size:19px; font-weight:800; color:#1e5c28;
+  text-align:center; line-height:1.25;
+}
+.wwd .haupt-gitter{ margin-bottom:10px; }
+.wwd .plw-wege{ margin:0; }
 </style>
 </head>
 <body>
@@ -4388,7 +4397,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "94.2 – Pläne kommen an, Gelöschtes bleibt weg";
+const APP_VERSION = "94.5 – Jedes Kind bleibt bei seinem";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -5543,6 +5552,37 @@ function lingoraPlaene(){
   return state.lingoraPlaene;
 }
 
+/* Laeuft dieser Plan noch?
+
+   Zwei Arten, aus dem Weg zu sein: durchgearbeitet (jeder Schritt
+   sitzt) oder von Hand ins Archiv gelegt. Beides bedeutet "nicht mehr
+   aktuell" - und bis 94.2 bedeutete es das NUR in der Planliste.
+   Ueberall sonst wurden alle Plaene gezaehlt: "du hast 6 Pläne",
+   obwohl fuenf davon laengst erledigt waren. */
+function planLaeuft(p){
+  if(!p) return false;
+  if(p.archiv) return false;
+  return !lingoraPlanStand(p).sitzt;
+}
+
+/* Die laufenden Plaene - das, was ueberall gemeint ist, wo frueher
+   lingoraPlaene() stand. lingoraPlaene() selbst bleibt die ganze
+   Ablage: gespeichert und abgeglichen wird weiterhin alles. */
+function plaeneLaufend(){
+  return lingoraPlaene().filter(planLaeuft);
+}
+
+/* Von Hand ins Archiv - und wieder heraus. */
+function planArchivieren(id, rein){
+  const p = lingoraPlaene().find(x => x && x.id === id);
+  if(!p) return;
+  if(rein === false) delete p.archiv; else p.archiv = true;
+  if(p.archiv && state.lingoraPlanAktiv === id) state.lingoraPlanAktiv = "";
+  if(!p.archiv) state.lingoraPlanAktiv = id;
+  saveProgress();
+  try{ syncToCloud(); }catch(e){}
+}
+
 /* Der gerade offene Plan. Absichtlich derselbe Name wie frueher: So
    arbeiten die vierzehn Stellen, die ihn lesen, unveraendert weiter. */
 function lingoraPlan(){
@@ -5556,7 +5596,7 @@ function lingoraPlan(){
      eben geloeschte oder ein laengst fertiger wieder als "offen" da.
      Jetzt der letzte, der noch etwas zu tun hat. */
   for(let i = alle.length - 1; i >= 0; i--){
-    if(!lingoraPlanStand(alle[i]).sitzt) return alle[i];
+    if(planLaeuft(alle[i])) return alle[i];
   }
   return null;        // alles fertig - das gehoert ins Archiv, nicht nach vorn
 }
@@ -5806,7 +5846,7 @@ function terminNochAktuell(p){
 function terminTagGeschafft(){
   const heute = dateKey(new Date());
   let gabEtwas = false;
-  for(const p of lingoraPlaene()){
+  for(const p of plaeneLaufend()){
     if(!lingoraMitTermin(p.art)) continue;
     if(!terminNochAktuell(p)) continue;
     const tag = lingoraTagVonPlan(p);
@@ -5820,7 +5860,7 @@ function terminTagGeschafft(){
 
 function terminPlanOffenHeute(){
   const heute = dateKey(new Date());
-  for(const p of lingoraPlaene()){
+  for(const p of plaeneLaufend()){
     if(!lingoraMitTermin(p.art)) continue;
     if(!terminNochAktuell(p)) continue;
     const tag = lingoraTagVonPlan(p);
@@ -5889,9 +5929,9 @@ function heuteDran(){
     return gesetzt;
   };
 
-  planSchritteRein(lingoraPlaene().filter(p => lingoraMitTermin(p.art)), HEUTE_ZIEL);
+  planSchritteRein(plaeneLaufend().filter(p => lingoraMitTermin(p.art)), HEUTE_ZIEL);
   if(liste.length) return liste;          // ein Termin laeuft: nur er
-  planSchritteRein(lingoraPlaene().filter(p => !lingoraMitTermin(p.art)), 1);
+  planSchritteRein(plaeneLaufend().filter(p => !lingoraMitTermin(p.art)), 1);
 
   // 2) Faellige Grammatik
   for(const t of gramFaelligeThemen()){
@@ -6480,11 +6520,21 @@ function renderLingoraPlan(){
         </span>
         <span class="plw-pfeil">▸</span>
       </button>
+      <button type="button" class="plw-weg" id="lg-archiv">
+        <span class="plw-ic">${p.archiv ? "↩️" : "📦"}</span>
+        <span class="plw-txt">
+          <span class="plw-t">${p.archiv ? "Aus dem Archiv holen" : "Ins Archiv legen"}</span>
+          <small>${p.archiv
+            ? "Der Plan zählt wieder mit und darf weitergehen"
+            : "Weg von vorne &ndash; aber nicht gelöscht, du kommst dran"}</small>
+        </span>
+        <span class="plw-pfeil">▸</span>
+      </button>
       <button type="button" class="plw-weg" id="lg-weg">
         <span class="plw-ic">🗑️</span>
         <span class="plw-txt">
           <span class="plw-t">Plan verwerfen</span>
-          <small>Nur diesen einen &ndash; deine anderen bleiben</small>
+          <small>Für immer weg &ndash; deine anderen bleiben</small>
         </span>
         <span class="plw-pfeil">▸</span>
       </button>
@@ -6565,6 +6615,14 @@ function renderLingoraPlan(){
        nebeneinander - es gibt nichts mehr zu verlieren. */
     state.lgWeisheit = "";
     lingoraFragebogenStarten();
+  });
+  anKnopf('lg-archiv', ()=>{
+    const offen = lingoraPlan() || lingoraPlaene().find(x => x && x.id === state.lingoraPlanAktiv);
+    if(!offen) return;
+    if(offen.archiv){ planArchivieren(offen.id, false); render(); return; }
+    planArchivieren(offen.id, true);
+    state.screen = state.lingoraReturnTo || "start";
+    render();
   });
   anKnopf('lg-weg', ()=>{
     const offen = lingoraPlan();
@@ -6647,7 +6705,7 @@ function planNaechsterSchritt(){
   const aktiv = lingoraPlan();
   const reihe = [];
   if(aktiv) reihe.push(aktiv);
-  lingoraPlaene().forEach(p => { if(p !== aktiv) reihe.push(p); });
+  plaeneLaufend().forEach(p => { if(p !== aktiv) reihe.push(p); });
 
   let zaeher = null;                 // ein schon zweimal versuchter Schritt
   for(const p of reihe){
@@ -6697,7 +6755,7 @@ function planWiederholung(n){
    Deshalb steht nur dieser oben. */
 function zielPlanOffen(){
   const heute = dateKey(new Date());
-  for(const p of lingoraPlaene()){
+  for(const p of plaeneLaufend()){
     if(!lingoraMitTermin(p.art)) continue;
     const stand = lingoraPlanStand(p);
     if(stand.sitzt) continue;
@@ -7432,7 +7490,6 @@ function lingoraStartHtml(){
         <span class="lg-gesicht lg-lebt"><img src="${LINGORA_BILD}" alt="Lingora"></span>
         <div class="lg-blase">${satz}</div>
       </div>
-      ${planWegeHtml()}
       ${heuteListe.length ? `
         <p class="lw-jetzt-l">${laeuft && !offen ? "NOCHMAL ÜBEN" : "HEUTE DRAN"}</p>
         ${heuteListeHtml(heuteListe)}` : ""}
@@ -7451,8 +7508,31 @@ function lingoraStartHtml(){
    Und sie heissen jetzt nach dem ANLASS, nicht nach dem Werkzeug:
    Ein Kind denkt nicht "ich mache einen Plan", es denkt "ich schreibe
    bald was". Die Unterzeile sagt, was dann passiert. */
+/* "Was moechtest du machen?" - das Erste auf der Startseite.
+
+   Vorher lagen die vier Wege an drei verschiedenen Stellen: die zwei
+   grossen Karten (Vokabeln, Grammatik) UNTER Lingoras Kasten, die zwei
+   Planknoepfe MITTEN darin. Ein Kind, das etwas ueben will, musste erst
+   an Lingoras Spruch und der Tagesliste vorbei - und dann raten, ob
+   sein Weg oben oder unten weitergeht.
+
+   Jetzt stehen alle vier untereinander, in der Reihenfolge, in der ein
+   Kind sie braucht: erst die beiden Faecher, dann der Anlass, dann die
+   Uebersicht. */
+function wasWillstDuHtml(){
+  if(!(state.cloudId || state.guest)) return "";
+  return `
+    <div class="panel wwd">
+      <h2 class="wwd-frage">Was möchtest du machen?</h2>
+      ${hauptwahlHtml()}
+      ${planWegeHtml()}
+    </div>`;
+}
+
 function planWegeHtml(){
-  const anzahl = (typeof lingoraPlaene === "function" ? lingoraPlaene() : []).length;
+  /* NUR die laufenden. Hier stand .length ueber ALLE Plaene - daher
+     "6 Pläne laufen", obwohl fünf im Archiv lagen. */
+  const anzahl = (typeof plaeneLaufend === "function" ? plaeneLaufend() : []).length;
   return `
     <div class="plw-wege">
       <button type="button" class="plw-weg haupt" id="lg-start-plan">
@@ -9719,6 +9799,9 @@ function loadSave(){
     if(data.portrait && typeof data.portrait === "object") state.portrait = data.portrait;
     if(Array.isArray(data.listen)) state.listen = data.listen;
     if(data.cloudId) state.cloudId = data.cloudId;
+    /* Aeltere Staende kennen datenVon nicht. Deren Daten gehoeren dem
+       zuletzt angemeldeten Konto - das ist cloudId. */
+    state.datenVon = data.datenVon || data.cloudId || null;
     if(data.grammarSkills && typeof data.grammarSkills === "object") state.grammarSkills = data.grammarSkills;
     if(data.activityLog && typeof data.activityLog === "object") state.activityLog = data.activityLog;
     if(Array.isArray(data.customRewards)) state.customRewards = data.customRewards;
@@ -9761,6 +9844,9 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       parentPinHash: state.parentPinHash,
       parentPinSalt: state.parentPinSalt,
       cloudId: state.cloudId,
+      /* Wem die Daten in diesem Geraetespeicher gehoeren. Ueberlebt
+         bewusst das Abmelden - siehe applyPlayerToState. */
+      datenVon: state.datenVon || null,
       /* Ohne diese Zeile war der Spitzname nach jedem Neuladen leer, bis
          das Cloud-Profil nachgeladen hatte - und in genau diesem Fenster
          hat das Speichern den Ranglisten-Eintrag geloescht. */
@@ -9906,6 +9992,7 @@ const state = {
   grammarOpenUnit: null,
   activityLog: {},         // {"2026-08-22": {v, vc, g, gc}} - Aufgaben und Treffer pro Tag
   customRewards: [],       // von den Eltern angelegte Belohnungen {id, icon, name, price}
+  datenVon: null,          // wem die Daten in diesem Geraetespeicher gehoeren
   parentUnlocked: false,   // nur fuer diese Sitzung: Elternbereich ist offen
   parentPinError: null,
   parentTab: "uebersicht", // "uebersicht" | "belohnungen"
@@ -10161,7 +10248,62 @@ function listenVereinen(lokal, cloud){
   return raus;
 }
 
+/* Alles, was einem KIND gehoert und nicht dem Geraet. Beim Wechsel des
+   Profils muss jedes einzelne Feld hier neu gesetzt werden - was
+   stehen bleibt, wandert ins naechste Konto. */
+function lernstandLeeren(){
+  state.datenVon = null;
+  state.customVocab = [];
+  state.gradeEntries = [];
+  state.redeemLog = [];
+  state.grammarSkills = {};
+  state.activityLog = {};
+  state.customRewards = [];
+  state.hiddenRewards = [];
+  state.lingoraPlaene = [];
+  state.lingoraPlanAktiv = "";
+  state.lingoraPlan = null;
+  state.listen = [];
+  state.wortStand = {};
+  state.boxTreffer = {};
+  state.weggeworfen = {};
+  state.meineLinks = [];
+  state.spitzname = "";
+  state.customSkin = "";
+  state.customAvatar = "";
+  state.portrait = null;
+  state.team = "";
+  state.inventory = {};
+  state.coins = 0;
+  state.diamanten = 0;
+  state.lifetimeBestStreak = 0;
+  try{ vokabelCacheLeeren(); }catch(e){}
+}
+
 function applyPlayerToState(player){
+  /* MUSS VOR state.cloudId = player.id stehen.
+
+     Alle Vereinen-Helfer weiter unten sind dafuer gebaut, zwei Staende
+     DESSELBEN Kindes zusammenzubringen - der vom Tablet und der aus der
+     Cloud. Auf einem geteilten Geraet kam aber nach dem Abmelden ein
+     ANDERES Kind, und im Speicher lagen noch die Plaene, Listen und der
+     Lernstand des vorigen. Die wurden mitvereinigt und beim naechsten
+     Hochladen in das fremde Profil geschrieben: So stand Nokies
+     "Klassenarbeit 9.10." ploetzlich bei Linie1111.
+
+     Zusammenfuehren nur beim selben Kind. Sonst wird uebernommen.
+
+     Gefragt wird nach state.datenVon, NICHT nach state.cloudId: cloudId
+     sagt nur, ob gerade jemand angemeldet ist, und wird beim Start ohne
+     gueltige Sitzung auf null gesetzt, ohne dass die Daten verschwinden.
+     datenVon sagt, wem das Zeug auf diesem Geraet gehoert, und bleibt
+     ueber Abmelden und abgelaufene Sitzungen hinweg stehen.
+
+     Leer heisst "gehoert noch niemandem" - dann ist Zusammenfuehren
+     ungefaehrlich, denn es gibt nichts Fremdes zu uebernehmen. */
+  const selbesKind = !state.datenVon || state.datenVon === player.id;
+  if(!selbesKind) lernstandLeeren();
+  state.datenVon = player.id;
   state.cloudId = player.id;
   // Ein Listen-Link, der vor der Anmeldung kam, wird jetzt eingeloest.
   setTimeout(()=>{ try{ geteilteListeNachholen(); geteiltenPlanNachholen(); }catch(e){} }, 500);
@@ -10174,12 +10316,16 @@ function applyPlayerToState(player){
   state.lifetimeBestStreak = typeof player.bestStreak === "number" ? player.bestStreak : 0;
   /* Die Grabsteine VOR allem anderen zusammenfuehren - jedes Vereinen
      darunter fragt sie ab. */
-  state.weggeworfen = wegVereinen(state.weggeworfen, player.weggeworfen);
+  state.weggeworfen = selbesKind
+    ? wegVereinen(state.weggeworfen, player.weggeworfen)
+    : wegVereinen({}, player.weggeworfen);
   /* Vereinen, nicht ersetzen. Die Zeile hiess bis 94.1
        state.customVocab = Array.isArray(player.customVocab) ? ... : [];
      und hat damit jedes lokal eingetragene Wort verworfen, sobald das
      Cloud-Profil das Feld noch nicht hatte. */
-  state.customVocab = vokabelnVereinen(state.customVocab, player.customVocab);
+  state.customVocab = selbesKind
+    ? vokabelnVereinen(state.customVocab, player.customVocab)
+    : (Array.isArray(player.customVocab) ? player.customVocab.slice() : []);
   vokabelCacheLeeren();
   state.gradeEntries = Array.isArray(player.gradeEntries) ? player.gradeEntries : [];
   state.redeemLog = Array.isArray(player.redeemLog) ? player.redeemLog : [];
@@ -10197,7 +10343,11 @@ function applyPlayerToState(player){
   if(player.portrait && typeof player.portrait === "object") state.portrait = player.portrait;
   /* Diese drei standen in der Cloud, wurden hier aber nie gelesen.
      Zusammenfuehren, nicht ersetzen - siehe die Helfer oben. */
-  if(Array.isArray(player.lingoraPlaene)) state.lingoraPlaene = plaeneVereinen(state.lingoraPlaene, player.lingoraPlaene);
+  if(Array.isArray(player.lingoraPlaene)){
+    state.lingoraPlaene = selbesKind
+      ? plaeneVereinen(state.lingoraPlaene, player.lingoraPlaene)
+      : player.lingoraPlaene.slice();
+  }
   /* Welcher Plan vorn steht, kommt aus der Cloud - aber nur, wenn hier
      gerade keiner offen ist. Sonst wuerde ein Abgleich mitten im
      Ueben das Kind aus seinem Plan werfen. */
@@ -10216,9 +10366,12 @@ function applyPlayerToState(player){
     state.klasse = player.klasse;
     state.gramDran = player.gramDran;
   }
-  state.listen     = listenVereinen(state.listen, player.listen);
-  state.wortStand  = wortStandVereinen(state.wortStand, player.wortStand);
-  state.boxTreffer = boxTrefferVereinen(state.boxTreffer, player.boxTreffer);
+  state.listen     = selbesKind ? listenVereinen(state.listen, player.listen)
+                                : (Array.isArray(player.listen) ? player.listen.slice() : []);
+  state.wortStand  = selbesKind ? wortStandVereinen(state.wortStand, player.wortStand)
+                                : Object.assign({}, player.wortStand || {});
+  state.boxTreffer = selbesKind ? boxTrefferVereinen(state.boxTreffer, player.boxTreffer)
+                                : Object.assign({}, player.boxTreffer || {});
   skinFrontAuffrischen();
   state.parentUnlocked = false;   // beim Profilwechsel wieder zusperren
   state.parentPinHash = player.parentPinHash || null;
@@ -13919,12 +14072,12 @@ function hauptwahlHtml(){
       <button type="button" class="haupt-karte hk-vokabeln" id="hw-vokabeln">
         ${wiederholung > 0 && !still ? `<span class="hk-punkt">${punkt}</span>` : ""}
         <img class="hk-bild" src="ic-buch.webp" alt="" width="200" height="200" loading="lazy">
-        <span class="hk-t">Vokabeln</span>
+        <span class="hk-t">Vokabeln üben</span>
         <span class="hk-u">${unter}</span>
       </button>
       <button type="button" class="haupt-karte hk-grammatik" id="hw-grammatik">
         <img class="hk-bild" src="ic-grammatik.webp" alt="" width="200" height="200" loading="lazy">
-        <span class="hk-t">Grammatik</span>
+        <span class="hk-t">Grammatik üben</span>
         <span class="hk-u">${grammatikThemenDerKlasse().length} Themen, Unit für Unit</span>
       </button>
     </div>`;
@@ -14428,11 +14581,11 @@ function renderStart(){
 
     ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""}${state.guest ? `<div class="guest-bar"><span class="guest-txt">&#128064; <strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">&#127381; Konto anlegen</button></div>` : ""}
 
+    ${wasWillstDuHtml()}
+
     ${terminPlanOffenHeute() ? "" : zielPlanHtml()}
 
     ${lingoraStartHtml()}
-
-    ${hauptwahlHtml()}
 
     ${werkzeugGitterHtml()}
 
@@ -14560,11 +14713,11 @@ function startVerdrahten(){
         await signOutCloud();
         state.playerName = "";
         state.playerPin = "";
-        state.coins = 0;
-        state.inventory = {};
-        state.customVocab = [];
-        state.gradeEntries = [];
-        state.redeemLog = [];
+        /* Bis 94.3 standen hier nur Muenzen, Vokabeln, Noten und
+           Belohnungen. Plaene, Listen, Lernstand und Grabsteine blieben
+           liegen - und wanderten beim naechsten Kind mit. */
+        lernstandLeeren();
+        state.cloudId = null;
         state.parentPinHash = null;
         state.parentPinSalt = null;
         state.lifetimeBestStreak = 0;
@@ -20288,8 +20441,8 @@ function lernwegPlaeneHtml(){
       </button>`;
   };
 
-  const laufend = alle.filter(p => !lingoraPlanStand(p).sitzt);
-  const fertig  = alle.filter(p =>  lingoraPlanStand(p).sitzt);
+  const laufend = alle.filter(planLaeuft);
+  const fertig  = alle.filter(p => !planLaeuft(p));
 
   return `
     <div class="panel">
@@ -20306,11 +20459,12 @@ function lernwegPlaeneHtml(){
         <details class="lw-regal sitzt" style="margin-top:12px;">
           <summary>
             <span class="lw-sym">📦</span>
-            <span class="lw-titel">Archiv &ndash; geschafft</span>
+            <span class="lw-titel">Archiv</span>
             <span class="lw-zahl">${fertig.length}</span>
           </summary>
-          <p class="lw-satz">Diese Pläne sind durch. Sie stehen dir nicht mehr im Weg
-            &ndash; du kannst sie hier aber jederzeit noch einmal üben.</p>
+          <p class="lw-satz">Geschafft oder weggeräumt. Diese Pläne stehen dir nicht mehr
+            im Weg &ndash; tipp einen an, wenn du ihn zurückholen oder noch einmal
+            üben willst.</p>
           <div class="lw-plaene">${fertig.map(karte).join("")}</div>
         </details>` : ""}
 
