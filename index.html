@@ -4388,7 +4388,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "94.1 – Elternbereich angeschlossen";
+const APP_VERSION = "94.2 – Pläne kommen an, Gelöschtes bleibt weg";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -5549,7 +5549,16 @@ function lingoraPlan(){
   const alle = lingoraPlaene();
   if(!alle.length) return null;
   const treffer = alle.find(p => p.id === state.lingoraPlanAktiv);
-  return treffer || alle[alle.length - 1];
+  if(treffer) return treffer;
+  /* Kein Plan ausgewaehlt - etwa direkt nach dem Wegwerfen. Bisher kam
+     hier alle[alle.length-1]: der ZULETZT angehaengte Plan. Und
+     angehaengt wird beim Cloud-Abgleich, also stand ausgerechnet der
+     eben geloeschte oder ein laengst fertiger wieder als "offen" da.
+     Jetzt der letzte, der noch etwas zu tun hat. */
+  for(let i = alle.length - 1; i >= 0; i--){
+    if(!lingoraPlanStand(alle[i]).sitzt) return alle[i];
+  }
+  return null;        // alles fertig - das gehoert ins Archiv, nicht nach vorn
 }
 
 /* Wie weit ist ein Plan - und sitzt er schon?
@@ -5596,9 +5605,13 @@ function lingoraPlanOeffnen(id){
 }
 
 function lingoraPlanLoeschen(id){
+  /* Erst der Grabstein, dann das Loeschen: sonst holt der naechste
+     Cloud-Abgleich den Plan wieder herein. */
+  wegMerken("plan", id);
   state.lingoraPlaene = lingoraPlaene().filter(p => p.id !== id);
   if(state.lingoraPlanAktiv === id) state.lingoraPlanAktiv = "";
   saveProgress();
+  try{ syncToCloud(); }catch(e){}    // sonst bleibt das Loeschen lokal
 }
 
 function lingoraHeutigerTag(){
@@ -6367,7 +6380,10 @@ function renderLingoraFrage(){
       neu.id = "p" + Date.now().toString(36);
       lingoraPlaene().push(neu);          // dazu, nicht ersetzen
       state.lingoraPlanAktiv = neu.id;
-      saveProgress();
+      /* syncToCloud() hat hier bis 94.1 GEFEHLT. Ein Plan, den ein
+         Elternteil am eigenen Handy fuer das Kind baute, blieb damit
+         auf diesem Handy - auf dem Handy des Kindes kam er nie an. */
+      saveProgress(); syncToCloud();
       state.screen = "lingoraplan";
       render();
       return;
@@ -9726,6 +9742,7 @@ function loadSave(){
     if(typeof data.lingoraPlanAktiv === "string") state.lingoraPlanAktiv = data.lingoraPlanAktiv;
     if(data.gramGelesen && typeof data.gramGelesen === "object") state.gramGelesen = data.gramGelesen;
     if(data.wortStand && typeof data.wortStand === "object") state.wortStand = data.wortStand;
+    if(data.weggeworfen && typeof data.weggeworfen === "object") state.weggeworfen = data.weggeworfen;
     if(NOTEN_SCHLUESSEL[data.gradeKey]) state.gradeKey = data.gradeKey;
   }catch(e){ /* Speicher blockiert (z.B. Vorschau-Sandbox) - Standardwerte bleiben */ }
 }
@@ -9768,6 +9785,7 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       gramGelesen: state.gramGelesen,
       wortStand: state.wortStand,
       boxTreffer: state.boxTreffer,
+      weggeworfen: state.weggeworfen,
       gradeKey: state.gradeKey
     }));
   }catch(e){ /* Speicher nicht verfügbar - Fortschritt bleibt nur für diese Sitzung erhalten */ }
@@ -10036,15 +10054,93 @@ function boxTrefferVereinen(lokal, cloud){
   return raus;
 }
 
+/* --- Grabsteine ------------------------------------------------------
+
+   Das Vereinen unten kann einen Eintrag, den die Cloud NOCH NICHT
+   kennt, nicht von einem unterscheiden, den das Kind WEGGEWORFEN hat.
+   Beides sieht gleich aus: hier ist er, dort nicht. Also hat die
+   Vereinigung bisher jeden geloeschten Plan wieder hereingeholt -
+   genau der gemeldete Fehler.
+
+   Deshalb merkt sich die App, was absichtlich weg ist. Ein Grabstein
+   ist nur eine Kennung mit Zeitstempel, kein Inhalt. Nach gut einem
+   Jahr darf er gehen: bis dahin hat jedes Geraet das Loeschen
+   mitbekommen. */
+const WEG_FRIST = 400 * 86400000;
+
+function wegAlle(){
+  if(!state.weggeworfen || typeof state.weggeworfen !== "object") state.weggeworfen = {};
+  return state.weggeworfen;
+}
+
+/* art ist "plan" oder "wort" - zwei Faecher, damit eine Plan-Kennung
+   nie versehentlich ein Wort begraebt. */
+function wegMerken(art, id){
+  if(!id) return;
+  const alle = wegAlle();
+  if(!alle[art] || typeof alle[art] !== "object") alle[art] = {};
+  alle[art][String(id)] = Date.now();
+}
+
+function wegIst(art, id){
+  if(!id) return false;
+  const fach = wegAlle()[art];
+  return !!(fach && fach[String(id)]);
+}
+
+/* Beide Seiten zusammen - ein Grabstein verschwindet nur durch Alter,
+   nie dadurch, dass das andere Geraet ihn nicht hat. Sonst wuerde ein
+   altes Profil das Loeschen zuruecknehmen. */
+function wegVereinen(lokal, cloud){
+  const raus = {};
+  const grenze = Date.now() - WEG_FRIST;
+  ["plan", "wort"].forEach(art=>{
+    const a = (lokal && lokal[art]) || {};
+    const b = (cloud && cloud[art]) || {};
+    const fach = {};
+    Object.keys(a).concat(Object.keys(b)).forEach(k=>{
+      const ts = Math.max(Number(a[k]) || 0, Number(b[k]) || 0);
+      if(ts > grenze) fach[k] = ts;
+    });
+    if(Object.keys(fach).length) raus[art] = fach;
+  });
+  return raus;
+}
+
+/* Eigene Woerter zusammenfuehren statt ersetzen.
+
+   DAS WAR DER DATENVERLUST: applyPlayerToState hat customVocab
+   bedingungslos aus dem Cloud-Profil gesetzt - und auf [], wenn das
+   Profil das Feld gar nicht hatte. Wer Woerter eingetragen hat und
+   deren Hochladen noch lief, abgelehnt wurde oder offline war, stand
+   nach dem naechsten Laden vor einer leeren Liste. Plaene und Listen
+   hatten ihren Helfer schon, die Woerter nicht. */
+function vokabelnVereinen(lokal, cloud){
+  const raus = Array.isArray(lokal) ? lokal.slice() : [];
+  const da = {};
+  raus.forEach(w=>{ const k = wortSchluessel(w); if(k) da[k] = true; });
+  (Array.isArray(cloud) ? cloud : []).forEach(w=>{
+    const k = wortSchluessel(w);
+    if(!k || k === "|" || da[k]) return;
+    if(wegIst("wort", k)) return;        // absichtlich geloescht
+    raus.push(w);
+    da[k] = true;
+  });
+  return raus;
+}
+
 /* Plaene zusammenfuehren, nicht ersetzen. Was auf DIESEM Geraet weiter
    ist, gewinnt - sonst wuerde ein aelterer Cloud-Stand die Arbeit von
    heute Nachmittag ueberschreiben. */
 function plaeneVereinen(lokal, cloud){
-  const raus = Array.isArray(lokal) ? lokal.slice() : [];
+  /* Weggeworfene zuerst heraus - auch auf der lokalen Seite, falls ein
+     alter Stand sie noch mitschleppt. */
+  const raus = (Array.isArray(lokal) ? lokal : []).filter(p => !(p && wegIst("plan", p.id)));
   const nachId = {};
   raus.forEach((p, i)=>{ if(p && p.id) nachId[p.id] = i; });
   (Array.isArray(cloud) ? cloud : []).forEach(p=>{
     if(!p || !p.id) return;
+    if(wegIst("plan", p.id)) return;     // geloescht ist geloescht
     const i = nachId[p.id];
     if(i === undefined){ raus.push(p); return; }
     /* Beide kennen den Plan: der mit mehr erledigten Schritten gewinnt. */
@@ -10076,7 +10172,15 @@ function applyPlayerToState(player){
   state.inventory = (player.inventory && typeof player.inventory === "object") ? player.inventory : {};
   state.avatarId = player.avatarId || state.avatarId;
   state.lifetimeBestStreak = typeof player.bestStreak === "number" ? player.bestStreak : 0;
-  state.customVocab = Array.isArray(player.customVocab) ? player.customVocab : [];
+  /* Die Grabsteine VOR allem anderen zusammenfuehren - jedes Vereinen
+     darunter fragt sie ab. */
+  state.weggeworfen = wegVereinen(state.weggeworfen, player.weggeworfen);
+  /* Vereinen, nicht ersetzen. Die Zeile hiess bis 94.1
+       state.customVocab = Array.isArray(player.customVocab) ? ... : [];
+     und hat damit jedes lokal eingetragene Wort verworfen, sobald das
+     Cloud-Profil das Feld noch nicht hatte. */
+  state.customVocab = vokabelnVereinen(state.customVocab, player.customVocab);
+  vokabelCacheLeeren();
   state.gradeEntries = Array.isArray(player.gradeEntries) ? player.gradeEntries : [];
   state.redeemLog = Array.isArray(player.redeemLog) ? player.redeemLog : [];
   state.grammarSkills = (player.grammarSkills && typeof player.grammarSkills === "object") ? player.grammarSkills : {};
@@ -10094,6 +10198,14 @@ function applyPlayerToState(player){
   /* Diese drei standen in der Cloud, wurden hier aber nie gelesen.
      Zusammenfuehren, nicht ersetzen - siehe die Helfer oben. */
   if(Array.isArray(player.lingoraPlaene)) state.lingoraPlaene = plaeneVereinen(state.lingoraPlaene, player.lingoraPlaene);
+  /* Welcher Plan vorn steht, kommt aus der Cloud - aber nur, wenn hier
+     gerade keiner offen ist. Sonst wuerde ein Abgleich mitten im
+     Ueben das Kind aus seinem Plan werfen. */
+  if(typeof player.lingoraPlanAktiv === "string" && player.lingoraPlanAktiv){
+    const hier = state.lingoraPlaene.find(p => p && p.id === state.lingoraPlanAktiv);
+    const dort = state.lingoraPlaene.find(p => p && p.id === player.lingoraPlanAktiv);
+    if(!hier && dort && !lingoraPlanStand(dort).sitzt) state.lingoraPlanAktiv = player.lingoraPlanAktiv;
+  }
   /* Eine Klasse OHNE gramDran stammt aus 73.0/73.1 und wurde dem Kind
      untergeschoben, nicht von ihm gewaehlt. Die wird bewusst verworfen -
      dann kommt die Frage beim naechsten Start eben nach. Seit 73.2
@@ -10390,7 +10502,10 @@ function syncToCloud(){
          aeltere, zwischengespeicherte Fassung, schrieb deren
          saveProgress() den Speicher ohne dieses Feld zurueck - und die
          Plaene waren weg. In der Cloud kann das nicht passieren. */
-      lingoraPlaene: lingoraPlaene()
+      lingoraPlaene: lingoraPlaene(),
+      weggeworfen: wegAlle(),
+      lingoraPlanAktiv: state.lingoraPlanAktiv || ""
+
     };
     /* Seit 73.0 in der Cloud, damit am Tablet nicht Klasse 6 und am Handy
        Klasse 5 steht. Aber NUR, wenn das Kind wirklich geantwortet hat.
@@ -10454,7 +10569,7 @@ function syncToCloud(){
       // "spitzname" und "portrait" gehoeren seit Version 48/50 dazu; ohne sie
       // hier waere ein fehlendes Regel-Feld gleichbedeutend mit "gar nichts
       // wird mehr gespeichert".
-      const JUNGE_FELDER = ["wortStand", "boxTreffer", "customSkin", "spitzname", "portrait", "listen", "diamanten", "lingoraPlaene"];
+      const JUNGE_FELDER = ["wortStand", "boxTreffer", "customSkin", "spitzname", "portrait", "listen", "diamanten", "lingoraPlaene", "weggeworfen", "lingoraPlanAktiv"];
       const dabei = JUNGE_FELDER.filter(f => payload[f] !== undefined);
       if(dabei.length){
         try{
@@ -20190,11 +20305,12 @@ function lernwegPlaeneHtml(){
       ${fertig.length ? `
         <details class="lw-regal sitzt" style="margin-top:12px;">
           <summary>
-            <span class="lw-sym">✅</span>
-            <span class="lw-titel">Sitzt schon</span>
+            <span class="lw-sym">📦</span>
+            <span class="lw-titel">Archiv &ndash; geschafft</span>
             <span class="lw-zahl">${fertig.length}</span>
           </summary>
-          <p class="lw-satz">Geschafft &ndash; du kannst sie jederzeit noch einmal üben.</p>
+          <p class="lw-satz">Diese Pläne sind durch. Sie stehen dir nicht mehr im Weg
+            &ndash; du kannst sie hier aber jederzeit noch einmal üben.</p>
           <div class="lw-plaene">${fertig.map(karte).join("")}</div>
         </details>` : ""}
 
@@ -21990,6 +22106,9 @@ function renderListe(){
                : "Das Wort aus dieser Liste nehmen? Im Wortschatz bleibt es.");
     showConfirmModal(frage, ()=>{
       if(eigene){
+        /* "Es ist dann ganz weg" muss auch nach dem Cloud-Abgleich
+           gelten - sonst stand das Wort beim naechsten Start wieder da. */
+        gewaehlt.forEach(k => wegMerken("wort", k));
         state.customVocab = (state.customVocab || [])
           .filter(w => gewaehlt.indexOf(wortSchluessel(w)) < 0);
         vokabelCacheLeeren();
