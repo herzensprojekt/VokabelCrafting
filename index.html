@@ -3884,6 +3884,77 @@ summary.mehr-knopf::after{ content:none; }
 .lb-rang{ font-family:var(--font); font-weight:800; font-size:12px; white-space:nowrap; }
 .lb-dia{ font-family:var(--font); font-weight:800; font-size:13px; color:#7a5c8f; }
 
+/* v94.9 - der Hinweis zu mehreren Kindern */
+.el-info{
+  margin:0 0 12px; padding:11px 12px;
+  border:2px solid #bcd8c2; border-radius:14px;
+  background:linear-gradient(180deg,#f3fbf4,#e8f5ea);
+}
+.el-info-t{ margin:0 0 5px; font-weight:800; font-size:14.5px; color:#1e5c28; }
+.el-info-s{ margin:0; font-size:13.5px; line-height:1.5; color:var(--tinte); }
+
+/* v94.8 - das Rezept unter dem Excel-Feld */
+.xl-tipp{
+  margin:14px 0 0; padding:13px 13px 11px;
+  border:2px dashed #c9a227; border-radius:16px;
+  background:linear-gradient(180deg,#fffbe9,#fdf3d4);
+}
+.xl-kopf{
+  margin:0 0 11px; font-weight:800; font-size:15.5px; color:#6b4f08;
+  line-height:1.3;
+}
+.xl-schritt{ display:flex; gap:10px; align-items:flex-start; margin:0 0 10px; }
+.xl-nr{
+  flex:0 0 auto; width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:#6b4f08; color:#fffbe9; font-weight:800; font-size:14.5px;
+}
+.xl-schritt .xl-txt{ font-size:14px; line-height:1.45; color:var(--tinte); }
+.xl-code{
+  margin:0 0 9px; padding:10px 11px;
+  border:1.5px solid #d8c07a; border-radius:11px;
+  background:#fffdf6; color:var(--tinte);
+  font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:12.5px; line-height:1.5;
+  white-space:pre-wrap; word-break:break-word;
+  -webkit-user-select:all; user-select:all;
+}
+.xl-ende{
+  margin:4px 0 0; font-size:13.5px; line-height:1.45; color:#6b4f08;
+}
+
+/* v94.6 - die Auswahlliste statt des Kachelfelds */
+.vw-wahl-l{
+  display:block; margin:0 0 6px; font-weight:800; font-size:15px;
+  color:var(--tinte);
+}
+.vw-quelle{
+  display:block; width:100%; box-sizing:border-box;
+  padding:14px 34px 14px 12px; margin:0 0 10px;
+  font-family:var(--font); font-size:17px; font-weight:800;
+  color:var(--tinte); line-height:1.3;
+  border:2px solid var(--papier-rand); border-radius:14px;
+  background:var(--papier) no-repeat right 11px center;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='10'><path d='M1 1l7 7 7-7' fill='none' stroke='%235a4628' stroke-width='2.5' stroke-linecap='round'/></svg>");
+  -webkit-appearance:none; appearance:none;
+}
+.vw-quelle:focus{ outline:3px solid #8a6a1c; outline-offset:2px; }
+.vw-dazu{ width:100%; margin:0 0 4px; }
+.vw-dazu small{ display:block; font-weight:600; opacity:.85; margin-top:2px; }
+
+/* v94.6 - "Multiple Ch..." gibt es nicht mehr.
+   Die Leiste stand nebeneinander, und .sl-art durfte nur 47 % breit
+   sein: jeder laengere Spielname wurde mit Punkten abgeschnitten.
+   Jetzt untereinander, beide ueber die volle Breite - dann passt auch
+   "Multiple Choice" und "Vokabelkarten" vollstaendig hinein. */
+.spiel-leiste{ flex-direction:column; }
+.sl-art{ max-width:none; width:100%; box-sizing:border-box;
+         min-height:54px; padding:10px 13px; }
+.sl-art-l{ font-size:11px; }
+.sl-art-w{ font-size:16px; white-space:normal; overflow:visible;
+           text-overflow:clip; }
+.sl-start{ width:100%; font-size:19px; padding:14px 12px; }
+
 /* v94.3 - die Frage ueber den vier Wegen */
 .wwd{ padding-top:14px; }
 .wwd-frage{
@@ -4397,7 +4468,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "94.5 – Jedes Kind bleibt bei seinem";
+const APP_VERSION = "95.0 – Grundprüfung: zwei Lücken geschlossen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -9872,6 +9943,15 @@ function saveProgress(){ if(state.guest) return;   // Testmodus speichert bewuss
       wortStand: state.wortStand,
       boxTreffer: state.boxTreffer,
       weggeworfen: state.weggeworfen,
+      /* BIS 94.9 FEHLTEN DIESE BEIDEN HIER.
+
+         loadSave() hat data.listen und data.portrait immer gelesen -
+         geschrieben hat sie nie jemand. Die Vokabellisten lagen damit
+         ausschliesslich in der Cloud: Beim Oeffnen ohne Internet war
+         die eigene Liste weg, bis die Cloud antwortete. Gefunden beim
+         Abgleich "gespeichert gegen gelesen". */
+      listen: state.listen,
+      portrait: state.portrait,
       gradeKey: state.gradeKey
     }));
   }catch(e){ /* Speicher nicht verfügbar - Fortschritt bleibt nur für diese Sitzung erhalten */ }
@@ -13265,12 +13345,24 @@ function renderElternkonto(){
 
       ${s.geladen.length
         ? s.geladen.map(elternKindKachelHtml).join("")
+          + `<div class="panel">
+               <div class="el-info">
+                 <p class="el-info-t">➕ Noch ein Kind dazunehmen</p>
+                 <p class="el-info-s">In der App des anderen Kindes den Elternbereich öffnen
+                   (mit dem Eltern-PIN), dort auf <strong>Elternzugang einrichten</strong> tippen,
+                   den Link an dich selbst schicken &ndash; und ihn öffnen, während du
+                   <strong>hier angemeldet</strong> bist. Dann kommt es einfach dazu.</p>
+               </div>
+             </div>`
         : (s.laeuft ? "" : `
           <div class="panel">
             <h3 style="font-size:16px;margin-bottom:6px;">Noch kein Kind verknüpft</h3>
-            <p class="muted" style="margin:0;">Öffne in der App deines Kindes den Elternbereich
+            <p class="muted" style="margin:0 0 10px;">Öffne in der App deines Kindes den Elternbereich
               (mit dem Eltern-PIN) und tippe dort auf <strong>Elternzugang einrichten</strong>.
               Den Link schickst du dir selbst &ndash; und öffnest ihn hier.</p>
+            <p class="muted" style="margin:0;">Hast du mehrere Kinder, wiederholst du das bei jedem
+              einmal &ndash; <strong>immer mit diesem einen Elternkonto</strong>. Danach siehst du
+              alle an dieser Stelle.</p>
           </div>`)}
     ` : elternAnmeldeHtml()}
 
@@ -14197,14 +14289,9 @@ function renderUebenVokabeln(){
       </div>
     ` : `
       <div class="panel">
-        ${klassen.length > 1 ? `
-          <div class="kl-reihe">
-            ${klassen.map(k=>`
-              <button type="button" class="kl-chip ${(state.klasse||klassen[0])===k?'aktiv':''}" data-klasse="${k}">
-                Klasse ${k}
-              </button>`).join("")}
-          </div>`
-        : `<div class="kl-schild">📚 Klasse ${klassen[0] || 5}</div>`}
+        <!-- Die Klasse stand hier als Schild bzw. als Knopfreihe. Zum
+             Aussuchen von Woertern braucht ein Kind sie nicht - sie
+             steht auf der Startseite im Profil. -->
         ${wahl.length ? `
           <div class="vw-korb">
             <span class="vw-korb-t">✓ <strong>${wahl.length}</strong> ${wahl.length===1?"Wort":"Wörter"} im Korb
@@ -14213,37 +14300,37 @@ function renderUebenVokabeln(){
           </div>` : ""}
         <p class="muted" style="margin:2px 0 12px;">Tippe an, woraus du üben willst.
         ${wahl.length ? "Deine Auswahl bleibt erhalten." : ""}</p>
-        <div class="pk-gitter">
-          <button type="button" class="pk-kachel dazu" id="pk-eigene">
-            <span class="pk-ic">➕</span>
-            <span class="pk-n">Vokabeln hinzufügen</span>
-            <span class="pk-z">Tippen, Foto, Excel</span>
-          </button>
-          ${listenAlle().map(l=>`
-            <button type="button" class="pk-kachel eigene" data-vw-oeffnen="${escapeHtml(LISTEN_ZEICHEN + l.name)}">
-              <span class="pk-ic">⭐</span>
-              <span class="pk-n">${escapeHtml(l.name)}</span>
-              <span class="pk-z">${(l.woerter||[]).length}</span>
-            </button>`).join("")}
-          ${paketeDerKlasse(state.klasse || klassen[0] || 5).map(p=>{
-            /* Wie viele aus DIESEM Paket liegen schon im Korb? Ohne die
-               Zahl weiss ein Kind nach dem dritten Paket nicht mehr, wo
-               es ueberall etwas ausgesucht hat. */
-            const drin = woerterVonQuelle(p.name)
-                          .filter(w => wahl.indexOf(wortSchluessel(w)) >= 0).length;
-            return `
-            <button type="button" class="pk-kachel ${drin ? "hat-wahl" : ""}" data-vw-oeffnen="${escapeHtml(p.name)}">
-              <span class="pk-ic">${p.icon}</span>
-              <span class="pk-n">${escapeHtml(p.name)}</span>
-              <span class="pk-z">${drin ? "✓ " + drin : p.anzahl}</span>
-            </button>`;
-          }).join("")}
-          <button type="button" class="pk-kachel" data-vw-oeffnen="Alle">
-            <span class="pk-ic">🌍</span>
-            <span class="pk-n">Alle Wörter</span>
-            <span class="pk-z">${getAllVocab().length}</span>
-          </button>
-        </div>
+        <!-- Statt eines Kachelfelds, das mit jeder neuen Liste laenger
+             wurde: EINE grosse Auswahlliste. Auf dem Handy oeffnet das
+             Geraet dafuer sein eigenes grosses Rad - das ist fuer Kinder
+             die bequemste Bedienung, die es gibt, und sie kennen sie
+             schon aus anderen Apps. -->
+        <label class="vw-wahl-l" for="vw-quelle">Woraus möchtest du üben?</label>
+        <select class="vw-quelle" id="vw-quelle">
+          <option value="">&mdash; aussuchen &mdash;</option>
+          ${listenAlle().length ? `<optgroup label="Meine Listen">
+            ${listenAlle().map(l=>`
+              <option value="${escapeHtml(LISTEN_ZEICHEN + l.name)}">⭐ ${escapeHtml(l.name)}</option>`).join("")}
+          </optgroup>` : ""}
+          <optgroup label="Aus dem Buch">
+            ${paketeDerKlasse(state.klasse || klassen[0] || 5).map(p=>{
+              /* Wie viele aus DIESEM Paket liegen schon im Korb? Ohne die
+                 Zahl weiss ein Kind nach dem dritten Paket nicht mehr, wo
+                 es ueberall etwas ausgesucht hat. */
+              const drin = woerterVonQuelle(p.name)
+                            .filter(w => wahl.indexOf(wortSchluessel(w)) >= 0).length;
+              return `
+              <option value="${escapeHtml(p.name)}">${p.icon} ${escapeHtml(p.name)}${drin ? " \u2713" + drin : ""}</option>`;
+            }).join("")}
+          </optgroup>
+          <optgroup label="Alles zusammen">
+            <option value="Alle">🌍 Alle Wörter</option>
+          </optgroup>
+        </select>
+        <button type="button" class="btn secondary vw-dazu" id="pk-eigene">
+          ➕ Vokabeln hinzufügen
+          <small>Tippen, Foto oder Excel</small>
+        </button>
       </div>
     `}
 
@@ -14266,6 +14353,21 @@ function renderUebenVokabeln(){
 
     <button class="btn danger" id="back-btn" style="margin-top:14px;">✕ ZURÜCK</button>
   `;
+
+  const quelleWahl = document.getElementById('vw-quelle');
+  if(quelleWahl){
+    quelleWahl.addEventListener('change', ()=>{
+      const wert = quelleWahl.value;
+      if(!wert) return;
+      state.offenesPaket = wert;
+      /* Wortgleich zum frueheren Kachelklick: die gruenen Woerter
+         bleiben stehen, sonst kann man nicht aus zwei Sammlungen
+         zusammenstellen. */
+      state.category = wahlListe().length ? AUSWAHL_ZEICHEN : state.offenesPaket;
+      saveProgress();
+      render();
+    });
+  }
 
   document.querySelectorAll('[data-vw-oeffnen]').forEach(el=>{
     el.addEventListener('click', ()=>{
@@ -14918,26 +15020,6 @@ function startVerdrahten(){
   if(impStart){ impStart.addEventListener('click', ()=>oeffneImpressum("start")); }
   const dsStart = document.getElementById('datenschutz-start');
   if(dsStart){ dsStart.addEventListener('click', ()=>oeffneDatenschutz("start")); }
-  const elZugang = document.getElementById('el-zugang');
-  if(elZugang){ elZugang.addEventListener('click', elternLinkErzeugen); }
-  const elKop = document.getElementById('el-link-kopieren');
-  if(elKop){ elKop.addEventListener('click', ()=>{
-    const l = (state.elternLinkStand || {}).link || "";
-    if(!l) return;
-    try{
-      navigator.clipboard.writeText(l);
-      showGoodToast('<span class="item-pop">📋</span> Link kopiert.');
-    }catch(e){ /* dann eben von Hand markieren */ }
-  }); }
-  const elTeil = document.getElementById('el-link-teilen');
-  if(elTeil){ elTeil.addEventListener('click', ()=>{
-    const l = (state.elternLinkStand || {}).link || "";
-    if(!l) return;
-    const txt = "Mein Elternzugang für LingoCrafter: " + l;
-    if(navigator.share){ navigator.share({ text: txt }).catch(()=>{}); }
-    else { window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank", "noopener"); }
-  }); }
-
   const parentsBtn = document.getElementById('parents-btn');
   if(parentsBtn){
     parentsBtn.addEventListener('click', ()=>{
@@ -18026,6 +18108,14 @@ function renderParents(){
       <p class="muted" style="margin-bottom:10px;">Mit einem eigenen Konto siehst du diese Zahlen
         auf deinem eigenen Handy &ndash; und mehrere Kinder an einer Stelle.
         Ohne dich jedes Mal über ${name} anzumelden.</p>
+
+      <div class="el-info">
+        <p class="el-info-t">👨‍👩‍👧‍👦 Mehrere Kinder? Ein Konto reicht.</p>
+        <p class="el-info-s">Jedes Kind erzeugt hier <strong>einmal</strong> einen Link.
+          Du öffnest die Links nacheinander mit <strong>demselben</strong> Elternkonto
+          &ndash; danach stehen alle Kinder nebeneinander in deiner Liste.
+          Über das Konto des Kindes musst du dann nie wieder gehen.</p>
+      </div>
       ${elStand.link ? `
         <div class="el-linkbox">
           <code class="el-link">${escapeHtml(elStand.link)}</code>
@@ -18316,6 +18406,33 @@ function renderParents(){
   if(delCancel){ delCancel.addEventListener('click', ()=>{ state.deleteOpen = false; state.deleteError = null; render(); }); }
   const delGo = document.getElementById('del-go');
   if(delGo){ delGo.addEventListener('click', kontoLoeschen); }
+  /* DIESE DREI STANDEN BIS 94.5 IN startVerdrahten().
+
+     Dort gibt es sie nicht: "Elternzugang einrichten" steht in
+     renderParents. getElementById fand nichts, der Zweig wurde
+     stillschweigend uebersprungen, und der Knopf tat beim Tippen
+     nichts - genau Markus' Fund. Dazu lagen auch "Link kopieren" und
+     "Teilen" tot daneben. */
+  const elZugang = document.getElementById('el-zugang');
+  if(elZugang){ elZugang.addEventListener('click', elternLinkErzeugen); }
+  const elKop = document.getElementById('el-link-kopieren');
+  if(elKop){ elKop.addEventListener('click', ()=>{
+    const l = (state.elternLinkStand || {}).link || "";
+    if(!l) return;
+    try{
+      navigator.clipboard.writeText(l);
+      showGoodToast('<span class="item-pop">📋</span> Link kopiert.');
+    }catch(e){ /* dann eben von Hand markieren */ }
+  }); }
+  const elTeil = document.getElementById('el-link-teilen');
+  if(elTeil){ elTeil.addEventListener('click', ()=>{
+    const l = (state.elternLinkStand || {}).link || "";
+    if(!l) return;
+    const txt = "Mein Elternzugang für LingoCrafter: " + l;
+    if(navigator.share){ navigator.share({ text: txt }).catch(()=>{}); }
+    else { window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank", "noopener"); }
+  }); }
+
   const lockBtn = document.getElementById('parent-lock');
   if(lockBtn){
     lockBtn.addEventListener('click', ()=>{
@@ -22343,10 +22460,12 @@ function renderCustomVocab(){
       <h3 style="font-size:16px;margin-bottom:2px;">WIE WILLST DU WÖRTER DAZUTUN?</h3>
       <p class="muted" style="margin-bottom:9px;">Vier Wege &ndash; such dir einen aus.</p>
       <div class="ev-wege">
+        <!-- Excel zuerst: das ist der Weg, der eine ganze Buchseite in
+             einem Rutsch und ohne Tippfehler hereinholt. -->
+        ${wegKachel("excel",  "📄", "Vokabeln als Excel-Liste")}
         ${wegKachel("suche",  "⭐", "Aus dem Wortschatz")}
         ${wegKachel("tippen", "✍️", "Selbst eintippen")}
         ${wegKachel("foto",   "📷", "Abfotografieren")}
-        ${wegKachel("excel",  "📄", "Aus Excel")}
       </div>
 
       ${weg === "suche" ? evSucheHtml() : ""}
@@ -22387,6 +22506,38 @@ function renderCustomVocab(){
         für .xlsx wird einmalig eine Hilfsbibliothek geladen.</p>
         <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="margin-top:10px;width:100%;">
         <p id="excel-status" class="muted" style="margin-top:8px;"></p>
+
+        <!-- Noch keine Excel-Datei? Dann ist das hier der schnellste Weg
+             von der Buchseite in die App. Der Prompt ist an
+             uebernehmeVokabelZeilen ausgerichtet: Spalte A deutsch,
+             Spalte B englisch, sonst nichts. -->
+        <div class="xl-tipp">
+          <p class="xl-kopf">✨ Noch keine Datei? In 3 Minuten fertig</p>
+
+          <div class="xl-schritt">
+            <span class="xl-nr">1</span>
+            <span class="xl-txt"><strong>Foto machen</strong><br>
+              Die Vokabelseite(n) im Heft oder Buch abfotografieren.</span>
+          </div>
+          <div class="xl-schritt">
+            <span class="xl-nr">2</span>
+            <span class="xl-txt"><strong>Bei einer KI hochladen</strong><br>
+              Zum Beispiel ChatGPT, Claude oder Gemini &ndash; Fotos anhängen
+              und diesen Text dazuschreiben:</span>
+          </div>
+          <div class="xl-code" id="xl-prompt">Lies alle Vokabeln aus den Fotos. Gib mir eine Excel-Datei (.xlsx) mit genau zwei Spalten: Spalte A deutsch, Spalte B englisch. Eine Vokabel pro Zeile, keine Überschrift, keine Nummerierung, keine weiteren Spalten. Schreibe die Wörter exakt so ab, wie sie dastehen &ndash; mit Artikel und Klammern.</div>
+          <button type="button" class="btn secondary small" id="xl-kopieren"
+                  style="width:auto;margin:0 0 12px;">📋 Text kopieren</button>
+
+          <div class="xl-schritt">
+            <span class="xl-nr">3</span>
+            <span class="xl-txt"><strong>Datei hier hochladen</strong><br>
+              Oben auf das Feld tippen und die .xlsx auswählen &ndash; fertig.</span>
+          </div>
+
+          <p class="xl-ende">So sind deine Vokabeln in wenigen Minuten
+            <strong>vollständig und richtig</strong> in der App &ndash; ganz ohne Abtippen.</p>
+        </div>
       </div>` : ""}
     </div>
 
@@ -22499,6 +22650,19 @@ function renderCustomVocab(){
       status.textContent = "⚠️ Keine gültigen Zeilen erkannt. Format: Deutsch = Englisch";
     }
   });
+
+  const xlKop = document.getElementById('xl-kopieren');
+  if(xlKop){
+    xlKop.addEventListener('click', ()=>{
+      const el = document.getElementById('xl-prompt');
+      if(!el) return;
+      const txt = el.textContent.trim();
+      const geschafft = ()=> showGoodToast('<span class="item-pop">📋</span> Text kopiert &ndash; jetzt bei der KI einfügen.');
+      try{
+        navigator.clipboard.writeText(txt).then(geschafft, ()=>{});
+      }catch(e){ /* dann eben von Hand markieren */ }
+    });
+  }
 
   const excelFeld = document.getElementById('excel-file-input');
   if(excelFeld) excelFeld.addEventListener('change', (e)=>{
