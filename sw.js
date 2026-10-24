@@ -69,7 +69,10 @@
 /* v8: ic-karten.webp ist dazugekommen. Ein neuer Speichername ist
    der Weg, die Liste von v7 loszuwerden - sonst fehlte das neue
    Symbol genau denen, die schon offline gespeichert haben. */
-const CACHE = "lingocrafter-v9";
+/* v10: Zehn Symbole und Lingora neu gezeichnet (Buntstift), wieder
+   unter denselben Dateinamen - also wieder ein neuer Speichername,
+   sonst saehe man offline noch die alten Bilder. */
+const CACHE = "lingocrafter-v10";
 const MITNEHMEN = [
   "./",
   "./index.html",
