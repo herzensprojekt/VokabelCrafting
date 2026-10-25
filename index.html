@@ -4545,7 +4545,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "95.4 – Neu gezeichnet";
+const APP_VERSION = "95.5 – Sicherheits-Update";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -12827,7 +12827,7 @@ function renderHeader(subtitle, compact, start){
   return `
     <div class="title-block${compact ? ' compact' : ''}${start ? ' start' : ''}">
       <img src="${LOGO_DATA_URI}" alt="LingoCrafter" class="logo-img">
-      ${subtitle ? `<p>${subtitle}</p>` : ""}
+      ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ""}
     </div>
   `;
 }
@@ -13592,10 +13592,19 @@ function renderParentConfirm(){
         if(statusEl){ statusEl.textContent = "⚠️ Bitte 4 Ziffern eingeben."; }
         return;
       }
-      const player = state.parentConfirmData;
+      /* v95.5: Beim neuen Link (?bestaetigen=) liegen PIN-Hash und Salt in
+         der Bestaetigung selbst - state.parentConfirmData gibt es dort
+         nicht. Vorher blieb der Knopf deshalb bei "Pruefe PIN ..." haengen. */
+      const quelle = state.parentConfirmBest
+        ? { parentPinHash: state.parentConfirmBest.pinHash, parentPinSalt: state.parentConfirmBest.pinSalt }
+        : state.parentConfirmData;
+      if(!quelle || !quelle.parentPinHash || !quelle.parentPinSalt){
+        if(statusEl){ statusEl.textContent = "⚠️ Für diese Belohnung ist kein Eltern-PIN hinterlegt."; }
+        return;
+      }
       if(statusEl){ statusEl.textContent = "⏳ Prüfe PIN ..."; }
-      const hash = await hashParentPin(pin, player.parentPinSalt);
-      if(hash !== player.parentPinHash){
+      const hash = await hashParentPin(pin, quelle.parentPinSalt);
+      if(hash !== quelle.parentPinHash){
         if(statusEl){ statusEl.textContent = "❌ Falscher PIN."; }
         return;
       }
@@ -16416,7 +16425,7 @@ function renderQuiz(){
     <div class="panel word-card" id="word-card">
       <div class="eyebrow">${ans.eyebrow}</div>
       ${word.img ? `<div class="term-image">${word.img}</div>` : ""}
-      <div class="term">${ans.promptText}${state.direction === "en-de" ? hoerKnopfHtml(word.en, "gross") : ""}</div>
+      <div class="term">${escapeHtml(ans.promptText)}${state.direction === "en-de" ? hoerKnopfHtml(word.en, "gross") : ""}</div>
       <div id="question-body"></div>
     </div>
   `;
@@ -16429,7 +16438,7 @@ function renderQuiz(){
     const choices = buildChoices(word);
     body.innerHTML = `
       <div class="choices">
-        ${choices.map(c=>`<button class="choice-btn" data-choice="${encodeURIComponent(c)}">${c}</button>`).join("")}
+        ${choices.map(c=>`<button class="choice-btn" data-choice="${encodeURIComponent(c)}">${escapeHtml(c)}</button>`).join("")}
       </div>
       <div class="feedback" id="feedback"></div>
     `;
@@ -19829,9 +19838,18 @@ function renderLeaderboardBody(){
 /* ---------------------------------------------------
    EIGENE VOKABELN (manuell oder per Excel-Import)
 --------------------------------------------------- */
+/* v95.5 - Sicherheits-Audit: Vokabeln und Listennamen kommen auch von
+   aussen (geteilte Links, Excel, Fotos). Spitze Klammern haben in einem
+   Wort nichts zu suchen, koennten aber an einer vergessenen Stelle als
+   HTML ausgefuehrt werden. Deshalb werden sie beim Hereinkommen
+   entfernt - zusaetzlich zum escapeHtml an den Anzeigestellen. */
+function ohneSpitzeKlammern(t){
+  return String(t == null ? "" : t).replace(/[<>]/g, "");
+}
+
 function addCustomVocabEntry(de, en){
-  de = (de||"").trim();
-  en = (en||"").trim();
+  de = ohneSpitzeKlammern(de).trim();
+  en = ohneSpitzeKlammern(en).trim();
   if(!de || !en) return false;
   const wort = {
     en: en,
@@ -21442,6 +21460,8 @@ function listeUebernehmen(paket){
 
   const schluessel = [];
   paket.paare.forEach(([en, de])=>{
+    en = ohneSpitzeKlammern(en).trim(); de = ohneSpitzeKlammern(de).trim();
+    if(!en || !de) return;
     const w = { en: en, de: de, cat: "Eigene" };
     const k = wortSchluessel(w);
     if(!da[k]){ state.customVocab.push(w); da[k] = true; }
@@ -21450,8 +21470,9 @@ function listeUebernehmen(paket){
 
   // Namensgleiche Liste nicht ueberschreiben - lieber durchnummerieren.
   vokabelCacheLeeren();          // die neuen Woerter sollen sofort zaehlen
-  let name = paket.name, n = 2;
-  while(listeFinden(name)){ name = paket.name + " (" + n + ")"; n++; }
+  const basisName = ohneSpitzeKlammern(paket.name).trim() || "Geteilte Liste";
+  let name = basisName, n = 2;
+  while(listeFinden(name)){ name = basisName + " (" + n + ")"; n++; }
   listeSichern(name, schluessel);     // hochgeladen zaehlt auch als "erstellt"
   saveProgress(); syncToCloud();
   return schluessel.length;
