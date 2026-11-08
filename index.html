@@ -4402,6 +4402,25 @@ body .pk-treffer{ background:var(--hafer); border:1.5px solid var(--birke-rand);
 body .pk-wort{ background:var(--birke); border:1.5px solid var(--birke-rand); color:var(--tinte); }
 body .pk-wort.drin{ background:var(--honig-hell); border-color:#e6cf9c; }
 body .pk-w-en{ color:var(--tinte); } body .pk-w-plus{ color:var(--tinte-hell); }
+
+/* v96.0 - Elternkarten: Woerter nur an Silbengrenzen trennen,
+   ChatGPT-Weg, untere Knoepfe ohne abgeschnittenen Text */
+body .el-karten{ grid-template-columns:repeat(3, minmax(min-content, 1fr)); gap:6px; }
+body .el-karte{ padding:12px 5px; min-width:0; }
+body .el-karte-t{ overflow-wrap:normal; word-break:normal; hyphens:manual;
+  font-size:clamp(12.5px, 3.7vw, 14px); }
+body .wd-unten{ white-space:normal; line-height:1.2; min-height:52px;
+  font-size:clamp(14px, 4vw, 17px); letter-spacing:0; padding-left:10px; padding-right:10px; }
+body .gpt-weg{ background:var(--honig-hell); border:1.5px solid #e6d3a6; border-radius:14px;
+  padding:12px 14px; margin:4px 0 0; }
+body .gpt-kopf{ font-weight:800; margin:0 0 6px; color:var(--honig-text); }
+body .gpt-schritte{ margin:0 0 8px; padding-left:22px; line-height:1.4; }
+body .gpt-schritte li{ margin:0 0 4px; }
+body .gpt-weg .xl-code{ margin:0 0 10px; }
+body .gpt-knoepfe{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
+body .gpt-knoepfe .btn{ width:auto; flex:1 1 140px; margin:0; text-decoration:none;
+  display:inline-flex; align-items:center; justify-content:center; }
+body #wd-einfuegen{ width:100%; }
 </style>
 </head>
 <body>
@@ -4917,7 +4936,7 @@ body .pk-w-en{ color:var(--tinte); } body .pk-w-plus{ color:var(--tinte-hell); }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "95.9 – Birke & Honig, Meine Listen";
+const APP_VERSION = "96.0 – ChatGPT-Liste, Feinschliff";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -19234,7 +19253,7 @@ function renderParents(){
         </div>` : `<p class="ep-nichts">Noch keine eigenen Wörter.</p>`}
       <button class="btn" id="el-vokabeln-dazu" style="margin-top:12px;">➕ VOKABELN HINZUFÜGEN</button>
       <p class="muted" style="margin:8px 0 0;font-size:12.5px;">Eintippen, eine ganze Liste einfügen
-        (auch wie im Buch: <em>go [gəʊ] gehen</em>) oder eine Excel-Datei.</p>
+        (am einfachsten mit ChatGPT von der Buchseite) oder eine Excel-Datei.</p>
     </div>`;
   const tabKarte = (id, ic, titel, unter)=>`
     <button type="button" class="el-karte ${state.parentTab === id ? 'active' : ''}" data-ptab="${id}"
@@ -23455,9 +23474,24 @@ function renderWorteDazu(){
 
     <div class="panel">
       <p class="ml-titel">Mehrere auf einmal</p>
-      <p class="muted" style="margin:0 0 8px;">Eine Zeile pro Wort &ndash; wie im Buch
-        (<em>go [gəʊ] gehen</em>) oder <em>Deutsch = Englisch</em>.</p>
-      <textarea id="wd-viele" rows="5" placeholder="go [gəʊ] gehen&#10;tree [triː] Baum&#10;Schule = school">${escapeHtml(state.einfText || "")}</textarea>
+      <div class="gpt-weg">
+        <p class="gpt-kopf">Am einfachsten: Liste mit ChatGPT erstellen</p>
+        <ol class="gpt-schritte">
+          <li><strong>Buchseite fotografieren</strong> &ndash; die Vokabelseite im Buch oder Heft.</li>
+          <li><strong>Foto bei ChatGPT hochladen</strong> und diesen Auftrag dazu einfügen:</li>
+        </ol>
+        <div class="xl-code" id="gpt-prompt">Lies alle Vokabeln auf dem Foto. Gib sie mir als Liste zurück, eine Vokabel pro Zeile, immer im Format: Deutsch = Englisch. Ohne Lautschrift, ohne Nummerierung, ohne Überschrift, ohne Erklärungen. Schreibe die Wörter genau so ab, wie sie dastehen. Gib nur die Liste in einem Codeblock aus.</div>
+        <div class="gpt-knoepfe">
+          <button type="button" class="btn secondary small" id="gpt-kopieren">Auftrag kopieren</button>
+          <a class="btn neutral small" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT öffnen</a>
+        </div>
+        <ol class="gpt-schritte" start="3">
+          <li><strong>Antwort kopieren</strong> und unten einfügen, dann auf <em>Prüfen</em> tippen.</li>
+        </ol>
+      </div>
+      <p class="muted" style="margin:12px 0 8px;">Oder selbst schreiben: eine Zeile pro Wort, <em>Deutsch = Englisch</em>.</p>
+      <textarea id="wd-viele" rows="5" placeholder="Schule = school&#10;Baum = tree&#10;gehen = go">${escapeHtml(state.einfText || "")}</textarea>
+      <button type="button" class="btn neutral small" id="wd-einfuegen" style="margin-top:8px;">Aus der Zwischenablage einfügen</button>
       <button class="btn secondary" id="wd-pruefen" style="margin-top:10px;">Prüfen</button>
     </div>
 
@@ -23512,8 +23546,8 @@ function renderWorteDazu(){
     </details>`}
 
     <div class="row" style="gap:8px;">
-      ${ziel ? `<button class="btn secondary col einzeilig" id="wd-fertig">Fertig – Liste ansehen</button>` : ""}
-      <button class="btn neutral col einzeilig" id="back-btn">✕ Zurück</button>
+      ${ziel ? `<button class="btn secondary col wd-unten" id="wd-fertig">Fertig – Liste ansehen</button>` : ""}
+      <button class="btn neutral col wd-unten" id="back-btn">✕ Zurück</button>
     </div>
   `;
 
@@ -23600,6 +23634,25 @@ function renderWorteDazu(){
     paareSpeichern(gut.concat(schon), v.length, v.filter(z => z.status === "unklar").length);
   });
   an('wd-fertig', ()=>{ state.listeInfo = null; listeOeffnen(LISTEN_ZEICHEN + ziel); });
+  an('gpt-kopieren', ()=>{
+    const el = document.getElementById('gpt-prompt');
+    if(!el) return;
+    try{
+      navigator.clipboard.writeText(el.textContent.trim()).then(
+        ()=> showGoodToast('<span class="item-pop">📋</span> Auftrag kopiert &ndash; jetzt bei ChatGPT einfügen.'), ()=>{});
+    }catch(e){ /* dann eben von Hand markieren */ }
+  });
+  an('wd-einfuegen', ()=>{
+    const feld = document.getElementById('wd-viele');
+    if(!feld || !navigator.clipboard || !navigator.clipboard.readText){ if(feld) feld.focus(); return; }
+    navigator.clipboard.readText().then(t=>{
+      t = String(t || "").replace(/^```[^\n]*\n?|```\s*$/g, "").trim();
+      if(!t){ feld.focus(); return; }
+      feld.value = feld.value.trim() ? feld.value.trim() + "\n" + t : t;
+      state.einfText = feld.value;
+      feld.focus();
+    }, ()=>{ feld.focus(); });
+  });
 
   try{ evListenbauVerdrahten(); }catch(e){ console.error("Listenbau:", e); }
   const xlKop = document.getElementById('xl-kopieren');

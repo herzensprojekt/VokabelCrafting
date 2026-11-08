@@ -72,7 +72,7 @@
 /* v10: Zehn Symbole und Lingora neu gezeichnet (Buntstift), wieder
    unter denselben Dateinamen - also wieder ein neuer Speichername,
    sonst saehe man offline noch die alten Bilder. */
-const CACHE = "lingocrafter-v14";
+const CACHE = "lingocrafter-v15";
 const MITNEHMEN = [
   "./",
   "./index.html",
