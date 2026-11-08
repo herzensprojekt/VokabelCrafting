@@ -4936,7 +4936,7 @@ body #wd-einfuegen{ width:100%; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "96.0 – ChatGPT-Liste, Feinschliff";
+const APP_VERSION = "96.1 – Spiele oben sichtbar";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -15314,14 +15314,14 @@ function kurzName(name){
 const SPIEL_HAUPT = [
   ["karten","🗂️","Vokabelkarten","Umdrehen und selbst sagen, ob es sitzt"],
   ["mc","🎯","Multiple Choice","4 Antworten zur Auswahl"],
+  ["hangman","✏️","Hangman","Buchstaben raten, 5 Fehler sind erlaubt"],
+  ["challenge","⚔️","Die Challenge","10 Sekunden gegen den Bösewicht"],
+  ["flood","🌊","Der Flutungsraum","Klettere dem Wasser davon"],
   ["type","📝","Vokabeltest","Selbst schreiben, mit Schulnote"]
 ];
 const SPIEL_WEITERE = [
   ["faellig","🔁","Fällig heute","Die Wörter, die jetzt dran sind – leicht, dann schwerer"],
   ["mix","🔀","Gemischt","Mal Auswahl, mal Eintippen"],
-  ["hangman","✏️","Hangman","Buchstaben raten, 5 Fehler sind erlaubt"],
-  ["challenge","⚔️","Die Challenge","10 Sekunden gegen den Bösewicht"],
-  ["flood","🌊","Der Flutungsraum","Klettere dem Wasser davon"],
   ["aussprache","🗣️","Aussprache","Echte Stimmen zum Nachsprechen"]
 ];
 function spielKachelHtml([m, ic, name, unter]){
