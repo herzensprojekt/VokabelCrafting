@@ -4142,6 +4142,266 @@ body.runde-laeuft .good-toast{ top:10px; bottom:auto; }
 .el-einst > summary small{ font-size:12.5px; font-weight:600; color:var(--tinte-hell); }
 .el-einst > summary.el-einst-titel::before{ content:"▸ "; }
 .el-einst[open] > summary.el-einst-titel::before{ content:"▾ "; }
+
+/* =====================================================================
+   v95.8 - BIRKE & HONIG
+   Heller, warmer Hygge-Raum; Minecraft nur als kleine Bloecke.
+   Diese Schicht steht bewusst am Ende: Sie ersetzt Heftlinien, Krakel-
+   rahmen und das kraeftige Gruen, ohne die Bausteine darunter
+   umzuschreiben. Entscheidung Markus 08.11.2026 (Vorschau Variante A).
+===================================================================== */
+:root{
+  --hafer:#f7f2e9; --birke:#fffdf9; --birke-rand:#ece2d2; --honig:#eab54a; --honig-lippe:#c79630;
+  --honig-text:#3a2810; --honig-hell:#f3e7cc; --lapis:#4f78a6; --lapis-lippe:#3b5d85;
+  --wolle:#efe8db; --gras-wuerfel:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%202%2022%207.5%2012%2013%202%207.5Z%22%20fill%3D%22%239cc08f%22/%3E%3Cpath%20d%3D%22M2%207.5%2012%2013v9L2%2016.5Z%22%20fill%3D%22%23c9a578%22/%3E%3Cpath%20d%3D%22M22%207.5%2012%2013v9l10-5.5Z%22%20fill%3D%22%23b48d60%22/%3E%3Cpath%20d%3D%22M12%202%2022%207.5v9L12%2022%202%2016.5v-9Z%20M2%207.5%2012%2013%2022%207.5%20M12%2013v9%22%20fill%3D%22none%22%20stroke%3D%22rgba%2860%2C40%2C20%2C.18%29%22%20stroke-width%3D%22.8%22/%3E%3C/svg%3E");
+  --papier:#fffdf9; --papier-tief:#f3e7cc; --papier-rand:#ece2d2;
+  --tinte:#33281c; --tinte-hell:#6e6150; --ink:#33281c; --gold:#eab54a;
+  --tisch:#efe8db; --blatt:#f7f2e9;
+}
+html, body{ background:var(--wolle); color:var(--tinte); }
+body #app{
+  background:var(--hafer) url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2256%22%20height%3D%2264%22%20viewBox%3D%220%200%2056%2064%22%3E%3Cpath%20d%3D%22M28%204%2052%2018%2028%2032%204%2018Z%20M4%2018v28l24%2014%20M52%2018v28L28%2060%20M28%2032v28%22%20fill%3D%22none%22%20stroke%3D%22%23ece3d3%22%20stroke-width%3D%221%22/%3E%3C/svg%3E") 0 0/56px 64px !important;
+  box-shadow:0 0 0 1px var(--birke-rand), 0 14px 36px rgba(90,70,40,.10) !important;
+}
+::selection{ background:var(--honig-hell); color:var(--tinte); }
+html{ scrollbar-color:#d9ccb6 transparent; }
+
+/* --- Karten ------------------------------------------------------- */
+body .panel, body .modal-box, body .platte{
+  background:var(--birke); border:1.5px solid var(--birke-rand); border-radius:18px;
+  box-shadow:0 3px 0 var(--birke-rand), 0 10px 24px rgba(90,70,40,.06);
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+body .panel.gefahr{ background:#fff6f4; border-color:#efcfc9; box-shadow:0 3px 0 #efcfc9; }
+body .panel.vg-wir, body .panel.vg-die{ background:var(--birke); border-color:var(--birke-rand); }
+
+/* Die Krakelrahmen aus 95.3 weichen ruhigen Karten mit Block-Kante. */
+body .usp, body .usp-herz, body .werk-karte, body .haupt-karte, body .plw-weg,
+body .fz-kachel, body .fz-muenzen, body .el-karte, body .mehr-kopf, body .ht-zeile,
+body .game-tile, body .gram-tile, body .unit-bar, body .vkm-zeile, body .fe-knopf, body .vk-quelle,
+body .el-einst > summary.el-einst-titel, body .sl-art{
+  background:var(--birke) !important; border:1.5px solid var(--birke-rand) !important;
+  border-radius:16px !important; box-shadow:0 3px 0 var(--birke-rand) !important; color:var(--tinte);
+  filter:none;
+}
+body .usp::before, body .usp-herz::before, body .werk-karte::before, body .haupt-karte::before, body .plw-weg::before,
+body .usp::after, body .usp-herz::after, body .werk-karte::after, body .haupt-karte::after, body .plw-weg::after{ display:none; }
+body .werk-karte:active, body .haupt-karte:active, body .plw-weg:active, body .ht-zeile:active,
+body .game-tile:active, body .gram-tile:active, body .el-karte:active, body .mehr-kopf:active{
+  transform:translateY(2px); box-shadow:0 1px 0 var(--birke-rand) !important;
+}
+body .game-tile.active, body .gram-tile.active, body .mode-btn.active, body .el-karte.active, body .vkm-zeile.aktiv,
+body .plw-weg.haupt{
+  background:var(--honig-hell) !important; border-color:#e6cf9c !important; box-shadow:0 3px 0 #e6cf9c !important;
+}
+body .ht-zeile{ background:var(--hafer) !important; box-shadow:none !important; }
+body .fz-muenzen{ background:var(--honig-hell) !important; border-color:#e6cf9c !important; box-shadow:0 3px 0 #e6cf9c !important; color:var(--tinte); }
+body .fz-muenzen .fz-m-u{ color:var(--tinte); }
+body .unit-block.offen .unit-bar{ background:var(--honig-hell) !important; }
+body .guest-bar{ background:var(--honig-hell); border:1.5px solid #e6cf9c; border-radius:16px; }
+body .lg-blase{ background:var(--honig-hell); border:none; border-radius:16px 16px 16px 4px; color:var(--tinte); }
+body .wwd-frage{ color:var(--tinte); }
+body .titel-farbig, body h2, body h3{ color:inherit; }
+
+/* --- Knoepfe: Block mit Lippe -------------------------------------- */
+body .btn{
+  background:var(--honig); color:var(--honig-text); border:none; border-radius:16px; font-weight:700;
+  box-shadow:0 5px 0 var(--honig-lippe), 0 10px 18px rgba(90,70,40,.10);
+  transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+body .btn::after{ display:none; }
+body .btn:hover{ filter:brightness(1.03); transform:translateY(-1px); box-shadow:0 6px 0 var(--honig-lippe), 0 12px 20px rgba(90,70,40,.12); }
+body .btn:active{ transform:translateY(4px); box-shadow:0 1px 0 var(--honig-lippe); }
+body .btn.secondary{ background:var(--lapis); color:#fff; box-shadow:0 5px 0 var(--lapis-lippe), 0 10px 18px rgba(90,70,40,.10); }
+body .btn.secondary:active{ box-shadow:0 1px 0 var(--lapis-lippe); }
+body .btn.danger{ background:#b3473a; color:#fff; box-shadow:0 5px 0 #86342a, 0 10px 18px rgba(90,70,40,.10); }
+body .btn.neutral, body .btn.wood, body #back-btn.btn.danger, body #el-zurueck.btn.danger, body #menu-btn.btn.danger{
+  background:var(--birke); color:var(--tinte); border:1.5px solid var(--birke-rand);
+  box-shadow:0 4px 0 var(--birke-rand), 0 8px 16px rgba(90,70,40,.06);
+}
+body .btn.gold{ background:var(--honig-hell); color:var(--honig-text); box-shadow:0 4px 0 #e6cf9c; }
+body .cancel-btn-inline.btn.danger{ background:var(--birke); color:#9a3a2e; border:1.5px solid #ebc7c1; box-shadow:0 3px 0 #ebc7c1; }
+body .btn:disabled, body .btn[disabled]{ filter:grayscale(.4); opacity:.6; transform:none; }
+body .btn:focus-visible, body .mode-btn:focus-visible, body .el-karte:focus-visible, body .nav-k:focus-visible{
+  outline:3px solid rgba(199,150,48,.55); outline-offset:3px;
+}
+
+/* --- Antworten ------------------------------------------------------ */
+body .choice-btn{
+  background:var(--birke); color:var(--tinte); border:1.5px solid var(--birke-rand); border-radius:16px;
+  box-shadow:0 3px 0 var(--birke-rand); font-weight:600;
+}
+body .choice-btn:hover:not([disabled]){ background:#fffaf0; }
+body .choice-btn.correct, body .choice-btn.correct[disabled]{ background:#dcefd2; color:#24592a; border-color:#a9d39a; box-shadow:0 3px 0 #a9d39a; }
+body .choice-btn.wrong, body .choice-btn.wrong[disabled]{ background:#f7ddd8; color:#7a2a1f; border-color:#e8b0a8; box-shadow:0 3px 0 #e8b0a8; }
+body .feedback.bad{ background:var(--honig-hell); color:var(--tinte); border-radius:16px; }
+body .feedback.almost{ background:#fbefd0; color:#5e4500; border-radius:16px; }
+body .good-toast{ background:#e8f4df; color:#24592a; border:1.5px solid #b9dcaa; border-radius:16px; box-shadow:0 8px 20px rgba(60,90,40,.18); }
+
+/* --- Eingaben -------------------------------------------------------- */
+body input[type=text], body input[type=password], body input[type=email], body input[type=number],
+body input[type=search], body textarea{
+  background:var(--birke); border:1.5px solid var(--birke-rand); border-radius:14px; color:var(--tinte);
+}
+body input:focus, body textarea:focus{ border-color:var(--honig); background:#fff; }
+body ::placeholder{ color:#8a7b67; }
+
+/* --- Untere Leiste ------------------------------------------------- */
+body .nav-leiste{ background:rgba(255,253,249,.97); border-top:1.5px solid var(--birke-rand);
+  box-shadow:0 -6px 18px rgba(90,70,40,.06); }
+body .nav-k{ color:var(--tinte-hell); }
+body .nav-k svg{ width:24px; height:24px; }
+body .nav-k.aktiv{ background:var(--honig-hell); color:var(--tinte); box-shadow:0 3px 0 #e6cf9c; }
+body .oben-zu{ background:var(--birke); border:1.5px solid var(--birke-rand); border-radius:14px;
+  box-shadow:0 3px 0 var(--birke-rand); color:var(--tinte); }
+
+/* --- Kopf ------------------------------------------------------------ */
+body .title-block.start.compact .logo-img{ max-width:min(34%, 128px); }
+body .title-block p{ background:var(--birke); border:1.5px solid var(--birke-rand); border-radius:999px; color:var(--tinte-hell); }
+
+/* --- Das Blockmotiv ------------------------------------------------- */
+.ep-frage::before, .el-einst-ueber::before, .wwd-frage::before, .lw-jetzt-l::before{
+  content:""; display:inline-block; width:20px; height:20px; margin:0 8px -3px 0;
+  background:var(--gras-wuerfel) center/contain no-repeat;
+}
+.wwd-frage::before{ width:24px; height:24px; margin-bottom:-4px; }
+.bloecke{ display:flex; flex-wrap:wrap; gap:2px; margin:6px 0 2px; }
+.bloecke i{ width:22px; height:22px; background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%202%2022%207.5%2012%2013%202%207.5Z%22%20fill%3D%22%23efe6d6%22/%3E%3Cpath%20d%3D%22M2%207.5%2012%2013v9L2%2016.5Z%22%20fill%3D%22%23e3d7c2%22/%3E%3Cpath%20d%3D%22M22%207.5%2012%2013v9l10-5.5Z%22%20fill%3D%22%23d8cab2%22/%3E%3Cpath%20d%3D%22M12%202%2022%207.5v9L12%2022%202%2016.5v-9Z%20M2%207.5%2012%2013%2022%207.5%20M12%2013v9%22%20fill%3D%22none%22%20stroke%3D%22rgba%2860%2C40%2C20%2C.18%29%22%20stroke-width%3D%22.8%22/%3E%3C/svg%3E") center/contain no-repeat; }
+.bloecke i.voll{ background-image:var(--gras-wuerfel); }
+.bloecke-kopf{ display:flex; justify-content:space-between; font-size:14px; font-weight:600; margin-top:14px; color:var(--tinte); }
+body .fz-balken{ display:none; }
+body .mode-btn.seg{ background:var(--birke); border:1.5px solid var(--birke-rand); border-radius:14px; color:var(--tinte); box-shadow:0 3px 0 var(--birke-rand); }
+body .mode-btn.seg.active{ background:var(--honig-hell); border-color:#e6cf9c; color:var(--tinte); box-shadow:0 3px 0 #e6cf9c; }
+/* Datenreihen im Elternbereich: Vokabeln Honig, Grammatik Lapis */
+body .ep-v{ background:var(--honig); } body .ep-g{ background:var(--lapis); }
+body .ep-p.ep-v{ background:var(--honig); } body .ep-p.ep-g{ background:var(--lapis); }
+body .ht-balken span{ background:var(--honig) !important; }
+/* Logo auch auf Ergebnisseiten kleiner - die Aufgabe hat Vorrang */
+body .title-block:not(.start) .logo-img{ max-width:min(46%, 170px); }
+body .certificate{ background:var(--birke); border:1.5px solid var(--birke-rand); border-radius:20px; box-shadow:0 3px 0 var(--birke-rand), 0 12px 28px rgba(90,70,40,.08); }
+body .certificate h2{ color:#7a5a10; }
+/* Karteikarte: Die Urteilsknoepfe erscheinen erst nach dem Umdrehen.
+   Vorher hob display:grid das hidden-Attribut auf - "Kann ich" liess sich
+   druecken, bevor man die Loesung gesehen hatte. */
+.vk-urteil[hidden], #vk-dreh[hidden]{ display:none !important; }
+body .btn.vk-kann{ background:#dcefd2; color:#24592a; border:1.5px solid #a9d39a; box-shadow:0 4px 0 #a9d39a; }
+body .btn.vk-ueben{ background:#f7ddd8; color:#7a2a1f; border:1.5px solid #e8b0a8; box-shadow:0 4px 0 #e8b0a8; }
+
+/* =====================================================================
+   v95.8 - Nacharbeit nach der Abschlusspruefung (Birke & Honig)
+===================================================================== */
+/* Kopfzeile: Logo klein links, Seitentitel daneben - die Aufgabe steht hoch. */
+body .title-block.compact{ display:flex; align-items:center; gap:12px; text-align:left; margin:2px 56px 12px 2px; }
+body .title-block.compact .logo-img{ max-width:64px; margin:0; flex:0 0 auto; }
+body .title-block.compact p{ margin:0; padding:0; background:none; border:none; border-radius:0;
+  font-size:20px; font-weight:700; color:var(--tinte); letter-spacing:-.01em; }
+body .title-block.start.compact .logo-img{ max-width:88px; }
+body.runde-laeuft .title-block .logo-img, body .title-block.compact .logo-img{ max-width:56px; }
+body .title-block:not(.compact) .logo-img{ max-width:min(40%, 150px); }
+/* Frage-Wort ist die groesste Zeile der Runde */
+body .word-card .term{ font-size:30px; font-weight:700; line-height:1.2; color:var(--tinte); margin:4px 0 12px; }
+body .word-card .eyebrow{ font-size:14px; letter-spacing:0; color:var(--tinte-hell); }
+body .answer-reveal{ font-size:16px; } body .answer-reveal strong{ font-size:24px; display:block; }
+
+/* Karteikarte als Birke-Karte: keine Heftlinien, kein roter Rand */
+body .vk-seite{ background:var(--birke); background-image:none; border:1.5px solid var(--birke-rand); border-radius:18px;
+  padding:18px; box-shadow:0 3px 0 var(--birke-rand), 0 10px 24px rgba(90,70,40,.08); }
+body .vk-wort{ font-family:var(--font); font-weight:800; color:var(--tinte); letter-spacing:-.01em; }
+body .vk-ecke{ font-size:12px; letter-spacing:.04em; color:var(--tinte-hell); }
+body .vk-fuss{ font-size:12px; left:18px; color:var(--tinte-hell); }
+
+/* Kicker weg: die Liste darunter erklaert sich selbst */
+body .lw-jetzt-l, body .mv-l{ display:none; }
+
+/* Altfarben auf die Welt bringen */
+body .ht-min.frei, body .fz-mehr, body .zur-anmeldung, body .tm-d{ color:var(--lapis); }
+body .gm-name, body .gt-name, body .unit-name, body .hk-t, body .wk-t, body .plw-t{ color:var(--tinte); }
+body .player-badge, body .spieler-chip, body .pb-name{ color:var(--tinte); }
+body .gt-orb.leer{ color:#cdbfa6; }
+
+/* Gesperrt heisst: Schloss und ruhige Flaeche - nicht ausgeblichen */
+body .werk-karte.gesperrt, body .werk-karte:disabled{ opacity:1; background:var(--hafer) !important; }
+body .werk-karte.gesperrt .wk-bild{ filter:grayscale(.85); opacity:.8; }
+body .werk-karte.gesperrt .wk-t{ color:var(--tinte-hell); }
+body .unit-block.zu .unit-bar{ opacity:1; background:var(--hafer) !important; }
+body .unit-block.zu .unit-name, body .unit-block.zu .unit-hint{ color:var(--tinte-hell); }
+
+/* Untergrenze 12 px */
+body .ep-wt, body .ep-zahl, body .unit-zahl, body .ht-min, body .mv-l, body .sk-teil-name, body .asp-datenschutz,
+body .chart .ax, body .nb-kurz, body .noten-tab th, body .noten-tab td, body .ep-legende, body .usp-kopf{ font-size:12px; }
+
+/* Keine Karte in der Karte: innen Haferflaeche statt Rand und Lippe */
+body .panel .haupt-karte, body .panel .plw-weg, body .panel .game-tile, body .panel .sl-art,
+body .panel .vk-quelle, body .panel .werk-karte, body .panel .gram-tile, body .panel .unit-bar,
+body .panel .mode-btn.seg{
+  background:var(--hafer) !important; border:1.5px solid transparent !important; box-shadow:none !important;
+}
+body .panel .game-tile.active, body .panel .gram-tile.active, body .panel .mode-btn.active, body .panel .plw-weg.haupt,
+body .panel .unit-block.offen .unit-bar, body .panel .mode-btn.seg.active{
+  background:var(--honig-hell) !important; border-color:#e6cf9c !important;
+}
+body .spiel-leiste{ background:var(--birke); border:1.5px solid var(--birke-rand); border-radius:18px; box-shadow:0 3px 0 var(--birke-rand); }
+
+/* Gezeichnete Linien-Symbole statt Emoji */
+.lc-ic{ width:24px; height:24px; display:block; color:var(--tinte); }
+.plw-ic .lc-ic{ width:30px; height:30px; color:var(--honig-lippe); }
+.el-karte-ic .lc-ic{ width:26px; height:26px; margin:0 auto; color:var(--honig-lippe); }
+.fz-k-ic .lc-ic{ width:22px; height:22px; margin:0 auto; color:var(--lapis); }
+
+body .kl-chip{ background:var(--birke); border:1.5px solid var(--birke-rand); color:var(--tinte); box-shadow:0 3px 0 var(--birke-rand); }
+body .kl-chip.aktiv{ background:var(--honig-hell); border-color:#e6cf9c; color:var(--tinte); box-shadow:0 3px 0 #e6cf9c; }
+
+/* Nachpruefung 2 */
+body .ep-tag.gewaehlt{ background:var(--honig-hell); } body .ep-tag.gewaehlt .ep-wt{ color:var(--tinte); }
+body .setting-label{ text-transform:none; letter-spacing:0; font-size:14px; }
+body.runde-laeuft .title-block.compact p{ font-size:14px; font-weight:600; color:var(--tinte-hell); }
+
+/* ===== v95.9 - Meine Listen und Woerter hinzufuegen ================= */
+body .nav-leiste{ backdrop-filter:none; -webkit-backdrop-filter:none; }
+.ml-kopf{ font-size:14px; font-weight:600; color:var(--tinte-hell); margin:0 0 4px; }
+.ml-titel{ font-size:18px; font-weight:700; margin:0 0 4px; color:var(--tinte); letter-spacing:-.01em; }
+.ml-zuletzt{ background:var(--birke); }
+body .btn.ml-dazu{ font-size:19px; margin:0 0 14px; }
+.ml-liste{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+.ml-zeile{ display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:10px; width:100%;
+  min-height:52px; padding:10px 12px; border:none; border-radius:14px; background:var(--hafer); cursor:pointer;
+  font-family:inherit; text-align:left; color:var(--tinte); }
+.ml-zeile:active{ transform:translateY(1px); }
+.ml-n{ font-weight:600; font-size:15px; overflow-wrap:anywhere; }
+.ml-z{ font-size:13px; color:var(--tinte-hell); white-space:nowrap; }
+.ml-pfeil{ font-size:20px; color:var(--tinte-hell); }
+.wd-label{ display:block; font-size:14px; font-weight:600; margin:0 0 6px; color:var(--tinte); }
+.wd-hilfe{ font-size:13px; margin:6px 0 0; }
+.wd-select{ width:100%; min-height:48px; font-family:inherit; font-size:16px; font-weight:600; color:var(--tinte);
+  padding:10px 12px; border-radius:14px; border:1.5px solid var(--birke-rand); background:var(--birke); }
+.wd-zu{ margin:0 0 10px; font-size:14px; color:var(--tinte-hell); }
+.wd-zu strong{ color:var(--tinte); }
+.wd-treffer{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.wd-t{ display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center; min-height:44px; padding:8px 12px;
+  border:none; border-radius:12px; background:var(--honig-hell); font-family:inherit; font-size:15px; font-weight:600;
+  color:var(--tinte); text-align:left; cursor:pointer; }
+.wd-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.wd-chip{ background:var(--hafer); border-radius:999px; padding:5px 11px; font-size:14px; }
+body #wd-viele{ width:100%; font-family:var(--font); font-size:16px; padding:12px; border-radius:14px;
+  border:1.5px solid var(--birke-rand); background:var(--birke); color:var(--tinte); }
+.wd-vorschau{ display:flex; flex-direction:column; gap:8px; }
+.wd-vz{ display:grid; grid-template-columns:1fr 1fr 44px; gap:6px; align-items:center; padding:8px; border-radius:14px; background:var(--hafer); }
+.wd-vz input{ font-size:16px !important; padding:9px 10px !important; min-width:0; }
+.wd-vz-weg{ width:44px; height:44px; border:none; border-radius:12px; background:var(--birke); color:var(--tinte-hell); font-size:16px; cursor:pointer; }
+.wd-vz-st{ grid-column:1 / -1; font-size:13px; color:var(--tinte-hell); }
+.wd-vz.inliste{ opacity:.8; }
+.wd-vz.unklar{ background:#fbefd0; } .wd-vz.unklar .wd-vz-st{ color:#5e4500; font-weight:600; }
+.wd-vz.neu .wd-vz-st{ color:#24592a; font-weight:600; }
+.wd-weitere > summary{ cursor:pointer; font-weight:700; font-size:16px; min-height:44px; display:flex; align-items:center; }
+.li-info{ background:#e8f4df; border-color:#b9dcaa; box-shadow:0 3px 0 #b9dcaa; }
+
+body .wd-ziel input, body #wd-en, body #wd-de{ font-size:17px; padding:12px; }
+
+body .panel.li-info{ background:#e8f4df; border-color:#b9dcaa; box-shadow:0 3px 0 #b9dcaa; }
+body .pk-treffer{ background:var(--hafer); border:1.5px solid var(--birke-rand); }
+body .pk-wort{ background:var(--birke); border:1.5px solid var(--birke-rand); color:var(--tinte); }
+body .pk-wort.drin{ background:var(--honig-hell); border-color:#e6cf9c; }
+body .pk-w-en{ color:var(--tinte); } body .pk-w-plus{ color:var(--tinte-hell); }
 </style>
 </head>
 <body>
@@ -4657,7 +4917,7 @@ body.runde-laeuft .good-toast{ top:10px; bottom:auto; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "95.7 – Übersichtlicher";
+const APP_VERSION = "95.9 – Birke & Honig, Meine Listen";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6626,7 +6886,7 @@ function renderLingoraFrage(){
       </button>
       ${schritt > 0 ? `<button class="btn ghost" id="lg-zurueck" style="margin-top:8px;">◀ Eine Frage zurück</button>` : ""}
     </div>
-    <button class="btn danger" id="back-btn">✕ ABBRECHEN</button>
+    <button class="btn danger" id="back-btn">✕ Abbrechen</button>
   `;
 
   const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
@@ -6868,7 +7128,7 @@ function renderLingoraPlan(){
 
     ${terminPlanOffenHeute() ? "" : nochUebenHtml()}
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
 
   /* Wird an mehreren Bildschirmen gebraucht - deshalb eine Funktion. */
@@ -7763,13 +8023,14 @@ function lingoraStartHtml(){
       </div>
       ${heuteListe.length ? `
         <button type="button" class="btn heute-los" id="heute-los">
-          ▶ ${heuteListe.every(e => e.frei) ? "EXTRARUNDE" : "HEUTE ÜBEN"}
+          ▶ ${heuteListe.every(e => e.frei) ? "Extrarunde" : "Heute üben"}
           <small>${heuteListe.every(e => e.frei)
             ? "ungefähr " + minuten + " Minuten"
             : (heuteListe.length === 1 ? "1 Sache" : heuteListe.length + " Sachen") + " &middot; ungefähr " + minuten + " Minuten"}</small>
         </button>
         <p class="lw-jetzt-l">${laeuft && !offen ? "NOCHMAL ÜBEN" : "HEUTE DRAN"}</p>
         ${heuteListeHtml(heuteListe)}` : ""}
+      ${tagesBloeckeHtml()}
       ${rangZeileHtml()}
       ${zuletztHtml()}
     </div>`;
@@ -7813,7 +8074,7 @@ function planWegeHtml(){
   return `
     <div class="plw-wege">
       <button type="button" class="plw-weg haupt" id="lg-start-plan">
-        <span class="plw-ic">📅</span>
+        <span class="plw-ic"><svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5h15v13h-15z M4.5 10.5h15 M8.5 4v4 M15.5 4v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
         <span class="plw-txt">
           <span class="plw-t">Ich schreibe bald einen Test</span>
           <small>Lingora plant bis dahin</small>
@@ -7821,7 +8082,7 @@ function planWegeHtml(){
         <span class="plw-pfeil">▸</span>
       </button>
       <button type="button" class="plw-weg" id="lg-lernweg">
-        <span class="plw-ic">🗺️</span>
+        <span class="plw-ic"><svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 9 4.5l6 2 5-2v13l-5 2-6-2-5 2z M9 4.5v13 M15 6.5v13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
         <span class="plw-txt">
           <span class="plw-t">Meine Pläne</span>
           <small>${anzahl
@@ -7856,6 +8117,19 @@ function heuteListeHtml(liste){
 
 /* Wofuer das Ganze: der naechste Rang. Ohne dieses Ziel ist Ueben
    eine Pflicht ohne Richtung. */
+/* v95.8 - Der Tagesfortschritt als Reihe kleiner Grasbloecke: das eine
+   Minecraft-Motiv der App. Jede geuebte Aufgabe fuellt einen Block. */
+function tagesBloeckeHtml(){
+  const h = heuteGeschafft();
+  const ziel = TAGESZIEL;
+  const voll = Math.min(ziel, h.gesamt);
+  return `
+    <div class="bloecke-kopf"><span>Heute geschafft</span><span>${h.gesamt} von ${ziel}</span></div>
+    <div class="bloecke" role="img" aria-label="${voll} von ${ziel} Blöcken gefüllt">
+      ${Array.from({length: ziel}, (_, k) => `<i class="${k < voll ? "voll" : ""}"></i>`).join("")}
+    </div>`;
+}
+
 function rangZeileHtml(){
   const f = rangFortschritt(diamantenStand());
   if(!f.naechst){
@@ -9325,7 +9599,7 @@ function renderSkinWerkstatt(){
       <p class="muted" id="sk-import-info" style="margin:8px 0 0;font-size:12px;"></p>
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
 
   // ---- Vorschaubilder nachreichen
@@ -9869,7 +10143,7 @@ function renderPortraitWerkstatt(){
         <p class="muted" style="margin:6px 0 0;">Beim ersten Mal dauert das ein paar Sekunden.
         Danach ist es sofort da.</p>
       </div>
-      <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
+      <button class="btn danger" id="back-btn">✕ Zurück</button>`;
     const zurueck = document.getElementById('back-btn');
     if(zurueck) zurueck.addEventListener('click', ()=>{ state.screen = "start"; render(); });
     portraitLaden().then(()=>render()).catch(()=>{
@@ -9880,7 +10154,7 @@ function renderPortraitWerkstatt(){
           <p class="muted" style="margin-top:6px;">Dafür braucht es einmal Internet.
           Deine Blockfigur funktioniert weiterhin.</p>
         </div>
-        <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
+        <button class="btn danger" id="back-btn">✕ Zurück</button>`;
       const z = document.getElementById('back-btn');
       if(z) z.addEventListener('click', ()=>{ state.screen = "start"; render(); });
     });
@@ -9925,7 +10199,7 @@ function renderPortraitWerkstatt(){
       <div class="pw-gitter">${kacheln}</div>
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ABBRECHEN</button>
+    <button class="btn danger" id="back-btn">✕ Abbrechen</button>
   `;
 
   const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
@@ -11570,7 +11844,7 @@ function cleanEn(en){
 }
 function getAnswerData(word){
   if(state.direction === "en-de"){
-    return { promptText: word.en, answerDisplay: word.de, accepted: word.accepted, eyebrow: "ÜBERSETZE INS DEUTSCHE" };
+    return { promptText: word.en, answerDisplay: word.de, accepted: word.accepted, eyebrow: "Übersetze ins Deutsche" };
   }
   const enBase = cleanEn(word.en);
   /* v95.7 - Sinngleiche Kurzformen gelten auch: "a lot" fuer "a lot of",
@@ -11582,7 +11856,7 @@ function getAnswerData(word){
   const ohneOf = enBase.replace(/\s+of$/i, "");
   if(ohneOf !== enBase && ohneOf.split(/\s+/).length >= 2) varianten.push(ohneOf);
   (Array.isArray(word.enAccepted) ? word.enAccepted : []).forEach(v => varianten.push(v));
-  return { promptText: word.de, answerDisplay: enBase, accepted: varianten, eyebrow: "ÜBERSETZE INS ENGLISCHE" };
+  return { promptText: word.de, answerDisplay: enBase, accepted: varianten, eyebrow: "Übersetze ins Englische" };
 }
 function evaluateTyped(input, acceptedList, correctionDisplay){
   const norm = normalize(input);
@@ -13013,6 +13287,7 @@ function render(){
   if(state.screen==="leaderboard") return renderLeaderboard();
   if(state.screen==="team") return renderTeam();
   if(state.screen==="customvocab") return renderCustomVocab();
+  if(state.screen==="wortedazu") return renderWorteDazu();
   if(state.screen==="liste") return renderListe();
   if(state.screen==="lernweg") return renderLernweg();
   if(state.screen==="challengeend") return renderChallengeRoundEnd();
@@ -13074,11 +13349,14 @@ const NAV_AUS = ["quiz", "grammarquiz", "milestone", "certificate", "grammarcert
                  "lingorafrage", "skinwerkstatt", "portraitwerkstatt", "parentconfirm",
                  "elternkonto", "confirmreward", "spielart", "impressum", "datenschutz", "info",
                  "lingorainfo", "stimmenskript"];
+/* v95.8 - Gezeichnete Linien-Symbole statt Emoji; Grammatik ist ein Block. */
+const NAV_SVG = (pfad)=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + pfad
+  + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>';
 const NAV_ZIELE = [
-  { id:"start",          ic:"🏠", t:"Heute",     zu:["start"] },
-  { id:"uebenvokabeln",  ic:"📖", t:"Vokabeln",  zu:["uebenvokabeln", "kartenwahl", "customvocab", "liste", "vokabelstats"] },
-  { id:"uebengrammatik", ic:"🧩", t:"Grammatik", zu:["uebengrammatik", "grammarstats"] },
-  { id:"eltern",         ic:"👪", t:"Eltern",    zu:["eltern", "parents"] }
+  { id:"start",          ic:NAV_SVG("M4 11.5 12 5l8 6.5V20h-5v-5h-6v5H4z"), t:"Heute",     zu:["start"] },
+  { id:"uebenvokabeln",  ic:NAV_SVG("M4 5.5c3-1.2 5.5-1 8 1 2.5-2 5-2.2 8-1V19c-3-1.2-5.5-1-8 1-2.5-2-5-2.2-8-1z M12 6.5V20"), t:"Vokabeln",  zu:["uebenvokabeln", "kartenwahl", "customvocab", "liste", "vokabelstats"] },
+  { id:"uebengrammatik", ic:NAV_SVG("M12 3.5 20 8v8l-8 4.5L4 16V8z M4 8l8 4.5L20 8 M12 12.5v8"), t:"Grammatik", zu:["uebengrammatik", "grammarstats"] },
+  { id:"eltern",         ic:NAV_SVG("M12 19.5s-7-4.3-7-9.2A3.8 3.8 0 0 1 12 8a3.8 3.8 0 0 1 7 2.3c0 4.9-7 9.2-7 9.2z"), t:"Eltern",    zu:["eltern", "parents"] }
 ];
 function navLeisteAuffrischen(){
   let nav = document.getElementById('nav-leiste');
@@ -13147,7 +13425,7 @@ function topBarHtml(cancelId){
   return `
     <div class="game-topbar">
       ${playerBadgeHtml(true)}
-      <button class="btn danger cancel-btn-inline" id="${cancelId}">✕ ABBRECHEN</button>
+      <button class="btn danger cancel-btn-inline" id="${cancelId}">✕ Abbrechen</button>
     </div>`;
 }
 
@@ -13808,7 +14086,7 @@ function renderElternkonto(){
       ${einfuegenHtml}
     ` : elternAnmeldeHtml() + einfuegenHtml}
 
-    <button class="btn danger" id="el-zurueck" style="margin-top:8px;">✕ ZURÜCK ZUR APP</button>
+    <button class="btn danger" id="el-zurueck" style="margin-top:8px;">✕ Zurück zur App</button>
   `;
 
   const linkLos = document.getElementById('el-link-los');
@@ -14449,8 +14727,8 @@ function grammatikOffeneUnit(){
 function sperrGrund(id){
   if(state.guest){
     return id === "custom-vocab-btn"
-      ? "Eigene Vokabeln werden in deinem Konto gespeichert. Tipp oben auf „🆕 Konto anlegen“ – dann kannst du sie eintragen."
-      : "Im Testmodus gibt es Rangliste und Shop noch nicht. Tipp oben auf „🆕 Konto anlegen“ – dann sammelst du Münzen, die du einlösen kannst.";
+      ? "Eigene Vokabeln werden in deinem Konto gespeichert. Tipp oben auf „Konto anlegen“ – dann kannst du sie eintragen."
+      : "Im Testmodus gibt es Rangliste und Shop noch nicht. Tipp oben auf „Konto anlegen“ – dann sammelst du Münzen, die du einlösen kannst.";
   }
   return "Dafür braucht die App gerade Internet. Prüf die Verbindung und versuch es gleich noch einmal.";
 }
@@ -14513,7 +14791,6 @@ function werkzeugGitterHtml(){
 
   return `
     <div class="panel">
-      <h3 style="font-size:14px;margin-bottom:2px;opacity:.75;">AUSSERDEM</h3>
       <div class="werk-gitter">
         ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
         ${kachel("custom-vocab-btn", "ic-eigene", "Vokabeln hinzufügen", !state.cloudId, "wk-dazu")}
@@ -14653,20 +14930,20 @@ function fortschrittZeileHtml(){
       </div>
       <div class="fz-rest">
         <button class="fz-kachel fz-klick" id="fz-diamanten" type="button">
-          <span class="fz-k-ic">💎</span>
+          <span class="fz-k-ic"><svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10l3.5 4.5L12 19.5 3.5 9z M3.5 9h17 M9.5 4.5 8 9l4 10.5L16 9l-1.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
           <span class="fz-k-t">${diamantenStand()}</span>
           <span class="fz-k-u">Diamanten</span>
           <span class="fz-mehr">Mehr verdienen ›</span>
         </button>
         <div class="fz-kachel ${voll ? "voll" : ""}">
-          <span class="fz-k-ic">${voll ? "🏆" : "✅"}</span>
+          <span class="fz-k-ic">${voll ? `<svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4.5h8v5a4 4 0 0 1-8 0z M8 6.5H5.5a2.5 2.5 0 0 0 2.5 4 M16 6.5h2.5a2.5 2.5 0 0 1-2.5 4 M12 13.5v3.5 M8.5 19.5h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>` : `<svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`}</span>
           <span class="fz-k-t">${heute.gesamt}<small>/${TAGESZIEL}</small></span>
           <span class="fz-k-u">heute geschafft</span>
           <span class="fz-balken"><i style="width:${anteil}%;"></i></span>
         </div>
         ${tage > 0 ? `
         <div class="fz-kachel">
-          <span class="fz-k-ic">📅</span>
+          <span class="fz-k-ic"><svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5h15v13h-15z M4.5 10.5h15 M8.5 4v4 M15.5 4v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
           <span class="fz-k-t">${tage}</span>
           <span class="fz-k-u">${tage === 1 ? "Tag" : "Tage"} bis zur Arbeit</span>
         </div>` : ""}
@@ -14777,7 +15054,7 @@ function renderEltern(){
           <button type="button" class="linkbtn" id="datenschutz-start">Datenschutz</button><br>
           <span style="font-size:12px;opacity:0.85;">Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt oder unterstützt.</span></footer>
     </div>
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
   const ekb = document.getElementById('eltern-konto-btn');
   if(ekb) ekb.addEventListener('click', ()=>{ state.screen = "elternkonto"; render(); });
@@ -14878,7 +15155,7 @@ function renderUebenVokabeln(){
               &ndash; aus so vielen Sammlungen, wie du magst.</span>
             <button type="button" class="vw-mini" id="vw-korb-leeren">Leeren</button>
           </div>` : ""}
-        <h3 style="font-size:16px;margin:0 0 2px;">WELCHE WÖRTER?</h3>
+        <h3 style="font-size:16px;margin:0 0 2px;">Welche Wörter?</h3>
         <p class="muted" style="margin:0 0 10px;">Tipp auf die Liste, wenn du etwas
         anderes üben willst.${wahl.length ? " Deine Auswahl bleibt erhalten." : ""}</p>
         <!-- DIE SYSTEMLISTE IST RAUS.
@@ -14917,12 +15194,12 @@ function renderUebenVokabeln(){
         </span>
       </button>
       <button type="button" class="btn sl-start" id="start-btn">
-        ▶ SPIELEN
+        ▶ Spielen
         <small>${escapeHtml(woher)}</small>
       </button>
     </div>
 
-    <button class="btn danger" id="back-btn" style="margin-top:14px;">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn" style="margin-top:14px;">✕ Zurück</button>
   `;
 
   const quelleWahl = document.getElementById('vw-quelle');
@@ -15070,7 +15347,7 @@ function renderSpielart(){
       </details>
     </div>
 
-    <button class="btn" id="sa-fertig" style="font-size:18px;padding:16px;">✓ FERTIG</button>
+    <button class="btn" id="sa-fertig" style="font-size:18px;padding:16px;">✓ Fertig</button>
   `;
   const f = document.getElementById('sa-fertig');
   if(f) f.addEventListener('click', ()=>{ state.screen = "uebenvokabeln"; saveProgress(); render(); });
@@ -15148,7 +15425,7 @@ function renderUebenGrammatik(){
     ${uebenKopfHtml("Grammatik üben", "Tippe ein Thema an &ndash; dann geht es los.")}
     
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:6px;">GRAMMATIK-THEMEN</h3>
+      <h3 style="font-size:16px;margin-bottom:6px;">Grammatik-Themen</h3>
       <p class="muted" style="margin-bottom:10px;">${grammatikThemenDerKlasse().length} Themen &ndash; sortiert nach Klasse und Unit.</p>
       ${klassenAuswahlHtml(grammatikKlassen())}
       ${GRAMMAR_TOPICS.length <= 6 ? `
@@ -15233,7 +15510,7 @@ function renderUebenGrammatik(){
     </div>
 
     <div style="height:12px;"></div>
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
   startVerdrahten();
   unitKnoepfeVerdrahten();
@@ -15283,7 +15560,7 @@ function renderStart(){
       <button type="button" class="info-btn" id="info-start-btn" title="Was ist LingoCrafter?" aria-label="Was ist LingoCrafter?">i</button>
     </div>
 
-    ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""}${state.guest ? `<div class="guest-bar"><span class="guest-txt">&#128064; <strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">&#127381; Konto anlegen</button></div>` : ""}
+    ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""}${state.guest ? `<div class="guest-bar"><span class="guest-txt"><strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">Konto anlegen</button></div>` : ""}
 
     <!-- v95.7 - ETAPPE 3: EINE KLARE REIHENFOLGE.
          Ein Kind, das die App oeffnet, sucht "Was mach ich jetzt?".
@@ -15305,14 +15582,14 @@ function renderStart(){
       <div class="row" style="align-items:center;">
         <span class="avatar-swatch" style="width:46px;max-width:46px;flex:0 0 auto;${avatarStyle(avatarById(avatarWahl()))}"></span>
         <div style="flex:1;padding:0 10px;min-width:0;">
-          <p style="font-weight:800;font-size:17px;margin:0;color:#1e5c28;overflow-wrap:anywhere;">${state.guest ? "Gast" : escapeHtml(state.playerName)}</p>
+          <p style="font-weight:800;font-size:17px;margin:0;color:var(--tinte);overflow-wrap:anywhere;">${state.guest ? "Gast" : escapeHtml(state.playerName)}</p>
           <p class="muted" style="margin:1px 0 0;font-size:13px;">${state.guest ? "Testmodus &middot; nichts wird gespeichert" : "Angemeldet &middot; Fortschritt wird gesichert"}</p>
         </div>
       </div>
       <!-- Ohne "width:auto" nehmen die Knoepfe die volle Breite aus
            .btn - dieselbe Machart wie auf der Anmeldeseite. -->
       <div class="profil-knoepfe">
-        ${state.guest ? `<button class="btn gold small" id="signup-btn">🆕 Konto anlegen</button>` : ``}<button class="btn secondary small" id="toggle-login-form">
+        ${state.guest ? `<button class="btn gold small" id="signup-btn">Konto anlegen</button>` : ``}<button class="btn secondary small" id="toggle-login-form">
           ${state.showLoginForm ? "▲ Einklappen" : "🎭 Avatar ändern"}
         </button><button class="btn secondary small" id="klasse-aendern">
           🎒 Klasse${state.klasse ? " (" + state.klasse + ".)" : ""}
@@ -16665,7 +16942,7 @@ function renderKartenWahl(){
     ${renderHeader("Vokabelkarten", true)}
 
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:2px;">WELCHE WÖRTER?</h3>
+      <h3 style="font-size:16px;margin-bottom:2px;">Welche Wörter?</h3>
       <p class="muted" style="margin-bottom:10px;">Tipp auf die Liste, wenn du etwas anderes üben willst.</p>
 
       <button type="button" class="vk-quelle" id="vkw-quelle">
@@ -16754,8 +17031,8 @@ function renderKartenKarte(){
   const rueckwaerts = state.direction === "en-de";
   const vorn   = rueckwaerts ? cleanEn(word.en) : word.de;
   const hinten = rueckwaerts ? word.de : cleanEn(word.en);
-  const vornSchild   = rueckwaerts ? "ENGLISH" : "DEUTSCH";
-  const hintenSchild = rueckwaerts ? "DEUTSCH" : "ENGLISH";
+  const vornSchild   = rueckwaerts ? "English" : "Deutsch";
+  const hintenSchild = rueckwaerts ? "Deutsch" : "English";
   const vornHoer   = rueckwaerts ? hoerKnopfHtml(word.en) : "";
   const hintenHoer = rueckwaerts ? "" : hoerKnopfHtml(word.en);
 
@@ -16792,7 +17069,7 @@ function renderKartenKarte(){
         </div>
       </div>
 
-      <button class="btn vk-dreh" id="vk-dreh">🔄 KARTE DREHEN</button>
+      <button class="btn vk-dreh" id="vk-dreh">🔄 Karte drehen</button>
       <div class="vk-urteil" id="vk-urteil" hidden>
         <button class="btn vk-kann" id="vk-kann">✓ Kann ich</button>
         <button class="btn vk-ueben" id="vk-ueben">↻ Sitzt noch nicht</button>
@@ -17071,7 +17348,7 @@ function showFeedbackWithConfirm(type, message, revealAnswer, extraNoteHtml){
     html += `<div class="answer-reveal">✔ Richtige Antwort: <strong>${escapeHtml(revealAnswer)}</strong>${hoerZusatz}</div>`;
   }
   if(extraNoteHtml){ html += extraNoteHtml; }
-  html += `<button class="btn" id="confirm-continue-btn" style="margin-top:12px;">✓ VERSTANDEN &ndash; WEITER</button>`;
+  html += `<button class="btn" id="confirm-continue-btn" style="margin-top:12px;">✓ Verstanden &ndash; weiter</button>`;
   fb.innerHTML = html;
   document.getElementById('confirm-continue-btn').addEventListener('click', advanceAfterAnswer, { once:true });
   scrollFeedbackIntoView(fb);
@@ -18975,9 +19252,9 @@ function renderParents(){
     <!-- v95.7 - Die Antwort zuerst: "Hat Ben geübt?" steht oben. Der
          Kasten zum Zuschauen auf dem eigenen Handy folgt danach. -->
     <div class="el-karten" role="tablist" aria-label="Elternbereich">
-      ${tabKarte("uebersicht", "📈", "Was " + name + " gemacht hat", "Woche, Fehlerwörter, Noten")}
-      ${tabKarte("belohnungen", "🎁", "Belohnungen", "festlegen und ausblenden")}
-      ${tabKarte("listen", "📝", "Eigene Listen", "Vokabeln selbst eintragen")}
+      ${tabKarte("uebersicht", `<svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5h16 M5 16l4.5-5 3.5 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`, "Was " + name + " gemacht hat", "Woche, Fehlerwörter, Noten")}
+      ${tabKarte("belohnungen", `<svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10h15v9.5h-15z M3.5 7h17v3h-17z M12 7v12.5 M12 7c-1.5-3-5-3-4.5-.5.3 1.4 4.5.5 4.5.5zm0 0c1.5-3 5-3 4.5-.5-.3 1.4-4.5.5-4.5.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`, "Belohnungen", "festlegen und ausblenden")}
+      ${tabKarte("listen", `<svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l1-4 10-10 3 3-10 10z M14 7l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`, "Eigene Listen", "Vokabeln selbst eintragen")}
     </div>
 
     <div id="eltab-inhalt" role="tabpanel" aria-labelledby="eltab-${state.parentTab || "uebersicht"}">
@@ -19064,7 +19341,7 @@ function renderParents(){
       <button class="btn parent-lock-btn" id="parent-lock">🔒 ELTERNBEREICH ABMELDEN</button>
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK ZUM SPIEL (sperrt ebenfalls)</button>
+    <button class="btn danger" id="back-btn">✕ Zurück zum Spiel (sperrt ebenfalls)</button>
   `;
 
   document.querySelectorAll('[data-notenschluessel]').forEach(el=>{
@@ -19214,7 +19491,7 @@ function renderParentGate(){
       `}
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
 
   const unlock = document.getElementById('parent-unlock');
@@ -19305,7 +19582,7 @@ function renderConfirmReward(){
           Erzeugt ein Bild der Belohnung &ndash; zum Verschicken oder Aufheben, damit es niemand vergisst.
         </p>
       </div>
-      <button class="btn danger" id="back-btn">✕ ZURÜCK ZUM SHOP</button>
+      <button class="btn danger" id="back-btn">✕ Zurück zum Shop</button>
     `;
     document.getElementById('reward-img-btn').addEventListener('click', ()=>{ teileBelohnungsbild(e.id); });
     document.getElementById('back-btn').addEventListener('click', ()=>{ state.screen = "shop"; render(); });
@@ -19341,7 +19618,7 @@ function renderConfirmReward(){
       <button class="btn secondary small" id="confirm-link">📤 PER LINK SCHICKEN</button>
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ABBRECHEN</button>
+    <button class="btn danger" id="back-btn">✕ Abbrechen</button>
   `;
 
   const knopf = document.getElementById('confirm-do');
@@ -19510,7 +19787,7 @@ function renderImpressum(){
       </p>
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
   document.getElementById('back-btn').addEventListener('click', ()=>{
     state.screen = state.impressumReturnTo || "start";
@@ -19696,7 +19973,7 @@ function renderDatenschutz(){
       </div>
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
   document.getElementById('back-btn').addEventListener('click', ()=>{
     state.screen = state.impressumReturnTo || "start";
@@ -19776,7 +20053,7 @@ function renderVergleich(){
 
     <button class="btn" id="vg-los">▶ AUSPROBIEREN</button>
     <div style="height:10px;"></div>
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
     <footer class="note">Duolingo-Preis: Richtwert für Deutschland, September 2026.</footer>
   `;
   const zurueck = ()=>{ state.screen = "start"; render(); window.scrollTo(0, 0); };
@@ -19964,7 +20241,7 @@ function renderInfo(){
 
     <button class="btn" id="info-los">▶ AUSPROBIEREN</button>
     <div style="height:10px;"></div>
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
     <footer class="note">Herzensprojekt GmbH &middot; Version ${APP_VERSION}</footer>
   `;
   const zurueck = ()=>{
@@ -20018,7 +20295,7 @@ function renderShop(){
       ${redeemHistoryHtml("archiv")}
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
 
   document.querySelectorAll('[data-redeem-id]').forEach(btn=>{
@@ -20273,7 +20550,7 @@ function renderTeam(){
       </div>
     `}
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
+    <button class="btn danger" id="back-btn">✕ Zurück</button>`;
 
   const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
   an('tm-gruenden', ()=>{
@@ -20333,7 +20610,7 @@ function renderLeaderboard(){
       <p id="lb-status" class="muted" style="margin:8px 0 0;"></p>
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
   const anLb = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
   const nameSetzen = (wert)=>{
@@ -20634,6 +20911,25 @@ async function handleExcelFile(file){
 
 // Gemeinsamer Schritt fuer CSV und Excel: Zeilen in eigene Vokabeln umwandeln.
 function uebernehmeVokabelZeilen(rows, statusEl){
+  /* v95.9 - Kommt der Import aus "Woerter hinzufuegen", landen alle
+     Zeilen in der gewaehlten Liste und die Liste oeffnet sich. */
+  if(state.screen === "wortedazu"){
+    const paare = [];
+    (rows || []).forEach(row=>{
+      if(!row || row.length < 2) return;
+      const de = String(row[0]==null ? "" : row[0]).trim();
+      const en = String(row[1]==null ? "" : row[1]).trim();
+      if(/^(deutsch|german|de)$/i.test(de) && /^(englisch|english|en)$/i.test(en)) return;
+      const z = zeileLesen(de + " = " + en);
+      if(z && z.ok) paare.push(z);
+    });
+    if(!paare.length){
+      if(statusEl) statusEl.textContent = "⚠️ Keine gültigen Zeilen gefunden (Spalte A = Deutsch, Spalte B = Englisch).";
+      return;
+    }
+    paareSpeichern(paare, (rows || []).length);
+    return;
+  }
   let added = 0;
   (rows || []).forEach(row=>{
     if(!row || row.length < 2) return;
@@ -21055,7 +21351,7 @@ function renderLernweg(){
 
     <button class="btn secondary einzeilig" id="lw-plan">📅 LINGORAS PLAN</button>
     <div style="height:10px;"></div>
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
 
   document.getElementById('lw-los').addEventListener('click', ()=> schritt.los());
@@ -22550,6 +22846,16 @@ function evListenbauVerdrahten(){
   an('ev-korb-leeren', ()=>{ state.listeBau = []; render(); });
 
   an('ev-speichern', ()=>{
+    if(state.screen === "wortedazu"){
+      const bau = (state.listeBau || []).slice();
+      state.listeBau = []; state.evSuche = ""; state.evPaket = "";
+      const name = zielListeSichern();
+      const neu = zuListeHinzufuegen(name, bau);
+      saveProgress(); syncToCloud();
+      state.listeInfo = { geprueft: bau.length, neu: neu, drin: bau.length - neu, name: name };
+      listeOeffnen(LISTEN_ZEICHEN + name);
+      return;
+    }
     showPromptModal("Wie soll deine Liste heißen?", "z.B. Vokabeltest Freitag", (name)=>{
       name = (name || "").trim().slice(0, 30);
       if(name.length < 2) return;
@@ -22723,14 +23029,23 @@ function renderListe(){
   app.innerHTML = `
     ${renderHeader(eigene ? "Meine eigenen Wörter" : name, true)}
 
+    ${state.listeInfo && !eigene && state.listeInfo.name === name ? `
+    <div class="panel li-info" role="status">
+      <p class="ml-titel">✓ Gespeichert in „${escapeHtml(name)}“</p>
+      <p class="muted" style="margin:0;">${state.listeInfo.geprueft} ${state.listeInfo.geprueft === 1 ? "Zeile" : "Zeilen"} geprüft:
+        <strong>${state.listeInfo.neu}</strong> neu in dieser Liste${state.listeInfo.drin ? `, <strong>${state.listeInfo.drin}</strong> waren schon drin` : ""}${state.listeInfo.unklar ? `, <strong>${state.listeInfo.unklar}</strong> unklar und nicht übernommen` : ""}.</p>
+    </div>` : ""}
+
     <div class="panel">
-      <button class="btn" id="li-ueben">▶ DIESE LISTE ÜBEN</button>
-      <p class="muted center-text" style="margin:8px 0 0;font-size:12.5px;">
+      <button class="btn" id="li-jetzt">▶ Jetzt üben</button>
+      <p class="muted center-text" style="margin:8px 0 10px;font-size:13px;">
         ${alle.length} ${alle.length === 1 ? "Wort" : "Wörter"} drin</p>
+      ${eigene ? "" : `<button class="btn neutral" id="li-mehr-dazu">＋ Weitere Wörter hinzufügen</button>`}
+      <button class="btn neutral" id="li-ueben" style="margin-top:8px;">Spielart und Wörter wählen</button>
     </div>
 
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:8px;">DIE WÖRTER</h3>
+      <h3 style="font-size:16px;margin-bottom:8px;">Die Wörter</h3>
 
       ${alle.length >= LISTE_SUCHE_AB ? `
         <div class="pk-suchfeld">
@@ -22791,11 +23106,17 @@ function renderListe(){
         die Spalten vertauscht waren? Hier drehst du es um.</p>` : ""}
     </div>`}
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
 
   const anLi = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
 
+  anLi('li-jetzt', ()=>{ state.listeInfo = null; listeJetztUeben(state.listeOffen); });
+  anLi('li-mehr-dazu', ()=>{
+    state.listeInfo = null;
+    state.zielListe = String(state.listeOffen || "").replace(LISTEN_ZEICHEN, "");
+    state.einfVorschau = null; state.screen = "wortedazu"; render();
+  });
   anLi('li-ueben', ()=>{
     state.category     = state.listeOffen;
     state.offenesPaket = state.listeOffen;
@@ -22896,73 +23217,256 @@ function renderListe(){
   });
 }
 
-function renderCustomVocab(){
-  const listen = listenAlle();
-  const eigene = eigeneEindeutig();
-  const weg    = state.evWeg || "";
+/* =====================================================================
+   v95.9 - EIGENE VOKABELN: EIN ORT, LISTE ZUERST
+   Nach einer Expertenrunde (Lern-Apps, Kinder-UX) und Jennys Rueckmeldung
+   "ich finde die Woerter nirgendwo":
+     - Alle Einstiege fuehren nach "Meine Listen".
+     - Woerter landen IMMER sichtbar in einer Liste ("Zu: Seite 42").
+     - Ein Eingabefeld zeigt beim Tippen Treffer aus dem Wortschatz.
+     - "Mehrere einfuegen" zeigt vorher eine Vorschau mit ehrlichen Zahlen.
+     - Nach dem Speichern bleibt die Liste offen, mit "Jetzt ueben".
+   Nichts ist weggefallen: Excel und das Durchblaettern der Pakete stehen
+   unter "Weitere Wege"; die Sammlung aller eigenen Woerter bleibt als
+   "Alle meine Wörter".
+===================================================================== */
+const MONATE = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+function listeAutoName(){
+  const d = new Date();
+  let name = "Eigene Wörter, " + d.getDate() + ". " + MONATE[d.getMonth()];
+  let n = 2, basis = name;
+  while(listeFinden(name)){ name = basis + " (" + n + ")"; n++; }
+  return name;
+}
+function listenNachZeit(){
+  return listenAlle().slice().sort((a, b) => (b.zuletzt || 0) - (a.zuletzt || 0));
+}
+/* Das Ziel fuer neue Woerter: gewaehlte Liste, sonst die zuletzt
+   bearbeitete. Gibt es keine, wird beim ersten Speichern eine angelegt. */
+function zielListeName(){
+  if(state.zielListe === "__neu__") return "";
+  if(state.zielListe && listeFinden(state.zielListe)) return state.zielListe;
+  const z = listeNeueste();
+  return z ? z.name : "";
+}
+function zielListeSichern(){
+  let name = zielListeName();
+  if(!name){
+    const roh = String(state.neuListeName || "").trim();
+    name = (roh && !/seite\s*$/i.test(roh)) ? roh.slice(0, 30) : listeAutoName();
+    if(!listeFinden(name)) listeSichern(name, []);
+    state.zielListe = name;
+    state.neuListeName = "";
+  }
+  return name;
+}
+/* Schluessel in eine Liste legen. Gibt zurueck, wie viele neu dazukamen. */
+function zuListeHinzufuegen(name, schluessel){
+  const l = listeFinden(name);
+  const vorher = l ? (l.woerter || []).slice() : [];
+  let neu = 0;
+  (schluessel || []).forEach(k=>{
+    if(k && k !== "|" && vorher.indexOf(k) < 0){ vorher.push(k); neu++; }
+  });
+  listeSichern(name, vorher);
+  return neu;
+}
+function wortBekannt(k){
+  return getAllVocab().some(w => wortSchluessel(w) === k);
+}
+/* Eine Zeile lesen, ohne schon etwas zu speichern. */
+function zeileLesen(roh){
+  const line = String(roh || "").trim();
+  if(!line) return null;
+  const parts = line.split(/=|;|\t/);
+  let de = "", en = "";
+  if(parts.length >= 2){ de = parts[0]; en = parts.slice(1).join(" "); }
+  else {
+    const buch = line.match(/^(.+?)\s*\[[^\]]*\]\s*(.+)$/);
+    if(buch){ en = buch[1]; de = buch[2]; }
+  }
+  de = ohneLautschrift(ohneSpitzeKlammern(de)); en = ohneLautschrift(ohneSpitzeKlammern(en));
+  /* Unklare Zeile: den Text ins Englisch-Feld legen, damit man sieht,
+     was nicht erkannt wurde, und es direkt korrigieren kann. */
+  if(!(de && en) && !en && !de) en = line;
+  return { roh: line, de: de, en: en, ok: !!(de && en) };
+}
+function vorschauStatus(z, liste){
+  if(!z.ok || !z.de || !z.en) return "unklar";
+  const k = wortSchluessel(z);
+  if(liste && liste.indexOf(k) >= 0) return "inliste";
+  if(wortBekannt(k)) return "sammlung";
+  return "neu";
+}
+/* Woerter speichern und die Liste mit Rueckmeldung oeffnen. */
+function paareSpeichern(paare, geprueft, unklar){
+  const name = zielListeSichern();
+  const keys = [];
+  paare.forEach(z=>{
+    const w = { en: z.en.trim(), de: z.de.trim() };
+    const k = wortSchluessel(w);
+    if(!wortBekannt(k)) addCustomVocabEntry(w.de, w.en);
+    keys.push(wortSchluessel({ en: ohneLautschrift(w.en), de: ohneLautschrift(w.de) }));
+  });
+  doppeltHinweisHolen();          // Hinweis gehoert hier in die Liste, nicht ins Feld
+  const vorher = ((listeFinden(name) || {}).woerter || []).length;
+  const neu = zuListeHinzufuegen(name, keys);
+  saveProgress(); syncToCloud();
+  state.listeInfo = { geprueft: geprueft || paare.length, neu: neu, drin: keys.length - neu, unklar: unklar || 0, name: name };
+  state.einfVorschau = null;
+  listeOeffnen(LISTEN_ZEICHEN + name);
+}
 
-  /* Vier Wege, aber nur einer offen. Vorher standen alle fuenf Bereiche
-     gleichzeitig untereinander - der Bildschirm war dreimal so lang wie
-     das, was man gerade brauchte. */
-  const wegKachel = (kennung, ic, titel) => `
-    <button type="button" class="ev-weg ${weg === kennung ? "aktiv" : ""}" data-ev-weg="${kennung}">
-      <span class="ev-weg-ic">${ic}</span>
-      <span class="ev-weg-t">${titel}</span>
+/* --- "Meine Listen": der eine Ort ------------------------------------ */
+function renderCustomVocab(){
+  const listen  = listenNachZeit();
+  const eigene  = eigeneEindeutig();
+  const zuletzt = listen[0] || null;
+  const zeile = (wert, ic, name, anzahl)=>`
+    <button type="button" class="ml-zeile" data-ml-oeffnen="${escapeHtml(wert)}">
+      <span class="ml-ic" aria-hidden="true">${ic}</span>
+      <span class="ml-n">${escapeHtml(name)}</span>
+      <span class="ml-z">${anzahl} ${anzahl === 1 ? "Wort" : "Wörter"}</span>
+      <span class="ml-pfeil" aria-hidden="true">›</span>
     </button>`;
 
-  const frisch = Array.isArray(state.frischDazu) ? state.frischDazu : [];
-
   app.innerHTML = `
-    ${renderHeader("Vokabeln hinzufügen", true)}
+    ${renderHeader("Meine Listen", true)}
 
-    ${frisch.length >= 2 ? `
-    <div class="ev-frisch">
-      <span class="ev-frisch-t">🆕 <strong>${frisch.length} neue Wörter</strong> sind dazugekommen.</span>
-      <span class="ev-frisch-k">
-        <button class="btn small" id="ev-frisch-speichern" style="width:auto;margin:0;">⭐ Gleich als Liste speichern</button>
-        <button class="btn secondary small" id="ev-frisch-weg" style="width:auto;margin:0;">Später</button>
-      </span>
+    ${zuletzt ? `
+    <div class="panel ml-zuletzt">
+      <p class="ml-kopf">Zuletzt bearbeitet</p>
+      <p class="ml-titel">${escapeHtml(zuletzt.name)}</p>
+      <p class="muted" style="margin:0 0 12px;">${(zuletzt.woerter || []).length} ${(zuletzt.woerter || []).length === 1 ? "Wort" : "Wörter"}</p>
+      <div class="row" style="gap:8px;">
+        <button class="btn secondary col einzeilig" id="ml-ueben">▶ Jetzt üben</button>
+        <button class="btn neutral col einzeilig" id="ml-zuletzt-oeffnen">Ansehen</button>
+      </div>
+    </div>` : `
+    <div class="panel">
+      <p class="ml-titel">Noch keine eigene Liste</p>
+      <p class="muted" style="margin:0;">Trag die Vokabeln aus deinem Buch ein &ndash; sie landen in
+        einer Liste, die du hier wiederfindest und sofort üben kannst.</p>
+    </div>`}
+
+    <button class="btn ml-dazu" id="ml-dazu">＋ Wörter hinzufügen</button>
+
+    ${(listen.length || eigene.length) ? `
+    <div class="panel">
+      <p class="ml-kopf">Alle Listen</p>
+      <div class="ml-liste">
+        ${listen.map(l => zeile(LISTEN_ZEICHEN + l.name, "⭐", l.name, (l.woerter || []).length)).join("")}
+        ${eigene.length ? zeile(CUSTOM_CATEGORY_NAME, "✏️", "Alle meine Wörter", eigene.length) : ""}
+      </div>
     </div>` : ""}
 
+    <button class="btn neutral" id="back-btn">✕ Zurück</button>
+  `;
+
+  const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  an('ml-dazu', ()=>{ state.zielListe = ""; state.einfVorschau = null; state.screen = "wortedazu"; render(); });
+  an('ml-zuletzt-oeffnen', ()=>{ if(zuletzt) listeOeffnen(LISTEN_ZEICHEN + zuletzt.name); });
+  an('ml-ueben', ()=>{ if(zuletzt) listeJetztUeben(LISTEN_ZEICHEN + zuletzt.name); });
+  document.querySelectorAll('[data-ml-oeffnen]').forEach(el=>{
+    el.addEventListener('click', ()=> listeOeffnen(el.dataset.mlOeffnen));
+  });
+  document.getElementById('back-btn').addEventListener('click', ()=>{ state.screen = "start"; render(); });
+}
+
+/* "Jetzt ueben" startet sofort - mit der zuletzt gewaehlten Spielart. */
+function listeJetztUeben(wert){
+  state.category = wert;
+  state.offenesPaket = "";
+  state.wahl = [];
+  state.mainMode = "vocab";
+  state.spielZurueck = "uebenvokabeln";
+  if(!state.mode || state.mode === "karten") state.mode = "mc";
+  saveProgress();
+  startGame();
+}
+
+/* --- Woerter hinzufuegen ---------------------------------------------- */
+function renderWorteDazu(){
+  const ziel   = zielListeName();
+  const listen = listenNachZeit();
+  const l      = ziel ? listeFinden(ziel) : null;
+  const drin   = l ? (l.woerter || []) : [];
+  const vors   = Array.isArray(state.einfVorschau) ? state.einfVorschau : null;
+  const enEing = state.dazuEn || "";
+  const treffer = enEing.trim().length >= 2 ? woerterSuchen(enEing, 6) : [];
+  const zuletztDazu = drin.slice(-5).reverse().map(k=>{
+    const w = getAllVocab().find(v => wortSchluessel(v) === k) || ((l && l.paare) || {})[k];
+    return w ? `<span class="wd-chip">${escapeHtml(cleanEn(w.en))} &ndash; ${escapeHtml(w.de)}</span>` : "";
+  }).join("");
+
+  const zaehle = (st)=> vors ? vors.filter(z => z.status === st).length : 0;
+
+  app.innerHTML = `
+    ${renderHeader("Wörter hinzufügen", true)}
+
+    <div class="panel wd-ziel">
+      <label class="wd-label" for="wd-ziel-wahl">Für welche Liste?</label>
+      <select id="wd-ziel-wahl" class="wd-select">
+        ${listen.map(x => `<option value="${escapeHtml(x.name)}" ${x.name === ziel ? "selected" : ""}>${escapeHtml(x.name)} (${(x.woerter || []).length})</option>`).join("")}
+        <option value="__neu__" ${!ziel ? "selected" : ""}>＋ Neue Liste …</option>
+      </select>
+      ${!ziel ? `
+        <label class="wd-label" for="wd-neu-name" style="margin-top:10px;">Name der neuen Liste</label>
+        <input type="text" id="wd-neu-name" maxlength="30" value="${escapeHtml(state.neuListeName || "Green Line, Seite ")}"
+               placeholder="z. B. Green Line, Seite 42" autocomplete="off">
+        <p class="muted wd-hilfe">Ohne Seitenzahl heißt sie „${escapeHtml(listeAutoName())}“ – umbenennen geht später.</p>` : ""}
+    </div>
+
+    ${vors ? `
     <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:2px;">WIE WILLST DU WÖRTER DAZUTUN?</h3>
-      <p class="muted" style="margin-bottom:9px;">Drei Wege &ndash; such dir einen aus.</p>
-      <div class="ev-wege">
-        <!-- Excel zuerst: das ist der Weg, der eine ganze Buchseite in
-             einem Rutsch und ohne Tippfehler hereinholt. -->
-        ${wegKachel("excel",  "📄", "Vokabeln als Excel-Liste")}
-        ${wegKachel("suche",  "⭐", "Aus dem Wortschatz")}
-        ${wegKachel("tippen", "✍️", "Selbst eintippen")}
+      <p class="ml-titel">Bitte kurz prüfen</p>
+      <p class="muted" style="margin:0 0 10px;">${vors.length} Zeilen gelesen:
+        <strong>${zaehle("neu") + zaehle("sammlung")}</strong> kommen in die Liste${zaehle("inliste") ? `, <strong>${zaehle("inliste")}</strong> sind schon drin` : ""}${zaehle("unklar") ? `, <strong>${zaehle("unklar")}</strong> unklar` : ""}.</p>
+      <div class="wd-vorschau">
+        ${vors.map((z, i) => `
+          <div class="wd-vz ${z.status}">
+            <input type="text" data-vz-en="${i}" value="${escapeHtml(z.en)}" aria-label="Englisch, Zeile ${i + 1}" placeholder="Englisch">
+            <input type="text" data-vz-de="${i}" value="${escapeHtml(z.de)}" aria-label="Deutsch, Zeile ${i + 1}" placeholder="Deutsch">
+            <button type="button" class="wd-vz-weg" data-vz-weg="${i}" aria-label="Zeile ${i + 1} entfernen">✕</button>
+            <span class="wd-vz-st">${{ neu: "neu", sammlung: "schon in deiner Sammlung – kommt in die Liste",
+                                       inliste: "schon in dieser Liste", unklar: "unklar – bitte beide Felder füllen" }[z.status]}</span>
+          </div>`).join("")}
       </div>
+      <button class="btn" id="wd-vz-speichern" style="margin-top:12px;">✓ ${zaehle("neu") + zaehle("sammlung")} Wörter speichern</button>
+      <button class="btn neutral" id="wd-vz-abbrechen" style="margin-top:8px;">Zurück zum Text</button>
+    </div>` : `
+    <div class="panel">
+      <p class="ml-titel">Ein Wort eintragen</p>
+      <p class="wd-zu">Zu: <strong>${ziel ? escapeHtml(ziel) : "neue Liste"}</strong></p>
+      <label class="wd-label" for="wd-en">Englisch</label>
+      <input type="text" id="wd-en" value="${escapeHtml(enEing)}" placeholder="z. B. tree" autocomplete="off" autocapitalize="off" spellcheck="false">
+      ${treffer.length ? `
+        <div class="wd-treffer" role="list" aria-label="Treffer aus dem Wortschatz">
+          <p class="muted wd-hilfe">Schon im Wortschatz &ndash; antippen:</p>
+          ${treffer.map(w => `<button type="button" class="wd-t" data-wd-treffer="${escapeHtml(wortSchluessel(w))}">
+              <span>${escapeHtml(cleanEn(w.en))}</span><span class="muted">${escapeHtml(w.de)}</span><span aria-hidden="true">＋</span></button>`).join("")}
+        </div>` : ""}
+      <label class="wd-label" for="wd-de" style="margin-top:10px;">Deutsch</label>
+      <input type="text" id="wd-de" placeholder="z. B. Baum" autocomplete="off">
+      <button class="btn" id="wd-einzeln" style="margin-top:12px;">＋ Hinzufügen</button>
+      <p id="wd-status" class="muted" role="status" aria-live="polite" style="margin:8px 0 0;"></p>
+      ${zuletztDazu ? `<p class="wd-label" style="margin-top:12px;">Zuletzt in dieser Liste</p><div class="wd-chips">${zuletztDazu}</div>` : ""}
+    </div>
 
-      ${weg === "suche" ? evSucheHtml() : ""}
+    <div class="panel">
+      <p class="ml-titel">Mehrere auf einmal</p>
+      <p class="muted" style="margin:0 0 8px;">Eine Zeile pro Wort &ndash; wie im Buch
+        (<em>go [gəʊ] gehen</em>) oder <em>Deutsch = Englisch</em>.</p>
+      <textarea id="wd-viele" rows="5" placeholder="go [gəʊ] gehen&#10;tree [triː] Baum&#10;Schule = school">${escapeHtml(state.einfText || "")}</textarea>
+      <button class="btn secondary" id="wd-pruefen" style="margin-top:10px;">Prüfen</button>
+    </div>
 
-      ${weg === "tippen" ? `
+    <details class="panel wd-weitere" ${state.wdWeitere ? "open" : ""}>
+      <summary>Weitere Wege: Excel-Datei, Pakete durchblättern</summary>
       <div class="ev-inhalt">
-        <p class="muted" style="margin-bottom:10px;">Trag ein Wortpaar ein und klick auf Hinzufügen &ndash; danach direkt das nächste.</p>
-        <div class="row" style="gap:10px;">
-          <div class="col">
-            <label class="muted" style="display:block;font-size:13px;margin-bottom:4px;">🇩🇪 Deutsch</label>
-            <input type="text" id="new-vocab-de" placeholder="z.B. Apfel">
-          </div>
-          <div class="col">
-            <label class="muted" style="display:block;font-size:13px;margin-bottom:4px;">🇬🇧 Englisch</label>
-            <input type="text" id="new-vocab-en" placeholder="z.B. apple">
-          </div>
-        </div>
-        <button class="btn" id="single-add-btn" style="margin-top:12px;">➕ HINZUFÜGEN</button>
-        <p id="bulk-status" class="muted" style="margin-top:8px;"></p>
-        <details style="margin-top:14px;">
-          <summary class="muted" style="cursor:pointer;">Mehrere auf einmal einfügen</summary>
-          <p class="muted" style="margin:10px 0 6px;">Ein Wortpaar pro Zeile, getrennt mit "=" &ndash; z.B.:<br><em>Apfel = apple</em></p>
-          <textarea id="bulk-vocab-textarea" rows="5" placeholder="Apfel = apple&#10;Haus = house" style="width:100%;font-family:var(--font);font-size:16px;padding:12px;border:2px solid var(--papier-rand);border-radius:12px;margin-top:4px;box-sizing:border-box;background:var(--papier-tief);"></textarea>
-          <button class="btn secondary" id="bulk-add-btn" style="margin-top:10px;">➕ ALLE HINZUFÜGEN</button>
-        </details>
-      </div>` : ""}
-
-
-      ${weg === "excel" ? `
-      <div class="ev-inhalt">
+        <p class="ml-titel" style="margin-top:6px;">Excel- oder CSV-Datei</p>
+        
+      <div>
         <p class="muted">Spalte A = Deutsch, Spalte B = Englisch. CSV wird direkt gelesen,
         für .xlsx wird einmalig eine Hilfsbibliothek geladen.</p>
         <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="margin-top:10px;width:100%;">
@@ -22999,119 +23503,105 @@ function renderCustomVocab(){
           <p class="xl-ende">So sind deine Vokabeln in wenigen Minuten
             <strong>vollständig und richtig</strong> in der App &ndash; ganz ohne Abtippen.</p>
         </div>
-      </div>` : ""}
-    </div>
+      </div>
+      </div>
+      <div class="ev-inhalt" style="margin-top:14px;">
+        <p class="ml-titel">Aus dem Wortschatz auswählen</p>
+        ${evSucheHtml()}
+      </div>
+    </details>`}
 
-    <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:8px;">DEINE WORTLISTEN</h3>
-      ${(listen.length || eigene.length) ? `
-        <div class="pk-gitter">
-          ${eigene.length ? `
-            <button type="button" class="pk-kachel eigene" data-ev-ueben="${escapeHtml(CUSTOM_CATEGORY_NAME)}">
-              <span class="pk-ic">✏️</span>
-              <span class="pk-n">Meine eigenen Wörter</span>
-              <span class="pk-z">${eigene.length}</span>
-            </button>` : ""}
-          ${listen.map(l => `
-            <button type="button" class="pk-kachel eigene" data-ev-ueben="${escapeHtml(LISTEN_ZEICHEN + l.name)}">
-              <span class="pk-ic">⭐</span>
-              <span class="pk-n">${escapeHtml(l.name)}</span>
-              <span class="pk-z">${(l.woerter || []).length}</span>
-            </button>`).join("")}
-        </div>
-        <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Tippe eine Liste an:
-        dort siehst du die Wörter, kannst suchen, welche rausnehmen &ndash; und üben.</p>
-      ` : `<p class="muted center-text" style="margin:6px 0;">Noch keine eigene Liste.
-           Nimm dir oben einen der vier Wege und fang an.</p>`}
+    <div class="row" style="gap:8px;">
+      ${ziel ? `<button class="btn secondary col einzeilig" id="wd-fertig">Fertig – Liste ansehen</button>` : ""}
+      <button class="btn neutral col einzeilig" id="back-btn">✕ Zurück</button>
     </div>
-
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
 
-  const anEv = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
+  const wahl = document.getElementById('wd-ziel-wahl');
+  if(wahl) wahl.addEventListener('change', ()=>{ state.zielListe = wahl.value; render(); });
+  const neuName = document.getElementById('wd-neu-name');
+  if(neuName) neuName.addEventListener('input', ()=>{ state.neuListeName = neuName.value; });
+  const det = app.querySelector('.wd-weitere');
+  if(det) det.addEventListener('toggle', ()=>{ state.wdWeitere = det.open; });
 
-  anEv('ev-frisch-weg', ()=>{ state.frischDazu = []; render(); });
-  anEv('ev-frisch-speichern', ()=>{
-    const woerter = (state.frischDazu || []).slice();
-    if(woerter.length < 2) return;
-    showPromptModal("Wie soll die Liste heißen?", "z.B. Vokabeln vom Foto", (name)=>{
-      name = (name || "").trim().slice(0, 30);
-      if(name.length < 2) return;
-      listeSichern(name, woerter);
-      state.category   = LISTEN_ZEICHEN + name;
-      state.frischDazu = [];
-      state.evWeg      = "";
-      saveProgress();
-      syncToCloud();
-      render();
-    });
-  });
-
-  document.querySelectorAll('[data-ev-weg]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      // Nochmal antippen schliesst wieder - sonst bleibt der Bildschirm
-      // lang, sobald man einmal etwas geoeffnet hat.
-      state.evWeg = (state.evWeg === el.dataset.evWeg) ? "" : el.dataset.evWeg;
-      render();
-    });
-  });
-
-  document.querySelectorAll('[data-ev-ueben]').forEach(el=>{
-    el.addEventListener('click', ()=>listeOeffnen(el.dataset.evUeben));
-  });
-
-
-  try{ evListenbauVerdrahten(); }catch(e){ console.error("Listenbau:", e); }
-
-  const einzelBtn = document.getElementById('single-add-btn');
-  if(einzelBtn) einzelBtn.addEventListener('click', ()=>{
-    const deInput = document.getElementById('new-vocab-de');
-    const enInput = document.getElementById('new-vocab-en');
-    const status = document.getElementById('bulk-status');
-    if(addCustomVocabEntry(deInput.value, enInput.value)){
-      saveProgress();
-      syncToCloud();
-      if(status){ status.textContent = "✅ Vokabel hinzugefügt."; }
-      deInput.value = "";
-      enInput.value = "";
-      render();
-      // Nach dem Neuzeichnen den Fokus wieder auf das Deutsch-Feld setzen,
-      // damit man direkt das nächste Wortpaar eintippen kann.
-      const freshDe = document.getElementById('new-vocab-de');
-      if(freshDe){ freshDe.focus(); }
-    } else if(status){
-      status.textContent = doppeltHinweisHolen()
-        ? "ℹ️ Dieses Wort steht schon in deinen eigenen Wörtern."
-        : "⚠️ Bitte beide Felder ausfüllen.";
-    }
-  });
-  const newVocabEn = document.getElementById('new-vocab-en');
-  if(newVocabEn){
-    newVocabEn.addEventListener('keydown', (e)=>{
-      if(e.key === "Enter"){ document.getElementById('single-add-btn').click(); }
+  const enFeld = document.getElementById('wd-en');
+  if(enFeld){
+    enFeld.addEventListener('input', ()=>{
+      state.dazuEn = enFeld.value;
+      clearTimeout(renderWorteDazu.t);
+      renderWorteDazu.t = setTimeout(()=>{
+        const pos = enFeld.selectionStart;
+        render();
+        const f = document.getElementById('wd-en');
+        if(f){ f.focus(); try{ f.setSelectionRange(pos, pos); }catch(e){} }
+      }, 250);
     });
   }
-
-  const bulkBtn = document.getElementById('bulk-add-btn');
-  if(bulkBtn) bulkBtn.addEventListener('click', ()=>{
-    const ta = document.getElementById('bulk-vocab-textarea');
-    const added = parseBulkVocabText(ta.value);
-    const doppelt = doppeltHinweisHolen();
-    if(added > 0 || doppelt){
-      saveProgress();
-      syncToCloud();
-      ta.value = "";
+  const meld = (txt)=>{ const s = document.getElementById('wd-status'); if(s) s.textContent = txt; };
+  document.querySelectorAll('[data-wd-treffer]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const name = zielListeSichern();
+      const neu = zuListeHinzufuegen(name, [el.dataset.wdTreffer]);
+      saveProgress(); syncToCloud();
+      state.dazuEn = "";
       render();
-      /* Erst neu zeichnen, dann die Meldung setzen - andersherum war sie
-         sofort wieder weg. */
-      const status = document.getElementById('bulk-status');
-      if(status){ status.textContent = `✅ ${added} Vokabel${added===1?'':'n'} hinzugefügt.` + doppelt; }
-    } else {
-      const status = document.getElementById('bulk-status');
-      if(status) status.textContent = "⚠️ Keine gültigen Zeilen erkannt. Format: Deutsch = Englisch oder wie im Buch: go [gəʊ] gehen";
-    }
+      meld(neu ? "✓ Zu „" + name + "“ hinzugefügt." : "Steht schon in „" + name + "“.");
+      const f = document.getElementById('wd-en'); if(f) f.focus();
+    });
   });
+  an('wd-einzeln', ()=>{
+    const en = (document.getElementById('wd-en') || {}).value || "";
+    const de = (document.getElementById('wd-de') || {}).value || "";
+    const z = zeileLesen(de + " = " + en);
+    if(!z || !z.ok){ meld("Bitte Englisch und Deutsch eintragen."); return; }
+    const name = zielListeSichern();
+    if(!wortBekannt(wortSchluessel(z))) addCustomVocabEntry(z.de, z.en);
+    doppeltHinweisHolen();
+    const neu = zuListeHinzufuegen(name, [wortSchluessel(z)]);
+    saveProgress(); syncToCloud();
+    state.dazuEn = "";
+    render();
+    meld(neu ? "✓ „" + z.en + "“ ist jetzt in „" + name + "“." : "„" + z.en + "“ steht schon in „" + name + "“.");
+    const f = document.getElementById('wd-en'); if(f) f.focus();
+  });
+  const deFeld = document.getElementById('wd-de');
+  if(deFeld) deFeld.addEventListener('keydown', (e)=>{ if(e.key === "Enter") document.getElementById('wd-einzeln').click(); });
 
+  an('wd-pruefen', ()=>{
+    const text = (document.getElementById('wd-viele') || {}).value || "";
+    state.einfText = text;
+    const zeilen = text.split("\n").map(zeileLesen).filter(Boolean);
+    if(!zeilen.length){ return; }
+    const liste = ((listeFinden(zielListeName()) || {}).woerter || []);
+    zeilen.forEach(z => z.status = vorschauStatus(z, liste));
+    state.einfVorschau = zeilen;
+    render();
+  });
+  const neuBewerten = ()=>{
+    const liste = ((listeFinden(zielListeName()) || {}).woerter || []);
+    (state.einfVorschau || []).forEach(z=>{ z.ok = !!(z.en.trim() && z.de.trim()); z.status = vorschauStatus(z, liste); });
+  };
+  document.querySelectorAll('[data-vz-en]').forEach(el=> el.addEventListener('change', ()=>{
+    state.einfVorschau[+el.dataset.vzEn].en = el.value; neuBewerten(); render(); }));
+  document.querySelectorAll('[data-vz-de]').forEach(el=> el.addEventListener('change', ()=>{
+    state.einfVorschau[+el.dataset.vzDe].de = el.value; neuBewerten(); render(); }));
+  document.querySelectorAll('[data-vz-weg]').forEach(el=> el.addEventListener('click', ()=>{
+    state.einfVorschau.splice(+el.dataset.vzWeg, 1);
+    if(!state.einfVorschau.length) state.einfVorschau = null;
+    render(); }));
+  an('wd-vz-abbrechen', ()=>{ state.einfVorschau = null; render(); });
+  an('wd-vz-speichern', ()=>{
+    const v = state.einfVorschau || [];
+    const gut = v.filter(z => z.status === "neu" || z.status === "sammlung");
+    const schon = v.filter(z => z.status === "inliste");
+    if(!gut.length && !schon.length) return;
+    state.einfText = "";
+    paareSpeichern(gut.concat(schon), v.length, v.filter(z => z.status === "unklar").length);
+  });
+  an('wd-fertig', ()=>{ state.listeInfo = null; listeOeffnen(LISTEN_ZEICHEN + ziel); });
+
+  try{ evListenbauVerdrahten(); }catch(e){ console.error("Listenbau:", e); }
   const xlKop = document.getElementById('xl-kopieren');
   if(xlKop){
     xlKop.addEventListener('click', ()=>{
@@ -23131,9 +23621,10 @@ function renderCustomVocab(){
     if(file){ handleExcelFile(file); }
   });
 
+
   document.getElementById('back-btn').addEventListener('click', ()=>{
-    state.screen = "start";
-    render();
+    state.einfVorschau = null; state.dazuEn = "";
+    state.screen = "customvocab"; render();
   });
 }
 
@@ -23214,7 +23705,7 @@ function renderInventar(){
 
     <button class="btn gold" id="inv-shop-btn">🛒 NEUE BELOHNUNGEN IM SHOP</button>
     <div style="height:10px;"></div>
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
 
   /* Genau dieselben vier Zuhoerer wie im Shop. Fehlt einer, sieht man
@@ -23304,7 +23795,7 @@ function grammarKartenHtml(topic, intro){
       ${lingoraKopfHtml(escapeHtml(intro.tip || ""), true)}
 
       <button class="btn" id="gk-weiter" style="margin-top:14px;">
-        🚀 VERSTANDEN – JETZT ÜBEN
+        🚀 Verstanden – jetzt üben
       </button>
     </div>`;
 }
@@ -23325,7 +23816,7 @@ function renderGrammarIntro(){
     app.innerHTML = `
       ${renderHeader("Grammatik", true)}
       ${grammarKartenHtml(topic, intro)}
-      <button class="btn danger" id="back-btn">✕ ZURÜCK</button>`;
+      <button class="btn danger" id="back-btn">✕ Zurück</button>`;
     const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
     const gesamt = grammarKartenAnzahl();   // EINE Quelle, siehe oben
     an('gk-weiter', ()=>{
@@ -23382,7 +23873,7 @@ function renderGrammarIntro(){
       </div>
     </div>
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
 
   document.getElementById('grammar-practice-btn').addEventListener('click', startGrammarPractice);
@@ -23947,7 +24438,7 @@ function grammarWeiterKnopf(fb, weiter){
   const b = document.createElement('button');
   b.className = 'btn';
   b.style.marginTop = '12px';
-  b.textContent = '✓ VERSTANDEN – WEITER';
+  b.textContent = '✓ Verstanden – weiter';
   b.addEventListener('click', weiter, { once:true });
   fb.appendChild(b);
   /* Erst den Raum so weit verkleinern, wie es geht, dann den Knopf ins
@@ -24738,7 +25229,7 @@ function renderGrammarStats(){
       </div>`;
     }).join("")}
 
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
+    <button class="btn danger" id="back-btn">✕ Zurück</button>
   `;
 
   document.querySelectorAll('[data-skill-topic]').forEach(el=>{
