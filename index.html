@@ -49,7 +49,6 @@
     "Vokabeltrainer mit Karteikasten-Prinzip",
     "Grammatik nach Units sortiert",
     "Eigene Vokabellisten anlegen",
-    "Vokabeln per Foto einlesen",
     "Aussprache üben mit dem Mikrofon",
     "Elternbereich mit Lernstatistik",
     "Offline nutzbar, als App installierbar"
@@ -95,7 +94,7 @@
     --ink:#242017;
     --gold:#f2c94c;
     --danger:#c0392b;
-    --ok:#3fa34d;
+    --ok:#2b7d38;   /* v95.7: dunkler - Weiss auf #3fa34d kam nur auf 3,2:1 */
     --wood:#7a4a2b;
     /* --- Buchseite ---------------------------------------------------
        Warmes Papier statt kaltem Glas. Die Werte sind bewusst leicht
@@ -105,7 +104,7 @@
     --papier-tief: #f4ecdb;   /* vertiefte Flaeche, Seitenrand */
     --papier-rand: #e5d8bf;   /* Linien und Kanten */
     --tinte:       #443a2c;   /* Text */
-    --tinte-hell:  #7d7060;   /* Nebentext */
+    --tinte-hell:  #665a4a;   /* Nebentext - v95.6 dunkler: #7d7060 kam auf getoenten Kacheln nur auf 3,7:1 */
     --salbei-a:#93b077; --salbei-b:#5c7a45;   /* Vokabeln */
     --pflaume-a:#ad8fae; --pflaume-b:#6b4c6c;  /* Grammatik */
     --terra-a:#d99263;  --terra-b:#a25c33;    /* Spiele */
@@ -2646,15 +2645,20 @@
     box-shadow: 0 3px 10px rgba(63,163,77,0.35);
   }
   .choice-btn.wrong{ background:#fbdcd8; border-color:var(--danger); }
-  .choice-btn[disabled]{ pointer-events:none; }
+  /* v95.6 - Ein gesperrter Knopf erbte das Grau des Browsers - auch die
+     RICHTIGE Antwort, genau in dem Moment, in dem sie sich einpraegen
+     soll (etwa 2:1 Kontrast). Jetzt bleibt die Schrift dunkel. */
+  .choice-btn[disabled]{ pointer-events:none; color:var(--tinte, #2b2b2b); opacity:1; }
+  .choice-btn.correct, .choice-btn.correct[disabled]{ color:#1e5c28; }
+  .choice-btn.wrong, .choice-btn.wrong[disabled]{ color:#7a2318; }
 
   .type-area{ margin-top:18px; }
-  input[type=text], input[type=password]{
+  input[type=text], input[type=password], input[type=email]{
     width:100%; font-family:var(--font); font-weight:600; font-size:22px;
     padding:14px; border:2px solid #e0e0e0; border-radius:12px; background:#fafafa;
     transition:border-color .15s ease, background .15s ease;
   }
-  input[type=text]:focus, input[type=password]:focus{ outline:none; border-color:var(--gold); background:#fff; }
+  input[type=text]:focus, input[type=password]:focus, input[type=email]:focus{ outline:none; border-color:var(--gold); background:#fff; }
 
   .feedback{
     margin-top:14px; padding:14px 16px; font-family:var(--font); font-size:17px; font-weight:600;
@@ -2797,58 +2801,6 @@
     body{ font-size:20px; }
     .avatar-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
   }
-
-/* --- Pruefliste nach dem Abfotografieren ---------------------------
-   Jedes Wortpaar bekommt zwei volle Zeilen. Zwei Felder nebeneinander
-   waren auf einem Handy so schmal, dass laengere Wendungen wie
-   "to make up your mind" nicht mehr zu lesen waren.                  */
-.scan-karte{
-  position:relative;
-  background:#fff;
-  border:2px solid #ece7de;
-  border-radius:14px;
-  padding:12px 44px 12px 12px;
-  margin-bottom:10px;
-}
-.scan-karte.unsicher{ border-color:#f0b429; background:#fffaf0; }
-.scan-mini{
-  display:block;
-  font-size:12px;
-  font-weight:700;
-  letter-spacing:.03em;
-  color:#8a8073;
-  margin:0 0 3px;
-}
-.scan-mini + .scan-feld{ margin-bottom:10px; }
-.scan-karte .scan-feld:last-of-type{ margin-bottom:0; }
-.scan-feld{
-  display:block;
-  width:100%;
-  box-sizing:border-box;
-  font-size:17px;
-  font-family:inherit;
-  padding:10px 12px;
-  border:2px solid #e0e0e0;
-  border-radius:10px;
-  background:#fafafa;
-}
-.scan-feld:focus{ outline:none; border-color:#7a4bbf; background:#fff; }
-.scan-weg{
-  position:absolute;
-  top:8px; right:8px;
-  width:32px; height:32px;
-  min-height:0; padding:0;
-  border:none; border-radius:9px;
-  background:#f3ece4; color:#6b4f31;
-  font-size:15px; font-weight:800;
-  cursor:pointer;
-}
-.scan-weg:hover{ background:#e8ddd0; }
-.scan-warn{
-  margin:8px 0 0;
-  font-size:13px;
-  color:#8a6d1f;
-}
 
 /* --- Mein Lernweg --------------------------------------------------- */
 .lw-jetzt{ border:2px solid #e8dcc8; background:linear-gradient(180deg,#fffdf8,#fff); }
@@ -3370,7 +3322,8 @@ summary.mehr-knopf::after{ content:none; }
   transition:transform .18s ease, box-shadow .18s ease;
 }
 .werk-karte:hover:not(:disabled){ transform:translateY(-3px); box-shadow:0 7px 18px rgba(90,70,40,0.20); }
-.werk-karte:disabled{ opacity:.45; cursor:default; box-shadow:none; transform:none; }
+.werk-karte:disabled, .werk-karte.gesperrt{ opacity:.6; box-shadow:none; transform:none; }
+.wk-schloss{ font-size:.85em; }
 /* Eine ungerade Kachel haengt sonst halbbreit und allein in der letzten
    Zeile. Sie darf die ganze Breite nehmen. */
 .werk-karte.breit{ grid-column:1 / -1; }
@@ -3642,7 +3595,7 @@ summary.mehr-knopf::after{ content:none; }
   width:clamp(68px, 21vw, 90px); height:auto; display:block; margin-bottom:6px;
   filter:drop-shadow(0 2px 4px rgba(90,70,40,0.30));
 }
-.werk-karte:disabled .wk-bild{ filter:grayscale(0.7) opacity(0.7); }
+.werk-karte:disabled .wk-bild, .werk-karte.gesperrt .wk-bild{ filter:grayscale(0.7) opacity(0.7); }
 
 .fz-m-bild{
   /* 28px hoch, damit der Muenzstapel in derselben 30px-Zeile sitzt
@@ -4029,6 +3982,166 @@ summary.mehr-knopf::after{ content:none; }
    Kontur - ein Schlagschatten macht sie nur matschig. */
 .usp-ic, .usp-herz img, .hk-bild, .wk-bild, .fz-m-bild, .fe-bild{ filter:none; }
 .lingora-gross{ filter:none; }
+.el-schritte{margin:12px 0 0;padding-left:22px;font-size:14px;line-height:1.5;}
+.el-schritte li{margin-bottom:6px;}
+.el-einfuegen input{width:100%;}
+.pin-eltern-bitte{ text-align:center; font-weight:700; font-size:17px; margin:0 0 6px; }
+
+/* ===== v95.6 - Lesbarkeit und Tippflaechen ==========================
+   Untergrenze 12 px Schrift, 44 px fuer alles, was man antippt.       */
+.fz-mehr{ font-size:12px; line-height:1.1; }
+.fz-m-u, .fz-k-u{ font-size:12px; }
+.ib-weg{ width:44px; height:44px; font-size:15px; }
+.info-btn{ min-width:44px; min-height:44px; }
+.cancel-btn-inline{ min-height:44px; }
+.lingora-knopf.klein{ width:44px; height:44px; }
+.lingora-knopf.klein .lg-lebt{ width:36px; height:36px; }
+input[type=text]:focus-visible, input[type=password]:focus-visible, input[type=email]:focus-visible,
+textarea:focus-visible{ outline:3px solid rgba(201,161,69,.55); outline-offset:2px; }
+/* v95.6 - Kontraste auf mindestens 4,5:1 */
+.fz-muenzen .fz-m-u{ opacity:1; color:#3a2900; }
+.gram-jetzt-l{ color:#556f58; }
+.unit-nr{ text-shadow:0 1px 1px rgba(0,0,0,.35); }
+.unit-nr[data-unit="3"]{ background:linear-gradient(160deg,#b9821a,#7d5506); }
+.unit-nr[data-unit="5"]{ background:linear-gradient(160deg,#2f9aaa,#176774); }
+.unit-block.zu .unit-nr{ filter:grayscale(1) brightness(.78); }
+
+/* ===== v95.7 - Etappe 3: Startseite, Leiste, ✕ ====================== */
+.heute-los{ display:flex; flex-direction:column; align-items:center; gap:2px;
+  font-size:20px; padding:14px 16px; margin:4px 0 14px; }
+.heute-los small{ font-size:13px; font-weight:600; opacity:.9; letter-spacing:0; text-transform:none; }
+
+.mehr-block{ margin:0 0 14px; }
+.mehr-kopf{ width:100%; display:grid; grid-template-columns:1fr auto; align-items:center;
+  text-align:left; gap:2px 10px; padding:14px 16px; cursor:pointer;
+  font-family:var(--font); color:var(--tinte);
+  background:rgba(253,250,243,0.93); border:2px solid var(--papier-rand, #e6dccb); border-radius:14px; }
+.mehr-t{ font-weight:800; font-size:17px; grid-column:1; }
+.mehr-u{ font-size:13px; color:var(--tinte-hell); grid-column:1; }
+.mehr-pfeil{ grid-column:2; grid-row:1 / span 2; font-size:18px; transition:transform .2s ease; }
+.mehr-block.offen .mehr-pfeil{ transform:rotate(90deg); }
+.mehr-block.offen .mehr-kopf{ border-bottom-left-radius:6px; border-bottom-right-radius:6px; margin-bottom:8px; }
+
+#app{ position:relative; }
+.oben-zu{ position:absolute; top:12px; right:12px; z-index:30;
+  width:44px; height:44px; border-radius:50%; cursor:pointer;
+  font-size:20px; font-weight:800; line-height:1; color:var(--tinte);
+  background:rgba(255,255,255,0.92); border:2px solid var(--papier-rand, #e6dccb);
+  box-shadow:0 2px 8px rgba(60,45,25,0.15); }
+.oben-zu:focus-visible{ outline:3px solid rgba(201,161,69,.65); outline-offset:2px; }
+
+.nav-leiste{ position:fixed; z-index:8500; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:480px; display:grid; grid-template-columns:repeat(4, 1fr);
+  background:rgba(253,250,243,0.97); border-top:2px solid var(--papier-rand, #e6dccb);
+  box-shadow:0 -4px 16px rgba(60,45,25,0.10);
+  padding:4px 4px max(6px, env(safe-area-inset-bottom, 6px));
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.nav-k{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+  min-height:52px; border:none; background:none; cursor:pointer; border-radius:12px;
+  font-family:var(--font); color:var(--tinte-hell); }
+.nav-ic{ font-size:21px; line-height:1.1; filter:grayscale(.35); }
+.nav-t{ font-size:12px; font-weight:700; }
+.nav-k.aktiv{ color:var(--tinte); background:rgba(201,161,69,0.16); }
+.nav-k.aktiv .nav-ic{ filter:none; }
+.nav-k.aktiv .nav-t{ font-weight:800; }
+.nav-k:focus-visible{ outline:3px solid rgba(201,161,69,.65); outline-offset:-3px; }
+body.hat-navi #app{ padding-bottom:calc(84px + env(safe-area-inset-bottom, 0px)); }
+body.hat-navi .lingora-knopf, body.hat-navi .lingora-knopf.klein{ bottom:calc(84px + env(safe-area-inset-bottom, 0px)); }
+body.hat-navi .install-banner{ bottom:calc(72px + env(safe-area-inset-bottom, 0px)); }
+/* Was im Rollkasten unten klebt, klebt jetzt UEBER der Leiste. */
+body.hat-navi .spiel-leiste{ bottom:calc(70px + env(safe-area-inset-bottom, 0px)); }
+body.hat-navi .li-korb{ bottom:calc(78px + env(safe-area-inset-bottom, 0px)); }
+
+/* ===== v95.7 - Etappe 4: Spielarten gestaffelt ====================== */
+.spiel-weitere{ margin-top:14px; }
+.spiel-weitere > summary{ cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px;
+  min-height:44px; padding:10px 14px; border-radius:12px; font-weight:800; font-size:15px;
+  color:var(--tinte); background:rgba(201,161,69,0.12); border:2px dashed rgba(201,161,69,0.45); }
+.spiel-weitere > summary::-webkit-details-marker{ display:none; }
+.spiel-weitere > summary::before{ content:"▸"; transition:transform .2s ease; }
+.spiel-weitere[open] > summary::before{ transform:rotate(90deg); }
+.spiel-weitere[open] > .game-grid{ margin-top:10px; }
+
+/* ===== v95.7 - Etappe 5: Elternbereich ============================= */
+.el-karten{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:0 0 14px; }
+.el-karte{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px;
+  min-height:44px; padding:12px 6px; cursor:pointer; border-radius:14px; font-family:var(--font);
+  color:var(--tinte); background:rgba(253,250,243,0.95); border:2px solid var(--papier-rand, #e6dccb); }
+.el-karte-ic{ font-size:24px; }
+.el-karte-t{ font-weight:800; font-size:13.5px; line-height:1.2; overflow-wrap:anywhere; }
+.el-karte-u{ font-size:12px; color:var(--tinte-hell); line-height:1.25; }
+.el-karte.active{ border-color:#c9a145; background:#fff7e2; box-shadow:0 2px 0 #c9a145; }
+.el-einst-titel{ font-size:15px; letter-spacing:.06em; text-transform:uppercase; color:var(--tinte-hell);
+  margin:22px 4px 8px; }
+.el-listen{ display:flex; flex-direction:column; gap:6px; }
+.el-liste{ display:flex; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:10px;
+  background:rgba(201,161,69,0.10); }
+.el-wege .el-weg-t{ font-weight:800; font-size:16px; margin:0 0 2px; }
+.el-wege .el-weg-u{ margin:0 0 10px; font-size:13.5px; }
+.el-weg-trenner{ border:none; border-top:1px dashed var(--papier-rand, #e6dccb); margin:16px 0; }
+
+/* ===== v95.7 - Etappe 6: einheitliche Optik ========================
+   Feste Bedeutung der Farben:
+     Gruen  (.btn)            weiter, ja, spielen
+     Blau   (.btn.secondary)  weitere Wahl, nebengeordnet
+     Rot    (.btn.danger)     nur, wo etwas verloren geht
+     Papier (.btn.neutral)    zurueck, nein, schliessen                */
+.btn.neutral{ background:rgba(255,255,255,0.9); color:var(--tinte);
+  border:2px solid var(--papier-rand, #e6dccb); box-shadow:0 1px 3px rgba(60,45,25,0.12); }
+.btn.neutral:hover{ box-shadow:0 3px 8px rgba(60,45,25,0.16); }
+/* Die Zurueck-Bloecke am Seitenende waren rot wie "Konto löschen".
+   Sie bleiben da (zweiter Weg neben dem ✕ oben), aber ruhig. */
+#back-btn.btn.danger, #el-zurueck.btn.danger, #menu-btn.btn.danger{
+  background:rgba(255,255,255,0.9); color:var(--tinte);
+  border:2px solid var(--papier-rand, #e6dccb); box-shadow:0 1px 3px rgba(60,45,25,0.12); }
+/* Ausnahme: Wo der Zurueck-Knopf eine Runde abbricht, bleibt er als
+   Abbruch erkennbar - aber als Umriss, nicht als roter Block. */
+.cancel-btn-inline.btn.danger{ background:#fff; color:#a63a2e; border:2px solid #e3b4ad; box-shadow:none; }
+
+/* Schrift-Hierarchie: Die Leitfrage ist groesser als der Fliesstext. */
+.wwd-frage{ font-size:22px; }
+.ep-frage{ font-size:18px; }
+
+/* "Richtig! +5" - dunkle Schrift auf hellem Gruen statt Weiss auf Verlauf,
+   und unter dem Logo statt darueber. */
+.good-toast{ top:auto; bottom:calc(96px + env(safe-area-inset-bottom, 0px));
+  background:#e6f6e8; color:#1e5c28; border:2px solid #7fc48a; font-size:17px;
+  box-shadow:0 6px 18px rgba(30,92,40,0.22); }
+/* In der Runde bleibt er oben - unten liegen die Antwortknoepfe. */
+body.runde-laeuft .good-toast{ top:10px; bottom:auto; }
+
+/* v95.7 - Nachmessung (Kritik B): Restliche Kleinschrift auf 12 px */
+.ep-wt{ font-size:12px; }
+.gram-jetzt-l, .sl-art-l, .ht-min{ font-size:12px; }
+.btn small{ opacity:1; }
+
+/* v95.7 - Ergebnis-Symbole mit Beschriftung */
+.stat-row .stat-u{ display:block; font-size:12px; font-weight:600; opacity:.85; margin-top:2px; }
+
+.gram-rat{ text-align:center; font-size:15px; margin:4px 8px 8px; color:var(--tinte); }
+
+/* v95.7 - Lingora haengt an der App-Spalte, nicht am Fensterrand. */
+.lingora-knopf, .lingora-knopf.klein{ right:max(12px, calc((100vw - 480px) / 2 + 12px)); }
+
+/* ===== v95.7 - Restpunkte ======================================== */
+.lg-fortsetzen-link{ display:block; width:100%; margin:10px 0 0; padding:10px 6px; min-height:44px;
+  background:none; border:none; cursor:pointer; font-family:var(--font); font-size:15px;
+  color:var(--tinte); text-decoration:underline; text-underline-offset:3px; }
+/* Logo: auf Unterseiten klein, damit die Aufgabe den Platz bekommt. */
+.title-block.compact .logo-img{ max-width:min(38%, 140px); }
+.title-block.start.compact .logo-img{ max-width:min(44%, 170px); }
+.lp-wege{ display:flex; flex-direction:column; gap:10px; margin:0 0 16px; }
+.lp-gast{ font-size:19px; padding:14px 16px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.lp-gast small{ font-size:13px; font-weight:600; }
+.el-einst{ margin-top:18px; }
+.el-einst > summary.el-einst-titel{ cursor:pointer; list-style:none; display:flex; flex-direction:column; gap:2px;
+  min-height:44px; padding:12px 14px; margin:0 0 10px; border-radius:12px; text-transform:none; letter-spacing:0;
+  font-size:16px; font-weight:800; color:var(--tinte);
+  background:rgba(253,250,243,0.95); border:2px solid var(--papier-rand, #e6dccb); }
+.el-einst > summary.el-einst-titel::-webkit-details-marker{ display:none; }
+.el-einst > summary small{ font-size:12.5px; font-weight:600; color:var(--tinte-hell); }
+.el-einst > summary.el-einst-titel::before{ content:"▸ "; }
+.el-einst[open] > summary.el-einst-titel::before{ content:"▾ "; }
 </style>
 </head>
 <body>
@@ -4062,15 +4175,14 @@ summary.mehr-knopf::after{ content:none; }
 
     <h2 style="font-size:18px;margin:20px 0 8px;">Was LingoCrafter kann</h2>
     <ul style="margin:0 0 16px;padding-left:20px;">
-      <li><strong>Vokabeln üben</strong> in fünf Spielarten – Multiple Choice, Vokabeltest, Gemischt,
+      <li><strong>Vokabeln üben</strong> in neun Spielarten – Vokabelkarten, Multiple Choice, Vokabeltest, Gemischt, Hangman, Aussprache, Fällig heute,
         Challenge gegen den Bösewicht und der Flutungsraum gegen das steigende Wasser.</li>
       <li><strong>Karteikasten-Prinzip:</strong> Jedes Wort wandert je nach Erfolg in eine andere Box.
         Wörter, die wackeln, kommen häufiger dran – was sitzt, seltener.</li>
       <li><strong>Englische Grammatik</strong> Thema für Thema, nach Units sortiert und passend zu
         <em>Green Line 1 und 2</em> – von den Zeitformen bis zur Wortstellung, mit Erklärung und Beispielen.</li>
       <li><strong>Eigene Vokabellisten:</strong> Wörter suchen und antippen, selbst eintippen,
-        aus einer Excel-Tabelle einlesen oder das Vokabelheft <strong>abfotografieren</strong> –
-        die Texterkennung läuft auf dem Gerät.</li>
+        oder aus einer Excel-Tabelle einlesen.</li>
       <li><strong>Aussprache üben:</strong> Jedes englische Wort lässt sich anhören, und in der
         Aussprache-Übung spricht das Kind selbst. Die Stimme verlässt das Gerät dabei nicht.</li>
       <li><strong>Klassenarbeits-Radar:</strong> zeigt vor der nächsten Arbeit, welche Themen noch wackeln.</li>
@@ -4545,7 +4657,7 @@ summary.mehr-knopf::after{ content:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "95.5 – Sicherheits-Update";
+const APP_VERSION = "95.7 – Übersichtlicher";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -4581,7 +4693,7 @@ const VOKABEL_PAKETE = [
    Uebersetzung schlimmer als eine fehlende: Das Wiederholungssystem
    uebt sie ein, bis das Kind sie sicher falsch kann.
 
-   Buchspezifische Woerter kommen ueber "Vokabeln abfotografieren"
+   Buchspezifische Woerter kommen ueber "Vokabeln hinzufuegen"
    dazu - dort sieht ein Mensch jedes Paar an, bevor es gespeichert
    wird.                                                              */
 const VOCAB = [
@@ -5003,7 +5115,7 @@ const VOCAB = [
   {en:"about", de:"ungefähr", accepted:["ungefähr","circa","etwa"], cat:CATEGORY_NAME},
   {en:"stuff", de:"Zeug", cat:CATEGORY_NAME},
   {en:"not ... any", de:"kein", accepted:["kein","keine","keinen"], cat:CATEGORY_NAME},
-  {en:"a lot of", de:"viel", accepted:["viel","viele","eine menge"], cat:CATEGORY_NAME},
+  {en:"a lot of", de:"viel", accepted:["viel","viele","eine menge"], enAccepted:["much","many","lots of"], cat:CATEGORY_NAME},
   {en:"a couple of", de:"ein paar", cat:CATEGORY_NAME},
   {en:"everything", de:"alles", cat:CATEGORY_NAME},
   {en:"to ask for", de:"fragen nach", accepted:["fragen nach","bitten um"], cat:CATEGORY_NAME},
@@ -6115,14 +6227,14 @@ function heuteDran(){
         quelle: "vokabel",
         titel: "Fällige Wörter",
         unter: faellig.length + (faellig.length === 1 ? " Wort wartet" : " Wörter warten") + " auf dich",
-        icon: "🔁", dauer: 5
+        icon: "🔁", dauer: 10   /* v95.7: 25 Wörter dauern eher 10 Minuten */
       }, "vokabel");
     } else if(bekannt.length && !heuteSchonVokabeln()){
       rein({
         quelle: "vokabel",
         titel: "Vokabeln auffrischen",
         unter: "Ein paar Wörter, die du schon mal hattest",
-        icon: "🔁", dauer: 5
+        icon: "🔁", dauer: 10   /* v95.7: 25 Wörter dauern eher 10 Minuten */
       }, "vokabel");
     }
   }
@@ -6166,7 +6278,7 @@ function heuteDran(){
         quelle: "vokabel", frei: true,
         titel: "Vokabeln üben",
         unter: "Nichts fällig – aber üben geht immer",
-        icon: "🔁", dauer: 5
+        icon: "🔁", dauer: 10   /* v95.7: 25 Wörter dauern eher 10 Minuten */
       }, "vokabel");
     }
   }
@@ -7634,9 +7746,14 @@ function lingoraStartHtml(){
       ? ((frist ? frist + " &ndash; heute noch " : "Dein Plan läuft &ndash; noch ")
          + "<strong>" + offen + "</strong> " + (offen === 1 ? "Schritt" : "Schritte")
          + (frist ? "." : " für heute."))
-      : ("Heute dran: <strong>" + heuteListe.length + "</strong> "
+      : (heuteListe.every(e => e.frei)
+         /* v95.6 - Nur die Extrarunde in der Liste? Dann ist nichts
+            faellig, und genau das steht auch da - nicht "1 Sache"
+            direkt ueber "Nichts fällig". */
+         ? "Heute ist nichts fällig. Lust auf eine Extrarunde?"
+         : ("Heute dran: <strong>" + heuteListe.length + "</strong> "
          + (heuteListe.length === 1 ? "Sache" : "Sachen")
-         + ", ungefähr <strong>" + minuten + "</strong> Minuten."));
+         + ", ungefähr <strong>" + minuten + "</strong> Minuten.")));
 
   return `
     <div class="panel lg-start jetzt">
@@ -7645,6 +7762,12 @@ function lingoraStartHtml(){
         <div class="lg-blase">${satz}</div>
       </div>
       ${heuteListe.length ? `
+        <button type="button" class="btn heute-los" id="heute-los">
+          ▶ ${heuteListe.every(e => e.frei) ? "EXTRARUNDE" : "HEUTE ÜBEN"}
+          <small>${heuteListe.every(e => e.frei)
+            ? "ungefähr " + minuten + " Minuten"
+            : (heuteListe.length === 1 ? "1 Sache" : heuteListe.length + " Sachen") + " &middot; ungefähr " + minuten + " Minuten"}</small>
+        </button>
         <p class="lw-jetzt-l">${laeuft && !offen ? "NOCHMAL ÜBEN" : "HEUTE DRAN"}</p>
         ${heuteListeHtml(heuteListe)}` : ""}
       ${rangZeileHtml()}
@@ -7795,9 +7918,11 @@ function heuteOverlayVielleicht(){
   overlay.innerHTML = `
     <div class="panel modal-box ht-box">
       ${lingoraKopfHtml(gruss, true)}
-      <p class="ht-kopf">Heute dran: <strong>${liste.length}</strong>
+      <p class="ht-kopf">${liste.every(e => e.frei)
+        ? "Heute ist nichts fällig. Lust auf eine Extrarunde?"
+        : `Heute dran: <strong>${liste.length}</strong>
         ${liste.length === 1 ? "Sache" : "Sachen"},
-        ungefähr <strong>${minuten}</strong> Minuten.</p>
+        ungefähr <strong>${minuten}</strong> Minuten.`}</p>
       ${heuteListeHtml(liste)}
       ${f.naechst ? `<p class="ht-ziel">Jede richtige Antwort bringt dich näher an
         ${f.naechst.icon} <strong>${escapeHtml(f.naechst.name)}</strong> &ndash;
@@ -7848,6 +7973,8 @@ function lingoraStartVerdrahten(){
   }
   const jetzt = document.getElementById('lg-jetzt');
   if(jetzt){ jetzt.addEventListener('click', ()=>{ if(lingoraJetzt) lingoraJetzt.los(); }); }
+  const heuteLos = document.getElementById('heute-los');
+  if(heuteLos){ heuteLos.addEventListener('click', ()=>{ if(heuteListe[0]) heuteStarten(heuteListe[0]); }); }
   document.querySelectorAll('.lg-start [data-heute]').forEach(b=>{
     b.addEventListener('click', ()=>{
       const i = parseInt(b.dataset.heute, 10);
@@ -8036,6 +8163,10 @@ function istInstalliert(){
 
 function istIOS(){
   const ua = navigator.userAgent || "";
+  /* v95.6 - Ein Android-Geraet ist nie ein iPhone. Manche Android-
+     Browser melden sich mit Touch und einer Desktop-Plattform - dann
+     bekam ein Android-Handy die Teilen-Anleitung von Safari. */
+  if(/Android/i.test(ua)) return false;
   return /iPad|iPhone|iPod/.test(ua) ||
          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
@@ -8361,8 +8492,74 @@ function lcHinweis(text){
   setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 2300);
 }
 
+/* v95.6 - LIEGENGEBLIEBENE FENSTER.
+   Dialoge haengen am <body>, nicht an #app - das Neuzeichnen raeumt sie
+   nicht weg. Wechselte der Bildschirm, waehrend einer offen war (Zurueck-
+   Wisch, Knopf darunter, Wechsel aus einer Rueckfrage heraus), blieb er
+   ueber der neuen Seite liegen und fing jedes Tippen ab: Jennys "jetzt
+   kann ich gar nicht mehr tippen".
+   Jedes Fenster bekommt beim Erscheinen den Bildschirm, zu dem es
+   gehoert. Wechselt der Bildschirm, gehen die alten. */
+try{
+  new MutationObserver(function(liste){
+    liste.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if(n.nodeType === 1 && n.classList && n.classList.contains('modal-overlay') && !n.dataset.schirm){
+          n.dataset.schirm = state.screen || "";
+          /* Barrierefreiheit: als Dialog kennzeichnen und den Fokus
+             hineinholen - vorher blieb er auf dem Knopf dahinter. */
+          var box = n.querySelector('.modal-box');
+          if(box){
+            box.setAttribute('role', 'dialog');
+            box.setAttribute('aria-modal', 'true');
+            var titel = box.querySelector('h3');
+            if(titel){ if(!titel.id) titel.id = 'dlg-' + Date.now(); box.setAttribute('aria-labelledby', titel.id); }
+            setTimeout(function(){
+              var ziel = box.querySelector('input, textarea, select, button, [tabindex]:not([tabindex="-1"])');
+              if(ziel && document.activeElement && !box.contains(document.activeElement)){
+                try{ ziel.focus({ preventScroll: true }); }catch(e){}
+              }
+            }, 30);
+          }
+        }
+      });
+    });
+  }).observe(document.body, { childList: true });
+}catch(e){}
+/* Tab bleibt im obersten offenen Fenster. */
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Tab') return;
+  var alle = document.querySelectorAll('.modal-overlay');
+  if(!alle.length) return;
+  var box = alle[alle.length - 1];
+  var teile = Array.prototype.filter.call(
+    box.querySelectorAll('a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"])'),
+    function(el){ return !el.disabled && el.offsetParent !== null; });
+  if(!teile.length) return;
+  var erstes = teile[0], letztes = teile[teile.length - 1];
+  if(!box.contains(document.activeElement)){ e.preventDefault(); erstes.focus(); return; }
+  if(e.shiftKey && document.activeElement === erstes){ e.preventDefault(); letztes.focus(); }
+  else if(!e.shiftKey && document.activeElement === letztes){ e.preventDefault(); erstes.focus(); }
+});
+
+function alteFensterWeg(){
+  document.querySelectorAll('.modal-overlay').forEach(function(o){
+    if(o.dataset.schirm !== undefined && o.dataset.schirm !== (state.screen || "") && o.parentNode){
+      o.parentNode.removeChild(o);
+    }
+  });
+}
+
 window.addEventListener('popstate', function(){
   lcPuffer = false;                       // unser Eintrag ist gerade verbraucht
+  /* v95.6 - Ist ein Fenster offen, schliesst der Wisch nur das Fenster. */
+  var offen = document.querySelectorAll('.modal-overlay');
+  if(offen.length){
+    var oben = offen[offen.length - 1];
+    if(oben.parentNode) oben.parentNode.removeChild(oben);
+    lcPufferLegen();
+    return;
+  }
   try{ if(typeof lingoraChatLeeren === "function") lingoraChatLeeren(); }catch(e){}
 
   if(lcZurueckSchritt()){ lcPufferLegen(); return; }
@@ -9909,6 +10106,26 @@ const MINECRAFT_QUOTES = [
   "Dein Wortschatz-Inventar ist jetzt randvoll.",
   "Von Holz zu Diamant - so schnell wächst dein Können!"
 ];
+/* v95.7 - LOB PASST ZUR LEISTUNG.
+   "Level Up!" bei 2 von 10 und eine "Meisterschafts-Urkunde" bei 6 von 25
+   entwerten jedes Lob - Kinder merken das sofort. Die grossen Sprueche
+   gibt es jetzt ab 70 %, darunter ehrliche Ermutigung. */
+const MUT_QUOTES = [
+  "Dranbleiben lohnt sich – jedes Wort, das wiederkommt, sitzt danach ein bisschen fester.",
+  "Fehler sind Wegweiser: Genau diese Wörter übst du als Nächstes.",
+  "Gut, dass du weitermachst. Beim zweiten Mal ist es schon leichter.",
+  "Jeder Versuch zählt – auch die, die noch nicht geklappt haben."
+];
+function rundenQuote(log){
+  const l = log || [];
+  if(!l.length) return 0;
+  const punkte = l.filter(x => x.result === "correct").length + 0.5 * l.filter(x => x.result === "almost").length;
+  return punkte / l.length;
+}
+function passenderSpruch(log){
+  return rundenQuote(log) >= 0.7 ? pickRandom(MINECRAFT_QUOTES) : pickRandom(MUT_QUOTES);
+}
+
 const GRADE_MOTIVATION_QUOTES = [
   "Jede Note ist nur ein Meilenstein auf deinem Weg - weiter craften!",
   "Übung macht den Meister, auch beim Vokabellernen. Du bist auf dem richtigen Weg!",
@@ -10730,7 +10947,10 @@ function diamantenDazu(anzahl){
 }
 
 function recordActivity(bereich, anzahl, richtig){
-  if(state.guest || !anzahl) return;
+  /* v95.6 - Auch im Testmodus zaehlen. Gespeichert wird dort ohnehin
+     nichts (saveProgress), aber nach 30 geuebten Woertern "0/20 heute
+     geschafft" zu lesen, war das Gegenteil von Ermutigung. */
+  if(!anzahl) return;
   if(!state.activityLog || typeof state.activityLog !== "object"){ state.activityLog = {}; }
   const k = heuteKey();
   const e = state.activityLog[k] || { v:0, vc:0, g:0, gc:0 };
@@ -11353,7 +11573,16 @@ function getAnswerData(word){
     return { promptText: word.en, answerDisplay: word.de, accepted: word.accepted, eyebrow: "ÜBERSETZE INS DEUTSCHE" };
   }
   const enBase = cleanEn(word.en);
-  return { promptText: word.de, answerDisplay: enBase, accepted: [enBase], eyebrow: "ÜBERSETZE INS ENGLISCHE" };
+  /* v95.7 - Sinngleiche Kurzformen gelten auch: "a lot" fuer "a lot of",
+     "go" fuer "to go". Vorher war "viel → a lot" falsch. Eigene
+     Alternativen kann ein Wort ueber enAccepted mitbringen. */
+  const varianten = [enBase];
+  const ohneTo = enBase.replace(/^to\s+/i, "");
+  if(ohneTo !== enBase) varianten.push(ohneTo);
+  const ohneOf = enBase.replace(/\s+of$/i, "");
+  if(ohneOf !== enBase && ohneOf.split(/\s+/).length >= 2) varianten.push(ohneOf);
+  (Array.isArray(word.enAccepted) ? word.enAccepted : []).forEach(v => varianten.push(v));
+  return { promptText: word.de, answerDisplay: enBase, accepted: varianten, eyebrow: "ÜBERSETZE INS ENGLISCHE" };
 }
 function evaluateTyped(input, acceptedList, correctionDisplay){
   const norm = normalize(input);
@@ -12632,7 +12861,7 @@ function renderAusHintergrund(){
 --------------------------------------------------- */
 const BAND_NICHT = ["quiz", "milestone", "flutwahl", "certificate",
                     "grammarquiz", "grammarcertificate", "challengeend",
-                    "aussprache", "lingorafrage", "scan",
+                    "aussprache", "lingorafrage",
                     "skinwerkstatt", "portraitwerkstatt", "parentconfirm"];
 
 function planBandHtml(){
@@ -12702,6 +12931,7 @@ function render(){
   if(typeof app !== "undefined" && app && state.screen !== zuletztGezeichnet){
     app.scrollTop = 0;
     zuletztGezeichnet = state.screen;
+    try{ alteFensterWeg(); }catch(e){}
   }
   // Damit der Zurueck-Wisch etwas zum Verbrauchen hat.
   try{ lcVerlaufAuffrischen(); }catch(e){}
@@ -12731,7 +12961,8 @@ function render(){
      keinen anderen mit, und im Konsolenprotokoll steht, welcher es
      war. */
   setTimeout(()=>{
-    [vgBandVerdrahten, planBandZeigen, fensterHoeheSetzen, lingoraKnopfAuffrischen,
+    [navLeisteAuffrischen, obenZuAuffrischen,
+     vgBandVerdrahten, planBandZeigen, fensterHoeheSetzen, lingoraKnopfAuffrischen,
      lingoraZurueckVerdrahten, lingoraStartVerdrahten, heuteOverlayVielleicht,
      lingoraChatZeigen, installBannerAuffrischen, hoerKnoepfeVerdrahten,
      floodBuehneAnpassen].forEach(fn=>{
@@ -12740,9 +12971,13 @@ function render(){
     });
   }, 0);
 
-  // Der Elternbereich sperrt sich selbst, sobald man ihn verlaesst - egal
-  // ueber welchen Knopf. Damit kommt niemand ohne PIN zurueck hinein.
-  if(state.screen !== "parents" && state.parentUnlocked){
+  /* v95.6 - Der Elternbereich bleibt nach dem Entsperren 10 Minuten
+     offen, auch wenn man kurz woanders hingeht. Vorher sperrte er sich
+     bei JEDEM Verlassen und bei jedem Wechsel in eine andere App - wer
+     den Eltern-Link per WhatsApp an sich selbst schickte, stand danach
+     wieder vor der PIN (Jennys "erst entsperren und wieder entsperren").
+     Wer sofort sperren will, hat dafuer den Knopf "Sperren". */
+  if(state.parentUnlocked && Date.now() > (state.parentOffenBis || 0)){
     state.parentUnlocked = false;
     state.parentTab = "uebersicht";
   }
@@ -12780,7 +13015,6 @@ function render(){
   if(state.screen==="customvocab") return renderCustomVocab();
   if(state.screen==="liste") return renderListe();
   if(state.screen==="lernweg") return renderLernweg();
-  if(state.screen==="scan") return renderScan();
   if(state.screen==="challengeend") return renderChallengeRoundEnd();
   if(state.screen==="inventar") return renderInventar();
   if(state.screen==="grammarintro") return renderGrammarIntro();
@@ -12823,6 +13057,82 @@ const BG_IMAGE_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAc
    Browser laedt es also nur einmal fuer beides. */
 const LOGO_DATA_URI = "logo-emblem.webp";
 
+/* =====================================================================
+   v95.7 - FESTE LEISTE UNTEN UND ✕ OBEN RECHTS (Etappe 3)
+
+   Bisher fuehrte der Weg zurueck nur ueber rote "✕ ZURÜCK"-Bloecke am
+   Ende jeder Seite - auf einer langen Seite erst nach dem Scrollen
+   erreichbar. Jenny: "da muss man erst ganz runter und wieder zurück.
+   Ich würde mir oben irgendwie 'n X wünschen."
+
+   Die Leiste haengt am <body>, nicht an #app, und ueberlebt dadurch
+   das Neuzeichnen. Waehrend einer Runde ist sie weg: Dort zaehlt nur
+   die Aufgabe, und ein Tipp daneben wuerde die Runde verlassen.
+===================================================================== */
+const NAV_AUS = ["quiz", "grammarquiz", "milestone", "certificate", "grammarcertificate",
+                 "challengeend", "flutwahl", "aussprache", "aussprachefertig", "grammarintro",
+                 "lingorafrage", "skinwerkstatt", "portraitwerkstatt", "parentconfirm",
+                 "elternkonto", "confirmreward", "spielart", "impressum", "datenschutz", "info",
+                 "lingorainfo", "stimmenskript"];
+const NAV_ZIELE = [
+  { id:"start",          ic:"🏠", t:"Heute",     zu:["start"] },
+  { id:"uebenvokabeln",  ic:"📖", t:"Vokabeln",  zu:["uebenvokabeln", "kartenwahl", "customvocab", "liste", "vokabelstats"] },
+  { id:"uebengrammatik", ic:"🧩", t:"Grammatik", zu:["uebengrammatik", "grammarstats"] },
+  { id:"eltern",         ic:"👪", t:"Eltern",    zu:["eltern", "parents"] }
+];
+function navLeisteAuffrischen(){
+  let nav = document.getElementById('nav-leiste');
+  const zeigen = !!(state.cloudId || state.guest) && NAV_AUS.indexOf(state.screen) < 0
+                 && !!state.klasse;
+  document.body.classList.toggle('hat-navi', zeigen);
+  if(!zeigen){ if(nav) nav.remove(); return; }
+  if(!nav){
+    nav = document.createElement('nav');
+    nav.id = 'nav-leiste';
+    nav.className = 'nav-leiste';
+    nav.setAttribute('aria-label', 'Hauptmenü');
+    nav.addEventListener('click', (e)=>{
+      const b = e.target.closest && e.target.closest('[data-nav]');
+      if(!b) return;
+      const ziel = b.dataset.nav;
+      document.querySelectorAll('.modal-overlay').forEach(o => o.remove());
+      if(ziel === "uebenvokabeln" && state.screen !== "uebenvokabeln"){
+        state.offenesPaket = ""; state.wahl = [];
+        state.category = wiederholWoerter().length ? WIEDERHOLEN_ZEICHEN : "Alle";
+      }
+      state.screen = ziel;
+      render();
+    });
+    document.body.appendChild(nav);
+  }
+  nav.innerHTML = NAV_ZIELE.map(z=>{
+    const aktiv = z.zu.indexOf(state.screen) >= 0;
+    return `<button type="button" class="nav-k${aktiv ? " aktiv" : ""}" data-nav="${z.id}"${aktiv ? ' aria-current="page"' : ""}>
+      <span class="nav-ic" aria-hidden="true">${z.ic}</span><span class="nav-t">${z.t}</span></button>`;
+  }).join("");
+}
+
+/* Das ✕ oben rechts. Es erfindet keinen neuen Weg, sondern drueckt den
+   Zurueck-Knopf, den die Seite ohnehin hat - so fuehrt es garantiert
+   dorthin, wohin "Zurück" schon immer fuehrte. */
+const OBEN_ZU_KNOEPFE = ["back-btn", "el-zurueck", "vkw-zurueck", "lg-zurueck", "li-zurueck", "sk-zurueck", "sa-fertig"];
+function obenZuAuffrischen(){
+  const alt = document.getElementById('oben-zu');
+  if(alt) alt.remove();
+  if(state.screen === "start" || !app) return;
+  if(app.querySelector('.game-topbar')) return;        // Runde: hat schon "✕ ABBRECHEN" oben
+  const ziel = OBEN_ZU_KNOEPFE.map(id => document.getElementById(id)).find(Boolean);
+  if(!ziel || !app.contains(ziel)) return;
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.id = 'oben-zu';
+  b.className = 'oben-zu';
+  b.setAttribute('aria-label', 'Schließen');
+  b.textContent = '✕';
+  b.addEventListener('click', ()=>{ const z = OBEN_ZU_KNOEPFE.map(id => document.getElementById(id)).find(Boolean); if(z) z.click(); });
+  app.insertBefore(b, app.firstChild);
+}
+
 function renderHeader(subtitle, compact, start){
   return `
     <div class="title-block${compact ? ' compact' : ''}${start ? ' start' : ''}">
@@ -12852,6 +13162,14 @@ function playerBadgeHtml(compact){
   `;
 }
 
+/* v95.7 - ETAPPE 6: Farben mit fester Bedeutung.
+   "JA" war immer rot - auch bei "Hattet ihr das schon im Unterricht?"
+   oder "Lernplan übernehmen?". Ein Kind lernt Farben schneller als
+   Woerter: Rot heisst jetzt nur noch "hier geht etwas verloren". */
+function istGefahrFrage(t){
+  return /abbrechen|löschen|loeschen|abmelden|austragen|ausblenden|sperren|wegwerfen|verlassen|beenden|entfernen|aus deinem Elternbereich nehmen/i.test(String(t || ""));
+}
+
 function showConfirmModal(message, onYes){
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -12866,8 +13184,8 @@ function showConfirmModal(message, onYes){
     <div class="panel modal-box">
       <p>${escapeHtml(message)}</p>
       <div class="row">
-        <button class="btn danger" id="modal-yes">JA</button>
-        <button class="btn secondary" id="modal-no">NEIN</button>
+        <button class="btn ${istGefahrFrage(message) ? "danger" : ""}" id="modal-yes">JA</button>
+        <button class="btn neutral" id="modal-no">NEIN</button>
       </div>
     </div>
   `;
@@ -13169,8 +13487,16 @@ function showSetParentPinModal(onDone){
   overlay.innerHTML = `
     <div class="panel modal-box">
       <h3 style="font-size:17px;margin-bottom:8px;">🔒 Eltern-PIN festlegen</h3>
-      <p class="center-text muted" style="margin-bottom:12px;">Diesen PIN brauchen deine Eltern, um Belohnungen offiziell zu bestätigen. Am besten legst du ihn gemeinsam mit ihnen fest!</p>
-      <input type="password" id="new-parent-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="4-stelliger Eltern-PIN">
+      <!-- v95.6 - Vorher stand hier "legst du ihn gemeinsam mit ihnen
+           fest" - an das Kind gerichtet. Wer den PIN kennt, kann sich
+           Belohnungen selbst bestaetigen. Jetzt geht die Bitte an die
+           Eltern, und der PIN wird zweimal eingegeben. -->
+      <p class="pin-eltern-bitte">👋 Bitte gib das Handy jetzt deinen Eltern.</p>
+      <p class="center-text muted" style="margin-bottom:12px;">Für Eltern: Mit diesem PIN öffnen Sie den
+        Elternbereich und bestätigen eingelöste Belohnungen. Tippen Sie ihn bitte selbst ein
+        &ndash; Ihr Kind sollte ihn nicht kennen.</p>
+      <input type="password" id="new-parent-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="4-stelliger Eltern-PIN" autocomplete="new-password">
+      <input type="password" id="new-parent-pin2" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="PIN wiederholen" autocomplete="new-password" style="margin-top:8px;">
       <button class="btn" id="save-parent-pin-btn" style="margin-top:12px;">💾 SPEICHERN</button>
       <p id="parent-pin-status" class="muted center-text" style="margin-top:8px;"></p>
     </div>
@@ -13179,9 +13505,14 @@ function showSetParentPinModal(onDone){
   const close = ()=>{ if(overlay.parentNode){ overlay.parentNode.removeChild(overlay); } };
   overlay.querySelector('#save-parent-pin-btn').addEventListener('click', async ()=>{
     const pin = overlay.querySelector('#new-parent-pin').value.trim();
+    const pin2 = overlay.querySelector('#new-parent-pin2').value.trim();
     const status = overlay.querySelector('#parent-pin-status');
-    if(pin.length < 4){
+    if(!/^[0-9]{4}$/.test(pin)){
       if(status){ status.textContent = "⚠️ Bitte 4 Ziffern eingeben."; }
+      return;
+    }
+    if(pin !== pin2){
+      if(status){ status.textContent = "⚠️ Die beiden PINs sind nicht gleich."; }
       return;
     }
     if(status){ status.textContent = "⏳ Wird sicher verschlüsselt ..."; }
@@ -13405,12 +13736,39 @@ function renderElternkonto(){
       }
     });
   }
+  /* v95.6 - Den Link EINFUEGEN statt antippen. Auf dem iPhone oeffnet
+     jeder angetippte Link Safari - nie die App auf dem Home-Bildschirm,
+     und die beiden teilen keine Daten. Wer den Link kopiert und hier in
+     SEINER App einfuegt, bleibt in der App. */
+  const einfuegenHtml = state.elternToken ? "" : `
+    <div class="panel el-einfuegen">
+      <h3 style="font-size:16px;margin-bottom:4px;">🔗 Link vom Kind einfügen</h3>
+      <p class="muted" style="margin:0 0 10px;">Hast du den Link aus der App deines Kindes
+        bekommen? Halte ihn in der Nachricht gedrückt, tippe auf <strong>Kopieren</strong>
+        und füge ihn hier ein.</p>
+      <input type="text" id="el-link-ein" autocomplete="off" autocapitalize="off" spellcheck="false"
+             placeholder="https://lingocrafter.de/?eltern=…">
+      <button class="btn secondary" id="el-link-los" style="margin-top:8px;">✅ Link übernehmen</button>
+    </div>`;
+
   app.innerHTML = `
     ${renderHeader("Elternbereich", true)}
+
+    ${state.elternToken && !s.uid ? `
+      <div class="panel el-dazu">
+        <p style="margin:0;"><strong>✅ Der Link deines Kindes ist angekommen.</strong></p>
+        <p class="muted" style="margin:6px 0 0;">Melde dich jetzt unten mit deinem Elternkonto an
+          &ndash; oder lege eins an, falls du noch keins hast. Danach kommt dein Kind automatisch
+          dazu. Installieren musst du dafür nichts, das klappt auch hier im Browser.</p>
+      </div>` : ""}
 
     ${s.uid ? `
       <div class="panel el-oben">
         <p class="el-wer">Angemeldet als <strong>${escapeHtml(s.mail || "")}</strong></p>
+        ${istIOS() && !istInstalliert() ? `
+          <p class="muted" style="margin:6px 0 10px;font-size:13px;">Tipp: In der LingoCrafter-App
+            auf deinem Home-Bildschirm siehst du das auch &ndash; dort auf <strong>Für Eltern</strong>
+            tippen und mit derselben E-Mail anmelden.</p>` : ""}
         <button class="btn secondary" id="el-raus">Abmelden</button>
       </div>
 
@@ -13447,10 +13805,26 @@ function renderElternkonto(){
               einmal &ndash; <strong>immer mit diesem einen Elternkonto</strong>. Danach siehst du
               alle an dieser Stelle.</p>
           </div>`)}
-    ` : elternAnmeldeHtml()}
+      ${einfuegenHtml}
+    ` : elternAnmeldeHtml() + einfuegenHtml}
 
     <button class="btn danger" id="el-zurueck" style="margin-top:8px;">✕ ZURÜCK ZUR APP</button>
   `;
+
+  const linkLos = document.getElementById('el-link-los');
+  if(linkLos){ linkLos.addEventListener('click', ()=>{
+    const feld = document.getElementById('el-link-ein');
+    const roh = (feld ? feld.value : "").trim();
+    const m = roh.match(/eltern=([0-9a-f]{32})/i) || roh.match(/^([0-9a-f]{32})$/i);
+    if(!m){
+      s.fehler = "Das sieht nicht nach einem Eltern-Link aus. Er enthält „?eltern=“ und eine lange Zeichenfolge.";
+      render(); return;
+    }
+    s.fehler = "";
+    state.elternToken = m[1].toLowerCase();
+    if(s.uid) elternKindDazu(state.elternToken);
+    else render();     // erst anmelden, dann kommt das Kind dazu
+  }); }
 
   const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
 
@@ -13478,7 +13852,10 @@ function renderElternkonto(){
       s.laeuft = false;
       if(!r.ok){ s.fehler = r.fehler; render(); return; }
       s.uid = r.uid; s.mail = db.elternMail(); s.fehler = "";
-      elternKinderLaden();
+      /* v95.6 - Wartet ein Link, kommt das Kind gleich dazu. Vorher
+         musste man nach dem Anmelden noch einen zweiten Knopf finden. */
+      if(state.elternToken) elternKindDazu(state.elternToken);
+      else elternKinderLaden();
     });
   });
 
@@ -13762,6 +14139,14 @@ function renderLogin(){
           echte Belohnungen eintauschen, die Mama und Papa festlegen.</p>
       </div>
 
+      <!-- v95.7 - Die zwei Wege hinein stehen oben. Vorher lag "Erst mal
+           ohne Konto ausprobieren" rund drei Bildschirmhoehen tiefer. -->
+      <div class="lp-wege">
+        <button type="button" class="btn lp-gast" id="lp-gast">▶ Gleich ausprobieren
+          <small>ohne Konto, sofort los</small></button>
+        <button type="button" class="btn neutral lp-konto" id="lp-konto">Ich habe ein Konto / Konto anlegen</button>
+      </div>
+
       ${vgBandHtml()}
 
       <div class="usp-gitter">
@@ -13818,7 +14203,7 @@ function renderLogin(){
           <span class="kachel-ic">🎮</span>
           <span class="kachel-txt">
             <span class="kachel-t">Üben, das sich nicht so anfühlt</span>
-            <span class="kachel-s">Fünf Spiele statt Karteikarten. Wer Spaß hat, übt länger.</span>
+            <span class="kachel-s">Neun Spielarten, von Karteikarten bis Challenge. Wer Spaß hat, übt länger.</span>
           </span>
         </div>
         <div class="kachel">
@@ -13891,7 +14276,7 @@ function renderLogin(){
 
       <details class="klapp">
         <summary><span class="klapp-ic">🎮</span><span>Alles, was drin ist</span></summary>
-        <div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Üben, das sich nicht so anfühlt</span><span class="sell-s">Fünf Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Wer Spaß hat, übt länger.</span></span></div><div class="sell"><span class="sell-i lg-sell-bild"><img src="${LINGORA_BILD}" alt="Lingora"></span><span class="sell-txt"><span class="sell-t">Frag Lingora, den Helfer</span><span class="sell-s">Er fragt, was ansteht &ndash; und baut daraus einen Lernplan mit klaren Schritten, bis zur Klassenarbeit. Ein aufmunterndes Wort hat er auch immer übrig.</span></span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-txt"><span class="sell-t">Vokabeln und Grammatik</span><span class="sell-s">Wortschatz trainieren und Grammatik Thema für Thema &ndash; von der Zeitform bis zur Wortstellung, mit Erklärung und Beispielen.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben und Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div></div>
+        <div class="sell-grid"><div class="sell"><span class="sell-i">&#127918;</span><span class="sell-txt"><span class="sell-t">Üben, das sich nicht so anfühlt</span><span class="sell-s">Neun Spielarten, der Flutungsraum gegen das steigende Wasser und die Challenge gegen den Bösewicht. Wer Spaß hat, übt länger.</span></span></div><div class="sell"><span class="sell-i lg-sell-bild"><img src="${LINGORA_BILD}" alt="Lingora"></span><span class="sell-txt"><span class="sell-t">Frag Lingora, den Helfer</span><span class="sell-s">Er fragt, was ansteht &ndash; und baut daraus einen Lernplan mit klaren Schritten, bis zur Klassenarbeit. Ein aufmunterndes Wort hat er auch immer übrig.</span></span></div><div class="sell"><span class="sell-i">&#129504;</span><span class="sell-txt"><span class="sell-t">Vokabeln und Grammatik</span><span class="sell-s">Wortschatz trainieren und Grammatik Thema für Thema &ndash; von der Zeitform bis zur Wortstellung, mit Erklärung und Beispielen.</span></span></div><div class="sell"><span class="sell-i">&#128104;&#8205;&#128105;&#8205;&#128103;</span><span class="sell-txt"><span class="sell-t">Elternbereich mit PIN</span><span class="sell-s">Diagramme über 30 Tage, Notenverlauf, gelöste Aufgaben und Trefferquote &ndash; und hier legen Sie die Belohnungen an.</span></span></div></div>
       </div>
 
       </details>
@@ -13926,6 +14311,10 @@ function renderLogin(){
   const lingoraMehr = document.getElementById('lingora-mehr-btn');
   if(lingoraMehr){ lingoraMehr.addEventListener('click', ()=>{ state.screen = "lingorainfo"; render(); }); }
 
+  const lpGast = document.getElementById('lp-gast');
+  if(lpGast) lpGast.addEventListener('click', ()=>{ const g = document.getElementById('guest-btn'); if(g) g.click(); });
+  const lpKonto = document.getElementById('lp-konto');
+  if(lpKonto) lpKonto.addEventListener('click', ()=>{ const z = document.getElementById('zur-anmeldung'); if(z) z.click(); });
   const anmeldeSprung = document.getElementById('zur-anmeldung');
   if(anmeldeSprung){ anmeldeSprung.addEventListener('click', ()=>zumAnmeldefeld(true)); }
 
@@ -14005,10 +14394,19 @@ function renderLogin(){
    ueberhaupt eine Unit zu oeffnen. Die vollstaendige Gliederung bleibt
    darunter - sie verschwindet nicht, sie muss nur nicht mehr
    durchsucht werden. */
+/* v95.7 - Ein Vorschlag aus einer noch gesperrten Unit fuehrte ins Leere
+   ("Für dich jetzt: Simple Present", Unit noch nicht freigeschaltet). */
+function themaFrei(t){
+  try{
+    const u = grammatikUnitsSichtbar().find(x => x.nr === t.unit && (x.klasse || 5) === (t.klasse || 5));
+    return !u || unitIstFrei(u);
+  }catch(e){ return true; }
+}
+
 function grammatikVorschlaege(){
   const raus = [];
   const rein = (t, grund)=>{
-    if(!t || t.locked) return;
+    if(!t || t.locked || !themaFrei(t)) return;
     if(raus.some(x => x.t.id === t.id)) return;
     raus.push({t: t, grund: grund});
   };
@@ -14021,7 +14419,7 @@ function grammatikVorschlaege(){
     .sort((a, b) => a.i.quote - b.i.quote)[0];
   if(schwach) rein(schwach.t, "da hakt es noch");
 
-  const neu = grammatikThemenDerKlasse().find(t => !t.locked && grammarSkillInfo(t).fenster === 0);
+  const neu = grammatikThemenDerKlasse().find(t => !t.locked && themaFrei(t) && grammarSkillInfo(t).fenster === 0);
   rein(neu, "noch nie geübt");
 
   return raus.slice(0, 3);
@@ -14048,14 +14446,69 @@ function grammatikOffeneUnit(){
    Wer den Klassenarbeits-Radar suchte, musste erst den richtigen Modus
    erwischen. Jetzt liegt alles an einer Stelle, im selben Kachelbild wie
    die beiden grossen Knoepfe oben.                                     */
+function sperrGrund(id){
+  if(state.guest){
+    return id === "custom-vocab-btn"
+      ? "Eigene Vokabeln werden in deinem Konto gespeichert. Tipp oben auf „🆕 Konto anlegen“ – dann kannst du sie eintragen."
+      : "Im Testmodus gibt es Rangliste und Shop noch nicht. Tipp oben auf „🆕 Konto anlegen“ – dann sammelst du Münzen, die du einlösen kannst.";
+  }
+  return "Dafür braucht die App gerade Internet. Prüf die Verbindung und versuch es gleich noch einmal.";
+}
+/* Ein Tipp auf eine gesperrte Kachel zeigt den Grund - und erreicht die
+   eigentliche Aktion gar nicht erst (Abfangen in der Capture-Phase). */
+document.addEventListener('click', (e)=>{
+  const t = e.target && e.target.closest && e.target.closest('.werk-karte.gesperrt');
+  if(!t) return;
+  e.stopPropagation(); e.preventDefault();
+  zeigeHinweis("Noch gesperrt 🔒", escapeHtml(t.dataset.gesperrt || ""));
+}, true);
+
+/* v95.7 - Alles, was nicht "heute ueben" ist, liegt gesammelt hier.
+   Aufgeklappt oder zu - das merkt sich das Geraet. Beim Aufklappen
+   rollt die Seite so weit, dass man die Kacheln auch SIEHT (sonst
+   klappte es unter dem Bildschirmrand auf und wirkte kaputt). */
+function mehrOffen(){
+  try{ return localStorage.getItem("lc-mehr-offen") === "1"; }catch(e){ return false; }
+}
+function mehrEntdeckenHtml(){
+  if(!(state.cloudId || state.guest)) return werkzeugGitterHtml();
+  const offen = mehrOffen();
+  return `
+    <div class="mehr-block ${offen ? "offen" : ""}">
+      <button type="button" class="mehr-kopf" id="mehr-kopf" aria-expanded="${offen}">
+        <span class="mehr-t">Mehr entdecken</span>
+        <span class="mehr-u">Karten, Skills, Radar, Shop, Rangliste, eigene Vokabeln …</span>
+        <span class="mehr-pfeil" aria-hidden="true">▸</span>
+      </button>
+      ${offen ? werkzeugGitterHtml() : ""}
+    </div>`;
+}
+document.addEventListener('click', (e)=>{
+  const k = e.target && e.target.closest && e.target.closest('#mehr-kopf');
+  if(!k) return;
+  const neu = !mehrOffen();
+  try{ localStorage.setItem("lc-mehr-offen", neu ? "1" : "0"); }catch(x){}
+  const vorher = k.getBoundingClientRect().top;
+  render();
+  try{
+    const n = document.getElementById('mehr-kopf');
+    if(n && typeof app !== "undefined" && app) app.scrollTop += n.getBoundingClientRect().top - vorher;
+    if(neu && n) setTimeout(()=>{ n.scrollIntoView({ behavior:"smooth", block:"start" }); }, 30);
+  }catch(x){}
+});
+
 function werkzeugGitterHtml(){
   const g = !!state.guest;
   /* "ic" ist jetzt der Dateiname eines gezeichneten Symbols, nicht mehr
      ein Emoji. Alle liegen neben der index.html.                      */
+  /* v95.6 - Gesperrte Kacheln sind nicht mehr "disabled". Ein toter
+     Knopf, der auf nichts reagiert, sieht fuer Kind und Eltern wie ein
+     Fehler aus. Jetzt laesst er sich antippen und sagt, was fehlt. */
   const kachel = (id, ic, titel, aus, farbe)=>`
-    <button type="button" class="werk-karte ${farbe || ""}" id="${id}"${aus ? " disabled" : ""}>
+    <button type="button" class="werk-karte ${farbe || ""}${aus ? " gesperrt" : ""}" id="${id}"
+            ${aus ? `aria-disabled="true" data-gesperrt="${escapeHtml(sperrGrund(id))}"` : ""}>
       <img class="wk-bild" src="${ic}.webp" alt="" width="200" height="200" loading="lazy">
-      <span class="wk-t">${titel}</span>
+      <span class="wk-t">${titel}${aus ? ' <span class="wk-schloss" aria-hidden="true">🔒</span>' : ""}</span>
     </button>`;
 
   return `
@@ -14286,9 +14739,20 @@ function erwachsenenTuerHtml(){
 function renderEltern(){
   app.innerHTML = `
     ${uebenKopfHtml("Für Eltern", "Einstellungen, Auswertung und Rechtliches.")}
-    <div class="panel">
-        <button class="btn parent-open-btn" id="parents-btn" ${state.guest ? "disabled" : ""}>👨‍👩‍👧 ELTERNBEREICH</button>
+    <!-- v95.7 - Zwei Wege, klar benannt. Jenny: "Muss ich mich an meinem
+         Handy mit seinem Account anmelden? Ich versteh nicht." -->
+    <div class="panel el-wege">
+        <p class="el-weg-t">Auf <strong>diesem</strong> Handy</p>
+        <p class="muted el-weg-u">Fortschritt ansehen, Belohnungen festlegen, Vokabeln eintragen &ndash; mit dem Eltern-PIN.</p>
+        <button class="btn parent-open-btn" id="parents-btn" ${state.guest ? "disabled" : ""}>👨‍👩‍👧 ELTERNBEREICH ÖFFNEN</button>
         ${state.guest ? `<p class="muted center-text" style="margin-top:4px;font-size:13px;">Im Testmodus nicht verfügbar.</p>` : ""}
+        <hr class="el-weg-trenner">
+        <p class="el-weg-t">Auf <strong>deinem eigenen</strong> Handy</p>
+        <p class="muted el-weg-u">Mit einem Elternkonto zuschauen &ndash; ohne dich als dein Kind anzumelden.
+          Hier meldest du dich an oder fügst den Link aus der App deines Kindes ein.</p>
+        <button class="btn secondary" id="eltern-konto-btn">📱 ALS ELTERNTEIL ANMELDEN</button>
+    </div>
+    <div class="panel">
         ${state.guest ? "" : `<div style="height:10px;"></div>
         <button class="btn danger einzeilig" id="logout-btn">🚪 ABMELDEN</button>`}
 
@@ -14315,6 +14779,8 @@ function renderEltern(){
     </div>
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
   `;
+  const ekb = document.getElementById('eltern-konto-btn');
+  if(ekb) ekb.addEventListener('click', ()=>{ state.screen = "elternkonto"; render(); });
   startVerdrahten();
 }
 
@@ -14331,6 +14797,12 @@ function uebenKopfHtml(titel, unter){
 
 function renderUebenVokabeln(){
   state.mainMode = "vocab";
+  if(state.kartenVonKachel){
+    state.kartenVonKachel = false;
+    if(state.mode === "karten"){
+      state.mode = (state.modeVorKarten && state.modeVorKarten !== "karten") ? state.modeVorKarten : "mc";
+    }
+  }
   state.spielZurueck = "uebenvokabeln";
   const offen  = state.offenesPaket || "";
   const wahl   = wahlListe();
@@ -14343,7 +14815,7 @@ function renderUebenVokabeln(){
      wird - sonst verspricht der Knopf etwas anderes, als er tut. */
   const woher = wahl.length ? (wahl.length + (wahl.length === 1 ? " Wort" : " Wörter"))
               : offen ? kurzName(offen)
-              : "Alle Wörter";
+              : kartenQuelleJetzt().name;     // v95.7: auch "Heute wiederholen
 
   app.innerHTML = `
     ${renderHeader(offen ? kurzName(offen) : "Vokabeln üben", true)}
@@ -14428,7 +14900,7 @@ function renderUebenVokabeln(){
         </button>
         <button type="button" class="btn secondary vw-dazu" id="pk-eigene">
           ➕ Vokabeln hinzufügen
-          <small>Tippen, Foto oder Excel</small>
+          <small>Tippen oder Excel</small>
         </button>
       </div>
     `}
@@ -14543,6 +15015,30 @@ function kurzName(name){
 /* Spielart und Richtung liegen jetzt auf einem eigenen Bildschirm.
    Auf dem Vokabelbildschirm standen sie zwischen der Wortauswahl und
    dem Startknopf - man musste an ihnen vorbei, um zu spielen. */
+const SPIEL_HAUPT = [
+  ["karten","🗂️","Vokabelkarten","Umdrehen und selbst sagen, ob es sitzt"],
+  ["mc","🎯","Multiple Choice","4 Antworten zur Auswahl"],
+  ["type","📝","Vokabeltest","Selbst schreiben, mit Schulnote"]
+];
+const SPIEL_WEITERE = [
+  ["faellig","🔁","Fällig heute","Die Wörter, die jetzt dran sind – leicht, dann schwerer"],
+  ["mix","🔀","Gemischt","Mal Auswahl, mal Eintippen"],
+  ["hangman","✏️","Hangman","Buchstaben raten, 5 Fehler sind erlaubt"],
+  ["challenge","⚔️","Die Challenge","10 Sekunden gegen den Bösewicht"],
+  ["flood","🌊","Der Flutungsraum","Klettere dem Wasser davon"],
+  ["aussprache","🗣️","Aussprache","Echte Stimmen zum Nachsprechen"]
+];
+function spielKachelHtml([m, ic, name, unter]){
+  return `
+          <button type="button" class="mode-btn game-tile ${state.mode===m?'active':''}" data-mode="${m}">
+            <span class="gm-ic">${ic}</span>
+            <span class="gm-txt">
+              <span class="gm-name">${name}</span>
+              <small>${unter}</small>
+            </span>
+          </button>`;
+}
+
 function renderSpielart(){
   app.innerHTML = `
     ${renderHeader("Wie willst du üben?", true)}
@@ -14558,32 +15054,28 @@ function renderSpielart(){
         </button>
       </div>
 
+      <!-- v95.7 - ETAPPE 4: Neun gleich grosse Kacheln waren fuer ein
+           Kind neun gleich wichtige Fragen. Jetzt stehen die drei Grund-
+           arten oben; die sechs anderen sind alle noch da, eine Ebene
+           tiefer. Ist eine davon gerade gewaehlt, steht der Bereich offen. -->
       <div class="setting-label">Spiel</div>
       <div class="game-grid">
-        ${[["karten","🗂️","Vokabelkarten","Umdrehen und selbst sagen, ob es sitzt"],
-           ["faellig", lernUeberblick().faellig > 0 ? "🔁" : "🌟", "Fällig heute", "Genau die Wörter, die jetzt dran sind"],
-           ["mc","🎯","Multiple Choice","4 Antworten zur Auswahl"],
-           ["type","📝","Vokabeltest","Selbst schreiben, mit Schulnote"],
-           ["mix","🔀","Gemischt","Mal Auswahl, mal Eintippen"],
-           ["hangman","✏️","Hangman","Buchstaben raten, 5 Fehler sind erlaubt"],
-           ["challenge","⚔️","Die Challenge","10 Sekunden gegen den Bösewicht"],
-           ["flood","🌊","Der Flutungsraum","Klettere dem Wasser davon"],
-           ["aussprache","🗣️","Aussprache","Echte Stimmen zum Nachsprechen"]
-          ].map(([m, ic, name, unter])=>`
-          <button type="button" class="mode-btn game-tile ${state.mode===m?'active':''}" data-mode="${m}">
-            <span class="gm-ic">${ic}</span>
-            <span class="gm-txt">
-              <span class="gm-name">${name}</span>
-              <small>${unter}</small>
-            </span>
-          </button>`).join("")}
+        ${SPIEL_HAUPT.map(spielKachelHtml).join("")}
       </div>
+      <details class="spiel-weitere"${(SPIEL_WEITERE.some(x => x[0] === state.mode) || state.spielWeitereOffen) ? " open" : ""}>
+        <summary>Weitere Spielarten (${SPIEL_WEITERE.length})</summary>
+        <div class="game-grid">
+          ${SPIEL_WEITERE.map(spielKachelHtml).join("")}
+        </div>
+      </details>
     </div>
 
     <button class="btn" id="sa-fertig" style="font-size:18px;padding:16px;">✓ FERTIG</button>
   `;
   const f = document.getElementById('sa-fertig');
   if(f) f.addEventListener('click', ()=>{ state.screen = "uebenvokabeln"; saveProgress(); render(); });
+  const w = app.querySelector('.spiel-weitere');
+  if(w) w.addEventListener('toggle', ()=>{ state.spielWeitereOffen = w.open; });
   startVerdrahten();
 }
 
@@ -14611,10 +15103,21 @@ function unitKnoepfeVerdrahten(){
       if(unitIstFrei(u)){
         // Schon frei: normal auf- und zuklappen.
         const oeffnen = grammatikOffeneUnit() !== u.nr;
+        /* v95.6 - DIE LISTE SPRANG. Klappte oben eine Unit zu, rutschte
+           alles darunter hoch, und 60 ms spaeter scrollte die Seite noch
+           einmal weich nach. Wer in diesem Moment tippte, traf ein anderes
+           Thema. Jetzt bleibt die angetippte Leiste genau dort stehen, wo
+           der Finger sie getroffen hat - sofort, ohne Nachscrollen. */
+        const schluessel = el.dataset.unitFrei;
+        const vorher = el.getBoundingClientRect().top;
         state.grammarOpenUnit = oeffnen ? u.nr : 0;
         render();
-        // Sonst klappt weiter unten etwas auf, das man nicht sieht.
-        if(oeffnen) unitInsBild(u);
+        try{
+          const neu = document.querySelector('[data-unit-frei="' + schluessel + '"]');
+          if(neu && typeof app !== "undefined" && app){
+            app.scrollTop += neu.getBoundingClientRect().top - vorher;
+          }
+        }catch(e){}
         return;
       }
       showConfirmModal('Hattet ihr "' + u.name + '" schon im Unterricht?', ()=>{
@@ -14782,22 +15285,21 @@ function renderStart(){
 
     ${state.loginError ? `<p class="center-text" style="margin:0 auto 10px;width:fit-content;max-width:90%;color:#7a201a;font-weight:700;background:rgba(255,255,255,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 14px;border-radius:14px;">⚠️ ${escapeHtml(state.loginError)}</p>` : ""}${state.guest ? `<div class="guest-bar"><span class="guest-txt">&#128064; <strong>Testmodus</strong> &ndash; dein Fortschritt wird <u>nicht</u> gespeichert.</span><button class="btn gold small" id="guest-signup-bar" style="width:auto;flex:0 0 auto;">&#127381; Konto anlegen</button></div>` : ""}
 
+    <!-- v95.7 - ETAPPE 3: EINE KLARE REIHENFOLGE.
+         Ein Kind, das die App oeffnet, sucht "Was mach ich jetzt?".
+         Die Antwort stand bisher unter vier Wegen und acht Kacheln.
+         Jetzt: 1. Heute ueben (ein Knopf), 2. die Hauptwege,
+         3. der Kontostand, 4. alles Weitere unter "Mehr entdecken".
+         Es ist nichts weggefallen - nur sortiert. -->
+    ${lingoraStartHtml()}
+
     ${wasWillstDuHtml()}
 
     ${terminPlanOffenHeute() ? "" : zielPlanHtml()}
 
-    <!-- Die Kacheln stehen seit 95.2 VOR Lingora: zuerst die vier Wege,
-         dann alles Weitere zum Antippen, und erst darunter der
-         Vorschlag fuer heute. -->
-    ${werkzeugGitterHtml()}
-
-    ${lingoraStartHtml()}
-
-    <!-- Muenzen, Diamanten, "heute geschafft", "Tage bis zur Arbeit":
-         Kontostand, nicht Aufgabe. Oben standen sie zwischen Lingoras
-         Vorschlag und den beiden grossen Karten und haben die zwei
-         Dinge auseinandergezogen, die zusammengehoeren. -->
     ${fortschrittZeileHtml()}
+
+    ${mehrEntdeckenHtml()}
 
     <div class="panel">
       <div class="row" style="align-items:center;">
@@ -14980,7 +15482,7 @@ function startVerdrahten(){
     });
   }
   document.querySelectorAll('.mode-btn[data-mode]').forEach(el=>{
-    el.addEventListener('click', ()=>{ state.mode = el.dataset.mode; render(); });
+    el.addEventListener('click', ()=>{ state.mode = el.dataset.mode; state.kartenVonKachel = false; render(); });
   });
   document.querySelectorAll('.mode-btn[data-direction]').forEach(el=>{
     el.addEventListener('click', ()=>{ state.direction = el.dataset.direction; render(); });
@@ -15040,7 +15542,10 @@ function startVerdrahten(){
   zu('hw-vokabeln',  ()=>{
     /* Frisch anfangen: eine Auswahl von vorgestern waere hier nur
        verwirrend, und der Knopf verspraeche eine falsche Zahl. */
-    state.offenesPaket = ""; state.wahl = []; state.category = "Alle";
+    state.offenesPaket = ""; state.wahl = [];
+    /* v95.7 - Ist etwas zu wiederholen, steht genau das vorausgewaehlt -
+       nicht "Alle Wörter: 444". */
+    state.category = wiederholWoerter().length ? WIEDERHOLEN_ZEICHEN : "Alle";
     state.screen = "uebenvokabeln"; render();
   });
   zu('hw-grammatik', ()=>{ state.screen = "uebengrammatik"; render(); });
@@ -15147,8 +15652,11 @@ function zuletztHtml(){
   // Kennung bewusst NICHT "lg-weiter": so heisst schon der Weiter-Knopf
   // im Lingora-Fragebogen. Zwei Bildschirme, dieselbe Kennung - das geht
   // so lange gut, bis sie sich einmal begegnen.
-  return `<button class="btn secondary einzeilig" id="lg-fortsetzen" style="margin-top:8px;">
-            ▶ WEITER: ${escapeHtml(z.titel)}
+  /* v95.7 - Ein ruhiger Link statt eines weiteren grossen Knopfs: Ueber ihm
+     steht schon "▶ HEUTE ÜBEN" - zwei gleich laute Knoepfe fuer dieselbe
+     Frage "was jetzt?" waren einer zu viel. Der Weg bleibt erhalten. */
+  return `<button type="button" class="lg-fortsetzen-link" id="lg-fortsetzen">
+            ↩ Zuletzt: <strong>${escapeHtml(z.titel)}</strong> &ndash; weiterspielen
           </button>`;
 }
 
@@ -15299,7 +15807,7 @@ function renderVocabFlood(){
       <div class="choices">
         ${choices.map(c=>`<button class="choice-btn" data-choice="${encodeURIComponent(c)}">${escapeHtml(c)}</button>`).join("")}
       </div>
-      <div class="feedback" id="feedback"></div>
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
     </div>
   `;
 
@@ -15999,6 +16507,7 @@ function kartenWoerter(schluessel){
    auf dem Bildschirm steht. Und eine einzeln angetippte Wortauswahl
    ist fluechtig gemeint; die kommt hier nie wieder hoch. */
 function kartenQuelleGueltig(){
+  if(!state.kartenQuelle){ try{ state.kartenQuelle = localStorage.getItem("lc-kartenquelle") || ""; }catch(e){} }
   const q = state.kartenQuelle;
   if(!q || q === AUSWAHL_ZEICHEN) return "Alle";
   if(q === "Alle") return "Alle";
@@ -16033,18 +16542,33 @@ function kartenQuellen(){
     vorschau: woerterVonQuelle(LISTEN_ZEICHEN + l.name).slice(0, 3)
                 .map(w => cleanEn(w.en)).join(", ")
   }));
+  /* v95.6 - Die eigenen Woerter stehen ganz oben bei "Meine Listen".
+     Vorher tauchten sie hier gar nicht auf: Wer Woerter eingetippt, aber
+     noch keine Liste daraus gemacht hatte, fand sie beim Ueben nirgends. */
+  const meine = woerterVonQuelle(CUSTOM_CATEGORY_NAME);
+  if(meine.length){
+    eigene.unshift({
+      wert: CUSTOM_CATEGORY_NAME, name: "Meine eigenen Wörter", anzahl: meine.length,
+      symbol: "✏️", frisch: false,
+      vorschau: meine.slice(0, 3).map(w => cleanEn(w.en)).join(", ")
+    });
+  }
   const alle = { wert:"Alle", name:"Alle Wörter", anzahl:getAllVocab().length,
                  symbol:"🌍", frisch:false, vorschau:"der ganze Wortschatz" };
-  const pakete = paketeDerKlasse(state.klasse || 5).map(p => ({
+  const wdh = wiederholWoerter();
+  const heute = wdh.length ? [{ wert: WIEDERHOLEN_ZEICHEN, name: "Heute wiederholen", anzahl: wdh.length,
+                 symbol: "⏰", frisch:false,
+                 vorschau: wdh.slice(0, 3).map(w => cleanEn(w.en)).join(", ") }] : [];
+  const pakete = paketeDerKlasse(state.klasse || 5).filter(p => p.name !== CUSTOM_CATEGORY_NAME).map(p => ({
     wert: p.name, name: p.name, anzahl: p.anzahl, symbol: p.icon, frisch:false,
     vorschau: woerterVonQuelle(p.name).slice(0, 3).map(w => cleanEn(w.en)).join(", ")
   }));
-  return { eigene: eigene, alle: alle, pakete: pakete };
+  return { eigene: eigene, heute: heute, alle: alle, pakete: pakete };
 }
 
 function kartenQuelleJetzt(){
   const q = kartenQuellen();
-  const alles = [].concat(q.eigene, [q.alle], q.pakete);
+  const alles = [].concat(q.eigene, q.heute, [q.alle], q.pakete);
   return alles.find(e => e.wert === state.category) || q.alle;
 }
 
@@ -16054,7 +16578,7 @@ function kartenQuelleJetzt(){
    das, was drin ist. Das ist das "einsehen" aus Markus' Wunsch. */
 function kartenListenMenue(beiWahl){
   const q = kartenQuellen();
-  const gesamt = q.eigene.length + 1 + q.pakete.length;
+  const gesamt = q.eigene.length + q.heute.length + 1 + q.pakete.length;
   const suche = state.kartenMenueSuche || "";
   const passt = (e)=> !suche || suchNormal(e.name).indexOf(suchNormal(suche)) >= 0;
 
@@ -16086,9 +16610,11 @@ function kartenListenMenue(beiWahl){
       <div class="vkm-liste">
         ${q.eigene.filter(passt).length ? `<p class="vkm-trenner">Meine Listen</p>
           ${q.eigene.filter(passt).map(zeile).join("")}` : ""}
-        ${passt(q.alle) ? `<p class="vkm-trenner">Der ganze Wortschatz</p>${zeile(q.alle)}` : ""}
-        ${q.pakete.filter(passt).length ? `<p class="vkm-trenner">Pakete</p>
+        ${q.heute.filter(passt).length ? `<p class="vkm-trenner">Für heute</p>
+          ${q.heute.filter(passt).map(zeile).join("")}` : ""}
+        ${q.pakete.filter(passt).length ? `<p class="vkm-trenner">Aus dem Buch</p>
           ${q.pakete.filter(passt).map(zeile).join("")}` : ""}
+        ${passt(q.alle) ? `<p class="vkm-trenner">Der ganze Wortschatz</p>${zeile(q.alle)}` : ""}
         ${!q.eigene.filter(passt).length && !q.pakete.filter(passt).length && !passt(q.alle)
           ? `<p class="muted" style="padding:14px 2px;">Dazu habe ich nichts gefunden.</p>` : ""}
       </div>
@@ -16182,6 +16708,13 @@ function renderKartenWahl(){
     state.spielZurueck = "kartenwahl";   // nach der Runde wieder hierher
     /* JETZT ist die Wahl getroffen - nicht beim blossen Ansehen. */
     state.kartenQuelle = state.category || "Alle";
+    // v95.7: auf dem Geraet merken - sonst stand beim naechsten Mal wieder "Alle Wörter".
+    try{ localStorage.setItem("lc-kartenquelle", state.kartenQuelle); }catch(e){}
+    /* v95.6 - Die Kachel "Vokabelkarten" ist ein eigener Weg. Sie darf
+       nicht die Spielart umstellen, die das Kind unter "Vokabeln üben"
+       gewaehlt hat - sonst startet dort ploetzlich ein Kartenspiel. */
+    if(state.mode !== "karten" || !state.kartenVonKachel) state.modeVorKarten = state.mode;
+    state.kartenVonKachel = true;
     state.mode = "karten";
     saveProgress();
     startGame();
@@ -16440,7 +16973,7 @@ function renderQuiz(){
       <div class="choices">
         ${choices.map(c=>`<button class="choice-btn" data-choice="${encodeURIComponent(c)}">${escapeHtml(c)}</button>`).join("")}
       </div>
-      <div class="feedback" id="feedback"></div>
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
     `;
     document.querySelectorAll('.choice-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>handleMcAnswer(btn, decodeURIComponent(btn.dataset.choice), word));
@@ -16451,7 +16984,7 @@ function renderQuiz(){
         <input type="text" id="type-input" placeholder="Deine Antwort..." autocomplete="off" autocapitalize="off" spellcheck="false">
         <button class="btn" id="submit-btn" style="margin-top:10px;">✓ ANTWORT PRÜFEN</button>
       </div>
-      <div class="feedback" id="feedback"></div>
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
     `;
     const input = document.getElementById('type-input');
     const submit = document.getElementById('submit-btn');
@@ -16463,10 +16996,14 @@ function renderQuiz(){
   }
 }
 
-// Zieht bei falschen Antworten Münzen ab, geht aber nie unter 0 (weder Session- noch Gesamt-Kontostand)
+/* v95.7 - FEHLER KOSTEN KEINE MUENZEN MEHR (Entscheidung Markus, 08.11.2026).
+   Bis 95.6 zog jede falsche Antwort 10 Muenzen ab, eine richtige brachte 5.
+   Unter rund 67 % Trefferquote verdiente ein Kind damit nichts - genau die
+   Kinder, fuer die die Belohnungen gedacht sind. Fehler sind Lernmomente:
+   Das Wort kommt wieder, und wer es dann kann, bekommt die Muenzen.
+   Die Funktion bleibt bestehen, damit kein Aufrufer ins Leere laeuft. */
 function deductCoinsForWrong(amount){
-  amount = amount || 5;
-  state.sessionCoins = Math.max(0, state.sessionCoins - amount);
+  /* absichtlich leer */
 }
 
 function scrollFeedbackIntoView(fb){
@@ -16489,6 +17026,8 @@ function showGoodToast(html){
   const t = document.createElement('div');
   t.id = 'good-toast';
   t.className = 'good-toast';
+  t.setAttribute('role', 'status');          // v95.6: Screenreader sagen "Richtig" an
+  t.setAttribute('aria-live', 'polite');
   t.innerHTML = html;
   document.body.appendChild(t);
   setTimeout(()=>{ t.classList.add('weg'); }, 950);
@@ -16574,7 +17113,7 @@ function advanceAfterAnswer(){
 }
 
 function showMilestone(){
-  state.milestoneQuote = pickRandom(MINECRAFT_QUOTES);
+  state.milestoneQuote = passenderSpruch(state.sessionLog);
   state.screen = "milestone";
   render();
 }
@@ -16588,7 +17127,7 @@ function renderMilestone(){
     ${renderHeader("Zwischenstand", true)}
     ${playerBadgeHtml(true)}
     <div class="panel dirt-panel center-text">
-      <h2 style="font-size:14px;color:#fff;">⛏ ${done} VOKABELN GESCHAFFT!</h2>
+      <h2 style="font-size:14px;color:#fff;">⛏ ${done} VOKABELN GESCHAFFT &ndash; ${(state.sessionLog || []).filter(x => x.result === "correct").length} RICHTIG</h2>
       <p style="font-family:var(--font);font-weight:700;font-style:italic;font-size:19px;color:#fff;margin:14px 0;">
         "${state.milestoneQuote}"
       </p>
@@ -16816,7 +17355,7 @@ function renderChallengeQuiz(){
       <div class="choices" id="challenge-choices">
         ${options.map(opt=>`<button class="choice-btn" data-choice="${encodeURIComponent(opt)}">${escapeHtml(opt)}</button>`).join("")}
       </div>
-      <div class="feedback" id="feedback"></div>
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
     </div>
   `;
 
@@ -16833,6 +17372,9 @@ function startChallengeTimer(word){
   updateChallengeTimerDisplay();
   clearInterval(challengeTimerId);
   challengeTimerId = setInterval(()=>{
+    /* v95.7 - Solange ein Fenster offen ist ("Runde abbrechen?"), steht
+       die Uhr. Vorher lief sie darunter weiter und kostete Leben. */
+    if(document.querySelector('.modal-overlay') || document.visibilityState === "hidden") return;
     challengeTimeLeft -= 1;
     updateChallengeTimerDisplay();
     if(challengeTimeLeft <= 0){
@@ -17026,7 +17568,7 @@ function handleMcAnswer(btn, choice, word){
     });
     state.streak = 0;
     deductCoinsForWrong(10);
-    showFeedbackWithConfirm('bad', `Leider falsch. -10 Münzen.`, ans.answerDisplay);
+    showFeedbackWithConfirm('bad', `Noch nicht – das Wort kommt wieder.`, ans.answerDisplay);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"wrong", userInput:choice, word});
     wortGelernt(word, "wrong");
     return; // Es geht erst weiter, wenn die richtige Antwort gelesen wurde
@@ -17066,7 +17608,7 @@ function handleTypedAnswer(value, word){
   } else {
     state.streak = 0;
     deductCoinsForWrong(10);
-    showFeedbackWithConfirm('bad', `Leider falsch. -10 Münzen.`, evalResult.correction);
+    showFeedbackWithConfirm('bad', `Noch nicht – das Wort kommt wieder.`, evalResult.correction);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"wrong", userInput:value, word});
     wortGelernt(word, "wrong");
     return; // Weiter geht's erst, wenn der Nutzer die richtige Antwort bestätigt hat
@@ -17174,7 +17716,7 @@ function endSession(reason){
   muenzenAbrechnen("vocab");
   state.lifetimeBestStreak = Math.max(state.lifetimeBestStreak, state.bestStreak);
   state.lastReason = reason;
-  state.sessionQuote = pickRandom(MINECRAFT_QUOTES);
+  state.sessionQuote = passenderSpruch(state.sessionLog);
   state.gradeWisdom = pickRandom(GRADE_WISDOM);
   // Nur der Vokabeltest gibt eine Note - und nur, wenn die Runde zu Ende
   // gespielt wurde. Ein Abbruch soll nicht zur Note fuehren.
@@ -17253,7 +17795,7 @@ function buildCertificateCanvas(){
   ctx.textAlign = "center";
   ctx.fillStyle = "#7a5a10";
   ctx.font = "800 46px Poppins, Arial, sans-serif";
-  ctx.fillText(won ? "🏆 VOKABEL-ZERTIFIKAT 🏆" : "📜 VOKABEL-URKUNDE", W/2, pad+80);
+  ctx.fillText(won && rundenQuote(state.sessionLog) >= 0.8 ? "🏆 VOKABEL-ZERTIFIKAT 🏆" : "📜 VOKABEL-URKUNDE", W/2, pad+80);
 
   // Avatar
   const avSize = 140;
@@ -17522,7 +18064,7 @@ const GRAMMAR_TOPICS = [
   {"id": "be-questions", "unit": 1, "klasse": 5, "code": "G4", "icon": "❓", "name": "Fragen mit be", "subtitle": "Are you ...? - Yes, I am.", "locked": false, "prompt": "WÄHLE DAS RICHTIGE WORT", "intro": {"title": "Fragen und Kurzantworten mit be", "lead": "Für eine Ja-Nein-Frage rutscht die Form von be einfach nach vorne: You are ... wird zu Are you ...? Geantwortet wird nie nur mit yes oder no - das klingt unhöflich. Du wiederholst immer die passende Form.", "rows": [{"en": "Am I ...?", "form": "Yes, I am.", "example": "No, I'm not.", "de": "Bin ich ...?"}, {"en": "Are you ...?", "form": "Yes, I am.", "example": "No, I'm not.", "de": "Bist du ...?"}, {"en": "Is he/she/it ...?", "form": "Yes, he is.", "example": "No, he isn't.", "de": "Ist er/sie/es ...?"}, {"en": "Are we ...?", "form": "Yes, we are.", "example": "No, we aren't.", "de": "Sind wir ...?"}, {"en": "Are they ...?", "form": "Yes, they are.", "example": "No, they aren't.", "de": "Sind sie ...?"}], "tip": "In der Kurzantwort mit yes darfst du NICHT zusammenziehen: Yes, I am. (nicht: Yes, I'm.) Bei no ist die Kurzform dagegen normal: No, I'm not."}, "exercises": [{"sentence": "___ you from Greenwich?", "answer": "Are", "opts": ["Are", "Is", "Am"], "de": "Kommst du aus Greenwich?"}, {"sentence": "___ you ready?", "answer": "Are", "opts": ["Are", "Is", "Am"], "de": "Bist du bereit?"}, {"sentence": "___ he your brother?", "answer": "Is", "opts": ["Is", "Are", "Am"], "de": "Ist er dein Bruder?"}, {"sentence": "___ she at home?", "answer": "Is", "opts": ["Is", "Are", "Am"], "de": "Ist sie zu Hause?"}, {"sentence": "___ it a good film?", "answer": "Is", "opts": ["Is", "Are", "Am"], "de": "Ist das ein guter Film?"}, {"sentence": "___ I too late?", "answer": "Am", "opts": ["Am", "Is", "Are"], "de": "Bin ich zu spät?"}, {"sentence": "___ we in the right room?", "answer": "Are", "opts": ["Are", "Is", "Am"], "de": "Sind wir im richtigen Raum?"}, {"sentence": "___ they your friends?", "answer": "Are", "opts": ["Are", "Is", "Am"], "de": "Sind das deine Freunde?"}, {"sentence": "___ Tom eleven years old?", "answer": "Is", "opts": ["Is", "Are", "Am"], "de": "Ist Tom elf Jahre alt?"}, {"sentence": "___ your parents at work?", "answer": "Are", "opts": ["Are", "Is", "Am"], "de": "Sind deine Eltern bei der Arbeit?"}, {"sentence": "___ the cat in the garden?", "answer": "Is", "opts": ["Is", "Are", "Am"], "de": "Ist die Katze im Garten?"}, {"sentence": "___ the children happy?", "answer": "Are", "opts": ["Are", "Is", "Am"], "de": "Sind die Kinder glücklich?"}, {"sentence": "Are you tired? - Yes, I ___.", "answer": "am", "opts": ["am", "are", "'m"], "de": "Bist du müde? - Ja."}, {"sentence": "Are you hungry? - No, I ___ not.", "answer": "'m", "opts": ["'m", "am", "are"], "de": "Hast du Hunger? - Nein."}, {"sentence": "Is he nice? - Yes, he ___.", "answer": "is", "opts": ["is", "are", "isn't"], "de": "Ist er nett? - Ja."}, {"sentence": "Is she your sister? - No, she ___.", "answer": "isn't", "opts": ["isn't", "aren't", "is"], "de": "Ist sie deine Schwester? - Nein."}, {"sentence": "Are they at school? - Yes, they ___.", "answer": "are", "opts": ["are", "is", "aren't"], "de": "Sind sie in der Schule? - Ja."}, {"sentence": "Are they Germans? - No, they ___.", "answer": "aren't", "opts": ["aren't", "isn't", "are"], "de": "Sind sie Deutsche? - Nein."}, {"sentence": "Is it cold? - Yes, it ___.", "answer": "is", "opts": ["is", "are", "isn't"], "de": "Ist es kalt? - Ja."}, {"sentence": "Is it your bike? - No, it ___.", "answer": "isn't", "opts": ["isn't", "aren't", "is"], "de": "Ist das dein Fahrrad? - Nein."}, {"sentence": "Are we late? - No, we ___.", "answer": "aren't", "opts": ["aren't", "isn't", "are"], "de": "Sind wir zu spät? - Nein."}, {"sentence": "Are we friends? - Yes, we ___.", "answer": "are", "opts": ["are", "is", "aren't"], "de": "Sind wir Freunde? - Ja."}, {"sentence": "Am I right? - Yes, you ___.", "answer": "are", "opts": ["are", "am", "is"], "de": "Habe ich recht? - Ja."}, {"sentence": "___ your dog friendly?", "answer": "Is", "opts": ["Is", "Are", "Am"], "de": "Ist dein Hund freundlich?"}, {"sentence": "___ these your books?", "answer": "Are", "opts": ["Are", "Is", "Am"], "de": "Sind das deine Bücher?"}, {"sentence": "___ this your seat?", "answer": "Is", "opts": ["Is", "Are", "Am"], "de": "Ist das dein Platz?"}]},
   {"id": "genitive", "unit": 1, "klasse": 5, "code": "G5", "icon": "🔑", "name": "Besitzform", "subtitle": "Tom's bike / of", "locked": false, "prompt": "WÄHLE DIE RICHTIGE BESITZFORM", "intro": {"title": "Wem gehört was? - 's und of", "lead": "Gehört etwas zu einem Lebewesen, hängst du 's an den Namen. Endet der Name schon auf -s (zum Beispiel weil es eine Mehrzahl ist), reicht der Apostroph allein. Gehört etwas zu einer Sache, nimmst du of.", "rows": [{"en": "Person, Einzahl", "form": "+ 's", "example": "Tom's bike", "de": "Toms Fahrrad"}, {"en": "endet auf -s", "form": "+ '", "example": "the boys' room", "de": "das Zimmer der Jungen"}, {"en": "zwei Namen", "form": "nur beim letzten", "example": "Luke and Jamie's room", "de": "Lukes und Jamies Zimmer"}, {"en": "Sache", "form": "of", "example": "the end of the road", "de": "das Ende der Straße"}], "tip": "Kleiner Test: Kann das Ding \"leben\"? Dann 's. Ist es ein Gegenstand, ein Ort oder eine Zeit? Dann of. Und Vorsicht: it's heißt \"es ist\", der Besitz heißt its ganz ohne Apostroph."}, "exercises": [{"sentence": "This is ___ bike.", "answer": "Tom's", "opts": ["Tom's", "Toms", "Tom"], "de": "Das ist Toms Fahrrad."}, {"sentence": "That is ___ room.", "answer": "Anna's", "opts": ["Anna's", "Annas", "Anna"], "de": "Das ist Annas Zimmer."}, {"sentence": "___ dog is black and white.", "answer": "Luke's", "opts": ["Luke's", "Lukes", "Luke"], "de": "Lukes Hund ist schwarz-weiß."}, {"sentence": "I like ___ new haircut.", "answer": "Lisa's", "opts": ["Lisa's", "Lisas", "Lisa"], "de": "Mir gefällt Lisas neue Frisur."}, {"sentence": "This is my ___ bedroom.", "answer": "sister's", "opts": ["sister's", "sisters", "sisters'"], "de": "Das ist das Zimmer meiner Schwester."}, {"sentence": "The ___ room is upstairs.", "answer": "boys'", "opts": ["boys'", "boy's", "boys"], "de": "Das Zimmer der Jungen ist oben."}, {"sentence": "The ___ house is very old.", "answer": "Elliots'", "opts": ["Elliots'", "Elliot's", "Elliots"], "de": "Das Haus der Elliots ist sehr alt."}, {"sentence": "My ___ car is blue.", "answer": "parents'", "opts": ["parents'", "parent's", "parents"], "de": "Das Auto meiner Eltern ist blau."}, {"sentence": "The ___ toys are everywhere.", "answer": "children's", "opts": ["children's", "childrens'", "childrens"], "de": "Das Spielzeug der Kinder liegt überall."}, {"sentence": "This is Luke and ___ room.", "answer": "Jamie's", "opts": ["Jamie's", "Jamies'", "Jamie"], "de": "Das ist Lukes und Jamies Zimmer."}, {"sentence": "The house is at the end ___ the road.", "answer": "of", "opts": ["of", "'s", "from"], "de": "Das Haus ist am Ende der Straße."}, {"sentence": "Here is a photo ___ my school.", "answer": "of", "opts": ["of", "'s", "from"], "de": "Hier ist ein Foto von meiner Schule."}, {"sentence": "The door ___ the car is open.", "answer": "of", "opts": ["of", "'s", "from"], "de": "Die Autotür steht offen."}, {"sentence": "What is the name ___ the film?", "answer": "of", "opts": ["of", "'s", "from"], "de": "Wie heißt der Film?"}, {"sentence": "The top ___ the hill is very windy.", "answer": "of", "opts": ["of", "'s", "from"], "de": "Oben auf dem Hügel ist es sehr windig."}, {"sentence": "This is my ___ favourite song.", "answer": "mum's", "opts": ["mum's", "mums", "mums'"], "de": "Das ist das Lieblingslied meiner Mama."}, {"sentence": "___ family lives in Greenwich.", "answer": "Lou's", "opts": ["Lou's", "Lous", "Lou"], "de": "Lous Familie wohnt in Greenwich."}, {"sentence": "The ___ ball is under the sofa.", "answer": "dog's", "opts": ["dog's", "dogs", "dogs'"], "de": "Der Ball des Hundes liegt unter dem Sofa."}, {"sentence": "The ___ names are on the door.", "answer": "teachers'", "opts": ["teachers'", "teacher's", "teachers"], "de": "Die Namen der Lehrer stehen an der Tür."}, {"sentence": "The colour ___ her eyes is green.", "answer": "of", "opts": ["of", "'s", "from"], "de": "Ihre Augen sind grün."}, {"sentence": "This is my ___ homework.", "answer": "brother's", "opts": ["brother's", "brothers", "brothers'"], "de": "Das sind die Hausaufgaben meines Bruders."}, {"sentence": "The end ___ the story is sad.", "answer": "of", "opts": ["of", "'s", "from"], "de": "Das Ende der Geschichte ist traurig."}, {"sentence": "___ birthday is in May.", "answer": "Jamie's", "opts": ["Jamie's", "Jamies", "Jamie"], "de": "Jamie hat im Mai Geburtstag."}, {"sentence": "The ___ cage is in the kitchen.", "answer": "mice's", "opts": ["mice's", "mices", "mice"], "de": "Der Käfig der Mäuse steht in der Küche."}, {"sentence": "My ___ garden is very big.", "answer": "grandma's", "opts": ["grandma's", "grandmas", "grandmas'"], "de": "Der Garten meiner Oma ist sehr groß."}]},
   {"id": "there-is-are", "unit": 1, "klasse": 5, "code": "G6", "icon": "📍", "name": "there is / there are", "subtitle": "Es gibt ...", "locked": false, "prompt": "WÄHLE DIE RICHTIGE FORM", "intro": {"title": "Es gibt - there is und there are", "lead": "Wenn du sagst, dass etwas irgendwo vorhanden ist, benutzt du there is (Einzahl) oder there are (Mehrzahl). Entscheidend ist immer das Wort direkt DAHINTER.", "rows": [{"en": "Einzahl", "form": "there is", "example": "There is a mouse in the house.", "de": "Im Haus ist eine Maus."}, {"en": "Mehrzahl", "form": "there are", "example": "There are two cats outside.", "de": "Draußen sind zwei Katzen."}, {"en": "verneint, Einzahl", "form": "there isn't", "example": "There isn't a shop here.", "de": "Hier gibt es keinen Laden."}, {"en": "verneint, Mehrzahl", "form": "there aren't", "example": "There aren't any chairs.", "de": "Es gibt keine Stühle."}, {"en": "Frage", "form": "Is/Are there ...?", "example": "Are there any shops?", "de": "Gibt es Läden?"}], "tip": "Deutsch sagt immer \"es gibt\", egal ob eins oder viele. Im Englischen musst du dich entscheiden - schau also immer auf das Wort direkt nach there is / there are."}, "exercises": [{"sentence": "___ a mouse in the house.", "answer": "There is", "opts": ["There is", "There are"], "de": "Im Haus ist eine Maus."}, {"sentence": "___ two cats in the garden.", "answer": "There are", "opts": ["There are", "There is"], "de": "Im Garten sind zwei Katzen."}, {"sentence": "___ a big park near my school.", "answer": "There is", "opts": ["There is", "There are"], "de": "In der Nähe meiner Schule ist ein großer Park."}, {"sentence": "___ many shops in this street.", "answer": "There are", "opts": ["There are", "There is"], "de": "In dieser Straße gibt es viele Läden."}, {"sentence": "___ a bus at eight o'clock.", "answer": "There is", "opts": ["There is", "There are"], "de": "Um acht Uhr fährt ein Bus."}, {"sentence": "___ three windows in my room.", "answer": "There are", "opts": ["There are", "There is"], "de": "In meinem Zimmer sind drei Fenster."}, {"sentence": "___ some milk in the fridge.", "answer": "There is", "opts": ["There is", "There are"], "de": "Im Kühlschrank ist Milch."}, {"sentence": "___ a lot of people here.", "answer": "There are", "opts": ["There are", "There is"], "de": "Hier sind viele Leute."}, {"sentence": "___ a dog under the table.", "answer": "There is", "opts": ["There is", "There are"], "de": "Unter dem Tisch liegt ein Hund."}, {"sentence": "___ two boys in the kitchen.", "answer": "There are", "opts": ["There are", "There is"], "de": "In der Küche sind zwei Jungen."}, {"sentence": "___ any bread at home.", "answer": "There isn't", "opts": ["There isn't", "There aren't"], "de": "Zu Hause ist kein Brot."}, {"sentence": "___ any chairs in this room.", "answer": "There aren't", "opts": ["There aren't", "There isn't"], "de": "In diesem Zimmer sind keine Stühle."}, {"sentence": "___ a shop in our village.", "answer": "There isn't", "opts": ["There isn't", "There aren't"], "de": "In unserem Dorf gibt es keinen Laden."}, {"sentence": "___ any biscuits left.", "answer": "There aren't", "opts": ["There aren't", "There isn't"], "de": "Es sind keine Kekse mehr da."}, {"sentence": "___ there a mouse in the house?", "answer": "Is", "opts": ["Is", "Are"], "de": "Ist eine Maus im Haus?"}, {"sentence": "___ there any shops near here?", "answer": "Are", "opts": ["Are", "Is"], "de": "Gibt es hier in der Nähe Läden?"}, {"sentence": "___ there a park in your town?", "answer": "Is", "opts": ["Is", "Are"], "de": "Gibt es in deiner Stadt einen Park?"}, {"sentence": "___ there many children in your class?", "answer": "Are", "opts": ["Are", "Is"], "de": "Sind viele Kinder in deiner Klasse?"}, {"sentence": "Is there a garden? - Yes, there ___.", "answer": "is", "opts": ["is", "are"], "de": "Gibt es einen Garten? - Ja."}, {"sentence": "Are there any cats? - No, there ___.", "answer": "aren't", "opts": ["aren't", "isn't"], "de": "Gibt es Katzen? - Nein."}, {"sentence": "___ a lot of homework today.", "answer": "There is", "opts": ["There is", "There are"], "de": "Heute gibt es viele Hausaufgaben."}, {"sentence": "___ four seasons in a year.", "answer": "There are", "opts": ["There are", "There is"], "de": "Ein Jahr hat vier Jahreszeiten."}, {"sentence": "___ a new boy in our class.", "answer": "There is", "opts": ["There is", "There are"], "de": "In unserer Klasse ist ein neuer Junge."}, {"sentence": "___ some apples on the table.", "answer": "There are", "opts": ["There are", "There is"], "de": "Auf dem Tisch liegen Äpfel."}, {"sentence": "___ a football match on TV tonight.", "answer": "There is", "opts": ["There is", "There are"], "de": "Heute Abend läuft ein Fußballspiel im Fernsehen."}]},
-  {"id": "possessive", "unit": 1, "klasse": 5, "code": "G7", "icon": "🏷️", "name": "my, your, his ...", "subtitle": "Possessivbegleiter", "locked": false, "prompt": "WÄHLE DEN RICHTIGEN POSSESSIVBEGLEITER", "intro": {"title": "Wem gehört es? - my, your, his, her ...", "lead": "Possessivbegleiter stehen vor einem Nomen und sagen, wem es gehört. Anders als im Deutschen verändern sie sich NICHT - my bleibt my, egal ob ein oder viele Dinge folgen.", "rows": [{"en": "I", "form": "my", "example": "my bike", "de": "mein Fahrrad"}, {"en": "you", "form": "your", "example": "your dog", "de": "dein/euer Hund"}, {"en": "he", "form": "his", "example": "his room", "de": "sein Zimmer"}, {"en": "she", "form": "her", "example": "her sister", "de": "ihre Schwester"}, {"en": "it", "form": "its", "example": "its door", "de": "seine Tür"}, {"en": "we", "form": "our", "example": "our school", "de": "unsere Schule"}, {"en": "they", "form": "their", "example": "their flat", "de": "ihre Wohnung"}], "tip": "Die beliebteste Falle: it's heißt \"es ist\", its heißt \"sein/ihr\". Genauso you're = \"du bist\", your = \"dein\". Kein Apostroph beim Besitz!"}, "exercises": [{"sentence": "This is ___ bike. (I)", "answer": "my", "opts": ["my", "your", "his"], "de": "Das ist mein Fahrrad."}, {"sentence": "I love ___ new room. (I)", "answer": "my", "opts": ["my", "our", "her"], "de": "Ich liebe mein neues Zimmer."}, {"sentence": "Is this ___ dog? (you)", "answer": "your", "opts": ["your", "my", "their"], "de": "Ist das dein Hund?"}, {"sentence": "I like ___ jacket. (you)", "answer": "your", "opts": ["your", "his", "our"], "de": "Mir gefällt deine Jacke."}, {"sentence": "Luke is in ___ room. (he)", "answer": "his", "opts": ["his", "her", "its"], "de": "Luke ist in seinem Zimmer."}, {"sentence": "Tom rides ___ bike to school. (he)", "answer": "his", "opts": ["his", "her", "their"], "de": "Tom fährt mit seinem Rad zur Schule."}, {"sentence": "Anna loves ___ cat. (she)", "answer": "her", "opts": ["her", "his", "its"], "de": "Anna liebt ihre Katze."}, {"sentence": "Lisa is doing ___ homework. (she)", "answer": "her", "opts": ["her", "his", "their"], "de": "Lisa macht ihre Hausaufgaben."}, {"sentence": "The house is nice. ___ door is green. (it)", "answer": "Its", "opts": ["Its", "It's", "His"], "de": "Das Haus ist schön. Seine Tür ist grün."}, {"sentence": "The dog has got ___ own bed. (it)", "answer": "its", "opts": ["its", "it's", "his"], "de": "Der Hund hat sein eigenes Körbchen."}, {"sentence": "This is ___ school. (we)", "answer": "our", "opts": ["our", "your", "their"], "de": "Das ist unsere Schule."}, {"sentence": "___ living room is big. (we)", "answer": "Our", "opts": ["Our", "Your", "Their"], "de": "Unser Wohnzimmer ist groß."}, {"sentence": "Lou and her family love ___ flat. (they)", "answer": "their", "opts": ["their", "our", "her"], "de": "Lou und ihre Familie lieben ihre Wohnung."}, {"sentence": "The boys are with ___ friends. (they)", "answer": "their", "opts": ["their", "his", "our"], "de": "Die Jungen sind bei ihren Freunden."}, {"sentence": "My sister and I like ___ new teacher. (we)", "answer": "our", "opts": ["our", "their", "my"], "de": "Meine Schwester und ich mögen unsere neue Lehrerin."}, {"sentence": "Jamie is looking for ___ keys. (he)", "answer": "his", "opts": ["his", "her", "its"], "de": "Jamie sucht seine Schlüssel."}, {"sentence": "Grandma is in ___ garden. (she)", "answer": "her", "opts": ["her", "his", "its"], "de": "Oma ist in ihrem Garten."}, {"sentence": "Are these ___ books? (you)", "answer": "your", "opts": ["your", "you're", "my"], "de": "Sind das deine Bücher?"}, {"sentence": "___ a nice dog. (you)", "answer": "You're", "opts": ["You're", "Your", "Yours"], "de": "Du bist ein lieber Hund."}, {"sentence": "___ dog is nice. (you)", "answer": "Your", "opts": ["Your", "You're", "Yours"], "de": "Dein Hund ist lieb."}, {"sentence": "___ a beautiful house. (it)", "answer": "It's", "opts": ["It's", "Its", "Is"], "de": "Es ist ein schönes Haus."}, {"sentence": "The cat is washing ___ paws. (it)", "answer": "its", "opts": ["its", "it's", "her"], "de": "Die Katze putzt sich die Pfoten."}, {"sentence": "Tony lives with ___ aunt. (he)", "answer": "his", "opts": ["his", "her", "their"], "de": "Tony wohnt bei seiner Tante."}, {"sentence": "The girls have got ___ own table. (they)", "answer": "their", "opts": ["their", "her", "our"], "de": "Die Mädchen haben ihren eigenen Tisch."}, {"sentence": "I can't find ___ pencil case. (I)", "answer": "my", "opts": ["my", "mine", "me"], "de": "Ich finde mein Mäppchen nicht."}]},
+  {"id": "possessive", "unit": 1, "klasse": 5, "code": "G7", "icon": "🏷️", "name": "my, your, his ...", "subtitle": "Possessivbegleiter", "locked": false, "prompt": "WÄHLE DAS RICHTIGE WORT – POSSESSIVBEGLEITER ODER KURZFORM (YOU'RE, IT'S)?", "intro": {"title": "Wem gehört es? - my, your, his, her ...", "lead": "Possessivbegleiter stehen vor einem Nomen und sagen, wem es gehört. Anders als im Deutschen verändern sie sich NICHT - my bleibt my, egal ob ein oder viele Dinge folgen.", "rows": [{"en": "I", "form": "my", "example": "my bike", "de": "mein Fahrrad"}, {"en": "you", "form": "your", "example": "your dog", "de": "dein/euer Hund"}, {"en": "he", "form": "his", "example": "his room", "de": "sein Zimmer"}, {"en": "she", "form": "her", "example": "her sister", "de": "ihre Schwester"}, {"en": "it", "form": "its", "example": "its door", "de": "seine Tür"}, {"en": "we", "form": "our", "example": "our school", "de": "unsere Schule"}, {"en": "they", "form": "their", "example": "their flat", "de": "ihre Wohnung"}], "tip": "Die beliebteste Falle: it's heißt \"es ist\", its heißt \"sein/ihr\". Genauso you're = \"du bist\", your = \"dein\". Kein Apostroph beim Besitz!"}, "exercises": [{"sentence": "This is ___ bike. (I)", "answer": "my", "opts": ["my", "your", "his"], "de": "Das ist mein Fahrrad."}, {"sentence": "I love ___ new room. (I)", "answer": "my", "opts": ["my", "our", "her"], "de": "Ich liebe mein neues Zimmer."}, {"sentence": "Is this ___ dog? (you)", "answer": "your", "opts": ["your", "my", "their"], "de": "Ist das dein Hund?"}, {"sentence": "I like ___ jacket. (you)", "answer": "your", "opts": ["your", "his", "our"], "de": "Mir gefällt deine Jacke."}, {"sentence": "Luke is in ___ room. (he)", "answer": "his", "opts": ["his", "her", "its"], "de": "Luke ist in seinem Zimmer."}, {"sentence": "Tom rides ___ bike to school. (he)", "answer": "his", "opts": ["his", "her", "their"], "de": "Tom fährt mit seinem Rad zur Schule."}, {"sentence": "Anna loves ___ cat. (she)", "answer": "her", "opts": ["her", "his", "its"], "de": "Anna liebt ihre Katze."}, {"sentence": "Lisa is doing ___ homework. (she)", "answer": "her", "opts": ["her", "his", "their"], "de": "Lisa macht ihre Hausaufgaben."}, {"sentence": "The house is nice. ___ door is green. (it)", "answer": "Its", "opts": ["Its", "It's", "His"], "de": "Das Haus ist schön. Seine Tür ist grün."}, {"sentence": "The dog has got ___ own bed. (it)", "answer": "its", "opts": ["its", "it's", "his"], "de": "Der Hund hat sein eigenes Körbchen."}, {"sentence": "This is ___ school. (we)", "answer": "our", "opts": ["our", "your", "their"], "de": "Das ist unsere Schule."}, {"sentence": "___ living room is big. (we)", "answer": "Our", "opts": ["Our", "Your", "Their"], "de": "Unser Wohnzimmer ist groß."}, {"sentence": "Lou and her family love ___ flat. (they)", "answer": "their", "opts": ["their", "our", "her"], "de": "Lou und ihre Familie lieben ihre Wohnung."}, {"sentence": "The boys are with ___ friends. (they)", "answer": "their", "opts": ["their", "his", "our"], "de": "Die Jungen sind bei ihren Freunden."}, {"sentence": "My sister and I like ___ new teacher. (we)", "answer": "our", "opts": ["our", "their", "my"], "de": "Meine Schwester und ich mögen unsere neue Lehrerin."}, {"sentence": "Jamie is looking for ___ keys. (he)", "answer": "his", "opts": ["his", "her", "its"], "de": "Jamie sucht seine Schlüssel."}, {"sentence": "Grandma is in ___ garden. (she)", "answer": "her", "opts": ["her", "his", "its"], "de": "Oma ist in ihrem Garten."}, {"sentence": "Are these ___ books? (you)", "answer": "your", "opts": ["your", "you're", "my"], "de": "Sind das deine Bücher?"}, {"sentence": "___ a nice dog. (you)", "answer": "You're", "opts": ["You're", "Your", "Yours"], "de": "Du bist ein lieber Hund."}, {"sentence": "___ dog is nice. (you)", "answer": "Your", "opts": ["Your", "You're", "Yours"], "de": "Dein Hund ist lieb."}, {"sentence": "___ a beautiful house. (it)", "answer": "It's", "opts": ["It's", "Its", "Is"], "de": "Es ist ein schönes Haus."}, {"sentence": "The cat is washing ___ paws. (it)", "answer": "its", "opts": ["its", "it's", "her"], "de": "Die Katze putzt sich die Pfoten."}, {"sentence": "Tony lives with ___ aunt. (he)", "answer": "his", "opts": ["his", "her", "their"], "de": "Tony wohnt bei seiner Tante."}, {"sentence": "The girls have got ___ own table. (they)", "answer": "their", "opts": ["their", "her", "our"], "de": "Die Mädchen haben ihren eigenen Tisch."}, {"sentence": "I can't find ___ pencil case. (I)", "answer": "my", "opts": ["my", "mine", "me"], "de": "Ich finde mein Mäppchen nicht."}]},
   {"id": "question-words", "unit": 1, "klasse": 5, "code": "G8", "icon": "🔍", "name": "Fragewörter", "subtitle": "where, who, what ...", "locked": false, "prompt": "WÄHLE DAS RICHTIGE FRAGEWORT", "intro": {"title": "Wer, was, wo? - Fragewörter", "lead": "Wenn du nicht nur ja oder nein hören willst, brauchst du ein Fragewort. Es steht immer ganz vorne, danach folgt die Form von be.", "rows": [{"en": "Where ...?", "form": "Wo? Wohin?", "example": "Where are you?", "de": "Wo bist du?"}, {"en": "Who ...?", "form": "Wer?", "example": "Who is on the sofa?", "de": "Wer sitzt auf dem Sofa?"}, {"en": "What ...?", "form": "Was?", "example": "What is this?", "de": "Was ist das?"}, {"en": "When ...?", "form": "Wann?", "example": "When is the party?", "de": "Wann ist die Party?"}, {"en": "How old ...?", "form": "Wie alt?", "example": "How old are you?", "de": "Wie alt bist du?"}, {"en": "Why ...?", "form": "Warum?", "example": "Why are you sad?", "de": "Warum bist du traurig?"}, {"en": "How ...?", "form": "Wie?", "example": "How is your day?", "de": "Wie ist dein Tag?"}], "tip": "Where fragt nach dem Ort, who nach einer Person, what nach einer Sache. Und für die Herkunft brauchst du das kleine from am Ende: Where are you from?"}, "exercises": [{"sentence": "___ are you, Irina?", "answer": "Where", "opts": ["Where", "Who", "What"], "de": "Wo bist du, Irina?"}, {"sentence": "___ are you from?", "answer": "Where", "opts": ["Where", "Who", "When"], "de": "Woher kommst du?"}, {"sentence": "___ is on the sofa?", "answer": "Who", "opts": ["Who", "What", "Where"], "de": "Wer sitzt auf dem Sofa?"}, {"sentence": "___ is your best friend?", "answer": "Who", "opts": ["Who", "What", "Why"], "de": "Wer ist dein bester Freund?"}, {"sentence": "___ is this, Sherlock?", "answer": "What", "opts": ["What", "Who", "Where"], "de": "Was ist das, Sherlock?"}, {"sentence": "___ is your favourite colour?", "answer": "What", "opts": ["What", "Who", "When"], "de": "Was ist deine Lieblingsfarbe?"}, {"sentence": "___ old are you?", "answer": "How", "opts": ["How", "What", "Why"], "de": "Wie alt bist du?"}, {"sentence": "___ is your birthday?", "answer": "When", "opts": ["When", "Where", "Who"], "de": "Wann hast du Geburtstag?"}, {"sentence": "___ are you so happy?", "answer": "Why", "opts": ["Why", "How", "What"], "de": "Warum bist du so glücklich?"}, {"sentence": "___ is your new school?", "answer": "How", "opts": ["How", "Who", "When"], "de": "Wie ist deine neue Schule?"}, {"sentence": "___ is my football?", "answer": "Where", "opts": ["Where", "What", "Who"], "de": "Wo ist mein Fußball?"}, {"sentence": "___ is on TV tonight?", "answer": "What", "opts": ["What", "Who", "Where"], "de": "Was läuft heute Abend im Fernsehen?"}, {"sentence": "___ is that girl over there?", "answer": "Who", "opts": ["Who", "What", "Where"], "de": "Wer ist das Mädchen da drüben?"}, {"sentence": "___ are your parents?", "answer": "Where", "opts": ["Where", "Who", "Why"], "de": "Wo sind deine Eltern?"}, {"sentence": "___ is the next bus?", "answer": "When", "opts": ["When", "Where", "What"], "de": "Wann kommt der nächste Bus?"}, {"sentence": "___ old is your sister?", "answer": "How", "opts": ["How", "What", "When"], "de": "Wie alt ist deine Schwester?"}, {"sentence": "___ is the dog so dirty?", "answer": "Why", "opts": ["Why", "How", "Who"], "de": "Warum ist der Hund so dreckig?"}, {"sentence": "___ is your dog's name?", "answer": "What", "opts": ["What", "Who", "How"], "de": "Wie heißt dein Hund?"}, {"sentence": "___ are the toilets, please?", "answer": "Where", "opts": ["Where", "When", "Who"], "de": "Wo sind bitte die Toiletten?"}, {"sentence": "___ are you late again?", "answer": "Why", "opts": ["Why", "Where", "What"], "de": "Warum bist du schon wieder zu spät?"}, {"sentence": "___ is in your bag?", "answer": "What", "opts": ["What", "Who", "Where"], "de": "Was ist in deiner Tasche?"}, {"sentence": "___ is your teacher?", "answer": "Who", "opts": ["Who", "What", "When"], "de": "Wer ist dein Lehrer?"}, {"sentence": "___ is the film? - At eight.", "answer": "When", "opts": ["When", "Where", "Why"], "de": "Wann läuft der Film? - Um acht."}, {"sentence": "___ is your favourite band?", "answer": "What", "opts": ["What", "Who", "Where"], "de": "Was ist deine Lieblingsband?"}, {"sentence": "___ are your shoes so wet?", "answer": "Why", "opts": ["Why", "How", "When"], "de": "Warum sind deine Schuhe so nass?"}]},
   {"id": "have-got", "unit": 1, "klasse": 5, "code": "G10", "icon": "🎒", "name": "have got", "subtitle": "Ich habe ...", "locked": false, "prompt": "WÄHLE DIE RICHTIGE FORM VON \"HAVE GOT\"", "intro": {"title": "Besitz zeigen mit have got", "lead": "Mit have got sagst du, dass dir etwas gehört oder dass jemand zu dir gehört. Es ist ein zweiteiliges Verb: die Form von have ändert sich, got bleibt immer stehen.", "rows": [{"en": "I", "form": "have got", "example": "I have got a dog.", "de": "Ich habe einen Hund."}, {"en": "you", "form": "have got", "example": "You have got a bike.", "de": "Du hast ein Fahrrad."}, {"en": "he / she / it", "form": "has got", "example": "She has got a cat.", "de": "Sie hat eine Katze."}, {"en": "we", "form": "have got", "example": "We have got time.", "de": "Wir haben Zeit."}, {"en": "they", "form": "have got", "example": "They have got a car.", "de": "Sie haben ein Auto."}], "tip": "Wieder gilt: he, she, it - das -s muss mit. Deshalb has got. Beim Sprechen zieht man zusammen: I've got, you've got, he's got, we've got, they've got."}, "exercises": [{"sentence": "I ___ got a dog.", "answer": "have", "opts": ["have", "has"], "de": "Ich habe einen Hund."}, {"sentence": "I ___ got two brothers.", "answer": "have", "opts": ["have", "has"], "de": "Ich habe zwei Brüder."}, {"sentence": "You ___ got a nice room.", "answer": "have", "opts": ["have", "has"], "de": "Du hast ein schönes Zimmer."}, {"sentence": "You ___ got my book.", "answer": "have", "opts": ["have", "has"], "de": "Du hast mein Buch."}, {"sentence": "He ___ got a new bike.", "answer": "has", "opts": ["has", "have"], "de": "Er hat ein neues Fahrrad."}, {"sentence": "He ___ got a lot of friends.", "answer": "has", "opts": ["has", "have"], "de": "Er hat viele Freunde."}, {"sentence": "She ___ got long hair.", "answer": "has", "opts": ["has", "have"], "de": "Sie hat lange Haare."}, {"sentence": "She ___ got a guinea pig.", "answer": "has", "opts": ["has", "have"], "de": "Sie hat ein Meerschweinchen."}, {"sentence": "It ___ got four legs.", "answer": "has", "opts": ["has", "have"], "de": "Es hat vier Beine."}, {"sentence": "It ___ got a green door.", "answer": "has", "opts": ["has", "have"], "de": "Es hat eine grüne Tür."}, {"sentence": "We ___ got a big garden.", "answer": "have", "opts": ["have", "has"], "de": "Wir haben einen großen Garten."}, {"sentence": "We ___ got no time today.", "answer": "have", "opts": ["have", "has"], "de": "Wir haben heute keine Zeit."}, {"sentence": "They ___ got a new car.", "answer": "have", "opts": ["have", "has"], "de": "Sie haben ein neues Auto."}, {"sentence": "They ___ got three cats.", "answer": "have", "opts": ["have", "has"], "de": "Sie haben drei Katzen."}, {"sentence": "Tom ___ got a skateboard.", "answer": "has", "opts": ["has", "have"], "de": "Tom hat ein Skateboard."}, {"sentence": "My sister ___ got a phone.", "answer": "has", "opts": ["has", "have"], "de": "Meine Schwester hat ein Handy."}, {"sentence": "My parents ___ got a small shop.", "answer": "have", "opts": ["have", "has"], "de": "Meine Eltern haben einen kleinen Laden."}, {"sentence": "The school ___ got a big library.", "answer": "has", "opts": ["has", "have"], "de": "Die Schule hat eine große Bibliothek."}, {"sentence": "The children ___ got new shoes.", "answer": "have", "opts": ["have", "has"], "de": "Die Kinder haben neue Schuhe."}, {"sentence": "Lisa and Anna ___ got the same jacket.", "answer": "have", "opts": ["have", "has"], "de": "Lisa und Anna haben dieselbe Jacke."}, {"sentence": "My dog ___ got a lucky charm.", "answer": "has", "opts": ["has", "have"], "de": "Mein Hund hat einen Glücksbringer."}, {"sentence": "Our teacher ___ got a funny hat.", "answer": "has", "opts": ["has", "have"], "de": "Unser Lehrer hat einen lustigen Hut."}, {"sentence": "I ___ got an idea!", "answer": "have", "opts": ["have", "has"], "de": "Ich habe eine Idee!"}, {"sentence": "The house ___ got two bathrooms.", "answer": "has", "opts": ["has", "have"], "de": "Das Haus hat zwei Badezimmer."}, {"sentence": "You and I ___ got the same hobby.", "answer": "have", "opts": ["have", "has"], "de": "Du und ich haben dasselbe Hobby."}]},
   {"id": "have-got-negative", "unit": 2, "klasse": 5, "code": "G11", "icon": "🙅", "name": "have got verneinen", "subtitle": "haven't got / hasn't got", "locked": false, "prompt": "WÄHLE DIE RICHTIGE VERNEINTE FORM", "intro": {"title": "Nein sagen mit have got", "lead": "have got besteht aus zwei Teilen - und das not schiebt sich genau dazwischen. Aus have got wird haven't got, aus has got wird hasn't got.", "rows": [{"en": "I", "form": "haven't got", "example": "I haven't got a pet.", "de": "Ich habe kein Haustier."}, {"en": "you", "form": "haven't got", "example": "You haven't got time.", "de": "Du hast keine Zeit."}, {"en": "he / she / it", "form": "hasn't got", "example": "He hasn't got a bike.", "de": "Er hat kein Fahrrad."}, {"en": "we", "form": "haven't got", "example": "We haven't got a car.", "de": "Wir haben kein Auto."}, {"en": "they", "form": "haven't got", "example": "They haven't got any money.", "de": "Sie haben kein Geld."}], "tip": "Denk daran: got bleibt immer stehen, es wandert nie weg. Und das -s der 3. Person steckt in hasn't - deshalb heißt es hasn't got und niemals hasn't gots."}, "exercises": [{"sentence": "I ___ got my lucky charm.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Ich habe meinen Glücksbringer nicht dabei."}, {"sentence": "I ___ got a pet.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Ich habe kein Haustier."}, {"sentence": "I ___ got any homework today.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Ich habe heute keine Hausaufgaben."}, {"sentence": "You ___ got much time.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Du hast nicht viel Zeit."}, {"sentence": "You ___ got my number.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Du hast meine Nummer nicht."}, {"sentence": "He ___ got a uniform.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Er hat keine Uniform."}, {"sentence": "He ___ got any brothers.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Er hat keine Brüder."}, {"sentence": "She ___ got a phone.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Sie hat kein Handy."}, {"sentence": "She ___ got time for us.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Sie hat keine Zeit für uns."}, {"sentence": "It ___ got a name yet.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Es hat noch keinen Namen."}, {"sentence": "We ___ got a garden.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Wir haben keinen Garten."}, {"sentence": "We ___ got any milk.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Wir haben keine Milch."}, {"sentence": "They ___ got a dog.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Sie haben keinen Hund."}, {"sentence": "They ___ got any money.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Sie haben kein Geld."}, {"sentence": "Tom ___ got his bag with him.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Tom hat seine Tasche nicht dabei."}, {"sentence": "My sister ___ got a bike.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Meine Schwester hat kein Fahrrad."}, {"sentence": "My parents ___ got much time.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Meine Eltern haben nicht viel Zeit."}, {"sentence": "The dog ___ got a lead.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Der Hund hat keine Leine."}, {"sentence": "The children ___ got school today.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Die Kinder haben heute keine Schule."}, {"sentence": "Our school ___ got a swimming pool.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Unsere Schule hat kein Schwimmbad."}, {"sentence": "Lisa and Anna ___ got the same hobby.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Lisa und Anna haben nicht dasselbe Hobby."}, {"sentence": "I ___ got any idea.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Ich habe keine Ahnung."}, {"sentence": "The flat ___ got a balcony.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Die Wohnung hat keinen Balkon."}, {"sentence": "You and I ___ got the same book.", "answer": "haven't", "opts": ["haven't", "hasn't"], "de": "Du und ich haben nicht dasselbe Buch."}, {"sentence": "My grandma ___ got a computer.", "answer": "hasn't", "opts": ["hasn't", "haven't"], "de": "Meine Oma hat keinen Computer."}]},
@@ -17716,6 +18258,10 @@ function renderCertificate(){
   const mistakes = state.sessionLog.filter(l=>l.result!=="correct");
   const quote = state.sessionQuote || pickRandom(MINECRAFT_QUOTES);
   const won = state.lastReason === "finished";
+  const anteil = rundenQuote(state.sessionLog);
+  const stufe = !won ? "abbruch" : (anteil >= 0.8 ? "meister" : (anteil >= 0.5 ? "gut" : "start"));
+  const spielerName = escapeHtml(state.playerName || "Spieler");
+  const kommtWieder = mistakes.length;
   /* "drowned" kann es seit v90.1 nicht mehr geben - Untergehen beendet
      keine Runde. Was bleibt, ist die Zahl der Rettungen; sie steht
      unten in der Zeile mit den Zaehlern. */
@@ -17728,9 +18274,13 @@ function renderCertificate(){
     ${playerBadgeHtml()}
 
     <div class="certificate">
-      <h2>${won ? "🏆 URKUNDE DER VOKABEL-MEISTERSCHAFT" : "📜 URKUNDE DER ÜBUNG"}</h2>
+      <h2>${{ meister: "🏆 URKUNDE DER VOKABEL-MEISTERSCHAFT", gut: "📜 URKUNDE DER ÜBUNG",
+              start: "🌱 GUTE RUNDE ZUM KENNENLERNEN", abbruch: "📜 URKUNDE DER ÜBUNG" }[stufe]}</h2>
       <p style="text-align:center;font-family:var(--font);font-weight:500;font-size:19px;margin:10px 0;line-height:1.5;">
-        ${won ? `Herzlichen Glückwunsch, <strong>${escapeHtml(state.playerName||"Spieler")}</strong>!` : `Gut geübt, <strong>${escapeHtml(state.playerName||"Spieler")}</strong> &ndash; weiter so!`}
+        ${{ meister: `Herzlichen Glückwunsch, <strong>${spielerName}</strong>!`,
+            gut: `Gut geübt, <strong>${spielerName}</strong> &ndash; weiter so!`,
+            start: `Stark, dass du drangeblieben bist, <strong>${spielerName}</strong>! ${kommtWieder} ${kommtWieder === 1 ? "Wort kommt" : "Wörter kommen"} bald wieder &ndash; dann sitzen sie besser.`,
+            abbruch: `Gut geübt, <strong>${spielerName}</strong> &ndash; weiter so!` }[stufe]}
       </p>
 
       ${schoolGrade ? `
@@ -17741,11 +18291,11 @@ function renderCertificate(){
       <p class="grade-wisdom">&bdquo;${escapeHtml(state.gradeWisdom || GRADE_WISDOM[0])}&ldquo;</p>` : ""}
 
       <div class="stat-row">
-        <div>✅<span>${correctCount}</span></div>
-        <div>🟡<span>${almostCount}</span></div>
-        <div>❌<span>${wrongCount}</span></div>
-        ${rettungen ? `<div>🛟<span>${rettungen}</span></div>` : ""}
-        <div>🪙<span>${state.sessionCoins}</span></div>
+        <div>✅<span>${correctCount}</span><small class="stat-u">richtig</small></div>
+        <div>🟡<span>${almostCount}</span><small class="stat-u">fast</small></div>
+        <div>❌<span>${wrongCount}</span><small class="stat-u">noch nicht</small></div>
+        ${rettungen ? `<div>🛟<span>${rettungen}</span><small class="stat-u">gerettet</small></div>` : ""}
+        <div>🪙<span>${state.sessionCoins}</span><small class="stat-u">Münzen</small></div>
       </div>
 
       <div class="quote">"${quote}"</div>
@@ -17784,8 +18334,16 @@ function renderCertificate(){
     <button class="btn ${mistakes.length>0 ? "secondary" : ""}" id="retry-btn"
             ${mistakes.length>0 ? "" : 'style="margin-top:14px;"'}>↻ NOCHMAL ÜBEN</button>
     <div style="height:10px;"></div>
-    <button class="btn danger" id="menu-btn">✕ ZUM MENÜ</button>
+    <!-- v95.6 - "Zum Menü" fuehrte zur Wortauswahl, nicht zum Start.
+         Jetzt sagt jeder Knopf, wohin er geht. -->
+    <div class="row" style="gap:8px;">
+      <button class="btn secondary col einzeilig" id="menu-btn">← Andere Wörter</button>
+      <button class="btn secondary col einzeilig" id="start-heim-btn">🏠 Startseite</button>
+    </div>
   `;
+
+  const heim = document.getElementById('start-heim-btn');
+  if(heim) heim.addEventListener('click', ()=>{ state.screen = "start"; render(); });
 
   planWeiterVerdrahten();
 
@@ -18159,6 +18717,10 @@ function elternZeile(icon, was, anzahl, richtig){
    Der Token ist 32 Hexzeichen aus crypto.getRandomValues - nicht aus
    Math.random. Er ist das einzige, was zwischen dem Link und dem
    Profil steht, und raten soll ihn niemand koennen. */
+function elternZugangBekannt(){
+  try{ return localStorage.getItem("lc-elternzugang") === "1"; }catch(e){ return false; }
+}
+
 function elternLinkErzeugen(){
   const b = new Uint8Array(16);
   crypto.getRandomValues(b);
@@ -18172,6 +18734,7 @@ function elternLinkErzeugen(){
       render(); return;
     }
     db.einladungAnlegen(token, bis).then(r=>{
+      if(r.ok){ try{ localStorage.setItem("lc-elternzugang", "1"); }catch(e){} }
       state.elternLinkStand = r.ok
         ? { laeuft:false, fehler:"",
             link: location.origin + location.pathname + "?eltern=" + token }
@@ -18181,8 +18744,12 @@ function elternLinkErzeugen(){
   });
 }
 
+const ELTERN_OFFEN_MS = 10 * 60 * 1000;
+function elternOffenHalten(){ state.parentOffenBis = Date.now() + ELTERN_OFFEN_MS; }
+
 function renderParents(){
   if(!state.parentUnlocked) return renderParentGate();
+  elternOffenHalten();    // jede Ansicht im Elternbereich verlaengert
   const elStand = state.elternLinkStand || {};
 
   const sum = aktivitaetSumme();
@@ -18210,8 +18777,8 @@ function renderParents(){
      Eltern-PIN - der Link ist ein Schluessel zu den Zahlen des Kindes,
      und ein Schluessel gehoert nicht auf den Kinderbildschirm. */
   const zugang = `
-    <div class="panel">
-      <h3 style="font-size:16px;margin-bottom:2px;">👨‍👩‍👧 ELTERNZUGANG</h3>
+    <div class="panel el-zugang-box">
+      <h3 style="font-size:16px;margin-bottom:2px;">📱 AUF DEINEM EIGENEN HANDY ZUSCHAUEN</h3>
       <p class="muted" style="margin-bottom:10px;">Mit einem eigenen Konto siehst du diese Zahlen
         auf deinem eigenen Handy &ndash; und mehrere Kinder an einer Stelle.
         Ohne dich jedes Mal über ${name} anzumelden.</p>
@@ -18231,9 +18798,16 @@ function renderParents(){
           <button class="btn col einzeilig" id="el-link-kopieren">📋 Link kopieren</button>
           <button class="btn secondary col einzeilig" id="el-link-teilen">💬 Teilen</button>
         </div>
-        <p class="muted" style="margin:9px 0 0;font-size:12.5px;line-height:1.45;">
-          Schick ihn dir selbst &ndash; per Mail oder Nachricht an dich. Er gilt eine Woche.
-          <strong>Gib ihn niemandem sonst:</strong> Wer ihn hat, kann ${name}s Zahlen sehen.</p>
+        <ol class="el-schritte">
+          <li><strong>Teilen</strong> tippen und den Link an dich selbst schicken (WhatsApp, Mail).</li>
+          <li>Auf <strong>deinem</strong> Handy den Link öffnen. Geht er in Safari auf, ist das richtig
+            &ndash; installieren musst du nichts.</li>
+          <li>Mit deinem Elternkonto anmelden oder eins anlegen. Dann ist ${name} verbunden.</li>
+        </ol>
+        <p class="muted" style="margin:6px 0 0;font-size:12.5px;line-height:1.45;">
+          Lieber in der App auf deinem Home-Bildschirm? Link kopieren, dort
+          <strong>Für Eltern</strong> öffnen und ihn bei <strong>Link vom Kind einfügen</strong> eintragen.
+          Der Link gilt eine Woche. <strong>Gib ihn niemandem sonst:</strong> Wer ihn hat, kann ${name}s Zahlen sehen.</p>
       ` : `
         <button class="btn" id="el-zugang"${elStand.laeuft ? " disabled" : ""}>
           ${elStand.laeuft ? "Einen Moment …" : "🔑 Elternzugang einrichten"}
@@ -18242,7 +18816,6 @@ function renderParents(){
     </div>`;
 
   const uebersicht = `
-    ${zugang}
     <div class="panel">
       <p class="ep-frage">Hat ${name} geübt?</p>
       <p class="ep-antwort">${tage === 0
@@ -18317,7 +18890,7 @@ function renderParents(){
       ${state.rewardError ? `<p class="center-text" style="color:#b3421f;font-weight:700;margin-top:8px;">⚠️ ${escapeHtml(state.rewardError)}</p>` : ""}
       <button class="btn" id="rw-add" style="margin-top:12px;">➕ BELOHNUNG ANLEGEN</button>
       <p class="muted" style="margin-top:8px;font-size:12px;">
-        Zum Vergleich: eine richtige Antwort bringt 10 Münzen, eine ganze Runde also grob 100.
+        Zum Vergleich: eine richtige Antwort bringt 5 Münzen, eine ganze Runde also grob 100 bis 150. Falsche Antworten kosten nichts.
       </p>
     </div>
 
@@ -18364,21 +18937,61 @@ function renderParents(){
       `}
     </div>`;
 
+  /* v95.7 - ETAPPE 5: Drei Karten statt zwei Reiter, und alles andere
+     darunter unter "Einstellungen". Nichts ist weggefallen.
+     Der Zuschau-Kasten steht ganz oben, solange auf diesem Geraet noch
+     kein Elternzugang eingerichtet wurde - danach wandert er zu den
+     Einstellungen. */
+  const zugangBekannt = elternZugangBekannt();
+  const listen = listenAlle();
+  const eigeneWoerter = eigeneEindeutig().length;
+  const listenTab = `
+    <div class="panel">
+      <p class="ep-frage">Eigene Wörter und Listen</p>
+      <p class="muted" style="margin:0 0 12px;">Vokabeln aus dem Schulbuch selbst eintragen
+        &ndash; ${name} findet sie danach unter <strong>Vokabeln üben</strong> ganz oben.</p>
+      ${eigeneWoerter || listen.length ? `
+        <div class="el-listen">
+          ${eigeneWoerter ? `<div class="el-liste"><span>✏️ Meine eigenen Wörter</span><b>${eigeneWoerter}</b></div>` : ""}
+          ${listen.map(l => `<div class="el-liste"><span>⭐ ${escapeHtml(l.name)}</span><b>${(l.woerter || []).length}</b></div>`).join("")}
+        </div>` : `<p class="ep-nichts">Noch keine eigenen Wörter.</p>`}
+      <button class="btn" id="el-vokabeln-dazu" style="margin-top:12px;">➕ VOKABELN HINZUFÜGEN</button>
+      <p class="muted" style="margin:8px 0 0;font-size:12.5px;">Eintippen, eine ganze Liste einfügen
+        (auch wie im Buch: <em>go [gəʊ] gehen</em>) oder eine Excel-Datei.</p>
+    </div>`;
+  const tabKarte = (id, ic, titel, unter)=>`
+    <button type="button" class="el-karte ${state.parentTab === id ? 'active' : ''}" data-ptab="${id}"
+            role="tab" id="eltab-${id}" aria-controls="eltab-inhalt" aria-selected="${state.parentTab === id}"
+            tabindex="${state.parentTab === id ? "0" : "-1"}">
+      <span class="el-karte-ic" aria-hidden="true">${ic}</span>
+      <span class="el-karte-t">${titel}</span>
+      <span class="el-karte-u">${unter}</span>
+    </button>`;
+
   app.innerHTML = `
     ${renderHeader("Elternbereich", true)}
     ${playerBadgeHtml(true)}
 
-    <div class="panel">
-      <p class="center-text" style="margin:0;font-weight:700;color:#1e4515;">
-        Lernfortschritt von ${escapeHtml(state.playerName || "deinem Kind")}
-      </p>
-      <div class="parent-tabs" style="margin-top:12px;margin-bottom:0;">
-        <button class="ptab ${state.parentTab === 'uebersicht' ? 'active' : ''}" data-ptab="uebersicht">📈 Fortschritt</button>
-        <button class="ptab ${state.parentTab === 'belohnungen' ? 'active' : ''}" data-ptab="belohnungen">🎁 Belohnungen</button>
-      </div>
+    <!-- v95.7 - Die Antwort zuerst: "Hat Ben geübt?" steht oben. Der
+         Kasten zum Zuschauen auf dem eigenen Handy folgt danach. -->
+    <div class="el-karten" role="tablist" aria-label="Elternbereich">
+      ${tabKarte("uebersicht", "📈", "Was " + name + " gemacht hat", "Woche, Fehlerwörter, Noten")}
+      ${tabKarte("belohnungen", "🎁", "Belohnungen", "festlegen und ausblenden")}
+      ${tabKarte("listen", "📝", "Eigene Listen", "Vokabeln selbst eintragen")}
     </div>
 
-    ${state.parentTab === 'belohnungen' ? belohnungen : uebersicht}
+    <div id="eltab-inhalt" role="tabpanel" aria-labelledby="eltab-${state.parentTab || "uebersicht"}">
+    ${state.parentTab === 'belohnungen' ? belohnungen : (state.parentTab === 'listen' ? listenTab : uebersicht)}
+    </div>
+
+    ${zugangBekannt ? "" : zugang}
+
+    <!-- v95.7 - Die Einstellungen standen offen unter jedem Reiter. Jetzt
+         zusammengeklappt; aufgeklappt bleibt, was offen war. -->
+    <details class="el-einst" id="el-einst"${(state.elEinstOffen || state.deleteOpen) ? " open" : ""}>
+      <summary class="el-einst-titel">Einstellungen <small>Zuschauen auf dem eigenen Handy, Sprachdateien, Notenschlüssel, Konto</small></summary>
+
+    ${zugangBekannt ? zugang : ""}
 
     <div class="panel">
       <h3 style="font-size:15px;margin-bottom:4px;">🔊 SPRACHDATEIEN</h3>
@@ -18442,6 +19055,8 @@ function renderParents(){
       `}
     </div>
 
+    </details>
+
     <div class="panel" style="text-align:center;">
       <p class="muted" style="margin:0 0 10px;font-size:12.5px;">
         Fertig? Dann bitte zusperren &ndash; sonst kommt das Kind ohne PIN wieder hier herein.
@@ -18462,6 +19077,13 @@ function renderParents(){
   });
   const stimmenBtn = document.getElementById('stimmen-btn');
   if(stimmenBtn){ stimmenBtn.addEventListener('click', ()=>{ state.screen = "stimmenskript"; render(); }); }
+  const einst = document.getElementById('el-einst');
+  if(einst) einst.addEventListener('toggle', ()=>{ state.elEinstOffen = einst.open; });
+  const vokDazu = document.getElementById('el-vokabeln-dazu');
+  if(vokDazu){ vokDazu.addEventListener('click', ()=>{
+    if(!state.cloudId){ zeigeHinweis("Noch gesperrt 🔒", escapeHtml(sperrGrund("custom-vocab-btn"))); return; }
+    state.screen = "customvocab"; state.evSuche = ""; render();
+  }); }
 
   /* Ein Balken ist antippbar - das ist der ganze Sinn der Woche. */
   document.querySelectorAll('[data-eltern-tag]').forEach(el=>{
@@ -18471,6 +19093,16 @@ function renderParents(){
     });
   });
 
+  const reiter = Array.from(document.querySelectorAll('.el-karte[data-ptab]'));
+  reiter.forEach((el, i)=>{
+    el.addEventListener('keydown', (e)=>{
+      if(e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      const ziel = reiter[(i + (e.key === "ArrowRight" ? 1 : reiter.length - 1)) % reiter.length];
+      ziel.click();
+      setTimeout(()=>{ const n = document.querySelector('.el-karte[data-ptab="' + ziel.dataset.ptab + '"]'); if(n) n.focus(); }, 0);
+    });
+  });
   document.querySelectorAll('[data-ptab]').forEach(el=>{
     el.addEventListener('click', ()=>{
       if(state.parentTab === 'belohnungen'){ rewardDraftLesen(); }
@@ -18575,8 +19207,8 @@ function renderParentGate(){
         <button class="btn" id="parent-unlock" style="margin-top:12px;">🔓 ÖFFNEN</button>
       ` : `
         <p class="center-text muted" style="margin-bottom:12px;">
-          Für dieses Profil gibt es noch keinen Eltern-PIN. Legt ihn gemeinsam fest &ndash; er schützt
-          diesen Bereich und bestätigt später die eingelösten Belohnungen.
+          Für dieses Profil gibt es noch keinen Eltern-PIN. Den legen die Eltern selbst fest
+          &ndash; er schützt diesen Bereich und bestätigt später die eingelösten Belohnungen.
         </p>
         <button class="btn" id="parent-setpin" style="margin-top:4px;">🔑 ELTERN-PIN FESTLEGEN</button>
       `}
@@ -18600,6 +19232,7 @@ function renderParentGate(){
         state.parentPinError = "Der PIN stimmt nicht."; render(); return;
       }
       state.parentUnlocked = true;
+      elternOffenHalten();
       state.parentPinError = null;
       render();
     };
@@ -18610,7 +19243,7 @@ function renderParentGate(){
   const setzen = document.getElementById('parent-setpin');
   if(setzen){
     setzen.addEventListener('click', ()=>{
-      showSetParentPinModal(()=>{ state.parentUnlocked = true; render(); });
+      showSetParentPinModal(()=>{ state.parentUnlocked = true; elternOffenHalten(); render(); });
     });
   }
   document.getElementById('back-btn').addEventListener('click', ()=>{
@@ -19108,7 +19741,7 @@ function renderVergleich(){
     <div class="panel vg-karte vg-wir">
       <p class="vg-titel">✨ Das können nur wir</p>
       <ul class="vg-liste">
-        ${vgPunkt("✏️", "Deine eigenen Vokabeln", "Abtippen oder einfach fotografieren")}
+        ${vgPunkt("✏️", "Deine eigenen Vokabeln", "Abtippen oder als Excel-Liste")}
         ${vgPunkt("📅", "Ein Plan bis zur Klassenarbeit", "Aufgeteilt auf die Tage davor")}
         ${vgPunkt("📝", "Eine Note wie in der Schule", "Damit du weißt, wo du stehst")}
         ${vgPunkt("🎁", "Belohnungen von Mama und Papa", "Münzen sammeln, zu Hause einlösen")}
@@ -19269,8 +19902,8 @@ function renderInfo(){
       <span class="shot-cap">Der Flutungsraum &ndash; klettere dem Wasser davon</span>
       <div class="info-text" style="margin-top:8px;">
         <p>
-          Fünf Spielarten: Multiple Choice, selbst Eintippen, Gemischt, eine Challenge gegen
-          den Bösewicht und der Flutungsraum &ndash; im schweren Modus steigt das Wasser die
+          Neun Spielarten: Vokabelkarten, Multiple Choice, selbst Eintippen, Gemischt, Hangman,
+          Aussprache, Fällig heute, eine Challenge gegen den Bösewicht und der Flutungsraum &ndash; im schweren Modus steigt das Wasser die
           ganze Zeit von allein weiter.
         </p>
       </div>
@@ -19847,9 +20480,38 @@ function ohneSpitzeKlammern(t){
   return String(t == null ? "" : t).replace(/[<>]/g, "");
 }
 
+/* v95.6 - Lautschrift raus. Im Schulbuch steht "go [gəʊ] gehen". Die
+   eckige Klammer gehoert nicht ins Wort - mit ihr stimmte beim Tippen
+   nie eine Antwort, und zwei Schreibweisen desselben Worts zaehlten
+   doppelt. Schraegstriche nur, wenn Lautschrift-Zeichen darin stehen:
+   "he/she" bleibt, wie es ist. */
+function ohneLautschrift(t){
+  return String(t == null ? "" : t)
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\/[^\/]*[əɪʊʌɒæɑɔɜθðŋʃʒːˈˌ][^\/]*\//g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/* v95.6 - DER FEHLER 38 -> 34.
+   Ein Wort, das schon in den eigenen Woertern stand, wurde ein zweites
+   Mal angehaengt. Die Kachel zaehlte beide, die Liste und das Spiel
+   kennen jedes Wort nur einmal - und schon fehlten "vier Woerter".
+   Jetzt kommt ein Wort nur einmal hinein; was doppelt war, merkt sich
+   die App hier, damit der Import es dem Kind auch sagen kann. */
+let eigeneDoppelt = [];
+function doppeltHinweisHolen(){
+  const n = eigeneDoppelt.length;
+  const beispiele = eigeneDoppelt.slice(0, 3).join(", ");
+  eigeneDoppelt = [];
+  if(!n) return "";
+  return " " + n + (n === 1 ? " Wort war" : " Wörter waren") + " schon da und "
+       + (n === 1 ? "ist" : "sind") + " nicht doppelt eingetragen: " + beispiele + (n > 3 ? " …" : "") + ".";
+}
+
 function addCustomVocabEntry(de, en){
-  de = ohneSpitzeKlammern(de).trim();
-  en = ohneSpitzeKlammern(en).trim();
+  de = ohneLautschrift(ohneSpitzeKlammern(de));
+  en = ohneLautschrift(ohneSpitzeKlammern(en));
   if(!de || !en) return false;
   const wort = {
     en: en,
@@ -19857,6 +20519,17 @@ function addCustomVocabEntry(de, en){
     cat: CUSTOM_CATEGORY_NAME,
     accepted: [de.toLowerCase()]
   };
+  if(!Array.isArray(state.customVocab)) state.customVocab = [];
+  const schluessel = wortSchluessel(wort);
+  if(state.customVocab.some(w => wortSchluessel(w) === schluessel)){
+    eigeneDoppelt.push(en);
+    /* Trotzdem zu den frisch dazugekommenen: wer gerade eine Buchseite
+       eingelesen hat, will alle Woerter dieser Seite in der Liste -
+       auch die, die er letzte Woche schon einmal hatte. */
+    if(!Array.isArray(state.frischDazu)) state.frischDazu = [];
+    if(state.frischDazu.indexOf(schluessel) < 0) state.frischDazu.push(schluessel);
+    return false;
+  }
   state.customVocab.push(wort);
   vokabelCacheLeeren();
   /* Alle vier Wege - tippen, Sammeleingabe, Foto, Excel - laufen durch
@@ -19880,7 +20553,13 @@ function parseBulkVocabText(text){
     if(!line) return;
     // Trennzeichen "=" oder ";" oder Tab werden akzeptiert, z.B. "Apfel = apple"
     const parts = line.split(/=|;|\t/);
-    if(parts.length < 2) return;
+    /* v95.6 - Buchformat "go [gəʊ] gehen": Englisch, Lautschrift,
+       Deutsch, ohne Trennzeichen. Die Lautschrift ist dann die Grenze. */
+    if(parts.length < 2){
+      const buch = line.match(/^(.+?)\s*\[[^\]]*\]\s*(.+)$/);
+      if(buch && addCustomVocabEntry(buch[2], buch[1])) added++;
+      return;
+    }
     const de = parts[0];
     const en = parts.slice(1).join(" ").trim();
     if(addCustomVocabEntry(de, en)) added++;
@@ -19967,422 +20646,16 @@ function uebernehmeVokabelZeilen(rows, statusEl){
   saveProgress();
   syncToCloud();
   if(statusEl){
-    statusEl.textContent = added > 0
-      ? `✅ ${added} Vokabeln aus der Datei übernommen.`
+    const doppelt = doppeltHinweisHolen();
+    statusEl.textContent = (added > 0 || doppelt)
+      ? `✅ ${added} Vokabeln aus der Datei übernommen.` + doppelt
       : "⚠️ Keine gültigen Zeilen gefunden (Spalte A = Deutsch, Spalte B = Englisch).";
   }
   render();
 }
 
-/* ---------------------------------------------------
-   VOKABELN ABFOTOGRAFIEREN
-
-   Die Erkennung laeuft VOLLSTAENDIG AUF DEM GERAET (Tesseract.js als
-   WebAssembly). Das ist keine Sparmassnahme, sondern die einzige
-   vertretbare Loesung: ein Cloud-Dienst braeuchte einen Schluessel, der
-   im Quelltext dieser Seite fuer jeden lesbar waere - und das Foto einer
-   Kinder-Schulbuchseite ginge an einen fremden Server. So verlaesst das
-   Bild das Handy nicht.
-
-   Zweispaltige Listen ("english | deutsch") lassen sich nicht am
-   Leerzeichen trennen - "a bottle of water eine Flasche Wasser" waere
-   nicht aufzuloesen. Deshalb werden die WORTKAESTEN ausgewertet: pro
-   Zeile die groesste waagerechte Luecke suchen, den Anfang des rechten
-   Blocks merken, und ueber alle Zeilen den Mittelwert nehmen. An einem
-   Testbild gemessen (Spalte beginnt bei 520 px): erkannte Grenze 513 px,
-   Streuung ueber acht Zeilen 3 px, 8 von 8 Zeilen richtig getrennt.
---------------------------------------------------- */
-
-let tesseractLadePromise = null;
-function ladeTesseract(){
-  if(window.Tesseract) return Promise.resolve(window.Tesseract);
-  if(tesseractLadePromise) return tesseractLadePromise;
-  tesseractLadePromise = new Promise((ok, fehl)=>{
-    const s = document.createElement('script');
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js";
-    s.onload = ()=> ok(window.Tesseract);
-    s.onerror = ()=>{ tesseractLadePromise = null; fehl(new Error("Texterkennung konnte nicht geladen werden.")); };
-    document.head.appendChild(s);
-  });
-  return tesseractLadePromise;
-}
-
-/* Handyfotos sind riesig. Ueber 1800 px bringt kein Plus an Erkennung,
-   kostet aber viel Zeit - und auf einem aelteren Geraet auch Speicher.
-   (Gemessen: dasselbe Foto auf das 1,5-fache vergroessert lieferte Wort
-   fuer Wort dasselbe Ergebnis, nur 20 % langsamer.)
-
-   Wichtiger als die Groesse ist die BELICHTUNG. Ein Handyfoto einer
-   Buchseite hat fast immer einen Helligkeitsverlauf - Fenster auf der
-   einen, Schatten auf der anderen Seite. Eine feste Schwelle
-   ("dunkler als X ist Schrift") verliert dann die dunkle Bildhaelfte
-   komplett. Deshalb wird jeder Punkt gegen den DURCHSCHNITT SEINER
-   UMGEBUNG verglichen, nicht gegen einen festen Wert. Das Integralbild
-   macht das schnell genug fuers Handy.
-
-   An einem nachgestellten Foto gemessen (schraeg, Lichtverlauf, leicht
-   unscharf, JPEG):
-       roh          -> 5 von 8 Zeilen beschaedigt
-                       "ountryside das Land", "ardly ever", "tin teilnehmen an",
-                       "to succeed" fiel ganz aus
-       aufbereitet  -> 8 von 8 Zeilen fehlerfrei                            */
-function scanBildVerkleinern(datei){
-  return new Promise((ok, fehl)=>{
-    const leser = new FileReader();
-    leser.onerror = ()=> fehl(new Error("Bild konnte nicht gelesen werden."));
-    leser.onload = ()=>{
-      const bild = new Image();
-      bild.onerror = ()=> fehl(new Error("Das ist kein lesbares Bild."));
-      bild.onload = ()=>{
-        try{
-          const max = 1800;
-          const f = Math.min(1, max / Math.max(bild.width, bild.height));
-          const c = document.createElement('canvas');
-          const W = c.width  = Math.round(bild.width  * f);
-          const H = c.height = Math.round(bild.height * f);
-          const x = c.getContext('2d');
-          x.drawImage(bild, 0, 0, W, H);
-
-          const d = x.getImageData(0, 0, W, H), px = d.data;
-          const grau = new Float32Array(W * H);
-          for(let i = 0, j = 0; i < px.length; i += 4, j++){
-            grau[j] = 0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2];
-          }
-          // Integralbild: Summe aller Punkte links oben von (x,y).
-          const S = new Float64Array((W+1) * (H+1));
-          for(let y = 0; y < H; y++){
-            let zeile = 0;
-            for(let xx = 0; xx < W; xx++){
-              zeile += grau[y*W + xx];
-              S[(y+1)*(W+1) + xx+1] = S[y*(W+1) + xx+1] + zeile;
-            }
-          }
-          const r = Math.max(8, Math.round(Math.min(W, H) / 40));
-          for(let y = 0; y < H; y++){
-            const y0 = Math.max(0, y-r), y1 = Math.min(H, y+r+1);
-            for(let xx = 0; xx < W; xx++){
-              const x0 = Math.max(0, xx-r), x1 = Math.min(W, xx+r+1);
-              const summe = S[y1*(W+1)+x1] - S[y0*(W+1)+x1] - S[y1*(W+1)+x0] + S[y0*(W+1)+x0];
-              const mittel = summe / ((x1-x0) * (y1-y0));
-              // 10 % unter der Umgebung: das ist Schrift, nicht Papier.
-              const v = grau[y*W + xx] < mittel * 0.90 ? 0 : 255;
-              const i = (y*W + xx) * 4;
-              px[i] = px[i+1] = px[i+2] = v; px[i+3] = 255;
-            }
-          }
-          x.putImageData(d, 0, 0);
-          ok(c.toDataURL('image/png'));
-        }catch(e){
-          // Lieber ein unaufbereitetes Bild als gar keins.
-          try{
-            const c = document.createElement('canvas');
-            c.width = bild.width; c.height = bild.height;
-            c.getContext('2d').drawImage(bild, 0, 0);
-            ok(c.toDataURL('image/png'));
-          }catch(e2){ fehl(new Error("Bild konnte nicht verarbeitet werden.")); }
-        }
-      };
-      bild.src = leser.result;
-    };
-    leser.readAsDataURL(datei);
-  });
-}
-
-/* Aus den erkannten Zeilen zwei Spalten machen.
-
-   ZWEI FEHLER, DIE ICH HIER ERST GEMACHT UND DANN GEMESSEN HABE:
-
-   1) Ich habe die Zeilen selbst gebildet, indem ich Woerter mit
-      aehnlicher Hoehe zusammenfasste. Bei einem GERADEN Bild geht das.
-      Ein Handyfoto ist aber immer ein bisschen gekippt: schon 1,6 Grad
-      ergeben ueber 1400 px Breite 20 px Versatz - mehr als eine halbe
-      Zeilenhoehe. Gemessen an einem nachgestellten Foto zerfiel dabei
-      jede Zeile in zwei ("to succeed" bei y=116, "Erfolg haben" bei
-      y=136), und heraus kamen NULL Wortpaare. Tesseract bringt eine
-      eigene Zeilenanalyse mit, die die Kippung beruecksichtigt - die
-      schaffte alle 8 Zeilen. Wir nehmen also seine, nicht meine.
-
-   2) Danach habe ich EINE feste senkrechte Grenze fuer alle Zeilen
-      berechnet. Auch das faellt bei Kippung um: die Spaltenkante wandert
-      von oben nach unten um dieselben 20 px. Eine Zeile ging genau
-      deshalb verloren - Grenze 772 px, Wortanfang 773 px. Jetzt wird
-      JEDE ZEILE AN IHRER EIGENEN groessten Luecke geteilt; die
-      gemeinsame Mitte dient nur noch als Plausibilitaetspruefung.
-      Damit: 8 von 8.                                                   */
-function scanSpaltenTrennen(ocrZeilen){
-  const zeilen = (ocrZeilen || []).map(l=>({
-    w: ((l && l.words) || [])
-        .filter(o => o && o.text && o.text.trim() && o.bbox && o.confidence > 30)
-        .map(o => ({t: o.text.trim(), x0: o.bbox.x0, x1: o.bbox.x1, k: o.confidence}))
-  })).filter(l => l.w.length >= 2);
-  if(zeilen.length < 1) return [];
-  zeilen.forEach(z => z.w.sort((a,b)=> a.x0 - b.x0));
-
-  // Je Zeile die groesste waagerechte Luecke merken.
-  const kandidaten = [];
-  zeilen.forEach(z=>{
-    let groesste = 0, stelle = -1;
-    for(let i = 1; i < z.w.length; i++){
-      const luecke = z.w[i].x0 - z.w[i-1].x1;
-      if(luecke > groesste){ groesste = luecke; stelle = i; }
-    }
-    z.luecke = groesste; z.stelle = stelle;
-    if(stelle > 0 && groesste > 25) kandidaten.push((z.w[stelle].x0 + z.w[stelle-1].x1) / 2);
-  });
-
-  if(kandidaten.length < 2) return scanEinspaltig(zeilen);
-  kandidaten.sort((a,b)=> a - b);
-  const mitte = kandidaten[Math.floor(kandidaten.length / 2)];
-  const breite = Math.max.apply(null, zeilen.map(z => z.w[z.w.length-1].x1));
-  const toleranz = Math.max(60, breite * 0.12);
-
-  const paare = [];
-  zeilen.forEach(z=>{
-    if(z.stelle < 1 || z.luecke <= 25) return;
-    const eigene = (z.w[z.stelle].x0 + z.w[z.stelle-1].x1) / 2;
-    // Sitzt die groesste Luecke ganz woanders, ist es keine Spaltenzeile
-    // (z.B. eine Ueberschrift). Die lassen wir lieber weg.
-    if(Math.abs(eigene - mitte) > toleranz) return;
-    const links  = z.w.slice(0, z.stelle).map(w=>w.t).join(' ').trim();
-    const rechts = z.w.slice(z.stelle).map(w=>w.t).join(' ').trim();
-    // Das schwaechste Wort der Zeile entscheidet, ob wir sie als
-    // unsicher kennzeichnen. Ein einziges verlesenes Wort macht das
-    // ganze Wortpaar unbrauchbar.
-    const schwaechstes = Math.min.apply(null, z.w.map(w => w.k == null ? 100 : w.k));
-    if(links && rechts) paare.push([links, rechts, schwaechstes]);
-  });
-
-  // Hat die Spaltentrennung kaum etwas gebracht, war es wohl doch
-  // einspaltig mit Trennzeichen.
-  if(paare.length < zeilen.length / 2) return scanEinspaltig(zeilen);
-  return paare;
-}
-
-/* Rueckfall: eine Spalte mit Trennzeichen, z.B. "apple - der Apfel". */
-function scanEinspaltig(zeilen){
-  const paare = [];
-  zeilen.forEach(z=>{
-    const text = z.w.map(w=>w.t).join(' ');
-    const teile = text.split(/\s+[-–—=:|]\s+|\t/);
-    if(teile.length >= 2){
-      const a = teile[0].trim(), b = teile.slice(1).join(' ').trim();
-      const schwaechstes = Math.min.apply(null, z.w.map(w => w.k == null ? 100 : w.k));
-      if(a && b) paare.push([a, b, schwaechstes]);
-    }
-  });
-  return paare;
-}
-
-/* Welche Spalte ist Englisch? Geraten, nicht behauptet - deshalb gibt es
-   in der Oberflaeche einen Knopf zum Tauschen. */
-function scanIstDeutscher(spalte){
-  let punkte = 0;
-  spalte.forEach(t=>{
-    const s = " " + t.toLowerCase() + " ";
-    if(/[äöüß]/.test(s)) punkte += 3;
-    if(/ (der|die|das|ein|eine|einen|einem|sich) /.test(s)) punkte += 2;
-    if(/ (to|the|a|an|of|and) /.test(s)) punkte -= 2;
-    if(/^to /.test(t.toLowerCase())) punkte -= 3;
-    // Grossgeschriebenes Hauptwort mitten im Satz spricht fuer Deutsch
-    if(/ [A-ZÄÖÜ][a-zäöüß]{2,}/.test(t)) punkte += 1;
-  });
-  return punkte;
-}
-
-async function scanStarten(datei){
-  const setz = (o)=>{ state.scanStand = Object.assign({}, state.scanStand || {}, o); render(); };
-  setz({laeuft: true, schritt: "Schatten werden herausgerechnet …", anteil: 0, fehler: null, paare: null});
-  try{
-    const bild = await scanBildVerkleinern(datei);
-    setz({vorschau: bild, schritt: "Texterkennung wird geladen …", anteil: 0.05});
-    const T = await ladeTesseract();
-
-    const arbeiter = await T.createWorker(['eng','deu'], 1, {
-      logger: (m)=>{
-        if(!m || !m.status) return;
-        const namen = {
-          "loading tesseract core":    "Texterkennung wird geladen …",
-          "initializing tesseract":    "Texterkennung wird vorbereitet …",
-          "loading language traineddata": "Sprachdaten werden geladen …",
-          "initializing api":          "Gleich geht's los …",
-          "recognizing text":          "Wörter werden gelesen …"
-        };
-        const t = namen[m.status];
-        if(t) setz({schritt: t, anteil: Math.max(0.05, m.progress || 0)});
-      }
-    });
-
-    const erg = await arbeiter.recognize(bild);
-    await arbeiter.terminate();
-
-    let paare = scanSpaltenTrennen((erg.data && erg.data.lines) || []);
-    // Kurze Bruchstuecke und Zeilennummern raus.
-    paare = paare.filter(p => p[0].length >= 2 && p[1].length >= 2 && !/^\d+$/.test(p[0]));
-
-    if(!paare.length){
-      setz({laeuft: false, fehler: "leer", schritt: null});
-      return;
-    }
-
-    // Englisch links oder rechts? Die deutschere Spalte gewinnt.
-    const linksDeutsch  = scanIstDeutscher(paare.map(p=>p[0]));
-    const rechtsDeutsch = scanIstDeutscher(paare.map(p=>p[1]));
-    const tauschen = linksDeutsch > rechtsDeutsch;
-    const zeilen = paare.map(p => ({
-      de: tauschen ? p[0] : p[1],
-      en: tauschen ? p[1] : p[0],
-      unsicher: (p[2] != null && p[2] < 75)
-    }));
-
-    setz({laeuft: false, schritt: null, paare: zeilen, sicher: Math.abs(linksDeutsch - rechtsDeutsch) >= 3});
-  }catch(e){
-    setz({laeuft: false, fehler: (e && e.message) || "unbekannt", schritt: null});
-  }
-}
-
-function renderScan(){
-  const st = state.scanStand || {};
-  const p = st.paare;
-
-  app.innerHTML = `
-    ${renderHeader("Vokabeln abfotografieren", true)}
-    ${playerBadgeHtml(true)}
-
-    ${!p && !st.laeuft ? `
-    <div class="panel">
-      <p style="margin:0 0 10px;">Fotografier eine <strong>gedruckte</strong> Vokabelliste ab &ndash;
-      aus dem Buch oder von einem Arbeitsblatt. Die Wörter werden direkt hier
-      auf deinem Gerät gelesen.</p>
-      <p class="muted" style="margin:0 0 12px;">
-        🔒 Das Bild wird <strong>nirgendwo hochgeladen</strong>. Es bleibt auf dem Handy.
-      </p>
-      <div class="asp-hinweis" style="margin-bottom:12px;">
-        <strong>Lieber halbe Seiten als ganze.</strong>
-        <p class="muted" style="margin:4px 0 8px;">
-          Fotografier eine Buchseite <strong>in zwei Schritten</strong> &ndash; erst die
-          obere Hälfte, die Wörter übernehmen, dann die untere. Je größer die
-          Schrift im Bild, desto zuverlässiger wird sie gelesen. Eine ganze
-          Seite auf einmal ergibt oft Buchstabensalat.
-        </p>
-        <strong>Außerdem:</strong>
-        <p class="muted" style="margin:4px 0 0;">
-          Gerade von oben fotografieren, gutes Licht.
-          <strong>Handschrift wird meist nicht erkannt</strong> &ndash;
-          gedruckte Listen dagegen sehr zuverlässig.
-        </p>
-      </div>
-      <label class="btn" for="scan-datei" style="display:block;text-align:center;cursor:pointer;">📷 FOTO AUFNEHMEN ODER WÄHLEN</label>
-      <!-- Bewusst OHNE capture="environment": sonst springt Android direkt in
-           die Kamera, und ein schon vorhandenes Foto laesst sich nicht waehlen. -->
-      <input type="file" id="scan-datei" accept="image/*" style="display:none;">
-      <p class="muted" style="margin:10px 0 0;font-size:13px;">
-        Beim ersten Mal werden einmalig die Sprachdaten geladen (ein paar Sekunden, danach nie wieder).
-      </p>
-    </div>` : ""}
-
-    ${st.laeuft ? `
-    <div class="panel center-text">
-      ${st.vorschau ? `<img src="${st.vorschau}" alt="" style="max-width:100%;max-height:180px;border-radius:12px;opacity:.55;">` : ""}
-      <p style="margin:14px 0 8px;font-weight:800;font-family:var(--font);">${escapeHtml(st.schritt || "Einen Moment …")}</p>
-      <div style="height:10px;background:#eee;border-radius:6px;overflow:hidden;">
-        <div style="height:100%;width:${Math.round((st.anteil||0)*100)}%;background:var(--gruen,#4caf50);transition:width .3s;"></div>
-      </div>
-    </div>` : ""}
-
-    ${st.fehler ? `
-    <div class="panel">
-      <h3 style="margin:0 0 8px;">${st.fehler === "leer" ? "Da konnte ich nichts lesen" : "Das hat nicht geklappt"}</h3>
-      <p class="muted" style="margin:0 0 10px;">${st.fehler === "leer"
-        ? "Auf dem Bild waren keine Wortpaare zu erkennen. Häufigste Gründe: Handschrift, zu wenig Licht, oder das Blatt ist schräg fotografiert."
-        : escapeHtml(String(st.fehler))}</p>
-      <button class="btn" id="scan-neu">🔁 NOCHMAL VERSUCHEN</button>
-    </div>` : ""}
-
-    ${p ? `
-    <div class="panel">
-      <h3 style="font-size:16px;margin:0 0 4px;">${p.length} Wortpaar${p.length===1?"":"e"} gefunden</h3>
-      <p class="muted" style="margin:0 0 10px;">
-        <strong>Bitte einmal durchsehen.</strong> Texterkennung verliest sich gern bei
-        Umlauten. Tippe direkt in ein Feld, um es zu ändern.
-      </p>
-      ${!st.sicher ? `<div class="asp-hinweis" style="margin-bottom:10px;">
-        <p class="muted" style="margin:0;">Ich bin mir nicht sicher, welche Spalte Englisch ist.
-        Prüf das kurz &ndash; mit dem Knopf unten lassen sich beide tauschen.</p>
-      </div>` : ""}
-      <!-- Jedes Wortpaar bekommt zwei volle Zeilen. Nebeneinander waren die
-           Felder auf einem Handy so schmal, dass laengere Wendungen nicht
-           mehr zu lesen waren. -->
-      <div>
-        ${p.map((z,i)=>`
-          <div class="scan-karte${z.unsicher ? " unsicher" : ""}">
-            <button class="scan-weg" data-scan-weg="${i}" aria-label="Zeile entfernen">✕</button>
-            <label class="scan-mini">🇬🇧 Englisch</label>
-            <input type="text" data-scan-en="${i}" value="${escapeHtml(z.en)}" class="scan-feld">
-            <label class="scan-mini">🇩🇪 Deutsch</label>
-            <input type="text" data-scan-de="${i}" value="${escapeHtml(z.de)}" class="scan-feld">
-            ${z.unsicher ? `<p class="scan-warn">⚠️ Hier war die Erkennung unsicher &ndash; bitte genau prüfen.</p>` : ""}
-          </div>
-        `).join("")}
-      </div>
-      <div class="row" style="gap:8px;margin-top:12px;">
-        <button class="btn secondary col" id="scan-tauschen">🔄 SPALTEN TAUSCHEN</button>
-      </div>
-      <button class="btn" id="scan-uebernehmen" style="margin-top:8px;">✅ ${p.length} VOKABEL${p.length===1?"":"N"} ÜBERNEHMEN</button>
-      <button class="btn secondary" id="scan-neu" style="margin-top:8px;">📷 ANDERES BILD</button>
-    </div>` : ""}
-
-    <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
-  `;
-
-  const anKnopf = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
-
-  const eingabe = document.getElementById('scan-datei');
-  if(eingabe) eingabe.addEventListener('change', (e)=>{
-    const d = e.target.files && e.target.files[0];
-    if(d) scanStarten(d);
-  });
-
-  // Tippen darf NICHT neu zeichnen - sonst springt der Finger aus dem Feld.
-  document.querySelectorAll('[data-scan-de]').forEach(el=>{
-    el.addEventListener('input', ()=>{ state.scanStand.paare[+el.dataset.scanDe].de = el.value; });
-  });
-  document.querySelectorAll('[data-scan-en]').forEach(el=>{
-    el.addEventListener('input', ()=>{ state.scanStand.paare[+el.dataset.scanEn].en = el.value; });
-  });
-  document.querySelectorAll('[data-scan-weg]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      state.scanStand.paare.splice(+el.dataset.scanWeg, 1);
-      if(!state.scanStand.paare.length) state.scanStand = {};
-      render();
-    });
-  });
-
-  anKnopf('scan-tauschen', ()=>{
-    state.scanStand.paare = state.scanStand.paare.map(z=>({de: z.en, en: z.de, unsicher: z.unsicher}));
-    state.scanStand.sicher = true;
-    render();
-  });
-
-  // "Nochmal" steht an zwei Stellen (Fehler- und Ergebnisfeld) - deshalb
-  // alle ansprechen, nicht nur den ersten mit dieser Kennung.
-  document.querySelectorAll('#scan-neu').forEach(el=>{
-    el.addEventListener('click', ()=>{ state.scanStand = {}; render(); });
-  });
-
-  anKnopf('scan-uebernehmen', ()=>{
-    let dazu = 0;
-    (state.scanStand.paare || []).forEach(z=>{ if(addCustomVocabEntry(z.de, z.en)) dazu++; });
-    state.scanStand = {};
-    saveProgress();
-    syncToCloud();
-    state.screen = "customvocab";
-    render();
-    const s = document.getElementById('bulk-status');
-    if(s) s.textContent = "✅ " + dazu + " Vokabel" + (dazu===1?"":"n") + " aus dem Foto übernommen.";
-  });
-
-  anKnopf('back-btn', ()=>{ state.scanStand = {}; state.screen = "customvocab"; render(); });
-}
+/* v95.6 - Der Foto-Import (Tesseract) ist entfernt: Er hat Buchseiten nicht
+   zuverlaessig gelesen. Wer eine Seite fotografiert, nimmt den Excel-Weg mit KI. */
 
 /* =====================================================================
    MEIN LERNWEG - Lingoras Überblick
@@ -21462,7 +21735,7 @@ function listeUebernehmen(paket){
   paket.paare.forEach(([en, de])=>{
     en = ohneSpitzeKlammern(en).trim(); de = ohneSpitzeKlammern(de).trim();
     if(!en || !de) return;
-    const w = { en: en, de: de, cat: "Eigene" };
+    const w = { en: en, de: de, cat: CUSTOM_CATEGORY_NAME };
     const k = wortSchluessel(w);
     if(!da[k]){ state.customVocab.push(w); da[k] = true; }
     if(schluessel.indexOf(k) < 0) schluessel.push(k);
@@ -21919,9 +22192,42 @@ function listeNeueste(){
 }
 
 /* Die Woerter einer Quelle: ein Paket, eine eigene Liste oder alles. */
+/* v95.6 - Die eigenen Woerter, jedes nur einmal. Aeltere Staende
+   koennen Doppelte enthalten (siehe addCustomVocabEntry); gezaehlt und
+   geuebt wird ab jetzt ueberall dieselbe Menge. */
+function eigeneEindeutig(){
+  const gesehen = new Set();
+  return (state.customVocab || []).filter(w=>{
+    const k = wortSchluessel(w);
+    if(!k || k === "|" || gesehen.has(k)) return false;
+    gesehen.add(k);
+    return true;
+  });
+}
+
+/* v95.7 - "Heute wiederholen" als WORTAUSWAHL. Bisher war "Fällig heute"
+   nur als Spielart zu haben - man konnte also nicht die faelligen Woerter
+   als Karten oder im Vokabeltest ueben. Gezaehlt wird nur, was schon
+   einmal geuebt wurde und wieder dran ist; noch nie gesehene Woerter
+   sind Vorrat, keine Pflicht (dieselbe Regel wie auf der Startkarte). */
+const WIEDERHOLEN_ZEICHEN = "⏰ Heute wiederholen";
+function wiederholWoerter(){
+  return getAllVocab().filter(w => wortStand(w) && wortIstFaellig(w));
+}
+
 function woerterVonQuelle(name){
   const alle = getAllVocab();
   if(!name || name === "Alle") return alle;
+  if(name === WIEDERHOLEN_ZEICHEN) return wiederholWoerter();
+  /* v95.6 - Die eigenen Woerter NICHT ueber die Kategorie suchen. Steht
+     ein eigenes Wort auch im Buch-Wortschatz ("go|gehen"), behaelt der
+     Wortschatz sein Exemplar mit der Buch-Kategorie - und das Wort fehlte
+     beim Ueben der eigenen Woerter. */
+  if(name === CUSTOM_CATEGORY_NAME){
+    const nachSchluessel = {};
+    alle.forEach(v=>{ const k = wortSchluessel(v); if(k) nachSchluessel[k] = v; });
+    return eigeneEindeutig().map(w => nachSchluessel[wortSchluessel(w)] || w);
+  }
   if(name.indexOf(LISTEN_ZEICHEN) === 0){
     const liste = listeFinden(name.slice(LISTEN_ZEICHEN.length));
     if(!liste) return [];
@@ -22054,7 +22360,7 @@ function paketAuswahlHtml(){
       <button type="button" class="pk-kachel dazu" id="pk-eigene">
         <span class="pk-ic">➕</span>
         <span class="pk-n">Vokabeln hinzufügen</span>
-        <span class="pk-z">Tippen, Foto, Excel</span>
+        <span class="pk-z">Tippen oder Excel</span>
       </button>
       ${eigenes && (!q || suchNormal(eigenes.name).indexOf(q) >= 0) ? `
         <button type="button" class="pk-kachel eigene ${state.category===eigenes.name?'aktiv':''}"
@@ -22365,7 +22671,7 @@ function listeIstEigene(){
 }
 
 function listeOffeneWoerter(){
-  if(listeIstEigene()) return (state.customVocab || []).slice();
+  if(listeIstEigene()) return eigeneEindeutig();
   return woerterVonQuelle(state.listeOffen);
 }
 
@@ -22481,8 +22787,8 @@ function renderListe(){
         🔄 Englisch und Deutsch tauschen
       </button>
       <p class="muted" style="margin:6px 0 0;font-size:12.5px;">
-        Steht in dieser Liste alles seitenverkehrt? Beim Abfotografieren rät die App,
-        welche Spalte deutsch ist &ndash; manchmal daneben. Hier drehst du es um.</p>` : ""}
+        Steht in dieser Liste alles seitenverkehrt, zum Beispiel weil in der Excel-Datei
+        die Spalten vertauscht waren? Hier drehst du es um.</p>` : ""}
     </div>`}
 
     <button class="btn danger" id="back-btn">✕ ZURÜCK</button>
@@ -22592,7 +22898,7 @@ function renderListe(){
 
 function renderCustomVocab(){
   const listen = listenAlle();
-  const eigene = state.customVocab || [];
+  const eigene = eigeneEindeutig();
   const weg    = state.evWeg || "";
 
   /* Vier Wege, aber nur einer offen. Vorher standen alle fuenf Bereiche
@@ -22620,14 +22926,13 @@ function renderCustomVocab(){
 
     <div class="panel">
       <h3 style="font-size:16px;margin-bottom:2px;">WIE WILLST DU WÖRTER DAZUTUN?</h3>
-      <p class="muted" style="margin-bottom:9px;">Vier Wege &ndash; such dir einen aus.</p>
+      <p class="muted" style="margin-bottom:9px;">Drei Wege &ndash; such dir einen aus.</p>
       <div class="ev-wege">
         <!-- Excel zuerst: das ist der Weg, der eine ganze Buchseite in
              einem Rutsch und ohne Tippfehler hereinholt. -->
         ${wegKachel("excel",  "📄", "Vokabeln als Excel-Liste")}
         ${wegKachel("suche",  "⭐", "Aus dem Wortschatz")}
         ${wegKachel("tippen", "✍️", "Selbst eintippen")}
-        ${wegKachel("foto",   "📷", "Abfotografieren")}
       </div>
 
       ${weg === "suche" ? evSucheHtml() : ""}
@@ -22655,12 +22960,6 @@ function renderCustomVocab(){
         </details>
       </div>` : ""}
 
-      ${weg === "foto" ? `
-      <div class="ev-inhalt">
-        <p class="muted" style="margin:0 0 10px;">Gedruckte Vokabelliste aus Buch oder Arbeitsblatt.
-        Die Wörter werden auf deinem Gerät gelesen &ndash; das Bild wird nirgendwo hochgeladen.</p>
-        <button class="btn" id="scan-start-btn">📷 FOTO AUFNEHMEN</button>
-      </div>` : ""}
 
       ${weg === "excel" ? `
       <div class="ev-inhalt">
@@ -22761,12 +23060,6 @@ function renderCustomVocab(){
     el.addEventListener('click', ()=>listeOeffnen(el.dataset.evUeben));
   });
 
-  const scanBtn = document.getElementById('scan-start-btn');
-  if(scanBtn) scanBtn.addEventListener('click', ()=>{
-    state.scanStand = {};
-    state.screen = "scan";
-    render();
-  });
 
   try{ evListenbauVerdrahten(); }catch(e){ console.error("Listenbau:", e); }
 
@@ -22787,7 +23080,9 @@ function renderCustomVocab(){
       const freshDe = document.getElementById('new-vocab-de');
       if(freshDe){ freshDe.focus(); }
     } else if(status){
-      status.textContent = "⚠️ Bitte beide Felder ausfüllen.";
+      status.textContent = doppeltHinweisHolen()
+        ? "ℹ️ Dieses Wort steht schon in deinen eigenen Wörtern."
+        : "⚠️ Bitte beide Felder ausfüllen.";
     }
   });
   const newVocabEn = document.getElementById('new-vocab-en');
@@ -22801,15 +23096,19 @@ function renderCustomVocab(){
   if(bulkBtn) bulkBtn.addEventListener('click', ()=>{
     const ta = document.getElementById('bulk-vocab-textarea');
     const added = parseBulkVocabText(ta.value);
-    const status = document.getElementById('bulk-status');
-    if(added > 0){
+    const doppelt = doppeltHinweisHolen();
+    if(added > 0 || doppelt){
       saveProgress();
       syncToCloud();
       ta.value = "";
-      if(status){ status.textContent = `✅ ${added} Vokabel${added===1?'':'n'} hinzugefügt.`; }
       render();
-    } else if(status){
-      status.textContent = "⚠️ Keine gültigen Zeilen erkannt. Format: Deutsch = Englisch";
+      /* Erst neu zeichnen, dann die Meldung setzen - andersherum war sie
+         sofort wieder weg. */
+      const status = document.getElementById('bulk-status');
+      if(status){ status.textContent = `✅ ${added} Vokabel${added===1?'':'n'} hinzugefügt.` + doppelt; }
+    } else {
+      const status = document.getElementById('bulk-status');
+      if(status) status.textContent = "⚠️ Keine gültigen Zeilen erkannt. Format: Deutsch = Englisch oder wie im Buch: go [gəʊ] gehen";
     }
   });
 
@@ -23242,6 +23541,7 @@ function startFloodRise(beiErtrinken){
   if(!state.floodHard) return;
   floodRiseTimerId = setInterval(()=>{
     if(floodBeendet){ stopFloodRise(); return; }
+    if(document.querySelector('.modal-overlay') || document.visibilityState === "hidden") return;   // v95.7: Pause im Dialog
     const maximum = floodPlatformTop(GRAMMAR_GOAL_CORRECT) + FLOOD_AVATAR_SIZE + 12;
     state.grammarWaterPx = Math.min(maximum, (state.grammarWaterPx || 12) + FLOOD_RISE_PX);
     const w = document.getElementById('flood-water');
@@ -23618,7 +23918,7 @@ function renderGrammarQuiz(){
       <div class="choices">
         ${choices.map(c=>`<button class="choice-btn" data-choice="${c}">${c}</button>`).join("")}
       </div>
-      <div class="feedback" id="feedback"></div>
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
     </div>
   `;
 
@@ -23658,6 +23958,28 @@ function grammarWeiterKnopf(fb, weiter){
   scrollFeedbackIntoView(fb);
 }
 
+/* v95.6 - "Fast!" nur, wenn es wirklich fast war: its/it's, your/you're,
+   ein Buchstabe daneben. Bei einer ganz anderen Antwort steht "Noch nicht". */
+function fastRichtig(gewaehlt, richtig){
+  const a = String(gewaehlt || "").toLowerCase().replace(/[’']/g, "'").trim();
+  const b = String(richtig  || "").toLowerCase().replace(/[’']/g, "'").trim();
+  if(!a || !b || a === b) return false;
+  if(a.replace(/'/g, "") === b.replace(/'/g, "")) return true;
+  if(Math.abs(a.length - b.length) > 2) return false;
+  const d = [];
+  for(let i = 0; i <= a.length; i++){ d[i] = [i]; }
+  for(let j = 1; j <= b.length; j++){ d[0][j] = j; }
+  for(let i = 1; i <= a.length; i++){
+    for(let j = 1; j <= b.length; j++){
+      d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    }
+  }
+  return d[a.length][b.length] <= (b.length > 4 ? 2 : 1);
+}
+function fastText(gewaehlt, richtig){
+  return fastRichtig(gewaehlt, richtig) ? "Fast!" : "Noch nicht.";
+}
+
 function handleGrammarAnswer(btn, choice, exercise){
   if(state.grammarAnswered) return;
   state.grammarAnswered = true;
@@ -23685,13 +24007,13 @@ function handleGrammarAnswer(btn, choice, exercise){
     fb.innerHTML = '';
   } else {
     // In der ruhigen Uebungsrunde gibt es bewusst KEINEN Muenzabzug.
-    if(!practice){ state.grammarSessionCoins = Math.max(0, state.grammarSessionCoins - 5); }
+    // v95.7: auch im Test und im Flutungsraum kein Muenzabzug mehr.
     state.grammarWrongStreak += 1;
     if(!practice){ raiseFloodWater(); }
     if(practice){
       fb.className = 'feedback show bad';
     rueckmeldungInsBild(fb);
-      fb.innerHTML = `<div>❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. ${escapeHtml(exercise.de)}</div>`;
+      fb.innerHTML = `<div>❌ ${fastText(choice, exercise.answer)} Richtig ist <strong>"${exercise.answer}"</strong>. ${escapeHtml(exercise.de)}</div>`;
     } else {
       // Flutungsraum: erst steigt das Wasser, die Korrektur folgt danach.
       fb.className = 'feedback';
@@ -23786,7 +24108,7 @@ function handleGrammarAnswer(btn, choice, exercise){
     rueckmeldungInsBild(fb);
       fb.innerHTML = `<div>${lost
           ? "🌊 Untergegangen! Zählt als Fehler &ndash; und weiter geht&rsquo;s. "
-          : ""}❌ Fast! Richtig ist <strong>"${exercise.answer}"</strong>. ${lost ? "" : (state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!")} ${escapeHtml(exercise.de)}</div>`;
+          : ""}❌ ${fastText(choice, exercise.answer)} Richtig ist <strong>"${exercise.answer}"</strong>. ${lost ? "" : (state.floodHard ? "Du rutschst eine Stufe runter!" : "Das Wasser ist gestiegen!")} ${escapeHtml(exercise.de)}</div>`;
       if(lost){ scrollFeedbackIntoView(fb); planeWeiter(weiter, 1600); }
       else { grammarWeiterKnopf(fb, weiter); }
     }, FLOOD_MSG_DELAY);
@@ -24478,10 +24800,10 @@ function renderGrammarCertificate(){
       ` : ""}
 
       <div class="stat-row">
-        <div>✅<span>${correctCount}</span></div>
-        <div>❌<span>${total-correctCount}</span></div>
-        ${state.floodRettungen ? `<div>🛟<span>${state.floodRettungen}</span></div>` : ""}
-        <div>🪙<span>${state.grammarSessionCoins}</span></div>
+        <div>✅<span>${correctCount}</span><small class="stat-u">richtig</small></div>
+        <div>❌<span>${total-correctCount}</span><small class="stat-u">noch nicht</small></div>
+        ${state.floodRettungen ? `<div>🛟<span>${state.floodRettungen}</span><small class="stat-u">gerettet</small></div>` : ""}
+        <div>🪙<span>${state.grammarSessionCoins}</span><small class="stat-u">Münzen</small></div>
       </div>
 
       <div class="quote">"${state.grammarQuote || pickRandom(GRAMMAR_MOTIVATION_QUOTES)}"</div>
@@ -24495,10 +24817,20 @@ function renderGrammarCertificate(){
     ${practice ? "" : `<div style="height:10px;"></div>
     <button class="btn secondary" id="grammar-otherlevel-btn">${state.floodHard ? "🌊 Lieber die leichte Variante" : "🌊 Jetzt die schwere Variante"}</button>`}
     <div style="height:10px;"></div>
-    <button class="btn secondary" id="grammar-switch-btn">${result === "test" ? "📘 IN RUHE WEITERÜBEN" : (practice ? "📝 JETZT DEN TEST SCHREIBEN" : "📘 LIEBER IN RUHE ÜBEN")}</button>
+    ${practice && total && correctCount / total < 0.7 ? `
+    <p class="gram-rat">Tipp: Erst noch eine Übungsrunde &ndash; ab 7 von 10 richtig lohnt sich der Test.</p>` : ""}
+    <button class="btn secondary" id="grammar-switch-btn">${result === "test" ? "📘 IN RUHE WEITERÜBEN"
+      : (practice ? (total && correctCount / total < 0.7 ? "📝 TROTZDEM DEN TEST SCHREIBEN" : "📝 JETZT DEN TEST SCHREIBEN") : "📘 LIEBER IN RUHE ÜBEN")}</button>
     <div style="height:10px;"></div>
-    <button class="btn wood" id="grammar-home-btn">🏠 ZUM STARTBILDSCHIRM</button>
+    <!-- v95.7 - "Zum Startbildschirm" fuehrte zur Grammatik-Uebersicht.
+         Jetzt sagt jeder Knopf, wohin er geht. -->
+    <div class="row" style="gap:8px;">
+      <button class="btn neutral col einzeilig" id="grammar-home-btn">← Andere Themen</button>
+      <button class="btn neutral col einzeilig" id="grammar-start-btn">🏠 Startseite</button>
+    </div>
   `;
+  const gStart = document.getElementById('grammar-start-btn');
+  if(gStart) gStart.addEventListener('click', ()=>{ state.screen = "start"; render(); });
 
   document.getElementById('grammar-retry-btn').addEventListener('click', ()=>{
     if(result === "test"){ startGrammarTest(); }
@@ -24613,8 +24945,11 @@ function refreshIfStale(){
   }
 }
 // Wer das Fenster wegschaltet, laesst den Elternbereich nicht offen stehen.
+/* v95.6 - Nicht mehr sofort beim Wegschalten sperren (siehe render):
+   Erst wenn die 10 Minuten beim Zurueckkommen abgelaufen sind. */
 document.addEventListener("visibilitychange", ()=>{
-  if(document.visibilityState === "hidden" && state.parentUnlocked){
+  if(document.visibilityState === "visible" && state.parentUnlocked
+     && Date.now() > (state.parentOffenBis || 0)){
     state.parentUnlocked = false;
     state.parentTab = "uebersicht";
     if(state.screen === "parents"){ render(); }
