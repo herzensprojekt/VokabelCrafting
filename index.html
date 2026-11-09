@@ -5006,7 +5006,7 @@ body .wb-fehler:empty{ display:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "96.4 – Wörter bearbeiten, Zwischenstand lesbar";
+const APP_VERSION = "96.5 – Vokabeln verwalten";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -14882,7 +14882,7 @@ function werkzeugGitterHtml(){
     <div class="panel">
       <div class="werk-gitter">
         ${kachel("leaderboard-btn", "ic-rangliste", "Rangliste", g, "wk-blau")}
-        ${kachel("custom-vocab-btn", "ic-eigene", "Vokabeln hinzufügen", !state.cloudId, "wk-dazu")}
+        ${kachel("custom-vocab-btn", "ic-eigene", "Vokabeln verwalten", !state.cloudId, "wk-dazu")}
         ${kachel("grammar-stats-btn", "ic-skills", "Grammatik-Skills", false, "wk-violett")}
         ${kachel("vokabel-stats-btn", "ic-speicher", "Vokabel-Skills", false, "wk-tuerkis")}
         ${kachel("shop-btn", "ic-muenzen", "Shop", g, "wk-gold")}
@@ -15265,8 +15265,8 @@ function renderUebenVokabeln(){
           <span class="vkq-pfeil">▸</span>
         </button>
         <button type="button" class="btn secondary vw-dazu" id="pk-eigene">
-          ➕ Vokabeln hinzufügen
-          <small>Tippen oder Excel</small>
+          Vokabeln verwalten
+          <small>Listen anlegen und bearbeiten</small>
         </button>
       </div>
     `}
@@ -22777,9 +22777,9 @@ function paketAuswahlHtml(){
 
     <div class="pk-gitter">
       <button type="button" class="pk-kachel dazu" id="pk-eigene">
-        <span class="pk-ic">➕</span>
-        <span class="pk-n">Vokabeln hinzufügen</span>
-        <span class="pk-z">Tippen oder Excel</span>
+        <span class="pk-ic">📒</span>
+        <span class="pk-n">Vokabeln verwalten</span>
+        <span class="pk-z">Listen anlegen und bearbeiten</span>
       </button>
       ${eigenes && (!q || suchNormal(eigenes.name).indexOf(q) >= 0) ? `
         <button type="button" class="pk-kachel eigene ${state.category===eigenes.name?'aktiv':''}"
@@ -22810,7 +22810,7 @@ function paketAuswahlHtml(){
     </div>
     ${q && !pakete.length && !listen.length ? `
       <p class="muted" style="margin:10px 0 0;">Dazu habe ich kein Paket gefunden.
-      Einzelne Wörter suchst du oben unter <strong>➕ Vokabeln hinzufügen</strong>.</p>` : ""}`;
+      Einzelne Wörter suchst du oben unter <strong>Vokabeln verwalten</strong>.</p>` : ""}`;
 }
 
 function paketAuswahlVerdrahten(){
