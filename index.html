@@ -4464,6 +4464,33 @@ body .ev-verwerfen{ background:none; border:0; font-family:inherit; font-size:14
   color:var(--tinte-hell); text-decoration:underline; min-height:44px; padding:0 4px; cursor:pointer; }
 body .pk-alle{ display:block; width:100%; min-height:44px; margin:0 0 8px; border:1.5px dashed var(--birke-rand);
   border-radius:12px; background:var(--birke); font-family:inherit; font-weight:700; color:var(--lapis-lippe); cursor:pointer; }
+
+/* v96.4 - Zwischenstand, alte Kaesten, Woerter bearbeiten */
+body .dirt-panel{ color:var(--tinte); }
+body .hp-label{ color:var(--tinte); text-shadow:none; }
+body .ms-panel{ padding:20px 16px; }
+body .ms-kopf{ font-size:19px; font-weight:800; color:var(--tinte); margin:0 0 14px; }
+body .ms-zahlen{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+body .ms-zahl{ background:var(--hafer); border:1.5px solid var(--birke-rand); border-radius:10px; padding:10px 4px 8px;
+  box-shadow:inset 0 -3px 0 var(--birke-rand); }
+body .ms-zahl strong{ display:block; font-size:26px; line-height:1.1; color:var(--tinte); }
+body .ms-zahl span{ display:block; font-size:13px; color:var(--tinte-hell); margin-top:2px; }
+body .ms-zahl.ms-gut{ background:var(--honig-hell); border-color:#e6cf9c; box-shadow:inset 0 -3px 0 #e6cf9c; }
+body .ms-balken{ margin:0 0 14px; }
+body .ms-spruch{ font-style:italic; font-size:17px; line-height:1.45; color:var(--tinte); margin:0; }
+body .li-reihe{ display:flex; gap:6px; align-items:stretch; margin-bottom:7px; }
+body .li-reihe .pk-wort.li-zeile{ flex:1; min-width:0; margin-bottom:0; }
+body .li-stift{ flex:0 0 44px; min-height:44px; display:flex; align-items:center; justify-content:center;
+  border:1.5px solid var(--birke-rand); border-radius:10px; background:var(--birke); color:var(--tinte-hell); cursor:pointer; padding:0; }
+body .li-stift svg{ pointer-events:none; }
+body .li-stift:hover, body .li-stift:focus-visible{ color:var(--tinte); border-color:var(--honig); }
+body .wb-box{ text-align:left; }
+body .wb-titel{ font-size:18px; margin:0 0 10px; }
+body .wb-label{ display:block; font-weight:700; font-size:14px; margin:10px 0 4px; color:var(--tinte); }
+body .wb-box input[type=text]{ width:100%; box-sizing:border-box; font-size:17px; }
+body .wb-hinweis{ font-size:13px; color:var(--tinte-hell); margin:10px 0 0; }
+body .wb-fehler{ font-size:13px; color:#a23b2a; margin:6px 0 0; min-height:0; }
+body .wb-fehler:empty{ display:none; }
 </style>
 </head>
 <body>
@@ -4979,7 +5006,7 @@ body .pk-alle{ display:block; width:100%; min-height:44px; margin:0 0 8px; borde
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "96.3 – Wörter dazu in drei Schritten";
+const APP_VERSION = "96.4 – Wörter bearbeiten, Zwischenstand lesbar";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -14259,7 +14286,7 @@ function renderParentConfirm(){
         <div class="panel dirt-panel center-text">
           <div style="font-size:48px;">${b.icon}</div>
           <p style="font-size:20px;font-weight:700;margin-top:8px;">${escapeHtml(b.belohnung)}</p>
-          <p class="muted" style="color:#fff;opacity:0.85;">${escapeHtml(b.kind||"")} &middot; ${escapeHtml(b.datum)}${b.zeit ? ' ' + escapeHtml(b.zeit) : ''} &middot; #${escapeHtml(b.nummer||"")}</p>
+          <p class="muted">${escapeHtml(b.kind||"")} &middot; ${escapeHtml(b.datum)}${b.zeit ? ' ' + escapeHtml(b.zeit) : ''} &middot; #${escapeHtml(b.nummer||"")}</p>
         </div>
         <label style="display:block;margin-top:14px;font-weight:600;">Eltern-PIN eingeben zum Bestätigen</label>
         <input type="password" id="parent-confirm-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="4-stelliger PIN">
@@ -14283,7 +14310,7 @@ function renderParentConfirm(){
         <div class="panel dirt-panel center-text">
           <div style="font-size:48px;">${entry.icon}</div>
           <p style="font-size:20px;font-weight:700;margin-top:8px;">${escapeHtml(entry.name)}</p>
-          <p class="muted" style="color:#fff;opacity:0.85;">${escapeHtml(player.name||"")} &middot; ${escapeHtml(entry.date)}${entry.time ? ' ' + escapeHtml(entry.time) : ''} &middot; #${shortEntryId(entry.id)}</p>
+          <p class="muted">${escapeHtml(player.name||"")} &middot; ${escapeHtml(entry.date)}${entry.time ? ' ' + escapeHtml(entry.time) : ''} &middot; #${shortEntryId(entry.id)}</p>
         </div>
         <label style="display:block;margin-top:14px;font-weight:600;">Eltern-PIN eingeben zum Bestätigen</label>
         <input type="password" id="parent-confirm-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="4-stelliger PIN" style="margin-top:6px;">
@@ -17461,20 +17488,25 @@ function renderMilestone(){
   const total = state.queue.length;
   const done = state.currentIndex;
   const remaining = total - done;
+  const richtig = (state.sessionLog || []).filter(x => x.result === "correct").length;
+  const pct = total ? Math.round(done / total * 100) : 0;
 
+  /* v96.4 - Hier stand noch weisse Schrift aus dem dunkelgruenen Kasten.
+     Seit der Grund Papier ist, war davon nur noch die Spitzhacke zu sehen. */
   app.innerHTML = `
     ${renderHeader("Zwischenstand", true)}
     ${playerBadgeHtml(true)}
-    <div class="panel dirt-panel center-text">
-      <h2 style="font-size:14px;color:#fff;">⛏ ${done} VOKABELN GESCHAFFT &ndash; ${(state.sessionLog || []).filter(x => x.result === "correct").length} RICHTIG</h2>
-      <p style="font-family:var(--font);font-weight:700;font-style:italic;font-size:19px;color:#fff;margin:14px 0;">
-        "${state.milestoneQuote}"
-      </p>
-      <p style="font-family:var(--font);font-size:18px;color:#fff;">
-        Noch <strong>${remaining}</strong> Vokabel${remaining===1?'':'n'} bis zum Ziel!
-      </p>
+    <div class="panel ms-panel center-text">
+      <p class="ms-kopf">${done} geschafft &ndash; weiter so!</p>
+      <div class="ms-zahlen">
+        <div class="ms-zahl"><strong>${done}</strong><span>geschafft</span></div>
+        <div class="ms-zahl ms-gut"><strong>${richtig}</strong><span>richtig</span></div>
+        <div class="ms-zahl"><strong>${remaining}</strong><span>noch übrig</span></div>
+      </div>
+      <div class="progress-outer ms-balken" aria-hidden="true"><div class="progress-inner" style="width:${pct}%"></div></div>
+      <p class="ms-spruch">&bdquo;${escapeHtml(state.milestoneQuote || "")}&ldquo;</p>
     </div>
-    <button class="btn" id="milestone-continue-btn">▶ WEITER</button>
+    <button class="btn" id="milestone-continue-btn">▶ Weiter</button>
   `;
   document.getElementById('milestone-continue-btn').addEventListener('click', ()=>{ nextQuestion(); });
 }
@@ -23127,6 +23159,112 @@ function listeWahl(){
    Unordnung. */
 const LISTE_SUCHE_AB = 8;
 
+/* v96.4 - Woerter in einer Liste verbessern.
+
+   Ein EIGENES Wort wird an Ort und Stelle geaendert - in allen Listen,
+   in denen es steht, denn es ist dasselbe Wort. Ein Wort aus dem BUCH
+   bleibt im Wortschatz unangetastet; die offene Liste bekommt statt
+   seiner die verbesserte Fassung als eigenes Wort. Der Lernstand zieht
+   mit um, damit eine Korrektur nichts Geuebtes verliert. */
+const STIFT_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg>';
+
+function wortIstEigen(k){
+  return (state.customVocab || []).some(w => wortSchluessel(w) === k);
+}
+
+function wortBearbeiten(alt, enNeu, deNeu){
+  enNeu = ohneLautschrift(ohneSpitzeKlammern(String(enNeu || ""))).trim();
+  deNeu = ohneLautschrift(ohneSpitzeKlammern(String(deNeu || ""))).trim();
+  if(!enNeu || !deNeu) return false;
+  const kAlt = wortSchluessel(alt);
+  const kNeu = wortSchluessel({ en: enNeu, de: deNeu });
+  const eigen = wortIstEigen(kAlt);
+
+  if(eigen){
+    const e = state.customVocab.find(w => wortSchluessel(w) === kAlt);
+    state.customVocab = state.customVocab.filter(w => w === e || wortSchluessel(w) !== kAlt);
+    if(kNeu !== kAlt && state.customVocab.some(w => w !== e && wortSchluessel(w) === kNeu)){
+      state.customVocab = state.customVocab.filter(w => w !== e);   // gibt es schon
+    } else {
+      e.en = enNeu; e.de = deNeu;
+      e.accepted = [deNeu.toLowerCase()];
+      delete e.enAccepted;
+    }
+    if(kNeu !== kAlt) wegMerken("wort", kAlt);
+  } else if(kNeu !== kAlt && !wortBekannt(kNeu)){
+    addCustomVocabEntry(deNeu, enNeu);
+  }
+  const weg = wegAlle();
+  if(weg.wort && weg.wort[kNeu]) delete weg.wort[kNeu];   // wieder da
+
+  listenAlle().forEach(l=>{
+    if(!eigen && LISTEN_ZEICHEN + l.name !== state.listeOffen) return;
+    const ws = l.woerter || [];
+    const i = ws.indexOf(kAlt);
+    if(i < 0) return;
+    if(kNeu !== kAlt){
+      if(ws.indexOf(kNeu) >= 0) ws.splice(i, 1); else ws[i] = kNeu;
+    }
+    l.paare = Object.assign({}, l.paare || {});
+    delete l.paare[kAlt];
+    l.paare[kNeu] = { en: enNeu, de: deNeu };
+  });
+
+  if(kNeu !== kAlt && state.wortStand && state.wortStand[kAlt] && !state.wortStand[kNeu]){
+    state.wortStand[kNeu] = state.wortStand[kAlt];
+    delete state.wortStand[kAlt];
+  }
+  state.listeWahl = (state.listeWahl || []).filter(k => k !== kAlt);
+  vokabelCacheLeeren();
+  saveProgress();
+  syncToCloud();
+  return true;
+}
+
+function wortBearbeitenFenster(w){
+  const k = wortSchluessel(w);
+  const eigen = wortIstEigen(k);
+  const imBuch = (typeof VOCAB !== "undefined" ? VOCAB : []).some(x => wortSchluessel(x) === k);
+  const hinweis = (eigen && !imBuch)
+    ? "Die Änderung gilt überall, wo dieses Wort steht."
+    : "Das Wort aus dem Buch bleibt, wie es ist. In dieser Liste steht dann deine verbesserte Fassung.";
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="panel modal-box wb-box" role="dialog" aria-modal="true" aria-labelledby="wb-titel">
+      <h3 id="wb-titel" class="wb-titel">Wort bearbeiten</h3>
+      <label class="wb-label" for="wb-en">Englisch</label>
+      <input type="text" id="wb-en" value="${escapeHtml(w.en)}" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label class="wb-label" for="wb-de">Deutsch</label>
+      <input type="text" id="wb-de" value="${escapeHtml(w.de)}" autocomplete="off">
+      <p class="wb-hinweis">${hinweis}</p>
+      <p class="wb-fehler" id="wb-fehler" role="alert"></p>
+      <div class="row">
+        <button class="btn" id="wb-ok">✓ Speichern</button>
+        <button class="btn neutral" id="wb-ab">Abbrechen</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const close = ()=>{ if(overlay.parentNode) overlay.parentNode.removeChild(overlay); };
+  const en = overlay.querySelector('#wb-en'), de = overlay.querySelector('#wb-de');
+  const speichern = ()=>{
+    if(!en.value.trim() || !de.value.trim()){
+      overlay.querySelector('#wb-fehler').textContent = "Bitte beide Felder ausfüllen.";
+      (en.value.trim() ? de : en).focus();
+      return;
+    }
+    if(wortBearbeiten(w, en.value, de.value)){ close(); render(); }
+  };
+  overlay.querySelector('#wb-ok').addEventListener('click', speichern);
+  overlay.querySelector('#wb-ab').addEventListener('click', close);
+  overlay.addEventListener('click', e=>{ if(e.target === overlay) close(); });
+  overlay.addEventListener('keydown', e=>{
+    if(e.key === "Enter"){ e.preventDefault(); speichern(); }
+    if(e.key === "Escape") close();
+  });
+  en.focus();
+}
+
 function renderListe(){
   const eigene = listeIstEigene();
   const name   = eigene ? CUSTOM_CATEGORY_NAME
@@ -23177,11 +23315,15 @@ function renderListe(){
           ${zeigen.map(w=>{
             const k = wortSchluessel(w);
             const drin = wahl.indexOf(k) >= 0;
-            return `<button type="button" class="pk-wort li-zeile ${drin?'drin':''}" data-li-wort="${escapeHtml(k)}">
-              <span class="pk-w-en">${escapeHtml(w.en)}</span>
-              <span class="pk-w-de">${escapeHtml(w.de)}</span>
-              <span class="pk-w-plus">${drin ? "✓" : "○"}</span>
-            </button>`;
+            return `<div class="li-reihe">
+              <button type="button" class="pk-wort li-zeile ${drin?'drin':''}" data-li-wort="${escapeHtml(k)}">
+                <span class="pk-w-en">${escapeHtml(w.en)}</span>
+                <span class="pk-w-de">${escapeHtml(w.de)}</span>
+                <span class="pk-w-plus">${drin ? "✓" : "○"}</span>
+              </button>
+              <button type="button" class="li-stift" data-li-bearbeiten="${escapeHtml(k)}"
+                      aria-label="${escapeHtml(w.en)} bearbeiten" title="Bearbeiten">${STIFT_SVG}</button>
+            </div>`;
           }).join("")}
         </div>`
         : `<p class="li-leer">${suche
@@ -23197,8 +23339,8 @@ function renderListe(){
         </div>`
         : (alle.length ? `
         <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
-          Tipp Wörter an. Dann kannst du daraus eine neue Liste machen &ndash;
-          oder sie ${eigene ? "löschen" : "aus dieser Liste nehmen"}.</p>` : "")}
+          Mit dem Stift verbesserst du ein falsches Wort. Tippst du Wörter an,
+          kannst du sie in eine Liste speichern oder ${eigene ? "löschen" : "aus dieser Liste nehmen"}.</p>` : "")}
     </div>
 
     ${eigene ? "" : `
@@ -23254,6 +23396,14 @@ function renderListe(){
   });
 
   anLi('li-keine', ()=>{ state.listeWahl = []; render(); });
+
+  document.querySelectorAll('[data-li-bearbeiten]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const k = el.dataset.liBearbeiten;
+      const w = alle.find(x => wortSchluessel(x) === k);
+      if(w) wortBearbeitenFenster(w);
+    });
+  });
 
   anLi('li-neu', ()=>{
     const gewaehlt = listeWahl().slice();
