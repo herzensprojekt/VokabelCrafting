@@ -4421,6 +4421,32 @@ body .gpt-knoepfe{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
 body .gpt-knoepfe .btn{ width:auto; flex:1 1 140px; margin:0; text-decoration:none;
   display:inline-flex; align-items:center; justify-content:center; }
 body #wd-einfuegen{ width:100%; }
+
+/* v96.2 - Meine Listen: Papierkorb, Archiv-Ordner, Archiv */
+body .ml-reihe{ display:flex; align-items:stretch; gap:6px; }
+body .ml-reihe .ml-zeile{ flex:1 1 auto; min-width:0; grid-template-columns:auto 1fr; column-gap:10px; row-gap:1px; }
+body .ml-reihe .ml-ic{ grid-row:1 / span 2; }
+body .ml-reihe .ml-n{ grid-column:2; overflow-wrap:break-word; word-break:normal; hyphens:auto; }
+body .ml-reihe .ml-z{ grid-column:2; }
+body .ml-aktion{ flex:0 0 46px; min-height:52px; border:1.5px solid var(--birke-rand); border-radius:14px;
+  background:var(--birke); color:var(--tinte-hell); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; padding:0; }
+body .ml-aktion .lc-ic{ width:22px; height:22px; }
+body .ml-aktion:active{ transform:translateY(1px); }
+body .ml-aktion.ml-weg{ color:#a2483a; }
+body .ml-aktion:focus-visible{ outline:3px solid var(--lapis); outline-offset:2px; }
+body .ml-archiv{ margin-top:14px; border-top:1.5px dashed var(--birke-rand); padding-top:10px; }
+body .ml-archiv > summary{ cursor:pointer; font-weight:700; min-height:44px; display:flex; align-items:center; gap:8px;
+  list-style:none; color:var(--tinte); }
+body .ml-archiv > summary::-webkit-details-marker{ display:none; }
+body .ml-archiv > summary::after{ content:"›"; margin-left:auto; font-size:22px; color:var(--tinte-hell); transition:transform .2s; }
+body .ml-archiv[open] > summary::after{ transform:rotate(90deg); }
+body .ml-hinweis{ display:flex; gap:8px; align-items:flex-start; margin:12px 0 0; font-size:13.5px; line-height:1.4;
+  color:var(--tinte-hell); }
+body .ml-hinweis .lc-ic{ flex:0 0 18px; width:18px; height:18px; margin-top:1px; }
+body .ml-hinweis + .ml-hinweis{ margin-top:6px; }
+body .wd-ziel{ margin:12px 0 0; padding:12px; border-radius:14px; background:var(--hafer); }
+body .wd-ziel-oder{ margin-top:12px; }
 </style>
 </head>
 <body>
@@ -4936,7 +4962,7 @@ body #wd-einfuegen{ width:100%; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "96.1 – Spiele oben sichtbar";
+const APP_VERSION = "96.2 – Listen speichern und archivieren";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -6785,7 +6811,7 @@ function renderLingoraFrage(){
   /* Eigene Listen zuerst: Wer sich fuer Freitag eine gebaut hat, will
      im Plan genau die - nicht das ganze Lehrwerkspaket. Sie heissen
      ueberall "★ Name", und woerterVonQuelle() versteht das schon. */
-  const kats = listenAlle().map(l => LISTEN_ZEICHEN + l.name)
+  const kats = listenAktiv().map(l => LISTEN_ZEICHEN + l.name)
                  .concat(categories().filter(k => k !== "Alle"));
 
   let inhalt = "";
@@ -16829,7 +16855,7 @@ function kartenAuswahlName(){
    gebaut werden. Zwei Listen waeren zwei Wahrheiten. */
 function kartenQuellen(){
   const neueste = listeNeueste();
-  const eigene = listenAlle().map(l => ({
+  const eigene = listenAktiv().map(l => ({
     wert: LISTEN_ZEICHEN + l.name,
     name: l.name,
     anzahl: (l.woerter || []).length,
@@ -22326,6 +22352,26 @@ function listenAlle(){
 function listeFinden(name){
   return listenAlle().find(l => l.name === name) || null;
 }
+/* v96.2 - Archiv: archivierte Listen bleiben gespeichert, stehen aber
+   nicht mehr in Auswahlen, Plaenen und "Zuletzt bearbeitet". */
+function listenAktiv(){
+  return listenAlle().filter(l => !l.archiv);
+}
+function listeArchivieren(name, rein){
+  const l = listeFinden(name);
+  if(!l) return;
+  if(rein) l.archiv = true; else delete l.archiv;
+  if(rein && state.category === LISTEN_ZEICHEN + name) state.category = "Alle";
+  if(rein && state.zielListe === name) state.zielListe = "";
+  saveProgress(); syncToCloud();
+}
+function listeLoeschen(name){
+  const i = listenAlle().findIndex(l => l.name === name);
+  if(i >= 0) listenAlle().splice(i, 1);
+  if(state.category === LISTEN_ZEICHEN + name) state.category = "Alle";
+  if(state.zielListe === name) state.zielListe = "";
+  saveProgress(); syncToCloud();
+}
 
 /* Eine Liste anlegen oder ueberschreiben - und dabei festhalten, WANN.
 
@@ -22495,7 +22541,7 @@ function listeTauschBeispiel(name){
 }
 
 function listeNeueste(){
-  const alle = listenAlle();
+  const alle = listenAktiv();
   if(!alle.length) return null;
   const mit = alle.filter(l => typeof l.zuletzt === "number");
   /* ">=", nicht ">": Date.now() loest in Millisekunden auf, und zwei
@@ -22645,7 +22691,7 @@ function paketAuswahlHtml(){
   const eigenes = alle.find(p => p.name === CUSTOM_CATEGORY_NAME) || null;
   const pakete  = alle.filter(p => p.name !== CUSTOM_CATEGORY_NAME)
                       .filter(p => !q || suchNormal(p.name).indexOf(q) >= 0);
-  const listen  = listenAlle().filter(l => !q || suchNormal(l.name).indexOf(q) >= 0);
+  const listen  = listenAktiv().filter(l => !q || suchNormal(l.name).indexOf(q) >= 0);
   /* Die zuletzt hochgeladene oder gebaute Liste - die sucht man nach
      dem Anlegen als erstes, und genau dann steht sie irgendwo
      zwischen zwanzig Kacheln. */
@@ -23258,15 +23304,14 @@ function listeAutoName(){
   return name;
 }
 function listenNachZeit(){
-  return listenAlle().slice().sort((a, b) => (b.zuletzt || 0) - (a.zuletzt || 0));
+  return listenAktiv().slice().sort((a, b) => (b.zuletzt || 0) - (a.zuletzt || 0));
 }
 /* Das Ziel fuer neue Woerter: gewaehlte Liste, sonst die zuletzt
    bearbeitete. Gibt es keine, wird beim ersten Speichern eine angelegt. */
 function zielListeName(){
   if(state.zielListe === "__neu__") return "";
   if(state.zielListe && listeFinden(state.zielListe)) return state.zielListe;
-  const z = listeNeueste();
-  return z ? z.name : "";
+  return "";
 }
 function zielListeSichern(){
   let name = zielListeName();
@@ -23339,55 +23384,97 @@ function paareSpeichern(paare, geprueft, unklar){
 /* --- "Meine Listen": der eine Ort ------------------------------------ */
 function renderCustomVocab(){
   const listen  = listenNachZeit();
+  const archiv  = listenAlle().filter(l => l.archiv).sort((a, b) => (b.zuletzt || 0) - (a.zuletzt || 0));
   const eigene  = eigeneEindeutig();
   const zuletzt = listen[0] || null;
-  const zeile = (wert, ic, name, anzahl)=>`
+  const IC_KORB = `<svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 13h10l1-13M10 11v5.5M14 11v5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const IC_ORDNER = `<svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h6.5l2 2H21v11H3zM12 11.5v5M9.5 14l2.5 2.5 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const IC_HOLEN = `<svg class="lc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h6.5l2 2H21v11H3zM12 16.5v-5M9.5 14l2.5-2.5 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const anzahlText = (n)=> n + " " + (n === 1 ? "Wort" : "Wörter");
+  const oeffnenKnopf = (wert, ic, name, anzahl)=>`
     <button type="button" class="ml-zeile" data-ml-oeffnen="${escapeHtml(wert)}">
       <span class="ml-ic" aria-hidden="true">${ic}</span>
       <span class="ml-n">${escapeHtml(name)}</span>
-      <span class="ml-z">${anzahl} ${anzahl === 1 ? "Wort" : "Wörter"}</span>
-      <span class="ml-pfeil" aria-hidden="true">›</span>
+      <span class="ml-z">${anzahlText(anzahl)}</span>
     </button>`;
+  const listenReihe = (l, imArchiv)=>`
+    <div class="ml-reihe">
+      ${oeffnenKnopf(LISTEN_ZEICHEN + l.name, imArchiv ? "📁" : "⭐", l.name, (l.woerter || []).length)}
+      <button type="button" class="ml-aktion" data-ml-archiv="${escapeHtml(l.name)}" data-rein="${imArchiv ? "0" : "1"}"
+              aria-label="${imArchiv ? "Aus dem Archiv holen" : "Archivieren"}: ${escapeHtml(l.name)}"
+              title="${imArchiv ? "Aus dem Archiv holen" : "Archivieren"}">${imArchiv ? IC_HOLEN : IC_ORDNER}</button>
+      <button type="button" class="ml-aktion ml-weg" data-ml-weg="${escapeHtml(l.name)}"
+              aria-label="Löschen: ${escapeHtml(l.name)}" title="Löschen">${IC_KORB}</button>
+    </div>`;
 
   app.innerHTML = `
     ${renderHeader("Meine Listen", true)}
+
+    <button class="btn ml-dazu" id="ml-dazu">＋ Neue Liste anlegen</button>
 
     ${zuletzt ? `
     <div class="panel ml-zuletzt">
       <p class="ml-kopf">Zuletzt bearbeitet</p>
       <p class="ml-titel">${escapeHtml(zuletzt.name)}</p>
-      <p class="muted" style="margin:0 0 12px;">${(zuletzt.woerter || []).length} ${(zuletzt.woerter || []).length === 1 ? "Wort" : "Wörter"}</p>
+      <p class="muted" style="margin:0 0 12px;">${anzahlText((zuletzt.woerter || []).length)}</p>
       <div class="row" style="gap:8px;">
         <button class="btn secondary col einzeilig" id="ml-ueben">▶ Jetzt üben</button>
         <button class="btn neutral col einzeilig" id="ml-zuletzt-oeffnen">Ansehen</button>
       </div>
-    </div>` : `
+    </div>` : (archiv.length ? "" : `
     <div class="panel">
       <p class="ml-titel">Noch keine eigene Liste</p>
       <p class="muted" style="margin:0;">Trag die Vokabeln aus deinem Buch ein &ndash; sie landen in
         einer Liste, die du hier wiederfindest und sofort üben kannst.</p>
-    </div>`}
+    </div>`)}
 
-    <button class="btn ml-dazu" id="ml-dazu">＋ Wörter hinzufügen</button>
-
-    ${(listen.length || eigene.length) ? `
+    ${(listen.length || eigene.length || archiv.length) ? `
     <div class="panel">
-      <p class="ml-kopf">Alle Listen</p>
+      <p class="ml-kopf">Meine Listen${listen.length ? " (" + listen.length + ")" : ""}</p>
       <div class="ml-liste">
-        ${listen.map(l => zeile(LISTEN_ZEICHEN + l.name, "⭐", l.name, (l.woerter || []).length)).join("")}
-        ${eigene.length ? zeile(CUSTOM_CATEGORY_NAME, "✏️", "Alle meine Wörter", eigene.length) : ""}
+        ${listen.map(l => listenReihe(l, false)).join("") || `<p class="muted" style="margin:4px 0;">Alle Listen liegen im Archiv.</p>`}
+        ${eigene.length ? `<div class="ml-reihe">${oeffnenKnopf(CUSTOM_CATEGORY_NAME, "✏️", "Alle meine Wörter", eigene.length)}</div>` : ""}
       </div>
+
+      ${archiv.length ? `
+      <details class="ml-archiv" ${state.mlArchivOffen ? "open" : ""}>
+        <summary><span class="ml-archiv-ic" aria-hidden="true">📁</span> Archiv (${archiv.length})</summary>
+        <div class="ml-liste">
+          ${archiv.map(l => listenReihe(l, true)).join("")}
+        </div>
+      </details>` : ""}
+
+      <p class="ml-hinweis">${IC_ORDNER}<span><strong>Archivieren</strong> legt eine Liste beiseite &ndash; im Archiv kannst du sie jederzeit öffnen oder zurückholen.</span></p>
+      <p class="ml-hinweis">${IC_KORB}<span><strong>Löschen</strong> entfernt nur die Liste &ndash; die Vokabeln selbst werden dabei nicht gelöscht. Deine eingetragenen Wörter findest du weiter unter „Alle meine Wörter“.</span></p>
     </div>` : ""}
 
     <button class="btn neutral" id="back-btn">✕ Zurück</button>
   `;
 
   const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
-  an('ml-dazu', ()=>{ state.zielListe = ""; state.einfVorschau = null; state.screen = "wortedazu"; render(); });
+  an('ml-dazu', ()=>{ state.zielListe = "__neu__"; state.neuListeName = ""; state.einfText = ""; state.einfVorschau = null; state.screen = "wortedazu"; render(); });
   an('ml-zuletzt-oeffnen', ()=>{ if(zuletzt) listeOeffnen(LISTEN_ZEICHEN + zuletzt.name); });
   an('ml-ueben', ()=>{ if(zuletzt) listeJetztUeben(LISTEN_ZEICHEN + zuletzt.name); });
   document.querySelectorAll('[data-ml-oeffnen]').forEach(el=>{
     el.addEventListener('click', ()=> listeOeffnen(el.dataset.mlOeffnen));
+  });
+  const det = app.querySelector('.ml-archiv');
+  if(det) det.addEventListener('toggle', ()=>{ state.mlArchivOffen = det.open; });
+  document.querySelectorAll('[data-ml-archiv]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const name = el.dataset.mlArchiv, rein = el.dataset.rein === "1";
+      listeArchivieren(name, rein);
+      render();
+      showGoodToast('<span class="item-pop">📁</span> ' + escapeHtml(name)
+        + (rein ? ' liegt jetzt im Archiv.' : ' ist wieder bei deinen Listen.'));
+    });
+  });
+  document.querySelectorAll('[data-ml-weg]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const name = el.dataset.mlWeg;
+      showConfirmModal('Liste „' + name + '“ löschen? Nur die Liste verschwindet – die Vokabeln selbst werden nicht gelöscht.',
+        ()=>{ listeLoeschen(name); render(); });
+    });
   });
   document.getElementById('back-btn').addEventListener('click', ()=>{ state.screen = "start"; render(); });
 }
@@ -23420,25 +23507,31 @@ function renderWorteDazu(){
 
   const zaehle = (st)=> vors ? vors.filter(z => z.status === st).length : 0;
 
-  app.innerHTML = `
-    ${renderHeader("Wörter hinzufügen", true)}
-
-    <div class="panel wd-ziel">
-      <label class="wd-label" for="wd-ziel-wahl">Für welche Liste?</label>
-      <select id="wd-ziel-wahl" class="wd-select">
-        ${listen.map(x => `<option value="${escapeHtml(x.name)}" ${x.name === ziel ? "selected" : ""}>${escapeHtml(x.name)} (${(x.woerter || []).length})</option>`).join("")}
-        <option value="__neu__" ${!ziel ? "selected" : ""}>＋ Neue Liste …</option>
-      </select>
+  const zielHtml = `
+    <div class="wd-ziel">
       ${!ziel ? `
-        <label class="wd-label" for="wd-neu-name" style="margin-top:10px;">Name der neuen Liste</label>
+        <label class="wd-label" for="wd-neu-name">Name der neuen Liste</label>
         <input type="text" id="wd-neu-name" maxlength="30" value="${escapeHtml(state.neuListeName || "Green Line, Seite ")}"
                placeholder="z. B. Green Line, Seite 42" autocomplete="off">
-        <p class="muted wd-hilfe">Ohne Seitenzahl heißt sie „${escapeHtml(listeAutoName())}“ – umbenennen geht später.</p>` : ""}
-    </div>
+        <p class="muted wd-hilfe">Ohne Seitenzahl heißt sie „${escapeHtml(listeAutoName())}“ – umbenennen geht später.</p>` : `
+        <p class="wd-zu" style="margin:0;">Kommt in die Liste <strong>${escapeHtml(ziel)}</strong></p>`}
+      ${listen.length ? `
+      <label class="wd-label wd-ziel-oder" for="wd-ziel-wahl">${ziel ? "Andere Liste wählen" : "Oder zu einer vorhandenen Liste hinzufügen"}</label>
+      <select id="wd-ziel-wahl" class="wd-select">
+        <option value="__neu__" ${!ziel ? "selected" : ""}>＋ Neue Liste</option>
+        ${listen.map(x => `<option value="${escapeHtml(x.name)}" ${x.name === ziel ? "selected" : ""}>${escapeHtml(x.name)} (${(x.woerter || []).length})</option>`).join("")}
+        ${ziel && !listen.some(x => x.name === ziel) ? `<option value="${escapeHtml(ziel)}" selected>${escapeHtml(ziel)} (Archiv)</option>` : ""}
+      </select>` : ""}
+    </div>`;
+  const speichernText = ziel ? "In diese Liste speichern" : "Als Liste speichern";
+
+  app.innerHTML = `
+    ${renderHeader("Wörter hinzufügen", true)}
 
     ${vors ? `
     <div class="panel">
       <p class="ml-titel">Bitte kurz prüfen</p>
+      ${zielHtml}
       <p class="muted" style="margin:0 0 10px;">${vors.length} Zeilen gelesen:
         <strong>${zaehle("neu") + zaehle("sammlung")}</strong> kommen in die Liste${zaehle("inliste") ? `, <strong>${zaehle("inliste")}</strong> sind schon drin` : ""}${zaehle("unklar") ? `, <strong>${zaehle("unklar")}</strong> unklar` : ""}.</p>
       <div class="wd-vorschau">
@@ -23451,11 +23544,36 @@ function renderWorteDazu(){
                                        inliste: "schon in dieser Liste", unklar: "unklar – bitte beide Felder füllen" }[z.status]}</span>
           </div>`).join("")}
       </div>
-      <button class="btn" id="wd-vz-speichern" style="margin-top:12px;">✓ ${zaehle("neu") + zaehle("sammlung")} Wörter speichern</button>
+      <button class="btn" id="wd-vz-speichern" style="margin-top:12px;">✓ ${zaehle("neu") + zaehle("sammlung") + zaehle("inliste")} Wörter ${ziel ? "speichern" : "als Liste speichern"}</button>
       <button class="btn neutral" id="wd-vz-abbrechen" style="margin-top:8px;">Zurück zum Text</button>
     </div>` : `
     <div class="panel">
-      <p class="ml-titel">Ein Wort eintragen</p>
+      <p class="ml-titel">Neue Liste aus dem Buch</p>
+      <div class="gpt-weg">
+        <p class="gpt-kopf">Am einfachsten: Liste mit ChatGPT erstellen</p>
+        <ol class="gpt-schritte">
+          <li><strong>Buchseite fotografieren</strong> &ndash; die Vokabelseite im Buch oder Heft.</li>
+          <li><strong>Foto bei ChatGPT hochladen</strong> und diesen Auftrag dazu einfügen:</li>
+        </ol>
+        <div class="xl-code" id="gpt-prompt">Lies alle Vokabeln auf dem Foto. Gib sie mir als Liste zurück, eine Vokabel pro Zeile, immer im Format: Deutsch = Englisch. Ohne Lautschrift, ohne Nummerierung, ohne Überschrift, ohne Erklärungen. Schreibe die Wörter genau so ab, wie sie dastehen. Gib nur die Liste in einem Codeblock aus.</div>
+        <div class="gpt-knoepfe">
+          <button type="button" class="btn secondary small" id="gpt-kopieren">Auftrag kopieren</button>
+          <a class="btn neutral small" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT öffnen</a>
+        </div>
+        <ol class="gpt-schritte" start="3">
+          <li><strong>Antwort kopieren</strong>, unten einfügen und als Liste speichern.</li>
+        </ol>
+      </div>
+      <p class="muted" style="margin:12px 0 8px;">Oder selbst schreiben: eine Zeile pro Wort, <em>Deutsch = Englisch</em>.</p>
+      <textarea id="wd-viele" rows="5" placeholder="Schule = school&#10;Baum = tree&#10;gehen = go">${escapeHtml(state.einfText || "")}</textarea>
+      <button type="button" class="btn neutral small" id="wd-einfuegen" style="margin-top:8px;">Aus der Zwischenablage einfügen</button>
+      ${zielHtml}
+      <button class="btn" id="wd-pruefen" style="margin-top:12px;">✓ ${speichernText}</button>
+      <p id="wd-viele-status" class="muted" role="status" aria-live="polite" style="margin:8px 0 0;"></p>
+    </div>
+
+    <div class="panel">
+      <p class="ml-titel">Einzelne Wörter eintippen</p>
       <p class="wd-zu">Zu: <strong>${ziel ? escapeHtml(ziel) : "neue Liste"}</strong></p>
       <label class="wd-label" for="wd-en">Englisch</label>
       <input type="text" id="wd-en" value="${escapeHtml(enEing)}" placeholder="z. B. tree" autocomplete="off" autocapitalize="off" spellcheck="false">
@@ -23470,29 +23588,6 @@ function renderWorteDazu(){
       <button class="btn" id="wd-einzeln" style="margin-top:12px;">＋ Hinzufügen</button>
       <p id="wd-status" class="muted" role="status" aria-live="polite" style="margin:8px 0 0;"></p>
       ${zuletztDazu ? `<p class="wd-label" style="margin-top:12px;">Zuletzt in dieser Liste</p><div class="wd-chips">${zuletztDazu}</div>` : ""}
-    </div>
-
-    <div class="panel">
-      <p class="ml-titel">Mehrere auf einmal</p>
-      <div class="gpt-weg">
-        <p class="gpt-kopf">Am einfachsten: Liste mit ChatGPT erstellen</p>
-        <ol class="gpt-schritte">
-          <li><strong>Buchseite fotografieren</strong> &ndash; die Vokabelseite im Buch oder Heft.</li>
-          <li><strong>Foto bei ChatGPT hochladen</strong> und diesen Auftrag dazu einfügen:</li>
-        </ol>
-        <div class="xl-code" id="gpt-prompt">Lies alle Vokabeln auf dem Foto. Gib sie mir als Liste zurück, eine Vokabel pro Zeile, immer im Format: Deutsch = Englisch. Ohne Lautschrift, ohne Nummerierung, ohne Überschrift, ohne Erklärungen. Schreibe die Wörter genau so ab, wie sie dastehen. Gib nur die Liste in einem Codeblock aus.</div>
-        <div class="gpt-knoepfe">
-          <button type="button" class="btn secondary small" id="gpt-kopieren">Auftrag kopieren</button>
-          <a class="btn neutral small" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT öffnen</a>
-        </div>
-        <ol class="gpt-schritte" start="3">
-          <li><strong>Antwort kopieren</strong> und unten einfügen, dann auf <em>Prüfen</em> tippen.</li>
-        </ol>
-      </div>
-      <p class="muted" style="margin:12px 0 8px;">Oder selbst schreiben: eine Zeile pro Wort, <em>Deutsch = Englisch</em>.</p>
-      <textarea id="wd-viele" rows="5" placeholder="Schule = school&#10;Baum = tree&#10;gehen = go">${escapeHtml(state.einfText || "")}</textarea>
-      <button type="button" class="btn neutral small" id="wd-einfuegen" style="margin-top:8px;">Aus der Zwischenablage einfügen</button>
-      <button class="btn secondary" id="wd-pruefen" style="margin-top:10px;">Prüfen</button>
     </div>
 
     <details class="panel wd-weitere" ${state.wdWeitere ? "open" : ""}>
@@ -23605,10 +23700,24 @@ function renderWorteDazu(){
   an('wd-pruefen', ()=>{
     const text = (document.getElementById('wd-viele') || {}).value || "";
     state.einfText = text;
+    const nf = document.getElementById('wd-neu-name');
+    if(nf) state.neuListeName = nf.value;
     const zeilen = text.split("\n").map(zeileLesen).filter(Boolean);
-    if(!zeilen.length){ return; }
+    if(!zeilen.length){
+      const st = document.getElementById('wd-viele-status');
+      if(st) st.textContent = "Bitte zuerst die Wörter oben einfügen.";
+      const f = document.getElementById('wd-viele'); if(f) f.focus();
+      return;
+    }
     const liste = ((listeFinden(zielListeName()) || {}).woerter || []);
     zeilen.forEach(z => z.status = vorschauStatus(z, liste));
+    /* v96.2 - Ist alles klar lesbar, wird sofort gespeichert. Nur bei
+       unklaren Zeilen kommt die Pruef-Ansicht dazwischen. */
+    if(!zeilen.some(z => z.status === "unklar")){
+      state.einfText = "";
+      paareSpeichern(zeilen, zeilen.length, 0);
+      return;
+    }
     state.einfVorschau = zeilen;
     render();
   });
@@ -23626,6 +23735,8 @@ function renderWorteDazu(){
     render(); }));
   an('wd-vz-abbrechen', ()=>{ state.einfVorschau = null; render(); });
   an('wd-vz-speichern', ()=>{
+    const nf = document.getElementById('wd-neu-name');
+    if(nf) state.neuListeName = nf.value;
     const v = state.einfVorschau || [];
     const gut = v.filter(z => z.status === "neu" || z.status === "sammlung");
     const schon = v.filter(z => z.status === "inliste");
