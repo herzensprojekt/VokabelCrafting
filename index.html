@@ -4491,6 +4491,42 @@ body .wb-box input[type=text]{ width:100%; box-sizing:border-box; font-size:17px
 body .wb-hinweis{ font-size:13px; color:var(--tinte-hell); margin:10px 0 0; }
 body .wb-fehler{ font-size:13px; color:#a23b2a; margin:6px 0 0; min-height:0; }
 body .wb-fehler:empty{ display:none; }
+
+/* v96.6 - Blockspass */
+.bs-kruemel, .bs-konfetti{ position:fixed; z-index:9000; pointer-events:none; border-radius:1px;
+  box-shadow:inset -1px -1px 0 rgba(0,0,0,.18), inset 1px 1px 0 rgba(255,255,255,.35); }
+.bs-kruemel{ animation:bs-kruemel 650ms cubic-bezier(.2,.7,.4,1) forwards; }
+@keyframes bs-kruemel{
+  0%{ transform:translate(0,0) rotate(0); opacity:1; }
+  45%{ transform:translate(calc(var(--dx) * .6), var(--dy)) rotate(calc(var(--dr) * .5)); opacity:1; }
+  100%{ transform:translate(var(--dx), calc(var(--dy) + 90px)) rotate(var(--dr)); opacity:0; }
+}
+.bs-konfetti{ top:-16px; animation:bs-fallen 2s linear forwards; opacity:0; }
+@keyframes bs-fallen{
+  0%{ transform:translate(0,0) rotate(0); opacity:1; }
+  85%{ opacity:1; }
+  100%{ transform:translate(var(--dx), 105vh) rotate(var(--dr)); opacity:0; }
+}
+.bs-buehne{ position:fixed; top:0; bottom:0; left:0; width:100%; overflow:hidden; pointer-events:none; z-index:8000; }
+.bs-klotzi{ position:absolute; left:0; z-index:8000; pointer-events:none; display:flex; align-items:flex-end; gap:8px;
+  transform:translateX(-90px); }
+.bs-klotzi-koerper{ width:52px; height:52px; filter:drop-shadow(0 3px 2px rgba(51,40,28,.22)); transform-origin:50% 100%; }
+.bs-klotzi-koerper svg{ display:block; }
+.bs-blase{ margin-bottom:30px; background:var(--birke, #fffdf9); color:var(--tinte, #33281c); border:1.5px solid var(--birke-rand, #ece2d2);
+  border-radius:12px; padding:7px 11px; font-size:14px; font-weight:700; line-height:1.3; max-width:190px;
+  box-shadow:0 4px 12px rgba(51,40,28,.12); opacity:0; transform:translateY(6px) scale(.92);
+  transition:opacity .2s ease, transform .2s ease; }
+.bs-blase.da{ opacity:1; transform:none; }
+.bs-turm{ display:flex; flex-direction:column-reverse; align-items:center; gap:2px; margin:0 0 12px; }
+.bs-turm-reihe{ display:flex; gap:2px; }
+.bs-turm-block{ width:16px; height:16px; border-radius:2px; opacity:0;
+  box-shadow:inset -2px -2px 0 rgba(0,0,0,.16), inset 2px 2px 0 rgba(255,255,255,.35);
+  animation:bs-block-fallen 420ms cubic-bezier(.3,1.4,.5,1) forwards; }
+@keyframes bs-block-fallen{ 0%{ transform:translateY(-34px); opacity:0; } 60%{ opacity:1; } 100%{ transform:none; opacity:1; } }
+@media (prefers-reduced-motion: reduce){
+  .bs-turm-block{ animation:none; opacity:1; }
+  .bs-kruemel, .bs-konfetti, .bs-buehne{ display:none; }
+}
 </style>
 </head>
 <body>
@@ -5006,7 +5042,7 @@ body .wb-fehler:empty{ display:none; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "96.5 – Vokabeln verwalten";
+const APP_VERSION = "96.6 – Klotzi und Block-Spaß";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -13328,7 +13364,7 @@ function render(){
      vgBandVerdrahten, planBandZeigen, fensterHoeheSetzen, lingoraKnopfAuffrischen,
      lingoraZurueckVerdrahten, lingoraStartVerdrahten, heuteOverlayVielleicht,
      lingoraChatZeigen, installBannerAuffrischen, hoerKnoepfeVerdrahten,
-     floodBuehneAnpassen].forEach(fn=>{
+     floodBuehneAnpassen, blockSpassNachZeichnen].forEach(fn=>{
       try{ if(typeof fn === "function") fn(); }
       catch(e){ try{ console.warn("nach dem Zeichnen:", e); }catch(x){} }
     });
@@ -16199,6 +16235,7 @@ function handleVocabFloodAnswer(btn, choice, word){
     state.sessionCoins += 5;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
+    bsRichtig();
     state.grammarCorrectCount += 1;
     setFloodPos(state.floodHard ? state.floodPos + 1 : state.grammarCorrectCount);
     showGoodToast('<span class="item-pop">🪙</span> Richtig! Eine Stufe höher.');
@@ -16558,6 +16595,7 @@ function hangmanGewonnen(){
   state.sessionCoins += HANGMAN_MUENZEN;
   state.streak += 1;
   state.bestStreak = Math.max(state.bestStreak, state.streak);
+    bsRichtig();
   state.sessionLog.push({ prompt: word.de, correct: cleanEn(word.en),
                           result: "correct", tipp: mitTipp, word: word });
   if(!mitTipp) wortGelernt(word, "correct");
@@ -17469,6 +17507,189 @@ function cancelGame(){
   });
 }
 
+/* =====================================================================
+   v96.6 - BLOCKSPASS: kleine, witzige Block-Animationen
+
+   Klotzi ist ein eigener Block mit Augen - keine Figur aus dem Spiel.
+   Er bewegt sich NUR ALS GANZES (huepfen, reinschauen, rausgehen); er
+   wird nie verbogen oder gestaucht. Dazu Block-Kruemel bei richtigen
+   Antworten und Block-Konfetti am Rundenende.
+
+   Alles schweigt, wenn das Geraet "weniger Bewegung" wuenscht.
+===================================================================== */
+const KLOTZI_SVG = '<svg viewBox="0 0 16 16" width="52" height="52" shape-rendering="crispEdges" aria-hidden="true">'
+  + '<rect x="0" y="0" width="16" height="16" fill="#eab54a"/>'
+  + '<rect x="0" y="0" width="16" height="4" fill="#f5d48a"/>'
+  + '<rect x="1" y="1" width="3" height="1" fill="#fbe7b8"/>'
+  + '<rect x="15" y="0" width="1" height="16" fill="#c79630"/>'
+  + '<rect x="0" y="15" width="16" height="1" fill="#c79630"/>'
+  + '<rect x="0" y="4" width="16" height="1" fill="#d9a63e"/>'
+  + '<rect x="2" y="12" width="2" height="1" fill="#d9a63e"/><rect x="11" y="5" width="3" height="1" fill="#d9a63e"/>'
+  + '<rect x="4" y="7" width="2" height="3" fill="#33281c"/><rect x="10" y="7" width="2" height="3" fill="#33281c"/>'
+  + '<rect x="4" y="7" width="1" height="1" fill="#fff"/><rect x="10" y="7" width="1" height="1" fill="#fff"/>'
+  + '<rect x="7" y="11" width="2" height="1" fill="#33281c"/>'
+  + '<rect x="2" y="10" width="2" height="1" fill="#e79a72" opacity=".7"/><rect x="12" y="10" width="2" height="1" fill="#e79a72" opacity=".7"/>'
+  + '</svg>';
+
+const BS_FARBEN = ["#eab54a", "#c79630", "#b98a5a", "#d9cfc0", "#8a7a66", "#f5d48a"];
+let bsLetzterTipp = null;
+let bsKlotziLaeuft = false;
+let bsStartGezeigt = false;
+
+function bsRuhig(){
+  try{ return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch(e){ return false; }
+}
+
+try{
+  document.addEventListener('pointerdown', e=>{
+    bsLetzterTipp = { x: e.clientX, y: e.clientY, t: Date.now() };
+  }, { capture: true, passive: true });
+}catch(e){}
+
+function bsZufall(a, b){ return a + Math.random() * (b - a); }
+
+/* Woher kommen die Kruemel? Vom Finger, wenn er gerade getippt hat -
+   sonst (Enter beim Tippen) aus der Mitte der Wortkarte. */
+function bsUrsprung(){
+  if(bsLetzterTipp && Date.now() - bsLetzterTipp.t < 1500) return bsLetzterTipp;
+  const k = document.querySelector('.word-card, #word-card, .panel');
+  if(k){ const r = k.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+  return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+}
+
+function bsKruemel(x, y, anzahl){
+  if(bsRuhig()) return;
+  for(let i = 0; i < anzahl; i++){
+    const k = document.createElement('div');
+    k.className = 'bs-kruemel';
+    const g = Math.round(bsZufall(6, 11));
+    k.style.cssText = 'left:' + (x - g / 2) + 'px;top:' + (y - g / 2) + 'px;width:' + g + 'px;height:' + g + 'px;background:'
+      + BS_FARBEN[i % BS_FARBEN.length] + ';--dx:' + bsZufall(-70, 70).toFixed(0) + 'px;--dy:' + bsZufall(-80, -30).toFixed(0)
+      + 'px;--dr:' + bsZufall(-200, 200).toFixed(0) + 'deg;animation-duration:' + bsZufall(560, 760).toFixed(0) + 'ms';
+    document.body.appendChild(k);
+    setTimeout(()=>{ if(k.parentNode) k.parentNode.removeChild(k); }, 900);
+  }
+}
+
+function bsKonfetti(){
+  if(bsRuhig()) return;
+  // Nur ueber der App-Spalte, nicht ueber dem leeren Rand breiter Bildschirme.
+  const spalte = document.getElementById('app');
+  const r = spalte ? spalte.getBoundingClientRect() : null;
+  const links = r && r.width ? r.left : 0;
+  const breite = r && r.width ? r.width : window.innerWidth;
+  for(let i = 0; i < 28; i++){
+    const k = document.createElement('div');
+    k.className = 'bs-konfetti';
+    const g = Math.round(bsZufall(7, 12));
+    const dauer = bsZufall(1500, 2600);
+    k.style.cssText = 'left:' + (links + bsZufall(0, breite - g)).toFixed(0) + 'px;width:' + g + 'px;height:' + g + 'px;background:'
+      + BS_FARBEN[i % BS_FARBEN.length] + ';--dr:' + bsZufall(-360, 360).toFixed(0) + 'deg;--dx:' + bsZufall(-40, 40).toFixed(0)
+      + 'px;animation-duration:' + dauer.toFixed(0) + 'ms;animation-delay:' + bsZufall(0, 500).toFixed(0) + 'ms';
+    document.body.appendChild(k);
+    setTimeout(()=>{ if(k.parentNode) k.parentNode.removeChild(k); }, dauer + 700);
+  }
+}
+
+/* Klotzi tritt auf: huepft von links herein, sagt etwas, huepft wieder
+   raus. Nur ganze Bewegungen - verschieben und leicht kippen. */
+function bsKlotzi(text, weit){
+  if(bsRuhig() || bsKlotziLaeuft) return;
+  if(document.querySelector('.modal-overlay')) return;
+  bsKlotziLaeuft = true;
+  const nav = document.querySelector('.nav-leiste');
+  let unten = 14;
+  if(nav){ const r = nav.getBoundingClientRect(); if(r.height && r.top < window.innerHeight) unten = window.innerHeight - r.top + 10; }
+  const el = document.createElement('div');
+  el.className = 'bs-klotzi';
+  el.setAttribute('aria-hidden', 'true');
+  el.style.bottom = unten + 'px';
+  /* Auf breiten Bildschirmen steht die App als Spalte in der Mitte.
+     Eine unsichtbare Buehne in Spaltenbreite schneidet ab - so kommt
+     Klotzi vom Rand der App herein, nicht aus dem leeren Fensterrand. */
+  const buehne = document.createElement('div');
+  buehne.className = 'bs-buehne';
+  const spalte = document.getElementById('app');
+  if(spalte){ const r = spalte.getBoundingClientRect(); if(r.width){ buehne.style.left = Math.round(r.left) + 'px'; buehne.style.width = Math.round(r.width) + 'px'; } }
+  buehne.appendChild(el);
+  el.innerHTML = '<div class="bs-klotzi-koerper">' + KLOTZI_SVG + '</div>'
+    + '<div class="bs-blase">' + escapeHtml(text) + '</div>';
+  document.body.appendChild(buehne);
+  const koerper = el.querySelector('.bs-klotzi-koerper');
+  const blase = el.querySelector('.bs-blase');
+  const ziel = weit ? Math.min(window.innerWidth * 0.32, 150) : 16;
+  const fertig = ()=>{ if(buehne.parentNode) buehne.parentNode.removeChild(buehne); bsKlotziLaeuft = false; };
+  try{
+    const huepfen = (mal)=>koerper.animate([
+      { transform: 'translateY(0) rotate(0deg)' },
+      { transform: 'translateY(-18px) rotate(-7deg)', offset: 0.45 },
+      { transform: 'translateY(0) rotate(0deg)' }
+    ], { duration: 300, iterations: mal, easing: 'ease-in-out' });
+    const rein = el.animate([{ transform: 'translateX(-90px)' }, { transform: 'translateX(' + ziel + 'px)' }],
+      { duration: weit ? 900 : 600, easing: 'linear', fill: 'forwards' });
+    huepfen(weit ? 3 : 2);
+    rein.onfinish = ()=>{
+      blase.classList.add('da');
+      setTimeout(()=>{
+        blase.classList.remove('da');
+        const raus = el.animate([{ transform: 'translateX(' + ziel + 'px)' }, { transform: 'translateX(-90px)' }],
+          { duration: weit ? 800 : 550, easing: 'linear', fill: 'forwards' });
+        huepfen(weit ? 3 : 2);
+        raus.onfinish = fertig;
+      }, 2100);
+    };
+  }catch(e){ fertig(); }
+  setTimeout(fertig, 6000);   // falls eine Animation haengen bleibt
+}
+
+const BS_SERIE = {
+  5:  "5 am Stück – blockstark!",
+  10: "10 am Stück! Ich bin platt.",
+  15: "15! Hast du heimlich geübt?",
+  20: "20?! Ich hol mal Verstärkung.",
+  30: "30! Ich bau dir ein Denkmal."
+};
+const BS_START = [
+  "Psst … nur 1 Minute?",
+  "Hallo! Ich bin Klotzi. Ich wohn hier.",
+  "Heute schon ein Wort abgebaut?",
+  "Ich hab Langeweile. Üben wir?",
+  "Drei Wörter. Nur drei. Versprochen."
+];
+const BS_PAUSE = ["Ich stapel schon mal.", "Weiter so – der Turm wächst!", "Kurz verschnaufen, dann weiter."];
+const BS_ENDE = ["Feierabend! Gut gebaut.", "Geschafft! Ich bin stolz auf dich.", "Runde fertig – Block für Block!"];
+
+/* Wird bei jeder richtigen Antwort gerufen (alle Spielarten). */
+function bsRichtig(){
+  try{
+    const o = bsUrsprung();
+    bsKruemel(o.x, o.y, 12);
+    if(BS_SERIE[state.streak]) setTimeout(()=>bsKlotzi(BS_SERIE[state.streak], true), 350);
+  }catch(e){}
+}
+
+/* Nach jedem Zeichnen: Start-Gruss einmal pro Besuch, Pause, Rundenende. */
+function blockSpassNachZeichnen(){
+  if(bsRuhig()) return;
+  /* Nur auf der echten Startseite - die Anmeldeseite heisst intern
+     auch "start", hat aber keine Navileiste. */
+  const echterStart = ()=> state.screen === "start" && !document.querySelector('.login-topbar')
+    && document.body.classList.contains('hat-navi');
+  if(echterStart() && !bsStartGezeigt){
+    bsStartGezeigt = true;
+    setTimeout(()=>{ if(echterStart()) bsKlotzi(pickRandom(BS_START), false); }, 2500);
+  }
+  if(state.screen === "milestone"){
+    setTimeout(()=>{ if(state.screen === "milestone") bsKlotzi(pickRandom(BS_PAUSE), true); }, 900);
+  }
+  if(state.screen === "certificate" && state.bsFeier){
+    state.bsFeier = false;
+    bsKonfetti();
+    setTimeout(()=>{ if(state.screen === "certificate") bsKlotzi(pickRandom(BS_ENDE), true); }, 1200);
+  }
+}
+
 function advanceAfterAnswer(){
   state.currentIndex++;
   if(state.mode !== "challenge" && state.currentIndex < state.queue.length && state.currentIndex % 10 === 0){
@@ -17497,6 +17718,14 @@ function renderMilestone(){
     ${renderHeader("Zwischenstand", true)}
     ${playerBadgeHtml(true)}
     <div class="panel ms-panel center-text">
+      <div class="bs-turm" aria-hidden="true">${(()=>{
+        /* 10 Bloecke als kleine Pyramide 4-3-2-1, von unten nach oben gebaut */
+        let n = 0;
+        return [4, 3, 2, 1].map(breite=>`<div class="bs-turm-reihe">${Array.from({length: breite}, ()=>{
+          const i = n++;
+          return `<span class="bs-turm-block" style="animation-delay:${i * 110}ms;background:${BS_FARBEN[i % 3]}"></span>`;
+        }).join("")}</div>`).join("");
+      })()}</div>
       <p class="ms-kopf">${done} geschafft &ndash; weiter so!</p>
       <div class="ms-zahlen">
         <div class="ms-zahl"><strong>${done}</strong><span>geschafft</span></div>
@@ -17818,6 +18047,7 @@ function handleChallengeAnswer(btn, choice, word){
     state.sessionCoins += coins;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
+    bsRichtig();
     state.challengeVillainHP = Math.max(0, state.challengeVillainHP - 1);
     updateBattleHP('villain');
     showFeedback('good', `<span class="item-pop">⚡</span> Treffer! +${coins} Münzen.`);
@@ -17929,6 +18159,7 @@ function handleMcAnswer(btn, choice, word){
     state.sessionCoins += coins;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
+    bsRichtig();
     showFeedback('good', `<span class="item-pop">🪙</span> Richtig! +${coins} Münzen.`);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"correct", word});
     wortGelernt(word, "correct");
@@ -17964,6 +18195,7 @@ function handleTypedAnswer(value, word){
     state.sessionCoins += coins;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
+    bsRichtig();
     showFeedback('good', `<span class="item-pop">🪙</span> Richtig! +${coins} Münzen.`);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"correct", userInput:value, word});
     wortGelernt(word, "correct");
@@ -17972,6 +18204,7 @@ function handleTypedAnswer(value, word){
     state.sessionCoins += coins;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
+    bsRichtig();
     showFeedbackWithConfirm('almost', `<span class="item-pop">🪙</span> Fast richtig! +${coins} Münzen.`, evalResult.correction);
     state.sessionLog.push({prompt:ans.promptText, correct:ans.answerDisplay, result:"almost", userInput:value, word});
     wortGelernt(word, "almost");
@@ -18087,6 +18320,7 @@ function endSession(reason){
   muenzenAbrechnen("vocab");
   state.lifetimeBestStreak = Math.max(state.lifetimeBestStreak, state.bestStreak);
   state.lastReason = reason;
+  state.bsFeier = reason === "finished" && state.sessionLog.length > 0;
   state.sessionQuote = passenderSpruch(state.sessionLog);
   state.gradeWisdom = pickRandom(GRADE_WISDOM);
   // Nur der Vokabeltest gibt eine Note - und nur, wenn die Runde zu Ende
