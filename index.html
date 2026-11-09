@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LingoCrafter – Englisch-Vokabeln üben für Klasse 5 und 6 | kostenlos, ohne Werbung</title>
-<meta name="description" content="Kostenloser Vokabeltrainer für Englisch: Vokabeln und Grammatik für Klasse 5 und 6 üben – passend zu Green Line, im Minecraft-Look. Ohne Werbung, ohne Kosten, ohne E-Mail-Adresse.">
+<meta name="description" content="Kostenloser Vokabeltrainer für Englisch: Vokabeln und Grammatik für Klasse 5 und 6 üben – passend zum Englischunterricht, im Minecraft-Look. Ohne Werbung, ohne Kosten, ohne E-Mail-Adresse.">
 <link rel="canonical" href="https://lingocrafter.de/">
 
 <!-- Wie der Link in WhatsApp, Threema und sozialen Netzen aussieht.
@@ -14,13 +14,13 @@
 <meta property="og:locale" content="de_DE">
 <meta property="og:url" content="https://lingocrafter.de/">
 <meta property="og:title" content="LingoCrafter – Englisch-Vokabeln üben, kostenlos und ohne Werbung">
-<meta property="og:description" content="Vokabeln und Grammatik für Klasse 5 und 6 üben – passend zu Green Line, im Minecraft-Look. Ohne Werbung, ohne Kosten, ohne E-Mail-Adresse.">
+<meta property="og:description" content="Vokabeln und Grammatik für Klasse 5 und 6 üben – passend zum Englischunterricht, im Minecraft-Look. Ohne Werbung, ohne Kosten, ohne E-Mail-Adresse.">
 <meta property="og:image" content="https://lingocrafter.de/vorschau.png">
 <meta property="og:image:width" content="640">
 <meta property="og:image:height" content="447">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="LingoCrafter – Englisch-Vokabeln üben, kostenlos und ohne Werbung">
-<meta name="twitter:description" content="Vokabeln und Grammatik für Klasse 5 und 6 üben – passend zu Green Line, im Minecraft-Look.">
+<meta name="twitter:description" content="Vokabeln und Grammatik für Klasse 5 und 6 üben – passend zum Englischunterricht, im Minecraft-Look.">
 <meta name="twitter:image" content="https://lingocrafter.de/vorschau.png">
 <meta name="theme-color" content="#5b9c3f">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -42,7 +42,7 @@
   "inLanguage": "de",
   "isAccessibleForFree": true,
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-  "description": "Kostenloser Vokabeltrainer für Englisch: Vokabeln und Grammatik für Klasse 5 und 6 üben, passend zu Green Line. Im Minecraft-Look, ohne Werbung und ohne E-Mail-Adresse.",
+  "description": "Kostenloser Vokabeltrainer für Englisch: Vokabeln und Grammatik für Klasse 5 und 6 üben, passend zum Englischunterricht. Im Minecraft-Look, ohne Werbung und ohne E-Mail-Adresse.",
   "audience": { "@type": "EducationalAudience", "educationalRole": "student" },
   "teaches": ["Englische Vokabeln", "Englische Grammatik", "Aussprache"],
   "featureList": [
@@ -4447,6 +4447,23 @@ body .ml-hinweis .lc-ic{ flex:0 0 18px; width:18px; height:18px; margin-top:1px;
 body .ml-hinweis + .ml-hinweis{ margin-top:6px; }
 body .wd-ziel{ margin:12px 0 0; padding:12px; border-radius:14px; background:var(--hafer); }
 body .wd-ziel-oder{ margin-top:12px; }
+
+/* v96.3 - Woerter dazu: Ziel oben, drei Reiter, Speichern-Leiste */
+body .wd-ziel-name{ font-weight:700; font-size:17px; margin:2px 0 0; overflow-wrap:break-word; }
+body .wd-reiterleiste{ display:grid; grid-template-columns:repeat(3, 1fr); gap:4px; padding:4px;
+  margin:0 0 12px; border-radius:16px; background:var(--birke-rand); }
+body .wd-reiter{ min-height:44px; border:0; border-radius:12px; background:transparent; font-family:inherit;
+  font-size:15px; font-weight:700; color:var(--tinte-hell); cursor:pointer; }
+body .wd-reiter.an{ background:var(--birke); color:var(--tinte); box-shadow:0 2px 0 var(--honig-lippe); }
+body .wd-reiter:focus-visible{ outline:3px solid var(--lapis); outline-offset:1px; }
+body .ev-korb.ev-korb-fest{ position:sticky; bottom:96px; z-index:20; background:var(--birke);
+  border:1.5px solid var(--honig); box-shadow:0 6px 18px rgba(51,40,28,.16); flex-wrap:wrap; row-gap:6px; }
+body .ev-korb.ev-korb-fest .ev-korb-z{ color:var(--tinte); flex:1 1 auto; font-size:15px; }
+body .ev-korb.ev-korb-fest #ev-speichern{ order:3; flex:1 1 100%; width:100% !important; }
+body .ev-verwerfen{ background:none; border:0; font-family:inherit; font-size:14px; font-weight:600;
+  color:var(--tinte-hell); text-decoration:underline; min-height:44px; padding:0 4px; cursor:pointer; }
+body .pk-alle{ display:block; width:100%; min-height:44px; margin:0 0 8px; border:1.5px dashed var(--birke-rand);
+  border-radius:12px; background:var(--birke); font-family:inherit; font-weight:700; color:var(--lapis-lippe); cursor:pointer; }
 </style>
 </head>
 <body>
@@ -4485,7 +4502,7 @@ body .wd-ziel-oder{ margin-top:12px; }
       <li><strong>Karteikasten-Prinzip:</strong> Jedes Wort wandert je nach Erfolg in eine andere Box.
         Wörter, die wackeln, kommen häufiger dran – was sitzt, seltener.</li>
       <li><strong>Englische Grammatik</strong> Thema für Thema, nach Units sortiert und passend zu
-        <em>Green Line 1 und 2</em> – von den Zeitformen bis zur Wortstellung, mit Erklärung und Beispielen.</li>
+        <em>Klasse 5 und 6</em> – von den Zeitformen bis zur Wortstellung, mit Erklärung und Beispielen.</li>
       <li><strong>Eigene Vokabellisten:</strong> Wörter suchen und antippen, selbst eintippen,
         oder aus einer Excel-Tabelle einlesen.</li>
       <li><strong>Aussprache üben:</strong> Jedes englische Wort lässt sich anhören, und in der
@@ -4962,7 +4979,7 @@ body .wd-ziel-oder{ margin-top:12px; }
    VOKABEL-DATEN  (Vokabeln 7 Juli)
 --------------------------------------------------- */
 const CATEGORY_NAME = "Beispiel Vokabeln";
-const APP_VERSION = "96.2 – Listen speichern und archivieren";
+const APP_VERSION = "96.3 – Wörter dazu in drei Schritten";
 
 /* Die Pakete, in denen die Woerter stecken. Reihenfolge hier =
    Reihenfolge auf dem Bildschirm. "klasse" ist vorbereitet: Sobald
@@ -15186,7 +15203,7 @@ function renderUebenVokabeln(){
         </div>
         ${wahl.length ? `
           <button class="btn secondary small" id="vw-merken" style="margin-top:12px;">
-            ⭐ Diese ${wahl.length} als Liste merken
+            ⭐ Als neue Liste speichern (${wahl.length})
           </button>` : ""}
       </div>
     ` : `
@@ -18406,7 +18423,7 @@ const GRAMMAR_TOPICS = [
   {"id": "few-little", "unit": 5, "klasse": 5, "code": "G26", "icon": "🔢", "name": "a few / a little", "subtitle": "a couple of", "locked": false, "prompt": "WÄHLE DAS RICHTIGE WORT", "intro": {"title": "Ein bisschen was - a few, a little, a couple of", "lead": "a few und a couple of stehen vor zählbaren Dingen (ein paar Poster). a little steht vor nicht zählbaren Dingen (ein bisschen Milch). a couple of meint dabei besonders wenige - ungefähr zwei.", "rows": [{"en": "zählbar", "form": "a few", "example": "a few posters", "de": "ein paar Poster"}, {"en": "zählbar, sehr wenige", "form": "a couple of", "example": "a couple of friends", "de": "ein paar Freunde"}, {"en": "nicht zählbar", "form": "a little", "example": "a little milk", "de": "ein bisschen Milch"}, {"en": "Frage dazu", "form": "How many / How much", "example": "How much milk?", "de": "Wie viel Milch?"}], "tip": "Merkhilfe: few klingt wie \"viele einzelne\" - da kannst du zählen. little heißt \"klein\" - eine kleine Menge, die man nicht zählt. Und a couple of sind fast immer nur zwei oder drei."}, "exercises": [{"sentence": "I've got ___ posters in my room.", "answer": "a few", "opts": ["a few", "a little"], "de": "Ich habe ein paar Poster in meinem Zimmer."}, {"sentence": "Can I have ___ milk in my tea?", "answer": "a little", "opts": ["a little", "a few"], "de": "Kann ich ein bisschen Milch in den Tee haben?"}, {"sentence": "She has got ___ friends in London.", "answer": "a few", "opts": ["a few", "a little"], "de": "Sie hat ein paar Freunde in London."}, {"sentence": "There is ___ water left.", "answer": "a little", "opts": ["a little", "a few"], "de": "Es ist noch ein bisschen Wasser da."}, {"sentence": "We need ___ eggs for the cake.", "answer": "a few", "opts": ["a few", "a little"], "de": "Wir brauchen ein paar Eier für den Kuchen."}, {"sentence": "Add ___ sugar to the bowl.", "answer": "a little", "opts": ["a little", "a few"], "de": "Gib ein bisschen Zucker in die Schüssel."}, {"sentence": "I've got ___ of posters for you.", "answer": "a couple", "opts": ["a couple", "a little"], "de": "Ich habe ein paar Poster für dich."}, {"sentence": "He has got ___ books about animals.", "answer": "a few", "opts": ["a few", "a little"], "de": "Er hat ein paar Bücher über Tiere."}, {"sentence": "Give me ___ time, please.", "answer": "a little", "opts": ["a little", "a few"], "de": "Gib mir bitte ein bisschen Zeit."}, {"sentence": "There are ___ people in the park.", "answer": "a few", "opts": ["a few", "a little"], "de": "Im Park sind ein paar Leute."}, {"sentence": "I need ___ of minutes.", "answer": "a couple", "opts": ["a couple", "a little"], "de": "Ich brauche ein paar Minuten."}, {"sentence": "Would you like ___ cheese?", "answer": "a little", "opts": ["a little", "a few"], "de": "Möchtest du ein bisschen Käse?"}, {"sentence": "We have ___ questions for you.", "answer": "a few", "opts": ["a few", "a little"], "de": "Wir haben ein paar Fragen an dich."}, {"sentence": "There is only ___ bread left.", "answer": "a little", "opts": ["a little", "a few"], "de": "Es ist nur noch ein bisschen Brot da."}, {"sentence": "I bought ___ of apples.", "answer": "a couple", "opts": ["a couple", "a little"], "de": "Ich habe ein paar Äpfel gekauft."}, {"sentence": "She speaks ___ French.", "answer": "a little", "opts": ["a little", "a few"], "de": "Sie spricht ein bisschen Französisch."}, {"sentence": "Only ___ children came to the party.", "answer": "a few", "opts": ["a few", "a little"], "de": "Nur ein paar Kinder kamen zur Party."}, {"sentence": "Put ___ salt in the water.", "answer": "a little", "opts": ["a little", "a few"], "de": "Gib ein bisschen Salz ins Wasser."}, {"sentence": "I've got ___ of pounds in my pocket.", "answer": "a couple", "opts": ["a couple", "a little"], "de": "Ich habe ein paar Pfund in der Tasche."}, {"sentence": "There are ___ shops in our village.", "answer": "a few", "opts": ["a few", "a little"], "de": "In unserem Dorf gibt es ein paar Läden."}, {"sentence": "Can I have ___ more juice?", "answer": "a little", "opts": ["a little", "a few"], "de": "Kann ich noch ein bisschen Saft haben?"}, {"sentence": "We need ___ chairs for the guests.", "answer": "a few", "opts": ["a few", "a little"], "de": "Wir brauchen ein paar Stühle für die Gäste."}, {"sentence": "He knows ___ German words.", "answer": "a few", "opts": ["a few", "a little"], "de": "Er kennt ein paar deutsche Wörter."}, {"sentence": "There is ___ snow on the roof.", "answer": "a little", "opts": ["a little", "a few"], "de": "Auf dem Dach liegt ein bisschen Schnee."}, {"sentence": "I've got ___ of ideas.", "answer": "a couple", "opts": ["a couple", "a little"], "de": "Ich habe ein paar Ideen."}]},
   {"id": "going-to", "unit": 5, "klasse": 5, "code": "G27", "icon": "🗓️", "name": "going to", "subtitle": "Pläne für später", "locked": false, "prompt": "WÄHLE DIE RICHTIGE FORM", "intro": {"title": "Was hast du vor? - das going-to future", "lead": "Wenn du etwas fest vorhast, sagst du be going to plus die Grundform des Verbs. Die Form von be richtet sich wie immer nach dem Subjekt.", "rows": [{"en": "I", "form": "am going to", "example": "I'm going to relax.", "de": "Ich werde mich ausruhen."}, {"en": "you", "form": "are going to", "example": "You're going to love it.", "de": "Das wirst du lieben."}, {"en": "he / she / it", "form": "is going to", "example": "She's going to help.", "de": "Sie wird helfen."}, {"en": "we", "form": "are going to", "example": "We're going to win.", "de": "Wir werden gewinnen."}, {"en": "verneint", "form": "not going to", "example": "I'm not going to cry.", "de": "Ich werde nicht weinen."}], "tip": "Nach going to steht immer die reine Grundform - nie ein -s und nie ein -ing. Also: He is going to play (nicht: plays, nicht: playing)."}, "exercises": [{"sentence": "I ___ going to relax every day.", "answer": "am", "opts": ["am", "is", "are"], "de": "Ich werde mich jeden Tag ausruhen."}, {"sentence": "You ___ going to love this film.", "answer": "are", "opts": ["are", "is", "am"], "de": "Du wirst diesen Film lieben."}, {"sentence": "He ___ going to visit his grandma.", "answer": "is", "opts": ["is", "are", "am"], "de": "Er wird seine Oma besuchen."}, {"sentence": "She ___ going to help us.", "answer": "is", "opts": ["is", "are", "am"], "de": "Sie wird uns helfen."}, {"sentence": "It ___ going to rain tonight.", "answer": "is", "opts": ["is", "are", "am"], "de": "Heute Abend wird es regnen."}, {"sentence": "We ___ going to have a party.", "answer": "are", "opts": ["are", "is", "am"], "de": "Wir werden eine Party feiern."}, {"sentence": "They ___ going to move to London.", "answer": "are", "opts": ["are", "is", "am"], "de": "Sie werden nach London ziehen."}, {"sentence": "Tom ___ going to buy a new bike.", "answer": "is", "opts": ["is", "are", "am"], "de": "Tom wird ein neues Fahrrad kaufen."}, {"sentence": "My parents ___ going to work late.", "answer": "are", "opts": ["are", "is", "am"], "de": "Meine Eltern werden lange arbeiten."}, {"sentence": "I'm going to ___ football tomorrow.", "answer": "play", "opts": ["play", "plays", "playing"], "de": "Ich werde morgen Fußball spielen."}, {"sentence": "She's going to ___ a cake.", "answer": "make", "opts": ["make", "makes", "making"], "de": "Sie wird einen Kuchen backen."}, {"sentence": "He's going to ___ his room.", "answer": "tidy", "opts": ["tidy", "tidies", "tidying"], "de": "Er wird sein Zimmer aufräumen."}, {"sentence": "We're going to ___ to the cinema.", "answer": "go", "opts": ["go", "goes", "going"], "de": "Wir werden ins Kino gehen."}, {"sentence": "They're going to ___ a new house.", "answer": "buy", "opts": ["buy", "buys", "buying"], "de": "Sie werden ein neues Haus kaufen."}, {"sentence": "I'm ___ going to watch TV tonight.", "answer": "not", "opts": ["not", "don't", "no"], "de": "Heute Abend werde ich nicht fernsehen."}, {"sentence": "She ___ going to come with us.", "answer": "isn't", "opts": ["isn't", "aren't", "doesn't"], "de": "Sie wird nicht mitkommen."}, {"sentence": "They ___ going to be late.", "answer": "aren't", "opts": ["aren't", "isn't", "don't"], "de": "Sie werden nicht zu spät kommen."}, {"sentence": "___ you going to help me?", "answer": "Are", "opts": ["Are", "Is", "Am"], "de": "Wirst du mir helfen?"}, {"sentence": "___ he going to play in the team?", "answer": "Is", "opts": ["Is", "Are", "Am"], "de": "Wird er im Team spielen?"}, {"sentence": "What ___ you going to do at the weekend?", "answer": "are", "opts": ["are", "is", "am"], "de": "Was hast du am Wochenende vor?"}, {"sentence": "I'm going to ___ my homework first.", "answer": "do", "opts": ["do", "does", "doing"], "de": "Ich werde zuerst meine Hausaufgaben machen."}, {"sentence": "The film ___ going to start in ten minutes.", "answer": "is", "opts": ["is", "are", "am"], "de": "Der Film fängt in zehn Minuten an."}, {"sentence": "We're going to ___ our friends in the park.", "answer": "meet", "opts": ["meet", "meets", "meeting"], "de": "Wir werden unsere Freunde im Park treffen."}, {"sentence": "She's going to ___ a new dress.", "answer": "wear", "opts": ["wear", "wears", "wearing"], "de": "Sie wird ein neues Kleid tragen."}, {"sentence": "I ___ going to forget this day.", "answer": "am not", "opts": ["am not", "isn't", "don't"], "de": "Diesen Tag werde ich nicht vergessen."}]},
 
-  /* ===== Klasse 6 - Green Line 2 =====
+  /* ===== Klasse 6 - Band 2 des Lehrwerks =====
      Units 1-5 wie im Buch, dazu die fuenf Trailer-Kapitel
      (G13-G17) als Unit 6. */
   {"id": "g6-past-pos", "unit": 1, "klasse": 6, "code": "G1a", "icon": "⏮️", "name": "Simple past: Aussagen", "subtitle": "I played, I went", "locked": false, "prompt": "WÄHLE DIE RICHTIGE FORM", "intro": {"title": "Die einfache Vergangenheit", "lead": "Was gestern passiert und vorbei ist, steht im simple past. Regelmäßige Verben bekommen einfach -ed – und zwar in allen Personen gleich. Unregelmäßige Verben haben eigene Formen, die du lernen musst.", "rows": [{"en": "normal", "form": "+ ed", "example": "play – played", "de": "spielen – spielte"}, {"en": "stummes -e", "form": "+ d", "example": "like – liked", "de": "mögen – mochte"}, {"en": "kurzer Vokal + Konsonant", "form": "Konsonant doppelt", "example": "plan – planned", "de": "planen – plante"}, {"en": "-y nach Konsonant", "form": "y wird zu i + ed", "example": "try – tried", "de": "versuchen – versuchte"}, {"en": "unregelmäßig", "form": "eigene Form", "example": "go – went", "de": "gehen – ging"}], "tip": "Anders als im Simple Present gibt es kein extra -s bei he/she/it. \"He played\" und \"they played\" sehen gleich aus."}, "exercises": [{"sentence": "Yesterday I ___ football.", "answer": "played", "opts": ["played", "play", "playd"], "de": "Gestern habe ich Fußball gespielt."}, {"sentence": "She ___ the film very much.", "answer": "liked", "opts": ["liked", "likeed", "like"], "de": "Der Film hat ihr sehr gefallen."}, {"sentence": "We ___ a party last week.", "answer": "planned", "opts": ["planned", "planed", "plan"], "de": "Wir haben letzte Woche eine Party geplant."}, {"sentence": "He ___ to call me twice.", "answer": "tried", "opts": ["tried", "tryed", "try"], "de": "Er hat zweimal versucht, mich anzurufen."}, {"sentence": "They ___ to London in July.", "answer": "went", "opts": ["went", "goed", "gone"], "de": "Sie sind im Juli nach London gefahren."}, {"sentence": "I ___ my homework after dinner.", "answer": "did", "opts": ["did", "done", "doed"], "de": "Ich habe nach dem Essen meine Hausaufgaben gemacht."}, {"sentence": "The dog ___ under the table.", "answer": "slept", "opts": ["slept", "sleeped", "sleept"], "de": "Der Hund hat unter dem Tisch geschlafen."}, {"sentence": "My mum ___ a cake on Sunday.", "answer": "made", "opts": ["made", "maked", "make"], "de": "Meine Mutter hat am Sonntag einen Kuchen gebacken."}, {"sentence": "We ___ our grandparents at the weekend.", "answer": "visited", "opts": ["visited", "visitted", "visitd"], "de": "Wir haben am Wochenende unsere Großeltern besucht."}, {"sentence": "He ___ a new bike for his birthday.", "answer": "got", "opts": ["got", "getted", "gets"], "de": "Er hat zum Geburtstag ein neues Fahrrad bekommen."}, {"sentence": "The children ___ in the garden.", "answer": "were", "opts": ["were", "was", "are"], "de": "Die Kinder waren im Garten."}, {"sentence": "I ___ very tired last night.", "answer": "was", "opts": ["was", "were", "am"], "de": "Ich war letzte Nacht sehr müde."}, {"sentence": "She ___ a letter to her friend.", "answer": "wrote", "opts": ["wrote", "writed", "written"], "de": "Sie hat ihrer Freundin einen Brief geschrieben."}, {"sentence": "They ___ pizza for lunch.", "answer": "had", "opts": ["had", "haved", "has"], "de": "Sie hatten Pizza zum Mittagessen."}, {"sentence": "He ___ the ball to me.", "answer": "threw", "opts": ["threw", "throwed", "thrown"], "de": "Er hat mir den Ball zugeworfen."}, {"sentence": "We ___ a great time at the farm.", "answer": "had", "opts": ["had", "have", "haded"], "de": "Wir hatten eine tolle Zeit auf dem Bauernhof."}, {"sentence": "The bus ___ at eight o'clock.", "answer": "stopped", "opts": ["stopped", "stoped", "stopt"], "de": "Der Bus hielt um acht Uhr."}, {"sentence": "I ___ my keys in the kitchen.", "answer": "left", "opts": ["left", "leaved", "leave"], "de": "Ich habe meine Schlüssel in der Küche liegen lassen."}]},
@@ -18443,7 +18460,7 @@ function grammarTopicById(id){ return GRAMMAR_TOPICS.find(t=>t.id===id); }
 // damit die Reihenfolge der des Schuljahres entspricht.
 function grammarTopicsOfUnit(nr, klasse){
   /* Klasse 5 und Klasse 6 haben beide Units 1-5. Ohne den zweiten
-     Filter stuenden die Themen aus Green Line 2 mitten in der Liste
+     Filter stuenden die Themen aus Band 2 des Lehrwerks mitten in der Liste
      des ersten Schuljahres. */
   const k = klasse || state.klasse || 5;
   return GRAMMAR_TOPICS
@@ -18462,7 +18479,7 @@ const GRAMMAR_UNITS = [
   { nr:4, klasse:5, name:"Fragen und Verneinen", hint:"do und does, Objektformen" },
   { nr:5, klasse:5, name:"Mengen und Pläne", hint:"Verlaufsform, some und any, going to" },
 
-  /* --- Klasse 6, Green Line 2 --------------------------------------
+  /* --- Klasse 6, Band 2 des Lehrwerks --------------------------------------
      Die Unit-Nummern beginnen wieder bei 1: so steht es im Buch, und
      genau so sucht ein Kind sie. Getrennt werden die Jahrgaenge ueber
      das Feld "klasse", nicht ueber die Nummer. */
@@ -22357,6 +22374,15 @@ function listeFinden(name){
 function listenAktiv(){
   return listenAlle().filter(l => !l.archiv);
 }
+/* Woerter, die nur als Exemplar in einer Liste stehen, muessen beim
+   Kopieren in eine andere Liste mitwandern - sonst zeigt die neue Liste
+   weniger an, als sie zaehlt. */
+function paareAusQuelleMerken(quelle, schluessel){
+  const name = String(quelle || "").indexOf(LISTEN_ZEICHEN) === 0 ? String(quelle).slice(LISTEN_ZEICHEN.length) : "";
+  const l = name ? listeFinden(name) : null;
+  state.bauPaare = Object.assign({}, state.bauPaare || {});
+  if(l && l.paare) (schluessel || []).forEach(k => { if(l.paare[k]) state.bauPaare[k] = l.paare[k]; });
+}
 function listeArchivieren(name, rein){
   const l = listeFinden(name);
   if(!l) return;
@@ -22823,6 +22849,9 @@ function evSucheHtml(){
   const treffer = suche ? woerterSuchen(suche, 40) : [];
   const bau     = Array.isArray(state.listeBau) ? state.listeBau : (state.listeBau = []);
   const paket   = state.evPaket || "";
+  const imDazu  = state.screen === "wortedazu";
+  const zielJetzt = imDazu ? zielListeName() : "";
+  const quellListen = listenNachZeit().filter(x => x.name !== zielJetzt);
 
   /* Eine Zeile je Wort - dieselbe Machart, egal ob sie aus der Suche
      oder aus einem geoeffneten Paket kommt. */
@@ -22840,15 +22869,16 @@ function evSucheHtml(){
     <div class="ev-inhalt">
       ${paket ? `
         <button type="button" class="btn secondary small einzeilig" id="ev-paket-zu"
-                style="width:auto;margin:0 0 10px;">← Andere Pakete</button>
+                style="width:auto;margin:0 0 10px;">← Zurück zur Übersicht</button>
         <p class="muted" style="margin:0 0 8px;">Tippe die Wörter an, die in deine Liste sollen.</p>
         <div class="pk-treffer" style="max-height:420px;">
           <p class="pk-treffer-k">${escapeHtml(paket)}</p>
+          ${woerterVonQuelle(paket).length > 1 ? `<button type="button" class="pk-alle" id="ev-alle">Alle ${woerterVonQuelle(paket).length} auswählen</button>` : ""}
           ${woerterVonQuelle(paket).map(wortZeile).join("")}
         </div>
       ` : `
-        <p class="muted" style="margin:0 0 10px;">Such ein Wort oder öffne ein Paket &ndash;
-        und tipp auf <strong>+</strong>. Deine Auswahl kannst du als Liste speichern.</p>
+        <p class="muted" style="margin:0 0 10px;">Such ein Wort oder öffne eine Liste oder ein Paket &ndash;
+        tipp die Wörter an und dann auf <strong>Speichern</strong>.</p>
 
         <div class="pk-suchfeld">
           <span class="pk-lupe">🔎</span>
@@ -22866,8 +22896,18 @@ function evSucheHtml(){
           <p class="muted" style="margin:8px 0 0;">Dieses Wort kennt die App noch nicht.
           Trag es weiter unten selbst ein.</p>` : ""}
 
+        ${!suche && quellListen.length ? `
+          <div class="setting-label" style="margin-top:14px;">Aus meinen Listen</div>
+          <div class="pk-gitter">
+            ${quellListen.map(x=>`
+              <button type="button" class="pk-kachel" data-ev-paket="${escapeHtml(LISTEN_ZEICHEN + x.name)}">
+                <span class="pk-ic">⭐</span>
+                <span class="pk-n">${escapeHtml(x.name)}</span>
+                <span class="pk-z">${(x.woerter || []).length}</span>
+              </button>`).join("")}
+          </div>` : ""}
         ${!suche ? `
-          <div class="setting-label" style="margin-top:14px;">Oder ein Paket öffnen</div>
+          <div class="setting-label" style="margin-top:14px;">Aus dem Buch</div>
           <div class="pk-gitter">
             ${paketeAlle().map(p=>`
               <button type="button" class="pk-kachel" data-ev-paket="${escapeHtml(p.name)}">
@@ -22879,10 +22919,10 @@ function evSucheHtml(){
       `}
 
       ${bau.length ? `
-        <div class="ev-korb">
+        <div class="ev-korb ${imDazu ? "ev-korb-fest" : ""}">
           <span class="ev-korb-z">${bau.length} ausgewählt</span>
-          <button class="btn small" id="ev-speichern" style="width:auto;margin:0;">⭐ Als Liste speichern</button>
-          <button class="btn secondary small" id="ev-korb-leeren" style="width:auto;margin:0;">Verwerfen</button>
+          <button class="btn small" id="ev-speichern" style="width:auto;margin:0;">${imDazu ? "✓ Speichern" : "⭐ Als neue Liste speichern"}</button>
+          <button class="${imDazu ? "ev-verwerfen" : "btn secondary small"}" id="ev-korb-leeren" style="width:auto;margin:0;">Verwerfen</button>
         </div>` : `
         <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
           Noch nichts ausgewählt. Tippe Wörter an.</p>`}
@@ -22898,6 +22938,7 @@ function evListenbauVerdrahten(){
       if(!Array.isArray(state.listeBau)) state.listeBau = [];
       const i = state.listeBau.indexOf(k);
       if(i >= 0) state.listeBau.splice(i, 1); else state.listeBau.push(k);
+      if(state.evPaket) paareAusQuelleMerken(state.evPaket, [k]);
       render();
     });
   });
@@ -22906,12 +22947,22 @@ function evListenbauVerdrahten(){
     el.addEventListener('click', ()=>{ state.evPaket = el.dataset.evPaket; render(); });
   });
   an('ev-paket-zu', ()=>{ state.evPaket = ""; render(); });
+  an('ev-alle', ()=>{
+    if(!Array.isArray(state.listeBau)) state.listeBau = [];
+    woerterVonQuelle(state.evPaket || "").forEach(w=>{
+      const k = wortSchluessel(w);
+      if(k && state.listeBau.indexOf(k) < 0) state.listeBau.push(k);
+    });
+    paareAusQuelleMerken(state.evPaket, state.listeBau);
+    render();
+  });
 
   an('ev-leeren', ()=>{ state.evSuche = ""; render(); });
   an('ev-korb-leeren', ()=>{ state.listeBau = []; render(); });
 
   an('ev-speichern', ()=>{
     if(state.screen === "wortedazu"){
+      const nf = document.getElementById('wd-neu-name'); if(nf) state.neuListeName = nf.value;
       const bau = (state.listeBau || []).slice();
       state.listeBau = []; state.evSuche = ""; state.evPaket = "";
       const name = zielListeSichern();
@@ -23140,7 +23191,7 @@ function renderListe(){
       ${wahl.length ? `
         <div class="ev-korb li-korb">
           <span class="ev-korb-z">${wahl.length} ausgewählt</span>
-          <button class="btn small" id="li-neu" style="width:auto;margin:0;">⭐ Neue Liste daraus</button>
+          <button class="btn small" id="li-neu" style="width:auto;margin:0;">⭐ In eine Liste speichern</button>
           <button class="btn danger small" id="li-weg" style="width:auto;margin:0;">🗑️ ${eigene ? "Löschen" : "Rausnehmen"}</button>
           <button class="btn secondary small" id="li-keine" style="width:auto;margin:0;">Auswahl aufheben</button>
         </div>`
@@ -23180,6 +23231,7 @@ function renderListe(){
   anLi('li-mehr-dazu', ()=>{
     state.listeInfo = null;
     state.zielListe = String(state.listeOffen || "").replace(LISTEN_ZEICHEN, "");
+    state.listeBau = []; state.evPaket = ""; state.evSuche = ""; state.wdTab = "einfuegen";
     state.einfVorschau = null; state.screen = "wortedazu"; render();
   });
   anLi('li-ueben', ()=>{
@@ -23206,15 +23258,16 @@ function renderListe(){
   anLi('li-neu', ()=>{
     const gewaehlt = listeWahl().slice();
     if(!gewaehlt.length) return;
-    showPromptModal("Wie soll die neue Liste heißen?", "z.B. Die schweren Wörter", (nm)=>{
-      nm = (nm || "").trim().slice(0, 30);
-      if(nm.length < 2) return;
-      listeSichern(nm, gewaehlt);
-      state.listeWahl = [];
-      saveProgress();
-      syncToCloud();
-      listeOeffnen(LISTEN_ZEICHEN + nm);      // gleich hineinsehen
-    });
+    /* v96.3 - In eine NEUE oder eine VORHANDENE Liste. Das geht ueber
+       den Bildschirm "Woerter dazu": Auswahl liegt schon im Korb, die
+       Ziel-Liste waehlt man oben, unten steht nur "Speichern". */
+    paareAusQuelleMerken(state.listeOffen, gewaehlt);
+    state.listeWahl = [];
+    state.listeBau = gewaehlt;
+    state.evPaket = state.listeOffen; state.evSuche = "";
+    state.zielListe = "__neu__"; state.neuListeName = "";
+    state.einfVorschau = null; state.wdTab = "auswaehlen";
+    state.screen = "wortedazu"; render();
   });
 
   anLi('li-weg', ()=>{
@@ -23332,7 +23385,13 @@ function zuListeHinzufuegen(name, schluessel){
   (schluessel || []).forEach(k=>{
     if(k && k !== "|" && vorher.indexOf(k) < 0){ vorher.push(k); neu++; }
   });
-  listeSichern(name, vorher);
+  const gesichert = listeSichern(name, vorher);
+  const extra = state.bauPaare || {};
+  (schluessel || []).forEach(k=>{
+    if(extra[k] && gesichert && !(gesichert.paare || {})[k]){
+      gesichert.paare = Object.assign({}, gesichert.paare || {}); gesichert.paare[k] = extra[k];
+    }
+  });
   return neu;
 }
 function wortBekannt(k){
@@ -23452,7 +23511,7 @@ function renderCustomVocab(){
   `;
 
   const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
-  an('ml-dazu', ()=>{ state.zielListe = "__neu__"; state.neuListeName = ""; state.einfText = ""; state.einfVorschau = null; state.screen = "wortedazu"; render(); });
+  an('ml-dazu', ()=>{ state.zielListe = "__neu__"; state.neuListeName = ""; state.einfText = ""; state.einfVorschau = null; state.listeBau = []; state.evPaket = ""; state.evSuche = ""; state.wdTab = "einfuegen"; state.screen = "wortedazu"; render(); });
   an('ml-zuletzt-oeffnen', ()=>{ if(zuletzt) listeOeffnen(LISTEN_ZEICHEN + zuletzt.name); });
   an('ml-ueben', ()=>{ if(zuletzt) listeJetztUeben(LISTEN_ZEICHEN + zuletzt.name); });
   document.querySelectorAll('[data-ml-oeffnen]').forEach(el=>{
@@ -23507,31 +23566,35 @@ function renderWorteDazu(){
 
   const zaehle = (st)=> vors ? vors.filter(z => z.status === st).length : 0;
 
+  const tab = state.wdTab || "einfuegen";
   const zielHtml = `
-    <div class="wd-ziel">
+    <div class="panel wd-ziel">
       ${!ziel ? `
         <label class="wd-label" for="wd-neu-name">Name der neuen Liste</label>
-        <input type="text" id="wd-neu-name" maxlength="30" value="${escapeHtml(state.neuListeName || "Green Line, Seite ")}"
-               placeholder="z. B. Green Line, Seite 42" autocomplete="off">
-        <p class="muted wd-hilfe">Ohne Seitenzahl heißt sie „${escapeHtml(listeAutoName())}“ – umbenennen geht später.</p>` : `
-        <p class="wd-zu" style="margin:0;">Kommt in die Liste <strong>${escapeHtml(ziel)}</strong></p>`}
+        <input type="text" id="wd-neu-name" maxlength="30" value="${escapeHtml(state.neuListeName || "")}"
+               placeholder="z. B. Vokabeltest Freitag" autocomplete="off">
+        <p class="muted wd-hilfe">Ohne Namen heißt sie „${escapeHtml(listeAutoName())}“ – umbenennen geht später.</p>` : `
+        <p class="wd-label" style="margin:0;">Liste</p>
+        <p class="wd-ziel-name">${escapeHtml(ziel)} <span class="muted">· ${drin.length} ${drin.length === 1 ? "Wort" : "Wörter"}</span></p>`}
       ${listen.length ? `
-      <label class="wd-label wd-ziel-oder" for="wd-ziel-wahl">${ziel ? "Andere Liste wählen" : "Oder zu einer vorhandenen Liste hinzufügen"}</label>
+      <label class="wd-label wd-ziel-oder" for="wd-ziel-wahl">${ziel ? "Andere Liste wählen" : "Oder in eine vorhandene Liste"}</label>
       <select id="wd-ziel-wahl" class="wd-select">
         <option value="__neu__" ${!ziel ? "selected" : ""}>＋ Neue Liste</option>
         ${listen.map(x => `<option value="${escapeHtml(x.name)}" ${x.name === ziel ? "selected" : ""}>${escapeHtml(x.name)} (${(x.woerter || []).length})</option>`).join("")}
         ${ziel && !listen.some(x => x.name === ziel) ? `<option value="${escapeHtml(ziel)}" selected>${escapeHtml(ziel)} (Archiv)</option>` : ""}
       </select>` : ""}
     </div>`;
-  const speichernText = ziel ? "In diese Liste speichern" : "Als Liste speichern";
+  const reiter = (id, txt)=>`<button type="button" role="tab" class="wd-reiter ${tab === id ? "an" : ""}" data-wd-tab="${id}"
+      aria-selected="${tab === id}">${txt}</button>`;
 
   app.innerHTML = `
-    ${renderHeader("Wörter hinzufügen", true)}
+    ${renderHeader(ziel ? "Wörter dazu" : "Neue Liste", true)}
+
+    ${zielHtml}
 
     ${vors ? `
     <div class="panel">
       <p class="ml-titel">Bitte kurz prüfen</p>
-      ${zielHtml}
       <p class="muted" style="margin:0 0 10px;">${vors.length} Zeilen gelesen:
         <strong>${zaehle("neu") + zaehle("sammlung")}</strong> kommen in die Liste${zaehle("inliste") ? `, <strong>${zaehle("inliste")}</strong> sind schon drin` : ""}${zaehle("unklar") ? `, <strong>${zaehle("unklar")}</strong> unklar` : ""}.</p>
       <div class="wd-vorschau">
@@ -23544,11 +23607,15 @@ function renderWorteDazu(){
                                        inliste: "schon in dieser Liste", unklar: "unklar – bitte beide Felder füllen" }[z.status]}</span>
           </div>`).join("")}
       </div>
-      <button class="btn" id="wd-vz-speichern" style="margin-top:12px;">✓ ${zaehle("neu") + zaehle("sammlung") + zaehle("inliste")} Wörter ${ziel ? "speichern" : "als Liste speichern"}</button>
+      <button class="btn" id="wd-vz-speichern" style="margin-top:12px;">✓ Speichern</button>
       <button class="btn neutral" id="wd-vz-abbrechen" style="margin-top:8px;">Zurück zum Text</button>
     </div>` : `
+    <div class="wd-reiterleiste" role="tablist" aria-label="Wie kommen die Wörter dazu?">
+      ${reiter("einfuegen", "Einfügen")}${reiter("auswaehlen", "Auswählen")}${reiter("eintippen", "Eintippen")}
+    </div>
+
+    ${tab === "einfuegen" ? `
     <div class="panel">
-      <p class="ml-titel">Neue Liste aus dem Buch</p>
       <div class="gpt-weg">
         <p class="gpt-kopf">Am einfachsten: Liste mit ChatGPT erstellen</p>
         <ol class="gpt-schritte">
@@ -23561,40 +23628,18 @@ function renderWorteDazu(){
           <a class="btn neutral small" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT öffnen</a>
         </div>
         <ol class="gpt-schritte" start="3">
-          <li><strong>Antwort kopieren</strong>, unten einfügen und als Liste speichern.</li>
+          <li><strong>Antwort kopieren</strong>, unten einfügen und auf <em>Speichern</em> tippen.</li>
         </ol>
       </div>
       <p class="muted" style="margin:12px 0 8px;">Oder selbst schreiben: eine Zeile pro Wort, <em>Deutsch = Englisch</em>.</p>
       <textarea id="wd-viele" rows="5" placeholder="Schule = school&#10;Baum = tree&#10;gehen = go">${escapeHtml(state.einfText || "")}</textarea>
       <button type="button" class="btn neutral small" id="wd-einfuegen" style="margin-top:8px;">Aus der Zwischenablage einfügen</button>
-      ${zielHtml}
-      <button class="btn" id="wd-pruefen" style="margin-top:12px;">✓ ${speichernText}</button>
+      <button class="btn" id="wd-pruefen" style="margin-top:12px;">✓ Speichern</button>
       <p id="wd-viele-status" class="muted" role="status" aria-live="polite" style="margin:8px 0 0;"></p>
     </div>
-
-    <div class="panel">
-      <p class="ml-titel">Einzelne Wörter eintippen</p>
-      <p class="wd-zu">Zu: <strong>${ziel ? escapeHtml(ziel) : "neue Liste"}</strong></p>
-      <label class="wd-label" for="wd-en">Englisch</label>
-      <input type="text" id="wd-en" value="${escapeHtml(enEing)}" placeholder="z. B. tree" autocomplete="off" autocapitalize="off" spellcheck="false">
-      ${treffer.length ? `
-        <div class="wd-treffer" role="list" aria-label="Treffer aus dem Wortschatz">
-          <p class="muted wd-hilfe">Schon im Wortschatz &ndash; antippen:</p>
-          ${treffer.map(w => `<button type="button" class="wd-t" data-wd-treffer="${escapeHtml(wortSchluessel(w))}">
-              <span>${escapeHtml(cleanEn(w.en))}</span><span class="muted">${escapeHtml(w.de)}</span><span aria-hidden="true">＋</span></button>`).join("")}
-        </div>` : ""}
-      <label class="wd-label" for="wd-de" style="margin-top:10px;">Deutsch</label>
-      <input type="text" id="wd-de" placeholder="z. B. Baum" autocomplete="off">
-      <button class="btn" id="wd-einzeln" style="margin-top:12px;">＋ Hinzufügen</button>
-      <p id="wd-status" class="muted" role="status" aria-live="polite" style="margin:8px 0 0;"></p>
-      ${zuletztDazu ? `<p class="wd-label" style="margin-top:12px;">Zuletzt in dieser Liste</p><div class="wd-chips">${zuletztDazu}</div>` : ""}
-    </div>
-
     <details class="panel wd-weitere" ${state.wdWeitere ? "open" : ""}>
-      <summary>Weitere Wege: Excel-Datei, Pakete durchblättern</summary>
+      <summary>Excel- oder CSV-Datei hochladen</summary>
       <div class="ev-inhalt">
-        <p class="ml-titel" style="margin-top:6px;">Excel- oder CSV-Datei</p>
-        
       <div>
         <p class="muted">Spalte A = Deutsch, Spalte B = Englisch. CSV wird direkt gelesen,
         für .xlsx wird einmalig eine Hilfsbibliothek geladen.</p>
@@ -23634,11 +23679,30 @@ function renderWorteDazu(){
         </div>
       </div>
       </div>
-      <div class="ev-inhalt" style="margin-top:14px;">
-        <p class="ml-titel">Aus dem Wortschatz auswählen</p>
-        ${evSucheHtml()}
-      </div>
-    </details>`}
+    </details>` : ""}
+
+    ${tab === "auswaehlen" ? `
+    <div class="panel">
+      ${evSucheHtml()}
+    </div>` : ""}
+
+    ${tab === "eintippen" ? `
+    <div class="panel">
+      <label class="wd-label" for="wd-en">Englisch</label>
+      <input type="text" id="wd-en" value="${escapeHtml(enEing)}" placeholder="z. B. tree" autocomplete="off" autocapitalize="off" spellcheck="false">
+      ${treffer.length ? `
+        <div class="wd-treffer" role="list" aria-label="Treffer aus dem Wortschatz">
+          <p class="muted wd-hilfe">Schon im Wortschatz &ndash; antippen:</p>
+          ${treffer.map(w => `<button type="button" class="wd-t" data-wd-treffer="${escapeHtml(wortSchluessel(w))}">
+              <span>${escapeHtml(cleanEn(w.en))}</span><span class="muted">${escapeHtml(w.de)}</span><span aria-hidden="true">＋</span></button>`).join("")}
+        </div>` : ""}
+      <label class="wd-label" for="wd-de" style="margin-top:10px;">Deutsch</label>
+      <input type="text" id="wd-de" placeholder="z. B. Baum" autocomplete="off">
+      <button class="btn" id="wd-einzeln" style="margin-top:12px;">＋ Hinzufügen</button>
+      <p id="wd-status" class="muted" role="status" aria-live="polite" style="margin:8px 0 0;"></p>
+      ${zuletztDazu ? `<p class="wd-label" style="margin-top:12px;">Zuletzt in dieser Liste</p><div class="wd-chips">${zuletztDazu}</div>` : ""}
+    </div>` : ""}
+    `}
 
     <div class="row" style="gap:8px;">
       ${ziel ? `<button class="btn secondary col wd-unten" id="wd-fertig">Fertig – Liste ansehen</button>` : ""}
@@ -23646,6 +23710,13 @@ function renderWorteDazu(){
     </div>
   `;
 
+  document.querySelectorAll('[data-wd-tab]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const nf = document.getElementById('wd-neu-name'); if(nf) state.neuListeName = nf.value;
+      const tf = document.getElementById('wd-viele'); if(tf) state.einfText = tf.value;
+      state.wdTab = el.dataset.wdTab; render();
+    });
+  });
   const an = (id, was)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', was); };
   const wahl = document.getElementById('wd-ziel-wahl');
   if(wahl) wahl.addEventListener('change', ()=>{ state.zielListe = wahl.value; render(); });

@@ -1,7 +1,7 @@
 # LingoCrafter
 
 > Kostenloser Vokabeltrainer für Englisch: Vokabeln und Grammatik für die
-> Klassen 5 und 6 üben, passend zu Green Line 1 und 2. Im Minecraft-Look,
+> Klassen 5 und 6 üben, passend zum Englischunterricht. Im Minecraft-Look,
 > ohne Werbung, ohne Kosten, ohne E-Mail-Adresse.
 
 LingoCrafter ist eine Web-App unter https://lingocrafter.de/. Sie läuft im
@@ -22,10 +22,11 @@ datensparsame Lern-App ohne Abo suchen.
   Flutungsraum
 - Karteikasten-Prinzip (Leitner): Jedes Wort wandert je nach Erfolg in eine
   andere Box; Wörter, die wackeln, kommen häufiger dran
-- Englische Grammatik nach Units sortiert, passend zu Green Line 1 und 2 —
+- Englische Grammatik nach Units sortiert, passend zu Klasse 5 und 6 —
   Zeitformen, Fragen und Verneinung, Wortstellung, mit Erklärung und Beispielen
-- Eigene Vokabellisten: einzeln antippen, selbst eintippen (auch ganze
-  Listen im Buchformat „go [gəʊ] gehen“) oder aus Excel einlesen
+- Eigene Vokabellisten: Buchseite mit ChatGPT abschreiben lassen und einfügen,
+  aus dem Wortschatz oder anderen Listen auswählen, selbst eintippen oder aus
+  Excel einlesen; Listen archivieren oder löschen
 - Aussprache: jedes englische Wort anhören; eigene Aussprache üben, wobei die
   Stimme das Gerät nicht verlässt
 - Klassenarbeits-Radar: zeigt vor der Arbeit, welche Themen noch wackeln
